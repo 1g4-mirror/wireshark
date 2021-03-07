@@ -927,6 +927,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cnip.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-coap.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cola.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-cola2.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-collectd.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-componentstatus.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-communityid.c
