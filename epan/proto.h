@@ -66,6 +66,9 @@ struct expert_field;
 /** Something to satisfy checkAPIs when you have a pointer to a value_string_ext (e.g., one built with value_string_ext_new()) */
 #define VALS_EXT_PTR(x) (cast_same(value_string_ext*, (x)))
 
+/** Make a const value_string_masked[] look like a _value_string_masked pointer, used to set header_field_info.strings */
+#define MVALS(x) (cast_same(const struct _value_string_masked*, (x)))
+
 /** Make a const true_false_string[] look like a _true_false_string pointer, used to set header_field_info.strings */
 #define TFS(x)      (cast_same(const struct true_false_string*, (x)))
 
