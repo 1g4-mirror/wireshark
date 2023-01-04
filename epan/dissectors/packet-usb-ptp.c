@@ -306,7 +306,7 @@ dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p
     usb_ptp_device_info = usb_ptp_conv_info->device_info;
     if (!usb_ptp_device_info)
     {
-        usb_ptp_device_info = (usb_ptp_device_info_t *) wmem_alloc0(pinfo->pool, sizeof(usb_ptp_device_info_t));
+        usb_ptp_device_info = wmem_new0(pinfo->pool, usb_ptp_device_info_t);
     }
 
     /* Create Device Info Tree */
@@ -465,13 +465,9 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     /*guint32 ptp_length _U_;*/
     gint offset = 0;
     const gchar *ptp_code_desc = "";
-    gchar *col_class;
-    gint  col_class_length=3+1;
+    const gchar *col_class = "?";
     usb_ptp_conv_info_t *usb_ptp_conv_info;
     const value_string_masked_t *vsm;
-
-    col_class = (gchar *) wmem_alloc(wmem_packet_scope(), col_class_length);
-    col_class[0]='\0';
 
     length_tvb = tvb_captured_length(tvb);
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "USB-PTP");
@@ -481,7 +477,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     usb_ptp_conv_info = (usb_ptp_conv_info_t *) usb_conv_info->class_data;
     if(!usb_ptp_conv_info)
     {
-        usb_ptp_conv_info = (usb_ptp_conv_info_t *) wmem_alloc0(wmem_file_scope(), sizeof(usb_ptp_conv_info_t));
+        usb_ptp_conv_info = wmem_new0(wmem_file_scope(), usb_ptp_conv_info_t);
         usb_conv_info->class_data = usb_ptp_conv_info;
         usb_ptp_conv_info->flavor = usb_ptp_flavor(pinfo, data);
     }
@@ -512,7 +508,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     switch(ptp_type)
     {
         case USB_PTP_TYPE_DATA:
-            g_snprintf(col_class, col_class_length, "DAT");
+            col_class = "DAT";
             /* "The Data Block will use the OperationCode from the Command Block" [1] 7.1.1 */
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_oc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
@@ -520,28 +516,27 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_CMD:
-            g_snprintf(col_class, col_class_length, "CMD");
+            col_class = "CMD";
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_oc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
             proto_tree_add_uint_format_value(tree, hf_operation_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_RESPONSE:
-            g_snprintf(col_class, col_class_length, "RSP");
+            col_class ="RSP";
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_rc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
             proto_tree_add_uint_format_value(tree, hf_response_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_EVENT:
-            g_snprintf(col_class, col_class_length, "EVT");
+            col_class = "EVT";
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_ec_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
             proto_tree_add_uint_format_value(tree, hf_event_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         default:
-            g_snprintf(col_class, col_class_length, "?");
             proto_tree_add_expert(tree, pinfo, &ei_ptp_undecoded, tvb, offset, 2);
             break;
     }
