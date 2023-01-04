@@ -43,55 +43,55 @@
 #include "packet-usb-ptp.h"
 
 /* Handlers */
-static gint proto_usb_ptp                      = -1;
-static gint ett_usb_ptp                        = -1;
-static gint ett_usb_ptp_device_info            = -1;
-static gint ett_usb_ptp_object_array           = -1;
-static gint ett_usb_ptp_parameters             = -1;
+static int proto_usb_ptp;
+static int ett_usb_ptp;
+static int ett_usb_ptp_device_info;
+static int ett_usb_ptp_object_array;
+static int ett_usb_ptp_parameters;
 
 /* Header Fields */
-static gint hf_container_length                = -1;
-static gint hf_container_type                  = -1;
-static gint hf_operation_code                  = -1;
-static gint hf_response_code                   = -1;
-static gint hf_event_code                      = -1;
-static gint hf_transaction_id                  = -1;
-static gint hf_payload                         = -1;
+static int hf_container_length;
+static int hf_container_type;
+static int hf_operation_code;
+static int hf_response_code;
+static int hf_event_code;
+static int hf_transaction_id;
+static int hf_payload;
 /* Device Info */
-static gint hf_devinfo_standardversion         = -1;
-static gint hf_devinfo_vendorextensionid       = -1;
-static gint hf_devinfo_vendorextensionversion  = -1;
-static gint hf_devinfo_vendorextensiondesc     = -1;
-static gint hf_devinfo_functionalmode          = -1;
-static gint hf_devinfo_operationsupported      = -1;
-static gint hf_devinfo_eventsupported          = -1;
-static gint hf_devinfo_devicepropertysupported = -1;
-static gint hf_devinfo_captureformat           = -1;
-static gint hf_devinfo_imageformat             = -1;
-static gint hf_devinfo_manufacturer            = -1;
-static gint hf_devinfo_model                   = -1;
-static gint hf_devinfo_deviceversion           = -1;
-static gint hf_devinfo_serialnumber            = -1;
-static gint hf_storageid                       = -1;
+static int hf_devinfo_standardversion;
+static int hf_devinfo_vendorextensionid;
+static int hf_devinfo_vendorextensionversion;
+static int hf_devinfo_vendorextensiondesc;
+static int hf_devinfo_functionalmode;
+static int hf_devinfo_operationsupported;
+static int hf_devinfo_eventsupported;
+static int hf_devinfo_devicepropertysupported;
+static int hf_devinfo_captureformat;
+static int hf_devinfo_imageformat;
+static int hf_devinfo_manufacturer;
+static int hf_devinfo_model;
+static int hf_devinfo_deviceversion;
+static int hf_devinfo_serialnumber;
+static int hf_storageid;
 /* Parameters */
-static gint hf_cmd_parameter                   = -1;
-static gint hf_response_parameter              = -1;
-static gint hf_event_parameter                 = -1;
+static int hf_cmd_parameter;
+static int hf_response_parameter;
+static int hf_event_parameter;
 /* Commands */
-static gint hf_cmd_devicepropvalue             = -1;
-static gint hf_cmd_devicepropdesc              = -1;
-static gint hf_cmd_objformatcode               = -1;
-static gint hf_cmd_objpropcode                 = -1;
-static gint hf_objhandle                       = -1;
+static int hf_cmd_devicepropvalue;
+static int hf_cmd_devicepropdesc;
+static int hf_cmd_objformatcode;
+static int hf_cmd_objpropcode;
+static int hf_objhandle;
 /* Expert fields */
 static expert_field ei_ptp_undecoded           = EI_INIT;
 
 /* Determine which classes this device lives in */
-static guint32
+static uint32_t
 usb_ptp_flavor(packet_info *pinfo, void* data)
 {
     (void)pinfo;
-    guint32              flavor;
+    uint32_t             flavor;
     usb_conv_info_t     *usb_conv_info = NULL;
 
     /* Put camera into different classes depending on vendor id, etc
@@ -129,6 +129,18 @@ usb_ptp_flavor(packet_info *pinfo, void* data)
         case USB_PTP_VENDOR_OLYMPUS:
             flavor |= USB_PTP_FLAVOR_OLYMPUS;
             break;
+        case USB_PTP_VENDOR_LEICA:
+            flavor |= USB_PTP_FLAVOR_LEICA;
+            break;
+        case USB_PTP_VENDOR_PARROT:
+            flavor |= USB_PTP_FLAVOR_PARROT;
+            break;
+        case USB_PTP_VENDOR_PANASONIC:
+            flavor |= USB_PTP_FLAVOR_PANASONIC;
+            break;
+        case USB_PTP_VENDOR_SONY:
+            flavor |= USB_PTP_FLAVOR_SONY;
+            break;
         default:
             break;
     }
@@ -139,10 +151,10 @@ usb_ptp_flavor(packet_info *pinfo, void* data)
 }
 
 static const usb_ptp_value_string_masked_t *
-table_value_from_mask(guint32 valmask, guint32 val, const usb_ptp_value_string_masked_t *table)
+table_value_from_mask(uint32_t valmask, uint32_t val, const usb_ptp_value_string_masked_t *table)
 {
-    gint i = 0;
-    guint32 mask;
+    int i = 0;
+    uint32_t mask;
 
     if (!table)
         return NULL;
@@ -184,13 +196,13 @@ table_value_from_mask(guint32 valmask, guint32 val, const usb_ptp_value_string_m
 
 /* Add a value from a 16-bit masked value table */
 static void
-proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* usb_conv_info, gint hf,
-        tvbuff_t *tvb, const gint length, const gint offset, const gint add_info, const usb_ptp_value_string_masked_t *vals)
+proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* usb_conv_info, int hf,
+        tvbuff_t *tvb, const int length, const int offset, const int add_info, const usb_ptp_value_string_masked_t *vals)
 {
     const usb_ptp_value_string_masked_t *vsm               = NULL;
     usb_ptp_conv_info_t         *usb_ptp_conv_info = NULL;
-    guint16                      val;
-    const gchar                 *desc              = "";
+    uint16_t                     val;
+    const char                  *desc              = "";
 
     /* If we're parsing a command parameter the parameter field is 32-bits, but we're only using 16-bits for these tables.
      * MSBs are silently dropped  */
@@ -213,14 +225,14 @@ proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* u
 }
 
 /* Add a PTP-style unicode string*/
-static gint
-usb_ptp_add_uint_string(proto_tree *tree, gint hf, tvbuff_t *tvb, gint offset, gchar* save_to)
+static int
+usb_ptp_add_uint_string(proto_tree *tree, int hf, tvbuff_t *tvb, int offset, char* save_to)
 {
-    guint8 length;
-    gchar   *str;
+    uint8_t length;
+    char    *str;
 
     /* First byte is the number of characters in UCS-2, including the terminating NULL */
-    length = tvb_get_guint8(tvb, offset) * 2;
+    length = tvb_get_uint8(tvb, offset) * 2;
     offset += 1;
     str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, length, ENC_LITTLE_ENDIAN | ENC_UCS_2);
     proto_tree_add_string(tree, hf, tvb, offset, length, str);
@@ -234,11 +246,11 @@ usb_ptp_add_uint_string(proto_tree *tree, gint hf, tvbuff_t *tvb, gint offset, g
 }
 
 /* Add Indexed array of 32-bit objects (not masked) */
-static gint
-usb_ptp_add_array_il(packet_info *pinfo _U_,proto_tree *parent_tree, gint hf,  tvbuff_t *tvb, gint offset, const char *str)
+static int
+usb_ptp_add_array_il(packet_info *pinfo _U_,proto_tree *parent_tree, int hf,  tvbuff_t *tvb, int offset, const char *str)
 {
-    guint32                      length;
-    guint32                      i;
+    uint32_t                     length;
+    uint32_t                     i;
     proto_tree                  *tree              = NULL;
 
     /* First 32-bits is the count of 16-bit objects in array */
@@ -265,11 +277,11 @@ usb_ptp_add_array_il(packet_info *pinfo _U_,proto_tree *parent_tree, gint hf,  t
 }
 
 /* Add Indexed array of 16-bit objects (masked)*/
-static gint
-usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t* conv_info, gint hf,  tvbuff_t *tvb, gint offset, const char *str, const usb_ptp_value_string_masked_t *vals)
+static int
+usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t* conv_info, int hf,  tvbuff_t *tvb, int offset, const char *str, const usb_ptp_value_string_masked_t *vals)
 {
-    guint32                      length;
-    guint32                      i;
+    uint32_t                     length;
+    uint32_t                     i;
     proto_tree                  *tree              = NULL;
 
     /* First 32-bits is the count of 16-bit objects in array */
@@ -297,12 +309,12 @@ usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t
 }
 
 static void
-dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, usb_conv_info_t *conv_info, gint offset)
+dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, usb_conv_info_t *conv_info, int offset)
 {
     proto_tree *tree = NULL;
     usb_ptp_conv_info_t   *usb_ptp_conv_info;
     usb_ptp_device_info_t *usb_ptp_device_info;
-    guint16 vendor_extension_id;
+    uint16_t vendor_extension_id;
 
     /* Create device info struct if not there already and attach it */
     usb_ptp_conv_info   = (usb_ptp_conv_info_t *) conv_info->class_data;
@@ -356,10 +368,10 @@ dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p
 }
 
 static void
-dissect_usb_ptp_params(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent_tree, gint offset,gint hf)
+dissect_usb_ptp_params(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent_tree, int offset,int hf)
 {
-    guint length_tvb;
-    guint32 remaining;
+    unsigned length_tvb;
+    uint32_t remaining;
     proto_tree *tree = NULL;
 
     length_tvb = tvb_captured_length(tvb);
@@ -382,10 +394,10 @@ dissect_usb_ptp_params(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent
 }
 
 static void
-dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb_conv_info_t *usb_conv_info, guint16 ptp_type,
-        guint16 ptp_code, const usb_ptp_value_string_masked_t *vsm _U_, gint offset)
+dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb_conv_info_t *usb_conv_info, uint16_t ptp_type,
+        uint16_t ptp_code, const usb_ptp_value_string_masked_t *vsm _U_, int offset)
 {
-    guint length_payload;
+    unsigned length_payload;
 
     switch(ptp_type)
     {
@@ -461,14 +473,14 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
 {
     usb_conv_info_t *usb_conv_info;
     proto_tree *tree = NULL;
-    guint length_tvb;
-    guint16 ptp_type;
-    guint16 ptp_code;
-    guint32 ptp_tid;
-    /*guint32 ptp_length _U_;*/
-    gint offset = 0;
-    const gchar *ptp_code_desc = "";
-    const gchar *col_class = "?";
+    unsigned length_tvb;
+    uint16_t ptp_type;
+    uint16_t ptp_code;
+    uint32_t ptp_tid;
+    /*uint32_t ptp_length _U_;*/
+    int offset = 0;
+    const char *ptp_code_desc = "";
+    const char *col_class = "?";
     usb_ptp_conv_info_t *usb_ptp_conv_info;
     const usb_ptp_value_string_masked_t *vsm;
 
@@ -571,7 +583,7 @@ proto_register_usb_ptp(void)
     *     enum ftenum     type;
     *     int             display;
     *     const void      *strings;
-    *     guint32         bitmask;
+    *     uint32_t        bitmask;
     *     const char      *blurb;
     *     .....
     * };
@@ -613,7 +625,7 @@ proto_register_usb_ptp(void)
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_vendorextensionid               ,
         { "Vendor Extension ID"                       , "usb-ptp.device.vendorextensionid"      , FT_UINT32 , BASE_HEX  ,
-        VALS(usb_ptp_devinfo_vendorextensionid_vals) , 0x0                                     , NULL      , HFILL}}   ,
+        VALS(usb_ptp_vendor_vals)                     , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_vendorextensionversion          ,
         { "Vendor Extension Version"                  , "usb-ptp.device.vendorextensionversion" , FT_UINT16 , BASE_HEX  ,
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
@@ -670,7 +682,7 @@ proto_register_usb_ptp(void)
         NULL                                          , 0x0                                     , NULL      , HFILL}}
         };
 
-    static gint *usb_ptp_subtrees[] = {
+    static int *usb_ptp_subtrees[] = {
         &ett_usb_ptp,
         &ett_usb_ptp_device_info,
         &ett_usb_ptp_object_array,

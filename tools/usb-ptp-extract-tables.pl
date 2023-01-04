@@ -1,28 +1,15 @@
 #!/usr/bin/perl -w
 # 
-# $Id$
-# 
 # USB PTP Dissector
 #    Extracts PTP response codes from libgphoto2
 #  This is then hand-merged into packet-usb-ptp.h
 # 
 # (c)2013 Max Baker <max@warped.org>
 # 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 $file = shift @ARGV || 'ptp.h';
+$outfile = 'epan/dissectors/packet-usb-ptp.h';
 
 %tables = (
 'PTP_AC' => 'StorageInfo Access Capability',
@@ -41,7 +28,14 @@ $file = shift @ARGV || 'ptp.h';
 'PTP_PS' => 'Protection Status',
 'PTP_RC' => 'Response Codes',
 'PTP_ST' => 'Storage Types',
-'PTP_FLAVOR' => 'Vendor IDs',
+'PTP_VENDOR' => 'Vendor IDs',
+);
+
+%manual_entries = (
+    'PTP_OC' => [
+        "USB_PTP_FLAVOR_NIKON     , 0xfc01, \"ServiceModeStart\"",
+        "USB_PTP_FLAVOR_NIKON     , 0xfc02, \"ServiceModeStop\"",
+    ]
 );
 
 %Flavors = qw/
@@ -51,14 +45,20 @@ CANON_EOS   USB_PTP_FLAVOR_CANON
 CASIO       USB_PTP_FLAVOR_CASIO
 EK          USB_PTP_FLAVOR_KODAK
 FUJI        USB_PTP_FLAVOR_FUJI
+LEICA       USB_PTP_FLAVOR_LEICA
 MTP         USB_PTP_FLAVOR_MTP
 NIKON       USB_PTP_FLAVOR_NIKON
 OLYMPUS     USB_PTP_FLAVOR_OLYMPUS
+OLYMPUS_OMD USB_PTP_FLAVOR_OLYMPUS
+PARROT      USB_PTP_FLAVOR_PARROT
+PANASONIC   USB_PTP_FLAVOR_PANASONIC
+SONY        USB_PTP_FLAVOR_SONY
+SONY_QX     USB_PTP_FLAVOR_SONY
 /;
 
 $re_hex = '0x[0-9a-f]+';
 
-open (H,"<$file") or die;
+open (H,"<$file") or die "Can't find gphoto2 header '$file'";
 while (<H>) {
     chomp;
 
@@ -77,23 +77,52 @@ while (<H>) {
 
 close H;
 
-# Output tables
-foreach my $table (sort keys %tables) {
-    output_table($table, $tables{$table});
-}
-
-sub output_table {
-    my ($table,$desc) = @_;
+sub output_unmasked_table {
+    my ($table,$desc, $FH) = @_;
 
     my $id = lc($table);
     $id =~ s/^PTP_//i;
-
-    print "/* $table $desc */\n";
-    print "static const value_string_masked usb_ptp_${id}_mvals\[\] = {\n";
+    print $FH "/* $table $desc */\n";
+    print $FH "static const value_string usb_ptp_${id}_vals\[\] = {\n";
     my @vals;
     DEFINE:
     foreach my $define (sort sort_D keys %D) {
         next unless $define =~ /^${table}_(.*)/i;
+        my $subdefine = $1;
+        my $value = $D{$define};
+
+        push @vals, sprintf("    {%s, \"%s\"}",$value,$subdefine);
+    }
+
+    # now add manual entries
+    if (exists $manual_entries{$table}) {
+        for $i (0 .. $#{ $manual_entries{$table}}) {
+            push @vals, sprintf("    {%s}", $manual_entries{$table}[$i]);
+        }
+    }
+
+    # Add a null entry to mark the end
+    push @vals, "    {0, NULL}";
+    print $FH join(",\n",@vals),"\n";
+    print $FH "};\n";
+
+}
+
+sub output_table {
+    my ($table,$desc, $FH) = @_;
+    my $is_masked = ($table ne "PTP_VENDOR");
+
+    return output_unmasked_table($table,$desc,$FH) unless $is_masked;
+
+    my $id = lc($table);
+    $id =~ s/^PTP_//i;
+    print $FH "/* $table $desc */\n";
+    print $FH "static const usb_ptp_value_string_masked_t usb_ptp_${id}_mvals\[\] = {\n";
+    my @vals;
+    DEFINE:
+    foreach my $define (sort sort_D keys %D) {
+        next unless $define =~ /^${table}_(.*)/i;
+        next if $define =~ /^.*_MASK/i;
         my $subdefine = $1;
 
         my $type = 'USB_PTP_FLAVOR_ALL';
@@ -102,11 +131,32 @@ sub output_table {
             $type = $Flavors{$flavor}
         }
 
+        my $value = $D{$define};
+        if ($value =~ /^0x[0-9A-F]+|\d+$/i) {
+            # number or (lowercase) hex
+            $value = lc($value);
+        } elsif ($value =~ /^\(\s*([A-Z_][A-Z0-9_]*)\s*\|\s([A-Z_][A-Z0-9_]*)\s*\)$/i) {
+            # handle simple case of (A | B) where no recursive expansion
+            $value = sprintf("(%s | %s)", $D{$1}, $D{$2})
+        } else {
+            die "unrecognized value $value for $subdefine"
+        }
+
         # Ok, not a subflavor
-        push @vals, sprintf("    {%-25s, %s, \"%s\"}",$type,lc($D{$define}),$subdefine);
+        push @vals, sprintf("    {%-25s, %s, \"%s\"}",$type,$value,$subdefine);
     }
-    print join(",\n",@vals),"\n";
-    print "};\n";
+
+    # now add manual entries
+    if (exists $manual_entries{$table}) {
+        for $i (0 .. $#{ $manual_entries{$table}}) {
+            push @vals, sprintf("    {%s}", $manual_entries{$table}[$i]);
+        }
+    }
+
+    # Add a null entry to mark the end
+    push @vals, sprintf("    {%-25s, 0, NULL}","USB_PTP_FLAVOR_NONE");
+    print $FH join(",\n",@vals),"\n";
+    print $FH "};\n";
 }
 
 
@@ -116,8 +166,35 @@ sub sort_D {
     $bb = $D{$b} || $b;
     $bb = hex($bb) if $bb=~/^${re_hex}$/i;
 
+    if ($aa eq $bb) {
+        return $a cmp $b;
+    }
     if ($aa =~ /^\d+$/ and $bb=~/^\d+$/) {
         return $aa <=> $bb;
     }
     return $aa cmp $bb;
 }
+
+open (OUT,">$outfile.tmp") or die;
+open (SRC,"<$outfile") or die;
+$in_autogen = 0;
+while (<SRC>) {
+    my $line = $_;
+    if ($line =~ /(?:START|END) AUTOGENERATED CODE/) {
+        print OUT $line;
+        if ($line =~ /START/) {
+            $in_autogen = 1;
+            # Output tables
+            foreach my $table (sort keys %tables) {
+                output_table($table, $tables{$table}, OUT);
+            }
+        } else {
+            $in_autogen = 0;
+        }
+        next;
+    }
+    print OUT $_ unless $in_autogen;
+}
+close SRC;
+close OUT;
+rename("$outfile.tmp", $outfile) or die;
