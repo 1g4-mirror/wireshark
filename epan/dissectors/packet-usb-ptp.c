@@ -21,13 +21,13 @@
  *
  * USB still image capture device definition 1.0
  * https://www.usb.org/document-library/still-image-capture-device-definition-10-and-errata-16-mar-2007
- * 
+ *
  * Media Transfer Protocol v1.1 Spec
  * https://www.usb.org/document-library/media-transfer-protocol-v11-spec-and-mtp-v11-adopters-agreement
- * 
+ *
  *
  * TODO:
- *      - Any and all further decode of returned objects.   Requires adding more sub-dissectors for MTP and PTP objects. 
+ *      - Any and all further decode of returned objects.   Requires adding more sub-dissectors for MTP and PTP objects.
  *          Example : dissect_usb_ptp_get_device_info
  *        There is extensive support in libgphoto2 for these objects that can be ported over here if people want these.
  */
@@ -94,7 +94,7 @@ usb_ptp_flavor(packet_info *pinfo, void* data)
     guint32              flavor;
     usb_conv_info_t     *usb_conv_info = NULL;
 
-    /* Put camera into different classes depending on vendor id, etc 
+    /* Put camera into different classes depending on vendor id, etc
      * Based on libgphoto/camlibs/ptp2/library.c:fixup_cached_deviceinfo()
      */
     flavor = USB_PTP_FLAVOR_ALL;
@@ -135,7 +135,7 @@ table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t 
     gint i = 0;
     guint32 mask;
 
-    if (!table) 
+    if (!table)
         return NULL;
 
     /* Two-pass approach here -- first we check w/out MTP mask bit set, then with
@@ -147,7 +147,7 @@ table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t 
     {
         /* Check that the value matches and the mask matches on any bit*/
         if ( (table[i].value == val) && (table[i].mask&mask) )
-        { 
+        {
             return &table[i];
         }
         i++;
@@ -162,7 +162,7 @@ table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t 
         {
             /* Check that the value matches and the mask matches on any bit*/
             if ( (table[i].value == val) && (table[i].mask&mask) )
-            { 
+            {
                 return &table[i];
             }
             i++;
@@ -175,7 +175,7 @@ table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t 
 
 /* Add a value from a 16-bit masked value table */
 static void
-proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* usb_conv_info, gint hf, 
+proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* usb_conv_info, gint hf,
         tvbuff_t *tvb, const gint length, const gint offset, const gint add_info)
 {
     const value_string_masked_t *vsm               = NULL;
@@ -189,7 +189,7 @@ proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* u
      * MSBs are silently dropped  */
     val = tvb_get_letohs(tvb,offset);
 
-	/* Lookup our vals used by this header field */
+    /* Lookup our vals used by this header field */
     hfinfo = proto_registrar_get_nth(hf);
     vals = (value_string_masked_t *) hfinfo->strings;
 
@@ -217,7 +217,7 @@ usb_ptp_add_uint_string(proto_tree *tree, gint hf, tvbuff_t *tvb, gint offset, g
     gchar   *str;
 
     /* First byte is the number of characters in UCS-2, including the terminating NULL */
-	length = tvb_get_guint8(tvb, offset) * 2;
+    length = tvb_get_guint8(tvb, offset) * 2;
     offset += 1;
     str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, length, ENC_LITTLE_ENDIAN | ENC_UCS_2);
     proto_tree_add_string(tree, hf, tvb, offset, length, str);
@@ -239,7 +239,7 @@ usb_ptp_add_array_il(packet_info *pinfo _U_,proto_tree *parent_tree, gint hf,  t
     proto_tree                  *tree              = NULL;
 
     /* First 32-bits is the count of 16-bit objects in array */
-	length = tvb_get_letohl(tvb, offset);
+    length = tvb_get_letohl(tvb, offset);
 
     /* Create Device Info Tree */
     if (parent_tree)
@@ -270,7 +270,7 @@ usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t
     proto_tree                  *tree              = NULL;
 
     /* First 32-bits is the count of 16-bit objects in array */
-	length = tvb_get_letohl(tvb, offset);
+    length = tvb_get_letohl(tvb, offset);
 
     /* Create Device Info Tree */
     if (parent_tree)
@@ -316,14 +316,14 @@ dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p
     }
 
     /* Add Elements to struct and gui */
-	usb_ptp_device_info->StandardVersion = tvb_get_letohs(tvb, offset);
+    usb_ptp_device_info->StandardVersion = tvb_get_letohs(tvb, offset);
     proto_tree_add_item(tree,hf_devinfo_standardversion              ,tvb,offset,2,  ENC_LITTLE_ENDIAN);
     offset+=2;
-	usb_ptp_device_info->VendorExtensionID = tvb_get_letohl(tvb, offset);
-	vendor_extension_id = tvb_get_letohs(tvb, offset);
+    usb_ptp_device_info->VendorExtensionID = tvb_get_letohl(tvb, offset);
+    vendor_extension_id = tvb_get_letohs(tvb, offset);
     proto_tree_add_item(tree,hf_devinfo_vendorextensionid            ,tvb,offset,4,  ENC_LITTLE_ENDIAN);
     offset+=4;
-	usb_ptp_device_info->VendorExtensionVersion = tvb_get_letohs(tvb, offset);
+    usb_ptp_device_info->VendorExtensionVersion = tvb_get_letohs(tvb, offset);
     proto_tree_add_item(tree,hf_devinfo_vendorextensionversion       ,tvb,offset,2,  ENC_LITTLE_ENDIAN);
     offset+=2;
     offset = usb_ptp_add_uint_string(tree, hf_devinfo_vendorextensiondesc,tvb,offset,usb_ptp_device_info->VendorExtensionDesc);
@@ -343,7 +343,7 @@ dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p
     /* Post Proc of this table */
 
     /* Enable/Disable MTP Extensions */
-    if (vendor_extension_id == USB_PTP_VENDOR_EXT_MTP) 
+    if (vendor_extension_id == USB_PTP_VENDOR_EXT_MTP)
     {
         usb_ptp_conv_info->flavor |= USB_PTP_FLAVOR_MTP;
     } else
@@ -402,7 +402,7 @@ dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb
                  *    return dissect_usb_ptp_set_device_prop_value(tvb,pinfo,tree,offset); */
                 case USB_PTP_OC_GETOBJECTPROPSSUPPORTED:
                     offset = usb_ptp_add_array_is(pinfo,tree,usb_conv_info,hf_cmd_objpropcode,tvb,offset,"OBJECT PROPERTY CODES");
-                    return; 
+                    return;
                 default:
                     break;
             }
@@ -493,7 +493,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
         tree = proto_item_add_subtree(ti, ett_usb_ptp);
     }
 
-    /* PTP Is defined as Class=6, SubClass=1, Protocol=1 */ 
+    /* PTP Is defined as Class=6, SubClass=1, Protocol=1 */
     if (!(   (usb_conv_info->interfaceSubclass == IF_CLASS_IMAGE_SUBCLASS_PTP)
           && (usb_conv_info->interfaceProtocol == IF_CLASS_IMAGE_PROTOCOL_PTP) ))
     {
@@ -503,7 +503,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
 
     proto_tree_add_item(tree, hf_container_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     /*ptp_length = tvb_get_letohl(tvb,offset);*/
-    offset+=4; 
+    offset+=4;
     proto_tree_add_item(tree, hf_container_type,   tvb, offset, 2, ENC_LITTLE_ENDIAN);
     ptp_type = tvb_get_letohs(tvb,offset);
     offset+=2;
@@ -516,28 +516,28 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
             /* "The Data Block will use the OperationCode from the Command Block" [1] 7.1.1 */
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_oc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
-            proto_tree_add_uint_format_value(tree, hf_operation_code,tvb, offset, 2, ptp_code, 
+            proto_tree_add_uint_format_value(tree, hf_operation_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_CMD:
             g_snprintf(col_class, col_class_length, "CMD");
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_oc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
-            proto_tree_add_uint_format_value(tree, hf_operation_code,tvb, offset, 2, ptp_code, 
+            proto_tree_add_uint_format_value(tree, hf_operation_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_RESPONSE:
             g_snprintf(col_class, col_class_length, "RSP");
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_rc_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
-            proto_tree_add_uint_format_value(tree, hf_response_code,tvb, offset, 2, ptp_code, 
+            proto_tree_add_uint_format_value(tree, hf_response_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         case USB_PTP_TYPE_EVENT:
             g_snprintf(col_class, col_class_length, "EVT");
             vsm = table_value_from_mask(usb_ptp_conv_info->flavor,ptp_code,usb_ptp_ec_mvals);
             ptp_code_desc = vsm ? vsm->strptr : "UNKNOWN";
-            proto_tree_add_uint_format_value(tree, hf_event_code,tvb, offset, 2, ptp_code, 
+            proto_tree_add_uint_format_value(tree, hf_event_code,tvb, offset, 2, ptp_code,
                     "%s (0x%04x)",ptp_code_desc,ptp_code);
             break;
         default:
@@ -551,7 +551,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     ptp_tid = tvb_get_letohl(tvb,offset);
     offset+=4;
 
-    col_add_fstr(pinfo->cinfo, COL_INFO, "%s %08x (%04x) %s", 
+    col_add_fstr(pinfo->cinfo, COL_INFO, "%s %08x (%04x) %s",
             col_class, ptp_tid, ptp_code, ptp_code_desc );
 
     /* Pass along if we have a payload */
@@ -583,95 +583,95 @@ proto_register_usb_ptp(void)
      *       These can't be used by proto_tree_add_item() directly and instead are used by proto_tree_add_item_mask etc
      *       */
     static hf_register_info hf[] = {
-        { &hf_container_length                        , 
-        { "Container Length"                          , "usb-ptp.container.length"              , FT_UINT32 , BASE_DEC  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_container_type                          , 
-        { "Container Type"                            , "usb-ptp.container.type"                , FT_UINT16 , BASE_HEX  , 
-        &usb_ptp_container_type_vals                  , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_operation_code                          , 
-        { "Operation Code"                            , "usb-ptp.operation.code"                , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_event_code                              , 
-        { "Event Code"                                , "usb-ptp.event.code"                    , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_transaction_id                          , 
-        { "Transaction ID"                            , "usb-ptp.transaction.id"                , FT_UINT32 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_payload                                 , 
-        { "Payload"                                   , "usb-ptp.payload"                       , FT_BYTES  , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_cmd_parameter                           , 
-        { "Parameter"                                 , "usb-ptp.command.parameter"             , FT_UINT32 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_response_code                           , 
-        { "Response Code"                             , "usb-ptp.response.code"                 , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_response_parameter                      , 
-        { "Parameter"                                 , "usb-ptp.response.parameter"            , FT_UINT32 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_event_parameter                         , 
-        { "Parameter"                                 , "usb-ptp.event.parameter"               , FT_UINT32 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_standardversion                 , 
-        { "Standard Version"                          , "usb-ptp.device.standardversion"        , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_vendorextensionid               , 
-        { "Vendor Extension ID"                       , "usb-ptp.device.vendorextensionid"      , FT_UINT32 , BASE_HEX  , 
-        VALS(usb_ptp_devinfo_vendorextensionid_vals) , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_vendorextensionversion          , 
-        { "Vendor Extension Version"                  , "usb-ptp.device.vendorextensionversion" , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_vendorextensiondesc             , 
-        { "Vendor Extension Description"              , "usb-ptp.device.vendorextensiondesc"    , FT_STRING , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_functionalmode                  , 
-        { "Functional Mode"                           , "usb-ptp.device.functionalmode"         , FT_UINT16 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_operationsupported              , 
-        { "Operation Supported"                       , "usb-ptp.device.operationssupported"    , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_oc_mvals)                      , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_eventsupported                  , 
-        { "Event Supported"                           , "usb-ptp.device.eventsupported"         , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_ec_mvals)                      , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_devicepropertysupported         , 
-        { "Device Property"                           , "usb-ptp.device.propertysupported"      , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_captureformat                   , 
-        { "Capture Format"                            , "usb-ptp.device.captureformat"          , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_imageformat                     , 
-        { "Image Format"                              , "usb-ptp.device.imageformat"            , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_manufacturer                    , 
-        { "Manufacturer"                              , "usb-ptp.device.manufacturer"           , FT_STRING , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_model                           , 
-        { "Model"                                     , "usb-ptp.device.model"                  , FT_STRING , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_deviceversion                   , 
-        { "Device Version"                            , "usb-ptp.device.deviceversion"          , FT_STRING , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_devinfo_serialnumber                    , 
-        { "Serial Number"                             , "usb-ptp.device.serialnumber"           , FT_STRING , BASE_NONE , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_cmd_devicepropvalue                     , 
-        { "Device Property"                           , "usb-ptp.device.property"               , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_cmd_devicepropdesc                      , 
-        { "Device Property"                           , "usb-ptp.device.propertydesc"           , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_storageid                               , 
-        { "Storage ID"                                , "usb-ptp.device.storageid"              , FT_UINT32 , BASE_HEX  , 
-        NULL                                          , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_cmd_objformatcode                       , 
-        { "Object Format Code"                        , "usb-ptp.object.format"                 , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_cmd_objpropcode                         , 
-        { "Object Prop Code"                          , "usb-ptp.object.code"                   , FT_UINT16 , BASE_HEX  , 
-        MVALS(usb_ptp_opc_mvals)                     , 0x0                                     , NULL      , HFILL}}   , 
-        { &hf_objhandle                               , 
-        { "Object Handle"                             , "usb-ptp.object.handle"                 , FT_UINT32 , BASE_HEX  , 
+        { &hf_container_length                        ,
+        { "Container Length"                          , "usb-ptp.container.length"              , FT_UINT32 , BASE_DEC  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_container_type                          ,
+        { "Container Type"                            , "usb-ptp.container.type"                , FT_UINT16 , BASE_HEX  ,
+        &usb_ptp_container_type_vals                  , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_operation_code                          ,
+        { "Operation Code"                            , "usb-ptp.operation.code"                , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_event_code                              ,
+        { "Event Code"                                , "usb-ptp.event.code"                    , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_transaction_id                          ,
+        { "Transaction ID"                            , "usb-ptp.transaction.id"                , FT_UINT32 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_payload                                 ,
+        { "Payload"                                   , "usb-ptp.payload"                       , FT_BYTES  , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_cmd_parameter                           ,
+        { "Parameter"                                 , "usb-ptp.command.parameter"             , FT_UINT32 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_response_code                           ,
+        { "Response Code"                             , "usb-ptp.response.code"                 , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_response_parameter                      ,
+        { "Parameter"                                 , "usb-ptp.response.parameter"            , FT_UINT32 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_event_parameter                         ,
+        { "Parameter"                                 , "usb-ptp.event.parameter"               , FT_UINT32 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_standardversion                 ,
+        { "Standard Version"                          , "usb-ptp.device.standardversion"        , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_vendorextensionid               ,
+        { "Vendor Extension ID"                       , "usb-ptp.device.vendorextensionid"      , FT_UINT32 , BASE_HEX  ,
+        VALS(usb_ptp_devinfo_vendorextensionid_vals) , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_vendorextensionversion          ,
+        { "Vendor Extension Version"                  , "usb-ptp.device.vendorextensionversion" , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_vendorextensiondesc             ,
+        { "Vendor Extension Description"              , "usb-ptp.device.vendorextensiondesc"    , FT_STRING , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_functionalmode                  ,
+        { "Functional Mode"                           , "usb-ptp.device.functionalmode"         , FT_UINT16 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_operationsupported              ,
+        { "Operation Supported"                       , "usb-ptp.device.operationssupported"    , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_oc_mvals)                      , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_eventsupported                  ,
+        { "Event Supported"                           , "usb-ptp.device.eventsupported"         , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_ec_mvals)                      , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_devicepropertysupported         ,
+        { "Device Property"                           , "usb-ptp.device.propertysupported"      , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_captureformat                   ,
+        { "Capture Format"                            , "usb-ptp.device.captureformat"          , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_imageformat                     ,
+        { "Image Format"                              , "usb-ptp.device.imageformat"            , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_manufacturer                    ,
+        { "Manufacturer"                              , "usb-ptp.device.manufacturer"           , FT_STRING , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_model                           ,
+        { "Model"                                     , "usb-ptp.device.model"                  , FT_STRING , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_deviceversion                   ,
+        { "Device Version"                            , "usb-ptp.device.deviceversion"          , FT_STRING , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_devinfo_serialnumber                    ,
+        { "Serial Number"                             , "usb-ptp.device.serialnumber"           , FT_STRING , BASE_NONE ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_cmd_devicepropvalue                     ,
+        { "Device Property"                           , "usb-ptp.device.property"               , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_cmd_devicepropdesc                      ,
+        { "Device Property"                           , "usb-ptp.device.propertydesc"           , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_storageid                               ,
+        { "Storage ID"                                , "usb-ptp.device.storageid"              , FT_UINT32 , BASE_HEX  ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_cmd_objformatcode                       ,
+        { "Object Format Code"                        , "usb-ptp.object.format"                 , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_cmd_objpropcode                         ,
+        { "Object Prop Code"                          , "usb-ptp.object.code"                   , FT_UINT16 , BASE_HEX  ,
+        MVALS(usb_ptp_opc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        { &hf_objhandle                               ,
+        { "Object Handle"                             , "usb-ptp.object.handle"                 , FT_UINT32 , BASE_HEX  ,
         NULL                                          , 0x0                                     , NULL      , HFILL}}
         };
 
@@ -699,7 +699,7 @@ proto_register_usb_ptp(void)
 }
 
 void
-proto_reg_handoff_usb_ptp(void) 
+proto_reg_handoff_usb_ptp(void)
 {
     dissector_handle_t usb_ptp_dissector_handle;
     usb_ptp_dissector_handle = find_dissector("usb-ptp");

@@ -57,7 +57,7 @@ typedef struct _usb_ptp_device_info_t {
     gchar        *SerialNumber;
 } usb_ptp_device_info_t;
 
-/* Struct stored into usb_conv that keeps track of decoded device information 
+/* Struct stored into usb_conv that keeps track of decoded device information
  *      Gets attached to *class_data in usb_conv */
 typedef struct _usb_ptp_conv_info_t {
     guint32                flavor;
