@@ -39,6 +39,13 @@
 #define USB_PTP_OC_GETOBJECTPROPSSUPPORTED 0x9801
 #define USB_PTP_OC_GETOBJECTPROPDESC       0x9802
 
+/* MASKED VALUE STRINGS */
+typedef struct _usb_ptp_value_string_masked {
+    guint32       mask;
+    guint32       value;
+    const gchar   *strptr;
+} usb_ptp_value_string_masked_t;
+
 /* PTP device info structure (returned by GetDevInfo) */
 typedef struct _usb_ptp_device_info_t {
     guint16       StandardVersion;
@@ -95,14 +102,14 @@ static const value_string usb_ptp_container_type_vals[] = {
  */
 
 /* PTP_AC StorageInfo Access Capability */
-static const value_string_masked_t usb_ptp_ac_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_ac_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "ReadWrite"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "ReadOnly"},
     {USB_PTP_FLAVOR_ALL       , 0x0002, "ReadOnly_with_Object_Deletion"},
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_AT Association Types */
-static const value_string_masked_t usb_ptp_at_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_at_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "GenericFolder"},
     {USB_PTP_FLAVOR_ALL       , 0x0002, "Album"},
@@ -114,7 +121,7 @@ static const value_string_masked_t usb_ptp_at_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_DPC Device Properties Codes */
-static const value_string_masked_t usb_ptp_dpc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_dpc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x5000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x5001, "BatteryLevel"},
     {USB_PTP_FLAVOR_ALL       , 0x5002, "FunctionalMode"},
@@ -742,20 +749,20 @@ static const value_string_masked_t usb_ptp_dpc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_DPFF Device Property Form Flag */
-static const value_string_masked_t usb_ptp_dpff_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_dpff_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x00, "None"},
     {USB_PTP_FLAVOR_ALL       , 0x01, "Range"},
     {USB_PTP_FLAVOR_ALL       , 0x02, "Enumeration"},
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_DPGS Device Property GetSet type */
-static const value_string_masked_t usb_ptp_dpgs_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_dpgs_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x00, "Get"},
     {USB_PTP_FLAVOR_ALL       , 0x01, "GetSet"},
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_DTC Data Type Codes */
-static const value_string_masked_t usb_ptp_dtc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_dtc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "UNDEF"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "INT8"},
     {USB_PTP_FLAVOR_ALL       , 0x0002, "UINT8"},
@@ -781,7 +788,7 @@ static const value_string_masked_t usb_ptp_dtc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_EC Event Codes */
-static const value_string_masked_t usb_ptp_ec_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_ec_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x4000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x4001, "CancelTransaction"},
     {USB_PTP_FLAVOR_ALL       , 0x4002, "ObjectAdded"},
@@ -861,7 +868,7 @@ static const value_string usb_ptp_devinfo_vendorextensionid_vals[] = {
 };
 
 /* PTP_FST FilesystemType Values */
-static const value_string_masked_t usb_ptp_fst_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_fst_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "GenericFlat"},
     {USB_PTP_FLAVOR_ALL       , 0x0002, "GenericHierarchical"},
@@ -869,7 +876,7 @@ static const value_string_masked_t usb_ptp_fst_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_GOH GetObjectHandles */
-static const value_string_masked_t usb_ptp_goh_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_goh_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x00000000, "ALL_ASSOCS"},
     {USB_PTP_FLAVOR_ALL       , 0x00000000, "ALL_FORMATS"},
     {USB_PTP_FLAVOR_ALL       , 0xffffffff, "ROOT_PARENT"},
@@ -877,7 +884,7 @@ static const value_string_masked_t usb_ptp_goh_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_OC Operation Codes */
-static const value_string_masked_t usb_ptp_oc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_oc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x1000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x1001, "GetDeviceInfo"},
     {USB_PTP_FLAVOR_ALL       , 0x1002, "OpenSession"},
@@ -1150,7 +1157,7 @@ static const value_string_masked_t usb_ptp_oc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_OFC Object Format Codes */
-static const value_string_masked_t usb_ptp_ofc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_ofc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x3000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x3001, "Association"},
     {USB_PTP_FLAVOR_ALL       , 0x3002, "Script"},
@@ -1247,7 +1254,7 @@ static const value_string_masked_t usb_ptp_ofc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_OPC MTP Object Properties */
-static const value_string_masked_t usb_ptp_opc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_opc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0xb104, "WirelessConfigurationFile"},
     {USB_PTP_FLAVOR_ALL       , 0xd901, "BuyFlag"},
     {USB_PTP_FLAVOR_ALL       , 0xdc01, "StorageID"},
@@ -1419,7 +1426,7 @@ static const value_string_masked_t usb_ptp_opc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_OPFF MTP Device Property Codes */
-static const value_string_masked_t usb_ptp_opff_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_opff_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x00, "None"},
     {USB_PTP_FLAVOR_ALL       , 0x01, "Range"},
     {USB_PTP_FLAVOR_ALL       , 0x02, "Enumeration"},
@@ -1431,7 +1438,7 @@ static const value_string_masked_t usb_ptp_opff_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x00, NULL}
 };
 /* PTP_PS Protection Status */
-static const value_string_masked_t usb_ptp_ps_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_ps_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "NoProtection"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "ReadOnly"},
     {USB_PTP_FLAVOR_MTP       , 0x8002, "ReadOnlyData"},
@@ -1439,7 +1446,7 @@ static const value_string_masked_t usb_ptp_ps_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_RC Response Codes */
-static const value_string_masked_t usb_ptp_rc_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_rc_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x2000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x2001, "OK"},
     {USB_PTP_FLAVOR_ALL       , 0x2002, "GeneralError"},
@@ -1516,7 +1523,7 @@ static const value_string_masked_t usb_ptp_rc_mvals[] = {
     {USB_PTP_FLAVOR_NONE      , 0x0000, NULL}
 };
 /* PTP_ST Storage Types */
-static const value_string_masked_t usb_ptp_st_mvals[] = {
+static const usb_ptp_value_string_masked_t usb_ptp_st_mvals[] = {
     {USB_PTP_FLAVOR_ALL       , 0x0000, "Undefined"},
     {USB_PTP_FLAVOR_ALL       , 0x0001, "FixedROM"},
     {USB_PTP_FLAVOR_ALL       , 0x0002, "RemovableROM"},

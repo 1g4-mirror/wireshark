@@ -129,8 +129,8 @@ usb_ptp_flavor(packet_info *pinfo, void* data)
     return flavor;
 }
 
-static const value_string_masked_t *
-table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t *table)
+static const usb_ptp_value_string_masked_t *
+table_value_from_mask(guint32 valmask, guint32 val, const usb_ptp_value_string_masked_t *table)
 {
     gint i = 0;
     guint32 mask;
@@ -176,22 +176,16 @@ table_value_from_mask(guint32 valmask, guint32 val, const value_string_masked_t 
 /* Add a value from a 16-bit masked value table */
 static void
 proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* usb_conv_info, gint hf,
-        tvbuff_t *tvb, const gint length, const gint offset, const gint add_info)
+        tvbuff_t *tvb, const gint length, const gint offset, const gint add_info, const usb_ptp_value_string_masked_t *vals)
 {
-    const value_string_masked_t *vsm               = NULL;
+    const usb_ptp_value_string_masked_t *vsm               = NULL;
     usb_ptp_conv_info_t         *usb_ptp_conv_info = NULL;
     guint16                      val;
-    header_field_info           *hfinfo;
     const gchar                 *desc              = "";
-    value_string_masked_t       *vals;
 
     /* If we're parsing a command parameter the parameter field is 32-bits, but we're only using 16-bits for these tables.
      * MSBs are silently dropped  */
     val = tvb_get_letohs(tvb,offset);
-
-    /* Lookup our vals used by this header field */
-    hfinfo = proto_registrar_get_nth(hf);
-    vals = (value_string_masked_t *) hfinfo->strings;
 
     usb_ptp_conv_info = (usb_ptp_conv_info_t *) usb_conv_info->class_data;
 
@@ -263,7 +257,7 @@ usb_ptp_add_array_il(packet_info *pinfo _U_,proto_tree *parent_tree, gint hf,  t
 
 /* Add Indexed array of 16-bit objects (masked)*/
 static gint
-usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t* conv_info, gint hf,  tvbuff_t *tvb, gint offset, const char *str)
+usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t* conv_info, gint hf,  tvbuff_t *tvb, gint offset, const char *str, const usb_ptp_value_string_masked_t *vals)
 {
     guint32                      length;
     guint32                      i;
@@ -286,7 +280,7 @@ usb_ptp_add_array_is(packet_info *pinfo,proto_tree *parent_tree, usb_conv_info_t
 
     for (i=0; i<length; i++)
     {
-        proto_tree_add_item_mask(pinfo,tree,conv_info,hf,tvb,2,offset,0);
+        proto_tree_add_item_mask(pinfo,tree,conv_info,hf,tvb,2,offset,0,vals);
         offset+=2;
     }
 
@@ -330,11 +324,11 @@ dissect_usb_ptp_get_device_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p
     proto_tree_add_item(tree,hf_devinfo_functionalmode               ,tvb,offset,2,  ENC_LITTLE_ENDIAN);
     offset+=2;
     /* TODO: Store array values in dev_info struct */
-    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_operationsupported     ,tvb,offset,"OPERATIONS SUPPORTED");
-    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_eventsupported         ,tvb,offset,"EVENTS SUPPORTED");
-    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_devicepropertysupported,tvb,offset,"DEVICE PROPERTIES SUPPORTED");
-    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_captureformat          ,tvb,offset,"CAPTURE FORMATS SUPPORTED");
-    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_imageformat            ,tvb,offset,"IMAGE FORMATS SUPPORTED");
+    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_operationsupported     ,tvb,offset,"OPERATIONS SUPPORTED",usb_ptp_oc_mvals);
+    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_eventsupported         ,tvb,offset,"EVENTS SUPPORTED",usb_ptp_ec_mvals);
+    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_devicepropertysupported,tvb,offset,"DEVICE PROPERTIES SUPPORTED",usb_ptp_dpc_mvals);
+    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_captureformat          ,tvb,offset,"CAPTURE FORMATS SUPPORTED",usb_ptp_ofc_mvals);
+    offset = usb_ptp_add_array_is(pinfo,tree,conv_info,hf_devinfo_imageformat            ,tvb,offset,"IMAGE FORMATS SUPPORTED",usb_ptp_ofc_mvals);
     offset = usb_ptp_add_uint_string(tree,hf_devinfo_manufacturer      ,tvb,offset,usb_ptp_device_info->Manufacturer);
     offset = usb_ptp_add_uint_string(tree,hf_devinfo_model             ,tvb,offset,usb_ptp_device_info->Model);
     offset = usb_ptp_add_uint_string(tree,hf_devinfo_deviceversion     ,tvb,offset,usb_ptp_device_info->DeviceVersion);
@@ -380,7 +374,7 @@ dissect_usb_ptp_params(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent
 
 static void
 dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb_conv_info_t *usb_conv_info, guint16 ptp_type,
-        guint16 ptp_code, const value_string_masked_t *vsm _U_, gint offset)
+        guint16 ptp_code, const usb_ptp_value_string_masked_t *vsm _U_, gint offset)
 {
     guint length_payload;
 
@@ -401,7 +395,7 @@ dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb
                 /*case USB_PTP_OC_SETDEVICEPROPVALUE: TODO
                  *    return dissect_usb_ptp_set_device_prop_value(tvb,pinfo,tree,offset); */
                 case USB_PTP_OC_GETOBJECTPROPSSUPPORTED:
-                    offset = usb_ptp_add_array_is(pinfo,tree,usb_conv_info,hf_cmd_objpropcode,tvb,offset,"OBJECT PROPERTY CODES");
+                    offset = usb_ptp_add_array_is(pinfo,tree,usb_conv_info,hf_cmd_objpropcode,tvb,offset,"OBJECT PROPERTY CODES",usb_ptp_opc_mvals);
                     return;
                 default:
                     break;
@@ -411,21 +405,21 @@ dissect_usb_ptp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, usb
             switch (ptp_code)
             {
                 case USB_PTP_OC_SETDEVICEPROPVALUE:
-                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_devicepropvalue,tvb,4,offset,1);
+                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_devicepropvalue,tvb,4,offset,1,usb_ptp_dpc_mvals);
                     offset+=4;
                     break;
                 case USB_PTP_OC_GETDEVICEPROPDESC:
-                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_devicepropdesc,tvb,4,offset,1);
+                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_devicepropdesc,tvb,4,offset,1,usb_ptp_dpc_mvals);
                     offset+=4;
                     break;
                 case USB_PTP_OC_GETOBJECTPROPSSUPPORTED:
-                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objformatcode,tvb,4,offset,1);
+                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objformatcode,tvb,4,offset,1,usb_ptp_ofc_mvals);
                     offset+=4;
                     break;
                 case USB_PTP_OC_GETOBJECTPROPDESC:
-                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objpropcode  ,tvb,4,offset,1);
+                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objpropcode  ,tvb,4,offset,1,usb_ptp_opc_mvals);
                     offset+=4;
-                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objformatcode,tvb,4,offset,1);
+                    proto_tree_add_item_mask(pinfo,tree,usb_conv_info,hf_cmd_objformatcode,tvb,4,offset,1,usb_ptp_ofc_mvals);
                     offset+=4;
                     break;
                 default:
@@ -467,7 +461,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     const gchar *ptp_code_desc = "";
     const gchar *col_class = "?";
     usb_ptp_conv_info_t *usb_ptp_conv_info;
-    const value_string_masked_t *vsm;
+    const usb_ptp_value_string_masked_t *vsm;
 
     length_tvb = tvb_captured_length(tvb);
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "USB-PTP");
@@ -574,9 +568,6 @@ proto_register_usb_ptp(void)
     * };
     */
 
-    /* NOTE: Some of the strings arguments given are value_string_masked_t[] instead of the normal value_string_t[]
-     *       These can't be used by proto_tree_add_item() directly and instead are used by proto_tree_add_item_mask etc
-     *       */
     static hf_register_info hf[] = {
         { &hf_container_length                        ,
         { "Container Length"                          , "usb-ptp.container.length"              , FT_UINT32 , BASE_DEC  ,
@@ -625,19 +616,19 @@ proto_register_usb_ptp(void)
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_operationsupported              ,
         { "Operation Supported"                       , "usb-ptp.device.operationssupported"    , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_oc_mvals)                      , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_eventsupported                  ,
         { "Event Supported"                           , "usb-ptp.device.eventsupported"         , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_ec_mvals)                      , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_devicepropertysupported         ,
         { "Device Property"                           , "usb-ptp.device.propertysupported"      , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_captureformat                   ,
         { "Capture Format"                            , "usb-ptp.device.captureformat"          , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_imageformat                     ,
         { "Image Format"                              , "usb-ptp.device.imageformat"            , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_devinfo_manufacturer                    ,
         { "Manufacturer"                              , "usb-ptp.device.manufacturer"           , FT_STRING , BASE_NONE ,
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
@@ -652,19 +643,19 @@ proto_register_usb_ptp(void)
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_cmd_devicepropvalue                     ,
         { "Device Property"                           , "usb-ptp.device.property"               , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_cmd_devicepropdesc                      ,
         { "Device Property"                           , "usb-ptp.device.propertydesc"           , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_dpc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_storageid                               ,
         { "Storage ID"                                , "usb-ptp.device.storageid"              , FT_UINT32 , BASE_HEX  ,
         NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_cmd_objformatcode                       ,
         { "Object Format Code"                        , "usb-ptp.object.format"                 , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_ofc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_cmd_objpropcode                         ,
         { "Object Prop Code"                          , "usb-ptp.object.code"                   , FT_UINT16 , BASE_HEX  ,
-        MVALS(usb_ptp_opc_mvals)                     , 0x0                                     , NULL      , HFILL}}   ,
+        NULL                                          , 0x0                                     , NULL      , HFILL}}   ,
         { &hf_objhandle                               ,
         { "Object Handle"                             , "usb-ptp.object.handle"                 , FT_UINT32 , BASE_HEX  ,
         NULL                                          , 0x0                                     , NULL      , HFILL}}
