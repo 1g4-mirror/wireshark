@@ -185,7 +185,7 @@ proto_tree_add_item_mask(packet_info *pinfo,proto_tree *tree, usb_conv_info_t* u
     const gchar                 *desc              = "";
     value_string_masked_t       *vals;
 
-    /* If we're parsing a command paramter the paramter field is 32-bits, but we're only using 16-bits for these tables.
+    /* If we're parsing a command parameter the parameter field is 32-bits, but we're only using 16-bits for these tables.
      * MSBs are silently dropped  */
     val = tvb_get_letohs(tvb,offset);
 
