@@ -100,29 +100,38 @@ usb_ptp_flavor(packet_info *pinfo, void* data)
     flavor = USB_PTP_FLAVOR_ALL;
     usb_conv_info = (usb_conv_info_t *)data;
 
-    /* Not modeled as a switch because I expect more complicated decode here for flavors, as modeled in libgphoto
-     * For example not all canon's support the PTP extensions */
+    /* The future may bring more complicated decode here, but for now we
+     * just guess additional vendor exts based on VID.
+     * Real implementations have to handle enough quirks that they maintain
+     * whitelists of devices to communicate properly. This implementation
+     * is much more basic.
+     */
 
     if (!usb_conv_info)
         return flavor;
 
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_NIKON)
-        flavor |= USB_PTP_FLAVOR_NIKON;
-
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_CANON)
-        flavor |= USB_PTP_FLAVOR_CANON;
-
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_FUJI)
-        flavor |= USB_PTP_FLAVOR_FUJI;
-
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_OLYMPUS)
-        flavor |= USB_PTP_FLAVOR_OLYMPUS;
-
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_CASIO)
-        flavor |= USB_PTP_FLAVOR_CASIO;
-
-    if (usb_conv_info->deviceVendor==USB_PTP_VENDOR_KODAK)
-        flavor |= USB_PTP_FLAVOR_KODAK;
+    switch (usb_conv_info->deviceVendor) {
+        case USB_PTP_VENDOR_CANON:
+            flavor |= USB_PTP_FLAVOR_CANON;
+            break;
+        case USB_PTP_VENDOR_NIKON:
+            flavor |= USB_PTP_FLAVOR_NIKON;
+            break;
+        case USB_PTP_VENDOR_FUJI:
+            flavor |= USB_PTP_FLAVOR_FUJI;
+            break;
+        case USB_PTP_VENDOR_KODAK:
+            flavor |= USB_PTP_FLAVOR_KODAK;
+            break;
+        case USB_PTP_VENDOR_CASIO:
+            flavor |= USB_PTP_FLAVOR_CASIO;
+            break;
+        case USB_PTP_VENDOR_OLYMPUS:
+            flavor |= USB_PTP_FLAVOR_OLYMPUS;
+            break;
+        default:
+            break;
+    }
 
     /* TODO: ANDROID */
 
