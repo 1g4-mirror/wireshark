@@ -856,7 +856,8 @@ static const value_string usb_ptp_devinfo_vendorextensionid_vals[] = {
     {0x0000000C,"FOTONATION"},
     {0x0000000D,"PENTAX"},
     {0x0000000E,"FUJI"},
-    {0xffffffff,"MTP"}
+    {0xffffffff,"MTP"},
+    {0x00000000, NULL}
 };
 
 /* PTP_FST FilesystemType Values */
