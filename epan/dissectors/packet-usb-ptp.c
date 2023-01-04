@@ -1,32 +1,30 @@
 /* packet-usb-ptp.c
  *
- * $Id$
- *
  * USB Packet Dissector :
  *     - Picture Transfer Protocol (PTP)
  *     - Media   Transfer Protocol (MTP)
  *
  * (c)2013 Max Baker <max@warped.org>
+ * (c)2022 Jake Merdich <jake@merdich.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Much of this adapted from libgphoto2/libgphoto2/camlibs/ptp2/
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Copyright (C) 2001 Mariusz Woloszyn <emsi@ipartners.pl>
+ * Copyright (C) 2003-2012 Marcus Meissner <marcus@jet.franken.de>
+ * Copyright (C) 2006-2008 Linus Walleij <triad@df.lth.se>
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
+/*
+ * References:
  *
- * Notes:
+ * USB still image capture device definition 1.0
+ * https://www.usb.org/document-library/still-image-capture-device-definition-10-and-errata-16-mar-2007
  * 
- *      [1] http://www.usb.org/developers/devclass_docs/usb_still_img10.pdf for protocol definition
+ * Media Transfer Protocol v1.1 Spec
+ * https://www.usb.org/document-library/media-transfer-protocol-v11-spec-and-mtp-v11-adopters-agreement
  * 
- * Formatting help by : http://www.vim.org/scripts/script.php?script_id=294
  *
  * TODO:
  *      - Any and all further decode of returned objects.   Requires adding more sub-dissectors for MTP and PTP objects. 
