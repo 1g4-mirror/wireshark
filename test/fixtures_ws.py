@@ -206,6 +206,7 @@ def dirs():
         protobuf_lang_files_dir=os.path.join(this_dir, 'protobuf_lang_files'),
         tools_dir=os.path.join(this_dir, '..', 'tools'),
         dfilter_dir=os.path.join(this_dir, 'suite_dfilter'),
+        dissector_dir=os.path.join(this_dir, 'dissectors'),
     )
 
 
@@ -222,6 +223,13 @@ def result_file(tmp_path):
     def result_file_real(filename):
         return str(tmp_path / filename)
     return result_file_real
+
+@pytest.fixture(scope='session')
+def dissectors_file(dirs):
+    '''Returns the path to a dissector file.'''
+    def resolver(filename):
+        return os.path.join(dirs.dissector_dir, filename)
+    return resolver
 
 @pytest.fixture
 def home_path(tmp_path):

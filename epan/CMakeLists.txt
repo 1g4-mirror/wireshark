@@ -299,15 +299,12 @@ set_source_files_properties(
 )
 
 add_library(epan
-	#Included so that Visual Studio can properly put header files in solution
-	${LIBWIRESHARK_HEADER_FILES}
-
-	${LIBWIRESHARK_FILES}
 	$<TARGET_OBJECTS:crypt>
 	$<TARGET_OBJECTS:dfilter>
 	$<TARGET_OBJECTS:dissectors>
 	$<TARGET_OBJECTS:dissectors-corba>
 	$<TARGET_OBJECTS:dissector-registration>
+	$<TARGET_OBJECTS:epan_objects>
 	$<TARGET_OBJECTS:ftypes>
 	$<$<BOOL:${LUA_FOUND}>:$<TARGET_OBJECTS:wslua>>
 	${CMAKE_BINARY_DIR}/resources/libwireshark.rc
@@ -327,6 +324,16 @@ set_target_properties(epan PROPERTIES
 if(MSVC)
 	set_target_properties(epan PROPERTIES LINK_FLAGS_DEBUG "${WS_MSVC_DEBUG_LINK_FLAGS}")
 endif()
+
+add_library(epan_objects OBJECT
+	#Included so that Visual Studio can properly put header files in solution
+	${LIBWIRESHARK_HEADER_FILES}
+
+	${LIBWIRESHARK_FILES}
+)
+set_target_properties(epan_objects PROPERTIES
+	COMPILE_DEFINITIONS "WS_BUILD_DLL"
+)
 
 target_link_libraries(epan
 	PUBLIC
@@ -356,18 +363,24 @@ target_link_libraries(epan
 		$<$<BOOL:${LUA_FOUND}>:lrexlib>
 )
 
-target_include_directories(epan
+target_link_libraries(epan_objects
+	PRIVATE
+		${LUA_LIBRARIES}
+		$<$<BOOL:${LUA_FOUND}>:lrexlib>
+)
+
+target_include_directories(epan_objects
 	SYSTEM PUBLIC
 		${GLIB2_INCLUDE_DIRS}
 )
 
-target_include_directories(epan
+target_include_directories(epan_objects
 	INTERFACE
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 		$<INSTALL_INTERFACE:include/wireshark>
 )
 
-target_include_directories(epan
+target_include_directories(epan_objects
 	SYSTEM PRIVATE
 		${BROTLI_INCLUDE_DIRS}
 		${CARES_INCLUDE_DIRS}

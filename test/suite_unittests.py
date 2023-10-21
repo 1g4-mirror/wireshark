@@ -14,6 +14,18 @@ import subprocess
 import pytest
 
 
+def gdb_available():
+    try:
+        subprocess.run(['gdb', '--help'],
+                       stdin=subprocess.DEVNULL,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL,
+                       )
+        return True
+    except FileNotFoundError:
+        return False
+
+
 class TestUnitTests:
     def test_unit_exntest(self, program, base_env):
         '''exntest'''
@@ -56,6 +68,21 @@ class TestUnitTests:
     def test_unit_fieldcount(self, cmd_tshark, test_env):
         '''fieldcount'''
         subprocess.check_call((cmd_tshark, '-G', 'fieldcount'), env=test_env)
+
+    def test_unit_dissectors_test(self, program, dissectors_file, base_env):
+        '''dissectors_test'''
+        if gdb_available():
+            cmd = [
+                    'gdb',
+                    '-batch',
+                    '-x', dissectors_file('test_runner.gdb'),
+                    '-return-child-result',
+                    program('dissectors_test'),
+                    ]
+        else:
+            cmd = [program('dissectors_test')]
+
+        subprocess.check_call(cmd, env=base_env)
 
 class Proto:
     """Data for a protocol."""
