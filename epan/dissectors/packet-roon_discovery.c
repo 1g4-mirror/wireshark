@@ -17,16 +17,27 @@
 
 #include <config.h>
 
-#include <stdlib.h> /* For bsearch() */
+#include <stdlib.h>
 
-#include <epan/packet.h>   /* Should be first Wireshark include (other than config.h) */
+#include <epan/packet.h>
+#include <epan/conversation.h>
+#include <epan/tap.h>
+#include <wireshark.h>
+#include "packet-roon_discovery.h"
 
 /* Prototypes */
-/* (Required to prevent [-Wmissing-prototypes] warnings */
 void proto_reg_handoff_roon_discover(void);
 void proto_register_roon_discover(void);
+conversation_t * roon_find_or_create_conversation(packet_info *pinfo);
+static roon_transaction_t *transaction_start(packet_info *pinfo,
+                                               proto_tree *tree,
+                                               char *tid);
+static roon_transaction_t *transaction_end(packet_info *pinfo,
+                                               proto_tree *tree,
+                                               char *tid);
 
 static dissector_handle_t roon_discover_handle;
+static int roon_tap;
 
 /* Initialize the protocol and registered fields */
 static int proto_roon_discover;
@@ -44,6 +55,7 @@ static int hf_roon_disco_name;
 static int hf_roon_disco_os_version;
 static int hf_roon_disco_protocol_version;
 static int hf_roon_disco_protocol_hash;
+static int hf_roon_disco_query_service_id;
 static int hf_roon_disco_raat_version;
 static int hf_roon_disco_service_id;
 static int hf_roon_disco_tcp_port;
@@ -51,6 +63,12 @@ static int hf_roon_disco_tid;
 static int hf_roon_disco_type;
 static int hf_roon_disco_unique_id;
 static int hf_roon_disco_user_id;
+
+// transaction tracking
+static int hf_roon_disco_resp_in;
+static int hf_roon_disco_resp_to;
+static int hf_roon_disco_resptime;
+static int hf_roon_disco_no_resp;
 
 
 #define ROON_DISCOVERY_ID "SOOD"
@@ -63,11 +81,6 @@ static gint ett_roon_discover;
 
 #define ROON_DISCOVERY_MIN_LENGTH 98 // empirically defined
 
-typedef struct {
-    char *key;
-    char *name;
-    int *value;
-} roon_map;
 
 // table to map field keys to our protocol tree entry.  The order of entries
 // must be sorted by they key field.
@@ -86,6 +99,7 @@ static const roon_map roon_disco_string_fields[] = {
     { "os_version"       , "OS Version"       , &hf_roon_disco_os_version }       ,
     { "protocol_hash"    , "Protocol Hash"    , &hf_roon_disco_protocol_hash }    ,
     { "protocol_version" , "Protocol Version" , &hf_roon_disco_protocol_version } ,
+    { "query_service_id" , "Query ServiceID"  , &hf_roon_disco_query_service_id } ,
     { "raat_version"     , "RAAT Version"     , &hf_roon_disco_raat_version }     ,
     { "service_id"       , "ServiceID"        , &hf_roon_disco_service_id }       ,
     { "tcp_port"         , "TCP Port"         , &hf_roon_disco_tcp_port }         ,
@@ -100,6 +114,15 @@ static const roon_map roon_disco_bool_fields[] = {
     { NULL     , NULL            , NULL }                  ,
 };
 
+// Roon ServiceIDs and their names.  Must be sorted by uuid.
+static const roon_uuid_map roon_service_ids[] = {
+    { "5a955bb8-9673-4f8d-9437-4c6b7b18fba8", "Roon Endpoint" },
+    { "d52b2cb7-02c5-48fc-981b-a10f0aadd93b", "Roon Server" },
+    { NULL, NULL }
+};
+
+
+// compares two roon_map entries by their key
 static int
 compare_keys(const void *va, const void *vb) {
     const roon_map *a = va, *b = vb;
@@ -130,6 +153,31 @@ roon_map_name(char *key, const roon_map rm[]) {
     size_t len = roon_map_length(rm);
     roon_map map[1] = {{ key, NULL, NULL }};
     roon_map *pair = bsearch(map, rm, len, sizeof(roon_map), compare_keys);
+    return pair ? pair->name : NULL;
+}
+
+
+static size_t
+roon_uuid_length(const roon_uuid_map rm[]) {
+    size_t len = 0;
+    while (rm[len].uuid != NULL) {
+        len++;
+    }
+    return len;
+}
+
+// compares two roon_uuid_map entries by their uuid
+static int
+compare_uuids(const void *va, const void *vb) {
+    const roon_uuid_map *a = va, *b = vb;
+    return strcmp(a->uuid, b->uuid);
+}
+
+const char *
+roon_map_uuid(char *key, const roon_uuid_map rm[]) {
+    size_t len = roon_uuid_length(rm);
+    roon_uuid_map map[1] = {{ key, NULL }};
+    roon_uuid_map *pair = bsearch(map, rm, len, sizeof(roon_uuid_map), compare_uuids);
     return pair ? pair->name : NULL;
 }
 
@@ -188,6 +236,8 @@ dissect_roon_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     }
 
     int next;
+    char *tid = NULL;
+
     // iterate over the rest of our message bytes
     for (guint i = 6; i < tvb_reported_length(tvb) ; i += next) {
         guint8 key_len, value_len;
@@ -210,6 +260,20 @@ dissect_roon_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         int *treeValue;
         if (treeName != NULL) {
             treeValue = roon_map_value(key, roon_disco_string_fields);
+            if (strcmp(key, "service_id") == 0 || strcmp(key, "query_service_id") == 0) {
+                const char *service_name = roon_map_uuid(value, roon_service_ids);
+                if (service_name != NULL) {
+                    char decoded_value[128];
+                    snprintf(decoded_value, sizeof(decoded_value)-1, "%s (%s)", value, service_name);
+                    proto_tree_add_string(roon_discover_tree, *treeValue, tvb, i, next, decoded_value);
+                    continue;  // next iteration... don't add the field again
+                }
+            }
+
+            // Store TID for transaction tracking
+            if (strcmp(key, "_tid") == 0) {
+                tid = value;
+            }
             proto_tree_add_string(roon_discover_tree, *treeValue, tvb, i, next, value);
             continue;
         }
@@ -227,10 +291,32 @@ dissect_roon_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         // fprintf(stderr, "no match for %s\n", key);
     }
 
-    return tvb_captured_length(tvb);
-}
+    /* Handle transaction tracking if we have a TID */
+    roon_transaction_t *trans = NULL;
+    if (tid != NULL) {
+        if (is_reply) {
+            trans = transaction_end(pinfo, roon_discover_tree, tid);
+        } else {
+            trans = transaction_start(pinfo, roon_discover_tree, tid);
+        }
+        tap_queue_packet(roon_tap, pinfo, trans);
+    }
 
-/* Register the protocol with Wireshark.  */
+    return tvb_captured_length(tvb);
+} // dissect_roon_discover
+
+/* Register the protocol with Wireshark.
+    const char        *name;              **< [FIELDNAME] full name of this field
+    const char        *abbrev;            **< [FIELDFILTERNAME] filter name of this field
+    enum ftenum        type;              **< [FIELDTYPE] field type, one of FT_ (from ftypes.h)
+    int                display;           **< [FIELDDISPLAY] one of BASE_, or field bit-width if FT_BOOLEAN and non-zero bitmask
+    const void        *strings;           **< [FIELDCONVERT] value_string, val64_string, range_string or true_false_string,
+                                               typically converted by VALS(), RVALS() or TFS().
+                                               If this is an FT_PROTOCOL or BASE_PROTOCOL_INFO then it points to the
+                                               associated protocol_t structure
+    guint64            bitmask;           **< [BITMASK] bitmask of interesting bits
+    const char        *blurb;             **< [FIELDDESCR] Brief description of field
+*/
 void
 proto_register_roon_discover(void)
 {
@@ -291,6 +377,10 @@ proto_register_roon_discover(void)
           { "Protocol Version", "roon_disco.protocol_version",
               FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
 
+        { &hf_roon_disco_query_service_id,
+          { "Query ServiceID", "roon_disco.query_service_id",
+              FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+
         { &hf_roon_disco_raat_version,
           { "RAAT Version", "roon_disco.raat_version",
               FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
@@ -318,6 +408,26 @@ proto_register_roon_discover(void)
         { &hf_roon_disco_unique_id,
           { "UniqueID", "roon_disco.unique_id",
               FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+
+        { &hf_roon_disco_resp_in,
+          { "Response frame", "roon_disco.resp_in", FT_FRAMENUM, BASE_NONE,
+            FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+            "The frame number of the corresponding response", HFILL } },
+
+        { &hf_roon_disco_no_resp,
+          { "No response seen", "roon_disco.no_resp", FT_NONE, BASE_NONE,
+            NULL, 0x0,
+            "No corresponding response frame was seen", HFILL } },
+
+        { &hf_roon_disco_resp_to,
+          { "Request frame", "roon_disco.resp_to", FT_FRAMENUM, BASE_NONE,
+            FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+            "The frame number of the corresponding request", HFILL } },
+
+        { &hf_roon_disco_resptime,
+          { "Response time", "roon_disco.resptime", FT_DOUBLE, BASE_NONE,
+            NULL, 0x0,
+            "The time between the request and the response, in ms.", HFILL } },
     };
 
     /* Setup protocol subtree array */
@@ -333,13 +443,220 @@ proto_register_roon_discover(void)
     proto_register_subtree_array(ett, array_length(ett));
 
     roon_discover_handle = register_dissector("roon_disco", dissect_roon_discover, proto_roon_discover);
-}
+    roon_tap = register_tap("roon_disco");
+} // proto_register_roon_discover
 
 void
 proto_reg_handoff_roon_discover(void)
 {
     dissector_add_uint_with_preference("udp.port", ROON_DISCOVERY_UDP_PORT, roon_discover_handle);
 }
+
+/*  A helper function that calls find_conversation() and, if a conversation is
+ *  not found, calls conversation_new().
+ *  The frame number and addresses are taken from pinfo.
+ *  Ignores the destination address as it may be a broadcast/multicast address.
+*/
+conversation_t *
+roon_find_or_create_conversation(packet_info *pinfo)
+{
+    conversation_t *conv=NULL;
+
+    // Have we seen this conversation before?  destination address is not used
+    // as it may be to a broadcast/multicast address.
+    conv = find_conversation(pinfo->num, &pinfo->src, NULL,
+                                  conversation_pt_to_conversation_type(pinfo->ptype),
+                                  pinfo->srcport, pinfo->destport, 0);
+    if (conv == NULL) {
+        // No, this is a new conversation.
+        conv = conversation_new(pinfo->num, &pinfo->src, NULL,
+                                conversation_pt_to_conversation_type(pinfo->ptype),
+                                pinfo->srcport, pinfo->destport, 0);
+    }
+
+    return conv;
+}
+
+/* Transaction tracking implementation */
+static roon_transaction_t *
+transaction_start(packet_info *pinfo, proto_tree *tree, char *tid)
+{
+    conversation_t *conversation;
+    roon_conv_info_t *roon_info;
+    roon_transaction_t *roon_trans;
+    wmem_tree_key_t roon_key[3];
+    proto_item *it;
+    guint32 tid_hash;
+
+
+    /* Create a hash of the TID string for use as key */
+    tid_hash = wmem_strong_hash((const guint8*)tid, (size_t)strlen(tid));
+
+    /* Handle the conversation tracking */
+    conversation = roon_find_or_create_conversation(pinfo);
+    roon_info = (roon_conv_info_t *)conversation_get_proto_data(conversation, proto_roon_discover);
+    if (roon_info == NULL) {
+        roon_info = wmem_new(wmem_file_scope(), roon_conv_info_t);
+        roon_info->unmatched_pdus = wmem_tree_new(wmem_file_scope());
+        roon_info->matched_pdus   = wmem_tree_new(wmem_file_scope());
+        conversation_add_proto_data(conversation, proto_roon_discover, roon_info);
+    }
+
+    if (!PINFO_FD_VISITED(pinfo)) {
+        /* this is a new request, create a new transaction structure and map it to the
+           unmatched table
+         */
+        roon_key[0].length = 1;
+        roon_key[0].key = &tid_hash;
+        roon_key[1].length = 0;
+        roon_key[1].key = NULL;
+
+        roon_trans = wmem_new(wmem_file_scope(), roon_transaction_t);
+        roon_trans->rqst_frame = pinfo->num;
+        roon_trans->resp_frame = 0;
+        roon_trans->rqst_time = pinfo->abs_ts;
+        nstime_set_zero(&roon_trans->resp_time);
+        wmem_tree_insert32_array(roon_info->unmatched_pdus, roon_key,
+                               (void *) roon_trans);
+    } else {
+        /* Already visited this frame */
+        guint32 frame_num = pinfo->num;
+
+        roon_key[0].length = 1;
+        roon_key[0].key = &tid_hash;
+        roon_key[1].length = 1;
+        roon_key[1].key = &frame_num;
+        roon_key[2].length = 0;
+        roon_key[2].key = NULL;
+
+        roon_trans = (roon_transaction_t *)wmem_tree_lookup32_array(roon_info->matched_pdus,
+                                                                   roon_key);
+    }
+
+    if (roon_trans == NULL) {
+        if (PINFO_FD_VISITED(pinfo)) {
+            // No response found - add field and expert info
+            it = proto_tree_add_item(tree, hf_roon_disco_no_resp, NULL, 0, 0, ENC_NA);
+            proto_item_set_generated(it);
+        }
+        return NULL;
+    }
+
+    // Print state tracking in the tree
+    if (roon_trans->resp_frame) {
+        it = proto_tree_add_uint(tree, hf_roon_disco_resp_in, NULL, 0, 0,
+                                 roon_trans->resp_frame);
+        proto_item_set_generated(it);
+
+        col_append_frame_number(pinfo, COL_INFO, " [reply in %u]",
+                               roon_trans->resp_frame);
+    }
+
+    return roon_trans;
+} // transaction_start
+
+/* ===================================================================== */
+static roon_transaction_t *
+transaction_end(packet_info *pinfo, proto_tree *tree, char *tid)
+{
+    conversation_t *conversation;
+    roon_conv_info_t *roon_info;
+    roon_transaction_t *roon_trans;
+    wmem_tree_key_t roon_key[3];
+    proto_item *it;
+    nstime_t ns;
+    double resp_time;
+    guint32 tid_hash;
+
+    /* Create a hash of the TID string for use as key */
+    tid_hash = wmem_strong_hash((const guint8*)tid, (size_t)strlen(tid));
+
+    // don't use the source address as it may not exist in the list of conversations
+    // since the original query may have been sent to a broadcast/multicast address.
+    conversation = find_conversation(pinfo->num, NULL, &pinfo->dst,
+                                    conversation_pt_to_conversation_type(pinfo->ptype),
+                                    pinfo->srcport, pinfo->destport, 0); // NO_ADDR_B|NO_PORT_B);
+    // conversation = find_conversation_pinfo(pinfo, 0);
+
+    if (conversation == NULL) {
+        return NULL;
+    }
+
+    roon_info = (roon_conv_info_t *)conversation_get_proto_data(conversation, proto_roon_discover);
+    if (roon_info == NULL) {
+        return NULL;
+    }
+
+    // first time visiting this frame?
+    if (!PINFO_FD_VISITED(pinfo)) {
+        guint32 frame_num;
+
+        roon_key[0].length = 1;
+        roon_key[0].key = &tid_hash;
+        roon_key[1].length = 0;
+        roon_key[1].key = NULL;
+
+        roon_trans = (roon_transaction_t *)wmem_tree_lookup32_array(roon_info->unmatched_pdus,
+                                                                   roon_key);
+        if (roon_trans == NULL) {
+            return NULL;
+        }
+
+        // we have already seen this response, or an identical one
+        if (roon_trans->resp_frame != 0) {
+            return NULL;
+        }
+
+        roon_trans->resp_frame = pinfo->num;
+
+        // we found a match. Add entries to the matched table for both request and reply frames
+        roon_key[0].length = 1;
+        roon_key[0].key = &tid_hash;
+        roon_key[1].length = 1;
+        roon_key[1].key = &frame_num;
+        roon_key[2].length = 0;
+        roon_key[2].key = NULL;
+
+        frame_num = roon_trans->rqst_frame;
+        wmem_tree_insert32_array(roon_info->matched_pdus, roon_key, (void *) roon_trans);
+
+        frame_num = roon_trans->resp_frame;
+        wmem_tree_insert32_array(roon_info->matched_pdus, roon_key, (void *) roon_trans);
+    } else {
+        // Already visited this frame
+        guint32 frame_num = pinfo->num;
+
+        roon_key[0].length = 1;
+        roon_key[0].key = &tid_hash;
+        roon_key[1].length = 1;
+        roon_key[1].key = &frame_num;
+        roon_key[2].length = 0;
+        roon_key[2].key = NULL;
+
+        roon_trans = (roon_transaction_t *)wmem_tree_lookup32_array_le(roon_info->matched_pdus,
+                                                                   roon_key);
+        if (roon_trans == NULL) {
+            return NULL;
+        }
+    }
+
+    it = proto_tree_add_uint(tree, hf_roon_disco_resp_to, NULL, 0, 0,
+                             roon_trans->rqst_frame);
+    proto_item_set_generated(it);
+
+    nstime_delta(&ns, &pinfo->abs_ts, &roon_trans->rqst_time);
+    roon_trans->resp_time = ns;
+    resp_time = nstime_to_msec(&ns);
+    it = proto_tree_add_double_format_value(tree, hf_roon_disco_resptime,
+                                            NULL, 0, 0, resp_time,
+                                            "%.3f ms", resp_time);
+    proto_item_set_generated(it);
+
+    col_append_frame_number(pinfo, COL_INFO, " [response to %u]",
+                           roon_trans->rqst_frame);
+
+    return roon_trans;
+} // transaction_end
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
