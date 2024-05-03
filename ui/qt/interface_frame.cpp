@@ -544,6 +544,18 @@ void InterfaceFrame::showContextMenu(QPoint pos)
 
     QModelIndex actIndex = ui->interfaceTree->indexAt(pos);
     QModelIndex realIndex = proxy_model_.mapToSource(info_model_.mapToSource(actIndex));
+
+    if (!realIndex.sibling(realIndex.row(), IFTREE_COL_EXTCAP_PATH).data().toString().isEmpty())
+    {
+        QString device_name = realIndex.sibling(realIndex.row(), IFTREE_COL_NAME).data().toString();
+        if (extcap_has_configuration(device_name.toUtf8().constData()))
+        {
+            ctx_menu->addAction(tr("Configure Interface"), this, [=] () {
+                emit showExtcapOptions(device_name, false);
+            });
+        }
+    }
+
     bool isHidden = realIndex.sibling(realIndex.row(), IFTREE_COL_HIDDEN).data(Qt::UserRole).toBool();
     QAction * hideAction = ctx_menu->addAction(tr("Hide Interface"), this, [=] () {
         /* Attention! Only realIndex.row is a 1:1 correlation to all_ifaces */
