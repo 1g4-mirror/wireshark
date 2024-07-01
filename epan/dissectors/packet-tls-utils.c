@@ -6799,6 +6799,82 @@ tls_keylog_process_lines(const ssl_master_key_map_t *mk_map, const guint8 *data,
     }
 }
 
+static void
+ssl_process_keylog_file(FILE **keylog_file, const ssl_master_key_map_t *mk_map)
+{
+    for (;;) {
+        char buf[1110], *line;
+        line = fgets(buf, sizeof(buf), *keylog_file);
+        if (!line) {
+            if (feof(*keylog_file)) {
+                /* Ensure that newly appended keys can be read in the future. */
+                clearerr(*keylog_file);
+            } else if (ferror(*keylog_file)) {
+                ssl_debug_printf("%s Error while reading key log file, closing it!\n", G_STRFUNC);
+                fclose(*keylog_file);
+                *keylog_file = NULL;
+            }
+            break;
+        }
+        tls_keylog_process_lines(mk_map, (guint8 *)line, (int)strlen(line));
+    }
+}
+
+/**
+ * Load all keylog files matching the given glob pattern.
+ *
+ * @return TRUE if the last component of the filename is a glob pattern
+ */
+static gboolean
+ssl_load_keyfiles(const gchar *tls_keylog_filename,
+                  const ssl_master_key_map_t *mk_map)
+{
+    gchar *pattern = g_path_get_basename(tls_keylog_filename);
+    if (!strchr(pattern, '*') && !strchr(pattern, '?')) {
+        return FALSE;
+    }
+
+    gchar *keylog_dirname = g_path_get_dirname(tls_keylog_filename);
+
+    GDir *keylog_dir = g_dir_open(keylog_dirname, 0, NULL);
+    if (!keylog_dir) {
+        ssl_debug_printf("%s failed to open directory %s\n", G_STRFUNC, keylog_dirname);
+        g_free(keylog_dirname);
+        g_free(pattern);
+        return FALSE;
+    }
+
+    const gchar *filename = NULL;
+    while ((filename = g_dir_read_name(keylog_dir)) != NULL) {
+        if (!g_pattern_match_simple(pattern, filename)) {
+            continue;
+        }
+
+        gchar *keylog_filename = g_build_filename(keylog_dirname, filename, NULL);
+
+        FILE *keylog_file = ws_fopen(keylog_filename, "r");
+        if (!keylog_file) {
+            ssl_debug_printf("%s failed to open file %s\n", G_STRFUNC, keylog_filename);
+            g_free(keylog_filename);
+            continue;
+        }
+
+        ssl_process_keylog_file(&keylog_file, mk_map);
+
+        if (keylog_file) {
+            fclose(keylog_file);
+        }
+        g_free(keylog_filename);
+    }
+
+    g_dir_close(keylog_dir);
+
+    g_free(keylog_dirname);
+    g_free(pattern);
+
+    return TRUE;
+}
+
 void
 ssl_load_keyfile(const gchar *tls_keylog_filename, FILE **keylog_file,
                  const ssl_master_key_map_t *mk_map)
@@ -6812,6 +6888,10 @@ ssl_load_keyfile(const gchar *tls_keylog_filename, FILE **keylog_file,
 
     /* Validate regexes before even trying to use it. */
     if (!ssl_compile_keyfile_regex()) {
+        return;
+    }
+
+    if (ssl_load_keyfiles(tls_keylog_filename, mk_map)) {
         return;
     }
 
@@ -6832,22 +6912,7 @@ ssl_load_keyfile(const gchar *tls_keylog_filename, FILE **keylog_file,
         }
     }
 
-    for (;;) {
-        char buf[1110], *line;
-        line = fgets(buf, sizeof(buf), *keylog_file);
-        if (!line) {
-            if (feof(*keylog_file)) {
-                /* Ensure that newly appended keys can be read in the future. */
-                clearerr(*keylog_file);
-            } else if (ferror(*keylog_file)) {
-                ssl_debug_printf("%s Error while reading key log file, closing it!\n", G_STRFUNC);
-                fclose(*keylog_file);
-                *keylog_file = NULL;
-            }
-            break;
-        }
-        tls_keylog_process_lines(mk_map, (guint8 *)line, (int)strlen(line));
-    }
+    ssl_process_keylog_file(keylog_file, mk_map);
 }
 /** SSL keylog file handling. }}} */
 
