@@ -786,8 +786,8 @@ void oid_pref_init(module_t *nameres)
 
     smi_paths_uat = uat_new("SMI Paths",
                             sizeof(smi_module_t),
-                            "smi_paths",
-                            FALSE,
+                            "smi_paths",    /* filename */
+                            TRUE,           /* from_profile */
                             (void**)&smi_paths,
                             &num_smi_paths,
     /* affects dissection of packets (as the MIBs and PIBs affect the
@@ -815,8 +815,8 @@ void oid_pref_init(module_t *nameres)
 
     smi_modules_uat = uat_new("SMI Modules",
                               sizeof(smi_module_t),
-                              "smi_modules",
-                              FALSE,
+                              "smi_modules",    /* filename */
+                              TRUE,             /* from_profile */
                               (void**)&smi_modules,
                               &num_smi_modules,
     /* affects dissection of packets (as the MIBs and PIBs affect the
