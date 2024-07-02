@@ -7748,6 +7748,7 @@ dissect_tcp_payload(tvbuff_t *tvb, packet_info *pinfo, int offset, guint32 seq,
 {
     gint nbytes;
     gboolean save_fragmented;
+    proto_tree* root_tree = proto_tree_get_root(tree);
 
     nbytes = tvb_reported_length_remaining(tvb, offset);
     proto_tree_add_bytes_format(tcp_tree, hf_tcp_payload, tvb, offset,
@@ -7757,7 +7758,7 @@ dissect_tcp_payload(tvbuff_t *tvb, packet_info *pinfo, int offset, guint32 seq,
     /* Can we desegment this segment? */
     if (pinfo->can_desegment) {
         /* Yes. */
-        desegment_tcp(tvb, pinfo, offset, seq, nxtseq, sport, dport, tree,
+        desegment_tcp(tvb, pinfo, offset, seq, nxtseq, sport, dport, root_tree,
                       tcp_tree, tcpd, tcpinfo);
     } else {
         /* No - just call the subdissector.
@@ -7766,7 +7767,7 @@ dissect_tcp_payload(tvbuff_t *tvb, packet_info *pinfo, int offset, guint32 seq,
         save_fragmented = pinfo->fragmented;
         pinfo->fragmented = TRUE;
 
-        process_tcp_payload(tvb, offset, pinfo, tree, tcp_tree, sport, dport,
+        process_tcp_payload(tvb, offset, pinfo, root_tree, tcp_tree, sport, dport,
                             seq, nxtseq, TRUE, tcpd, tcpinfo);
         pinfo->fragmented = save_fragmented;
     }
