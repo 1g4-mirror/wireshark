@@ -161,13 +161,14 @@ static guint32 selected_frame_number;
  * The way the packet decode is to be written.
  */
 typedef enum {
-    WRITE_NONE,     /* dummy initial state */
-    WRITE_TEXT,     /* summary or detail text */
-    WRITE_XML,      /* PDML or PSML */
-    WRITE_FIELDS,   /* User defined list of fields */
-    WRITE_JSON,     /* JSON */
-    WRITE_JSON_RAW, /* JSON only raw hex */
-    WRITE_EK        /* JSON bulk insert to Elasticsearch */
+    WRITE_UNSPECIFIED,  /* dummy initial state */
+    WRITE_NONE,         /* no output -- just test command line arguments */
+    WRITE_TEXT,         /* summary or detail text */
+    WRITE_XML,          /* PDML or PSML */
+    WRITE_FIELDS,       /* User defined list of fields */
+    WRITE_JSON,         /* JSON */
+    WRITE_JSON_RAW,     /* JSON only raw hex */
+    WRITE_EK,           /* JSON bulk insert to Elasticsearch */
         /* Add CSV and the like here */
 } output_action_e;
 
@@ -529,7 +530,7 @@ print_usage(FILE *output)
     fprintf(output, "     delimit               delimit ASCII dump text with '|' characters\n");
     fprintf(output, "     noascii               exclude ASCII dump text\n");
     fprintf(output, "     help                  display help for --hexdump and exit\n");
-    fprintf(output, "  -T pdml|ps|psml|json|jsonraw|ek|tabs|text|fields|?\n");
+    fprintf(output, "  -T pdml|ps|psml|json|jsonraw|ek|tabs|text|fields|none|?\n");
     fprintf(output, "                           format of text output (def: text)\n");
     fprintf(output, "  -j <protocolfilter>      protocols layers filter if -T ek|pdml|json selected\n");
     fprintf(output, "                           (e.g. \"ip ip.flags text\", filter does not expand child\n");
@@ -1662,7 +1663,7 @@ main(int argc, char *argv[])
                 break;
             case 'T':        /* printing Type */
                 /* output_action has been already set. It means multiple -T. */
-                if (output_action > WRITE_NONE) {
+                if (output_action > WRITE_UNSPECIFIED) {
                     cmdarg_err("Multiple -T parameters are unsupported");
                     exit_status = WS_EXIT_INVALID_OPTION;
                     goto clean_exit;
@@ -1702,10 +1703,15 @@ main(int argc, char *argv[])
                     output_action = WRITE_JSON_RAW;
                     print_details = TRUE;   /* Need details */
                     print_summary = FALSE;  /* Don't allow summary */
+                } else if (strcmp(ws_optarg, "none") == 0) {
+                    output_action = WRITE_NONE;
+                    print_details = FALSE;
+                    print_summary = FALSE;
                 }
                 else {
                     cmdarg_err("Invalid -T parameter \"%s\"; it must be one of:", ws_optarg);                   /* x */
-                    cmdarg_err_cont("\t\"fields\"  The values of fields specified with the -e option, in a form\n"
+                    cmdarg_err_cont(
+                            "\t\"fields\"  The values of fields specified with the -e option, in a form\n"
                             "\t          specified by the -E option.\n"
                             "\t\"pdml\"    Packet Details Markup Language, an XML-based format for the\n"
                             "\t          details of a decoded packet. This information is equivalent to\n"
@@ -1732,7 +1738,8 @@ main(int argc, char *argv[])
                             "\t          This is the default.\n"
                             "\t\"tabs\"    Similar to the text report except that each column of the\n"
                             "\t          human-readable one-line summary is delimited with an ASCII\n"
-                            "\t          horizontal tab character.");
+                            "\t          horizontal tab character.\n"
+                            "\t\"none\"    No output; just test command line arguments.");
                     exit_status = WS_EXIT_INVALID_OPTION;
                     goto clean_exit;
                 }
@@ -1890,8 +1897,11 @@ main(int argc, char *argv[])
     }
 
     /* set the default output action to TEXT */
-    if (output_action == WRITE_NONE)
+    if (output_action == WRITE_UNSPECIFIED)
         output_action = WRITE_TEXT;
+
+    if (output_action == WRITE_NONE) {
+    }
 
     /* set the default file type to pcapng */
     if (out_file_type == WTAP_FILE_TYPE_SUBTYPE_UNKNOWN)
@@ -1903,7 +1913,7 @@ main(int argc, char *argv[])
      * possibility of printing only hex/ascii output without necessarily
      * requiring that either the summary or details be printed too.
      */
-    if (!print_summary && !print_details && !print_hex)
+    if (!print_summary && !print_details && !print_hex && output_action != WRITE_NONE)
         print_summary = TRUE;
 
     if (no_duplicate_keys && output_action != WRITE_JSON && output_action != WRITE_JSON_RAW) {
@@ -2445,7 +2455,10 @@ main(int argc, char *argv[])
         }
     }
 
-    if (cf_name) {
+    if (output_action == WRITE_NONE) {
+        ws_debug("tshark: \"-T none\" specified, performing no action");
+    }
+    else if (cf_name) {
         ws_debug("tshark: Opening capture file: %s", cf_name);
         /*
          * We're reading a capture file.
@@ -4364,6 +4377,7 @@ write_preamble(capture_file *cf)
             return !ferror(stdout);
 
         case WRITE_EK:
+        case WRITE_NONE:
             return TRUE;
 
         default:
@@ -4737,6 +4751,9 @@ print_packet(capture_file *cf, epan_dissect_t *edt)
                     edt, &cf->cinfo, stdout);
             return !ferror(stdout);
 
+        case WRITE_NONE:
+            return FALSE;
+
         default:
             ws_assert_not_reached();
     }
@@ -4779,6 +4796,7 @@ write_finale(void)
             return !ferror(stdout);
 
         case WRITE_EK:
+        case WRITE_NONE:
             return TRUE;
 
         default:

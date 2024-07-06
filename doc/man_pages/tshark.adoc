@@ -815,7 +815,7 @@ the default snapshot length is used if provided.
 -S  <separator>::
 Set the line separator to be printed between packets.
 
--T  ek|fields|json|jsonraw|pdml|ps|psml|tabs|text::
+-T  ek|fields|json|jsonraw|pdml|ps|psml|tabs|text|none::
 +
 --
 Set the format of the output when viewing decoded packet data.  The
@@ -886,6 +886,9 @@ as a delimiter between each column.
 *text* Text of a human-readable one-line summary of each of the packets, or a
 multi-line view of the details of each of the packets, depending on
 whether the *-V* option was specified.  This is the default.
+
+*none* No output. Tests command line options but performs no reading or writing.
+Useful for testing the validity of other command line options such as *-Y*.
 --
 
 --temp-dir <directory>::
