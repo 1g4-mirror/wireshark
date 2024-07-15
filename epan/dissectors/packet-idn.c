@@ -49,6 +49,7 @@
 #define IDNCT_OCTET_SEGMENT		0x10
 #define IDNCT_OCTET_STRING		0x11
 #define IDNCT_DIMMER_LEVELS		0x18
+#define IDNCT_AUDIO_WAVE_SAMPLE		0x20
 
 /* Service Modes (CONT = continuous stream, DISC = discrete stream) */
 #define IDNSM_VOID				0x00
@@ -260,6 +261,7 @@ static const value_string chunk_type[] = {
 	{ IDNCT_OCTET_STRING, "Octet String" },
 	{ IDNCT_DIMMER_LEVELS, "Dimmer Levels" },
 	{ IDNCT_LP_FRAME_SF, "Laser Projector Frame Samples (sequel fragment)" },
+	{ IDNCT_AUDIO_WAVE_SAMPLE, "Audio Wave Samples"},
 	{ 0, NULL}
 };
 static const value_string cfl_string[] = {
