@@ -59,6 +59,7 @@
 #define IDNSM_LP_EFFECTS_DISC	0x04
 #define IDNSM_DMX512_CONT		0x05
 #define IDNSM_DMX512_DISC		0x06
+#define IDNSM_AUDIO_WAVE_SEGMENTS	0x0C
 
 /* Dictionary Tags */
 #define IDNTAG_PRECISION			0x4010
@@ -278,6 +279,7 @@ static const value_string service_mode_string[] = {
 	{ IDNSM_LP_EFFECTS_DISC, "Laser Projector Effects (Discrete)" },
 	{ IDNSM_DMX512_CONT, "DMX512 (Continuous)" },
 	{ IDNSM_DMX512_DISC, "DMX512 (Discrete)" },
+	{ IDNSM_AUDIO_WAVE_SEGMENTS, "Audio: Stream of waveform segments"},
 	{ 0, NULL}
 };
 static const value_string gts_glin[] = {
