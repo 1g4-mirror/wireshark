@@ -194,6 +194,16 @@ static int hf_idn_offset;
 static int hf_idn_dlim;
 static int hf_idn_reserved;
 
+/* Audio Header */
+static int hf_idn_category;
+static int hf_idn_format;
+//static int hf_idn_subcategory;
+//static int hf_idn_parameter;
+//static int hf_idn_suffix_length;
+//static int hf_idn_layout;
+//static int hf_idn_4bit_channels;
+//static int hf_idn_8bit_channels;
+
 /* Tags */
 static int hf_idn_gts;
 static int hf_idn_gts_void;
@@ -327,6 +337,20 @@ static const value_string result_code[] = {
 	{ 0xEE, "Invalid payload" },
 	{ 0xEF, "Any other processing error" },
 	{ 0, NULL}
+};
+
+static const value_string category[] = {
+	{ 0x0, "Decoder modifiers with suffix" },
+	{ 0x1, "Decoder modifiers with parameter" },
+	{ 0x4, "Sample word descriptors" },
+	{ 0x6, "Common channel layout descriptors" },
+	{ 0x8, "Multichannel layout descriptors" }
+};
+
+static const value_string format[] ={
+	{ 0x0, "8 Bit signed integer (one octet)" },
+	{ 0x1, "16 Bit signed integer (two octets)" },
+	{ 0x2, "24 Bit signed integer (three octets)" }
 };
 
 static int get_service_match(guint8 flags) {
@@ -1700,6 +1724,22 @@ void proto_register_idn(void) {
 			FT_UINT16, BASE_HEX,
 			NULL, 0x0,
 			NULL, HFILL }
+		},
+		{
+		 &hf_idn_category,
+		 	{ "Category", "idn.category",
+		 	FT_UINT8, BASE_HEX,			//only 4 bits long
+		 	VALS(category), 0x0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_format,
+		 	{ "Format", "idn.format",
+		 	FT_UINT8, BASE_DEC,			//only 4 bits long
+		 	VALS(format), 0x0,
+		 	NULL, HFILL
+		 	}
 		}
 	};
 
