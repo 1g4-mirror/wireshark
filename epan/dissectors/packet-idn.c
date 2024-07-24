@@ -197,9 +197,9 @@ static int hf_idn_reserved;
 /* Audio Header */
 static int hf_idn_category;
 static int hf_idn_format;
-//static int hf_idn_subcategory;
-//static int hf_idn_parameter;
-//static int hf_idn_suffix_length;
+static int hf_idn_subcategory;
+static int hf_idn_parameter;
+static int hf_idn_suffix_length;
 //static int hf_idn_layout;
 //static int hf_idn_4bit_channels;
 //static int hf_idn_8bit_channels;
@@ -390,6 +390,10 @@ static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 			}else {
 				col_append_str(pinfo->cinfo, COL_INFO, "-SEQ");
 			}
+			break;
+		case IDNCT_AUDIO_WAVE_SAMPLE:
+			col_append_str(pinfo->cinfo, COL_INFO, "-AUDIO");
+			minfo->is_dmx = 1;
 			break;
 		default:
 			col_append_str(pinfo->cinfo, COL_INFO, "-UNKNOWN");
@@ -1738,6 +1742,30 @@ void proto_register_idn(void) {
 		 	{ "Format", "idn.format",
 		 	FT_UINT8, BASE_DEC,			//only 4 bits long
 		 	VALS(format), 0x0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_subcategory,
+		 	{ "Subcategory", "idn.subcategory",
+		 	FT_UINT8, BASE_DEC,			//only 4 bits long
+		 	NULL, 0x0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_parameter,
+		 	{ "Format", "idn.format",
+		 	FT_UINT8, BASE_DEC,			//only 4 bits long
+		 	NULL, 0x0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_suffix_length,
+		 	{ "Suffix length", "idn.suffix_length",
+		 	FT_UINT8, BASE_DEC,			//only 4 bits long
+		 	NULL, 0x0,
 		 	NULL, HFILL
 		 	}
 		}
