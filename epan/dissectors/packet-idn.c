@@ -135,6 +135,7 @@ static gint ett_dic_tree;
 static gint ett_data;
 static gint ett_subdata;
 static gint ett_dmx_subtree;
+static gint ett_audio_header_tree;
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -1787,7 +1788,8 @@ void proto_register_idn(void) {
 		&ett_dic_tree,
 		&ett_data,
 		&ett_subdata,
-		&ett_dmx_subtree
+		&ett_dmx_subtree,
+		&ett_audio_header_tree
 	};
 
 	proto_idn = proto_register_protocol (
