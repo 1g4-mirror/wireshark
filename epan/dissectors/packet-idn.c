@@ -100,6 +100,7 @@ typedef struct {
 	guint16 total_size;
 	guint8 channel_id;
 	guint8 chunk_type;
+	gboolean is_audio;
 } message_info;
 
 typedef struct {
@@ -394,7 +395,7 @@ static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 			break;
 		case IDNCT_AUDIO_WAVE_SAMPLE:
 			col_append_str(pinfo->cinfo, COL_INFO, "-AUDIO");
-			minfo->is_dmx = 1;
+			minfo->is_audio = 1;
 			break;
 		default:
 			col_append_str(pinfo->cinfo, COL_INFO, "-UNKNOWN");
