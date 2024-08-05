@@ -1029,6 +1029,11 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
+static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
+	//proto_tree *idn_audio_subtree _U_ = proto_item_add_subtree(idn_tree, ett_audio_header_tree);
+	return offset;
+}
+
 static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *idn_tree) {
 	int scm;
 	configuration_info *config = NULL;
@@ -1068,6 +1073,8 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 			offset = dissect_idn_octet_segment(tvb, offset, idn_tree);
 		}else if(minfo->is_dmx) {
 			offset = dissect_idn_dmx_data(tvb, pinfo, offset, idn_tree, config);
+		}else if(minfo->is_audio){
+			offset = dissect_idn_audio_data(tvb, pinfo, offset, idn_tree);
 		}else {
 			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config);
 		}
