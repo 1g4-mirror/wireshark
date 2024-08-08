@@ -988,7 +988,7 @@ static int dissect_idn_channel_configuration(tvbuff_t *tvb, packet_info *pinfo, 
 
 	configuration_info *config = *config_p;
 	if(config->word_count > 0) {
-		if(minfo->chunk_type == IDNCT_OCTET_SEGMENT) {
+		if(minfo->chunk_type == IDNCT_OCTET_SEGMENT || minfo->chunk_type == IDNCT_AUDIO_WAVE_SAMPLE) {
 			return offset;
 		}else if(minfo->is_dmx) {
 			offset = dissect_idn_dmx_dictionary(tvb, offset, idn_tree, config);
@@ -1030,7 +1030,17 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 }
 
 static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-	//proto_tree *idn_audio_subtree _U_ = proto_item_add_subtree(idn_tree, ett_audio_header_tree);
+	proto_tree *idn_audio_header_tree _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header_tree, NULL, "Audio Header");
+	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
 	return offset;
 }
 
@@ -1056,7 +1066,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 			return offset;
 		}
 
-		if(minfo->chunk_type != IDNCT_VOID && minfo->chunk_type != IDNCT_LP_FRAME_SF) {
+		if(minfo->chunk_type != IDNCT_VOID && minfo->chunk_type != IDNCT_LP_FRAME_SF && minfo->chunk_type != IDNCT_AUDIO_WAVE_SAMPLE) {
 			scm = get_service_match(tvb_get_guint8(tvb, offset));
 
 			offset = dissect_idn_chunk_header(tvb, offset, idn_tree, minfo);
