@@ -136,7 +136,7 @@ static gint ett_dic_tree;
 static gint ett_data;
 static gint ett_subdata;
 static gint ett_dmx_subtree;
-static gint ett_audio_header_tree;
+static gint ett_audio_header;
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -197,13 +197,14 @@ static int hf_idn_dlim;
 static int hf_idn_reserved;
 
 /* Audio Header */
+static int hf_idn_audio_header;
 static int hf_idn_category;
 static int hf_idn_format;
 static int hf_idn_subcategory;
 static int hf_idn_parameter;
 static int hf_idn_suffix_length;
-//static int hf_idn_layout;
-//static int hf_idn_4bit_channels;
+static int hf_idn_layout;
+static int hf_idn_4bit_channels;
 //static int hf_idn_8bit_channels;
 
 /* Tags */
@@ -341,7 +342,7 @@ static const value_string result_code[] = {
 	{ 0, NULL}
 };
 
-static const value_string category[] = {
+static const value_string category[] _U_= {
 	{ 0x0, "Decoder modifiers with suffix" },
 	{ 0x1, "Decoder modifiers with parameter" },
 	{ 0x4, "Sample word descriptors" },
@@ -349,7 +350,7 @@ static const value_string category[] = {
 	{ 0x8, "Multichannel layout descriptors" }
 };
 
-static const value_string format[] ={
+static const value_string format[] _U_={
 	{ 0x0, "8 Bit signed integer (one octet)" },
 	{ 0x1, "16 Bit signed integer (two octets)" },
 	{ 0x2, "24 Bit signed integer (three octets)" }
@@ -1029,18 +1030,39 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
+static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
+	//proto_tree_add_item(idn_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	//offset += 1;
+	static int * const audio_cat_6[] = {
+		&hf_idn_category,
+		&hf_idn_format,
+		&hf_idn_4bit_channels,
+		&hf_idn_layout,
+		NULL
+	};
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
+	return offset;
+}
+
 static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-	proto_tree *idn_audio_header_tree _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header_tree, NULL, "Audio Header");
-	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
-	offset += 1;
-	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
-	offset += 1;
-	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
-	offset += 1;
-	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
-	offset += 1;
-	proto_tree_add_item(idn_audio_header_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
-	offset += 1;
+	proto_tree *idn_audio_header _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header, NULL, "Audio Header");
+	gint8 det_category = tvb_get_gint8(tvb, offset);
+	det_category = det_category & 11110000;
+	switch (det_category) {
+		case 0x00:
+
+			break;
+		case 0x10:
+
+			break;
+		case 0x40:
+
+			break;
+		case 0x60:
+			dissect_idn_audio_category_6(tvb, pinfo, offset, idn_audio_header);
+			break;
+
+	}
 	return offset;
 }
 
@@ -1749,18 +1771,42 @@ void proto_register_idn(void) {
 			NULL, HFILL }
 		},
 		{
+		 &hf_idn_audio_header,
+		 	{ "Category", "idn.audioheader",
+		 	FT_UINT16, BASE_HEX,
+		 	NULL, 0x0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
 		 &hf_idn_category,
 		 	{ "Category", "idn.category",
-		 	FT_UINT8, BASE_HEX,			//only 4 bits long
-		 	VALS(category), 0x0,
+		 	FT_UINT16, BASE_HEX,
+		 	NULL, 0xF000, // can't use VALS(category) in bitmask
 		 	NULL, HFILL
 		 	}
 		},
 		{
 		 &hf_idn_format,
 		 	{ "Format", "idn.format",
-		 	FT_UINT8, BASE_DEC,			//only 4 bits long
-		 	VALS(format), 0x0,
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x0F00,// can't use VALS(format) in bitmask
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_layout,
+		 	{ "Format", "idn.layout",
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x00F0,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_4bit_channels,
+		 	{ "Format", "idn.category6channels",
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x000F,
 		 	NULL, HFILL
 		 	}
 		},
@@ -1807,7 +1853,7 @@ void proto_register_idn(void) {
 		&ett_data,
 		&ett_subdata,
 		&ett_dmx_subtree,
-		&ett_audio_header_tree
+		&ett_audio_header
 	};
 
 	proto_idn = proto_register_protocol (
