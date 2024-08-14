@@ -1036,8 +1036,8 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U
 	static int * const audio_cat_6[] = {
 		&hf_idn_category,
 		&hf_idn_format,
-		&hf_idn_4bit_channels,
 		&hf_idn_layout,
+		&hf_idn_4bit_channels,
 		NULL
 	};
 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
@@ -1045,7 +1045,7 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U
 }
 
 static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-	proto_tree *idn_audio_header _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header, NULL, "Audio Header");
+	//proto_tree *idn_audio_header _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header, NULL, "Audio Header");
 	gint8 det_category = tvb_get_gint8(tvb, offset);
 	det_category = det_category & 11110000;
 	switch (det_category) {
@@ -1059,7 +1059,7 @@ static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int
 
 			break;
 		case 0x60:
-			dissect_idn_audio_category_6(tvb, pinfo, offset, idn_audio_header);
+			dissect_idn_audio_category_6(tvb, pinfo, offset, idn_tree);
 			break;
 
 	}
@@ -1772,7 +1772,7 @@ void proto_register_idn(void) {
 		},
 		{
 		 &hf_idn_audio_header,
-		 	{ "Category", "idn.audioheader",
+		 	{ "Audio Header", "idn.audioheader",
 		 	FT_UINT16, BASE_HEX,
 		 	NULL, 0x0,
 		 	NULL, HFILL
@@ -1782,7 +1782,7 @@ void proto_register_idn(void) {
 		 &hf_idn_category,
 		 	{ "Category", "idn.category",
 		 	FT_UINT16, BASE_HEX,
-		 	NULL, 0xF000, // can't use VALS(category) in bitmask
+		 	VALS(category), 0xF000,
 		 	NULL, HFILL
 		 	}
 		},
@@ -1790,13 +1790,13 @@ void proto_register_idn(void) {
 		 &hf_idn_format,
 		 	{ "Format", "idn.format",
 		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x0F00,// can't use VALS(format) in bitmask
+		 	VALS(format), 0x0F00,
 		 	NULL, HFILL
 		 	}
 		},
 		{
 		 &hf_idn_layout,
-		 	{ "Format", "idn.layout",
+		 	{ "Layout", "idn.layout",
 		 	FT_UINT16, BASE_DEC,
 		 	NULL, 0x00F0,
 		 	NULL, HFILL
@@ -1804,7 +1804,7 @@ void proto_register_idn(void) {
 		},
 		{
 		 &hf_idn_4bit_channels,
-		 	{ "Format", "idn.category6channels",
+		 	{ "Channels", "idn.category6channels",
 		 	FT_UINT16, BASE_DEC,
 		 	NULL, 0x000F,
 		 	NULL, HFILL
