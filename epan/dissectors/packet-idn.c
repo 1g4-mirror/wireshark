@@ -205,7 +205,7 @@ static int hf_idn_parameter;
 static int hf_idn_suffix_length;
 static int hf_idn_layout;
 static int hf_idn_4bit_channels;
-//static int hf_idn_8bit_channels;
+static int hf_idn_8bit_channels;
 
 /* Tags */
 static int hf_idn_gts;
@@ -1030,6 +1030,18 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
+static int dissect_idn_audio_category_0(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
+	static int * const audio_cat_0[] = {
+		&hf_idn_category,
+		&hf_idn_subcategory,
+		&hf_idn_parameter,
+		&hf_idn_suffix_length,
+		NULL
+	};
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
+	return offset;
+}
+
 static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
 	//proto_tree_add_item(idn_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
 	//offset += 1;
@@ -1050,7 +1062,7 @@ static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int
 	det_category = det_category & 11110000;
 	switch (det_category) {
 		case 0x00:
-
+			dissect_idn_audio_category_0(tvb, pinfo, offset, idn_tree);
 			break;
 		case 0x10:
 
@@ -1813,24 +1825,32 @@ void proto_register_idn(void) {
 		{
 		 &hf_idn_subcategory,
 		 	{ "Subcategory", "idn.subcategory",
-		 	FT_UINT8, BASE_DEC,			//only 4 bits long
-		 	NULL, 0x0,
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x0F00,
 		 	NULL, HFILL
 		 	}
 		},
 		{
 		 &hf_idn_parameter,
 		 	{ "Format", "idn.format",
-		 	FT_UINT8, BASE_DEC,			//only 4 bits long
-		 	NULL, 0x0,
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x00F0,
 		 	NULL, HFILL
 		 	}
 		},
 		{
 		 &hf_idn_suffix_length,
 		 	{ "Suffix length", "idn.suffix_length",
-		 	FT_UINT8, BASE_DEC,			//only 4 bits long
-		 	NULL, 0x0,
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x000F,
+		 	NULL, HFILL
+		 	}
+		},
+		{
+		 &hf_idn_8bit_channels,
+		 	{ "Channels", "idn.channel",
+		 	FT_UINT16, BASE_DEC,
+		 	NULL, 0x00FF,
 		 	NULL, HFILL
 		 	}
 		}
