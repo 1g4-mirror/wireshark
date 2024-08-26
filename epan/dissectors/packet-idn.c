@@ -1056,9 +1056,29 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U
 	return offset;
 }
 
-static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-	//proto_tree *idn_audio_header _U_ = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_audio_header, NULL, "Audio Header");
-	gint8 det_category = tvb_get_gint8(tvb, offset);
+static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *idn_tree, configuration_info *config){
+	gint8 det_category;
+	gint16 current_tag;
+	int tag_count = config->word_count;
+	tag_count *= 2;
+	proto_item *dictionary_tree = proto_tree_add_subtree(idn_tree, tvb, offset, tag_count, ett_dic, NULL, "Dictionary");
+
+	for(int i = 0; i <= tag_count; i++){
+		current_tag = tvb_get_guint16(tvb, offset, 2);
+		switch (current_tag) {
+			case 0x0000:
+				//add void tag
+				proto_tree_add_item(dictionary_tree, hf_idn_gts_void, tvb, offset, 2, ENC_BIG_ENDIAN);
+				offset += 2;
+				break;
+			default:
+				//dissect depending on category
+				offset += 2;
+				break;
+		}
+	}
+
+	det_category = tvb_get_gint8(tvb, offset);
 	det_category = det_category & 11110000;
 	switch (det_category) {
 		case 0x00:
@@ -1075,6 +1095,13 @@ static int dissect_idn_audio_data(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int
 			break;
 
 	}
+	return offset;
+}
+
+static int dissect_idn_audio(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_, configuration_info  * config){
+
+	offset = dissect_idn_audio_dictionary(tvb, pinfo, offset, idn_tree, config);
+
 	return offset;
 }
 
@@ -1118,7 +1145,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 		}else if(minfo->is_dmx) {
 			offset = dissect_idn_dmx_data(tvb, pinfo, offset, idn_tree, config);
 		}else if(minfo->is_audio){
-			offset = dissect_idn_audio_data(tvb, pinfo, offset, idn_tree);
+			offset = dissect_idn_audio(tvb, pinfo, offset, idn_tree, config);
 		}else {
 			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config);
 		}
