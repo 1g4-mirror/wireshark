@@ -1030,19 +1030,33 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
-static int dissect_idn_audio_category_0(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-	static int * const audio_cat_0[] = {
+// static int dissect_idn_audio_category_0(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
+// 	static int * const audio_cat_0[] = {
+// 		&hf_idn_category,
+// 		&hf_idn_subcategory,
+// 		&hf_idn_parameter,
+// 		&hf_idn_suffix_length,
+// 		NULL
+// 	};
+// 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
+// 	return offset;
+// }
+
+static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+
+	static int * const audio_cat_8[] = {
 		&hf_idn_category,
-		&hf_idn_subcategory,
-		&hf_idn_parameter,
-		&hf_idn_suffix_length,
+		&hf_idn_format,
+		&hf_idn_8bit_channels,
 		NULL
 	};
-	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
+
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_8, ENC_BIG_ENDIAN);
+
 	return offset;
 }
 
-static int dissect_idn_audio_category_6(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
+static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
 	//proto_tree_add_item(idn_tree, hf_idn_category, tvb, offset, 1, ENC_BIG_ENDIAN);
 	//offset += 1;
 	static int * const audio_cat_6[] = {
@@ -1063,7 +1077,7 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 	tag_count *= 2;
 	proto_item *dictionary_tree = proto_tree_add_subtree(idn_tree, tvb, offset, tag_count, ett_dic, NULL, "Dictionary");
 
-	for(int i = 0; i <= tag_count; i++){
+	for(int i = 0; i < tag_count; i++){
 		current_tag = tvb_get_guint16(tvb, offset, 2);
 		switch (current_tag) {
 			case 0x0000:
@@ -1072,28 +1086,21 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 				offset += 2;
 				break;
 			default:
+				//determing category
+				det_category = tvb_get_gint8(tvb, offset);
+				det_category = det_category >> 4;
 				//dissect depending on category
+				switch (det_category) {
+					case 0x6:
+						dissect_idn_audio_category_6(tvb, offset, dictionary_tree);
+						break;
+					case 0x8:
+						dissect_idn_audio_category_8(tvb, offset, dictionary_tree);
+						break;
+				}
 				offset += 2;
 				break;
 		}
-	}
-
-	det_category = tvb_get_gint8(tvb, offset);
-	det_category = det_category & 11110000;
-	switch (det_category) {
-		case 0x00:
-			dissect_idn_audio_category_0(tvb, pinfo, offset, idn_tree);
-			break;
-		case 0x10:
-
-			break;
-		case 0x40:
-
-			break;
-		case 0x60:
-			dissect_idn_audio_category_6(tvb, pinfo, offset, idn_tree);
-			break;
-
 	}
 	return offset;
 }
