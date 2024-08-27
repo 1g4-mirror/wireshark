@@ -196,8 +196,8 @@ static int hf_idn_offset;
 static int hf_idn_dlim;
 static int hf_idn_reserved;
 
-/* Audio Header */
-static int hf_idn_audio_header;
+/* Audio Dictionary Tags */
+static int hf_idn_audio_dictionary_tag;
 static int hf_idn_category;
 static int hf_idn_format;
 static int hf_idn_subcategory;
@@ -206,6 +206,13 @@ static int hf_idn_suffix_length;
 static int hf_idn_layout;
 static int hf_idn_4bit_channels;
 static int hf_idn_8bit_channels;
+
+/* Audio Header*/
+static int hf_idn_audio_flags;
+static int hf_idn_audio_duration;
+static int hf_idn_audio_flags_two_bits_reserved;
+static int hf_idn_audio_flags_four_bits_reserved;
+static int hf_idn_audio_flags_scm;
 
 /* Tags */
 static int hf_idn_gts;
@@ -1038,7 +1045,7 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 // 		&hf_idn_suffix_length,
 // 		NULL
 // 	};
-// 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
+// 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
 // 	return offset;
 // }
 
@@ -1051,7 +1058,7 @@ static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *i
 		NULL
 	};
 
-	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_8, ENC_BIG_ENDIAN);
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_8, ENC_BIG_ENDIAN);
 
 	return offset;
 }
@@ -1066,7 +1073,7 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_4bit_channels,
 		NULL
 	};
-	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_header, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
 	return offset;
 }
 
@@ -1075,7 +1082,7 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 	gint16 current_tag;
 	int tag_count = config->word_count;
 	tag_count *= 2;
-	proto_item *dictionary_tree = proto_tree_add_subtree(idn_tree, tvb, offset, tag_count, ett_dic, NULL, "Dictionary");
+	proto_item *dictionary_tree = proto_tree_add_subtree(idn_tree, tvb, offset, tag_count, ett_dic_tree, NULL, "Dictionary");
 
 	for(int i = 0; i < tag_count; i++){
 		current_tag = tvb_get_guint16(tvb, offset, 2);
@@ -1105,10 +1112,27 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 	return offset;
 }
 
+static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+
+	static int * const audio_flags[] = {
+		&hf_idn_audio_flags_two_bits_reserved,
+		&hf_idn_audio_flags_scm,
+		&hf_idn_audio_flags_four_bits_reserved,
+		NULL
+	};
+
+	proto_item *audio_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_header, NULL, "Audio Header");
+
+	proto_tree_add_bitmask(audio_header_tree, tvb, offset, hf_idn_audio_flags, ett_audio_header, audio_flags, ENC_BIG_ENDIAN);
+	return offset;
+
+	proto_tree_add_item(idn_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
+}
+
 static int dissect_idn_audio(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_, configuration_info  * config){
 
 	offset = dissect_idn_audio_dictionary(tvb, pinfo, offset, idn_tree, config);
-
+	dissect_idn_audio_header(tvb, offset, idn_tree);
 	return offset;
 }
 
@@ -1817,8 +1841,8 @@ void proto_register_idn(void) {
 			NULL, HFILL }
 		},
 		{
-		 &hf_idn_audio_header,
-		 	{ "Audio Header", "idn.audioheader",
+		 &hf_idn_audio_dictionary_tag,
+		 	{ "Audio Dictionary Tag", "idn.audioheader",
 		 	FT_UINT16, BASE_HEX,
 		 	NULL, 0x0,
 		 	NULL, HFILL
@@ -1887,6 +1911,41 @@ void proto_register_idn(void) {
 		 	NULL, 0x00FF,
 		 	NULL, HFILL
 		 	}
+		},
+		{
+			&hf_idn_audio_flags,
+			{ "Flags", "idn.audio_flags",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_duration,
+			{ "Duration in microseconds", "idn.audio_duration",
+			FT_UINT24, BASE_DEC,
+			NULL, 0x0,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_flags_two_bits_reserved,
+			{ "Reserved", "idn.audio_2",
+			FT_UINT8, BASE_HEX,
+			NULL, 0xC0,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_flags_four_bits_reserved,
+			{ "Reserved", "idn.audio_4",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x0F,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_flags_scm,
+			{ "Service configuration match", "idn.audio_scm",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x30,
+			NULL, HFILL}
 		}
 	};
 
