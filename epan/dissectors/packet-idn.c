@@ -111,8 +111,8 @@ typedef struct {
 	int sample_size;
 	int *count;
 	int *base;
-	gint8 *audio_format;
-	gint8 *audio_channels;
+	int *audio_format;
+	int *audio_channels;
 } configuration_info;
 
 void proto_register_idn(void);
@@ -139,6 +139,7 @@ static gint ett_data;
 static gint ett_subdata;
 static gint ett_dmx_subtree;
 static gint ett_audio_header;
+static gint ett_audio_samples;
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -209,13 +210,17 @@ static int hf_idn_layout;
 static int hf_idn_4bit_channels;
 static int hf_idn_8bit_channels;
 
-/* Audio Header*/
+/* Audio Header */
 static int hf_idn_audio_flags;
 static int hf_idn_audio_duration;
 static int hf_idn_audio_flags_two_bits_reserved;
 static int hf_idn_audio_flags_four_bits_reserved;
 static int hf_idn_audio_flags_scm;
 
+/* Audio Samples */
+static int hf_idn_audio_sample_format_zero;
+static int hf_idn_audio_sample_format_one;
+static int hf_idn_audio_sample_format_two;
 /* Tags */
 static int hf_idn_gts;
 static int hf_idn_gts_void;
@@ -1059,8 +1064,8 @@ static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_8bit_channels,
 		NULL
 	};
-	gint8 channels = tvb_get_gint16(tvb, offset, 2);
-	gint8 audio_format = channels;
+	int channels = tvb_get_gint16(tvb, offset, 2);
+	int audio_format = channels;
 	audio_format >>= 8;
 	audio_format &= 0x000F;
 	cinfo->audio_format = &audio_format;
@@ -1082,8 +1087,8 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_4bit_channels,
 		NULL
 	};
-	gint8 channels = tvb_get_gint8(tvb, offset);
-	gint8 audio_format = channels;
+	int channels = tvb_get_gint8(tvb, offset);
+	int audio_format = channels;
 	audio_format >>= 8;
 	audio_format &= 0x000F;
 	cinfo->audio_format = &audio_format;
@@ -1149,7 +1154,27 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	return offset;
 }
 
-static int dissect_idn_audio_samples(tvbuff_t *tvb _U_, int offset, proto_tree *idn_tree _U_, configuration_info  * config _U_){
+static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
+/*	if(config->audio_format == 0x00){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
+	}else if(config->audio_format == 0x01){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
+	}else if(config->audio_format == 0x02){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
+	}*/
+	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
+	int audio_format = * config->audio_format;
+	switch (audio_format) {
+		case 0:
+			proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
+			break;
+		case 1:
+		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
+			break;
+		case 2:
+		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
+			break;
+	}
 	return offset;
 }
 
@@ -1971,6 +1996,27 @@ void proto_register_idn(void) {
 			FT_UINT8, BASE_HEX,
 			NULL, 0x30,
 			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_sample_format_zero,
+			{ "Audio Sample (format 0)", "idn.audio_sample_0",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_sample_format_one,
+			{ "Audio Sample (format 1)", "idn.audio_sample_1",
+			FT_UINT16, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL}
+		},
+		{
+			&hf_idn_audio_sample_format_two,
+			{ "Audio Sample (format 2)", "idn.audio_sample_2",
+			FT_UINT24, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL}
 		}
 	};
 
@@ -1991,7 +2037,8 @@ void proto_register_idn(void) {
 		&ett_data,
 		&ett_subdata,
 		&ett_dmx_subtree,
-		&ett_audio_header
+		&ett_audio_header,
+		&ett_audio_samples
 	};
 
 	proto_idn = proto_register_protocol (
