@@ -111,8 +111,8 @@ typedef struct {
 	int sample_size;
 	int *count;
 	int *base;
-	int *audio_format;
-	int *audio_channels;
+	guint8 *audio_format;
+	guint8 *audio_channels;
 } configuration_info;
 
 void proto_register_idn(void);
@@ -1064,10 +1064,9 @@ static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_8bit_channels,
 		NULL
 	};
-	int channels = tvb_get_gint16(tvb, offset, 2);
-	int audio_format = channels;
-	audio_format >>= 8;
-	audio_format &= 0x000F;
+	guint8 channels = tvb_get_gint8(tvb, offset);
+	guint8 audio_format = channels;
+	audio_format = audio_format & 0x0F;
 	cinfo->audio_format = &audio_format;
 	channels &= 0x00FF;
 	cinfo->audio_channels = &channels;
@@ -1087,12 +1086,11 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_4bit_channels,
 		NULL
 	};
-	int channels = tvb_get_gint8(tvb, offset);
-	int audio_format = channels;
-	audio_format >>= 8;
-	audio_format &= 0x000F;
+	guint8 channels = tvb_get_gint8(tvb, offset);
+	guint8 audio_format = channels;
+	audio_format = audio_format & 0x0F;
 	cinfo->audio_format = &audio_format;
-	channels &= 0x000F;
+	channels &= 0x0F;
 	cinfo->audio_channels = &channels;
 
 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
@@ -1155,23 +1153,16 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 }
 
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
-/*	if(config->audio_format == 0x00){
-		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
-	}else if(config->audio_format == 0x01){
-		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
-	}else if(config->audio_format == 0x02){
-		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
-	}*/
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
-	int audio_format = * config->audio_format;
+	guint8 audio_format = * config->audio_format;
 	switch (audio_format) {
-		case 0:
+		case 0x00:
 			proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
 			break;
-		case 1:
+		case 0x01:
 		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
 			break;
-		case 2:
+		case 0x02:
 		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
 			break;
 	}
