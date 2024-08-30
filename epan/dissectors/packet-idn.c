@@ -362,6 +362,7 @@ static int get_service_match(guint8 flags) {
 
 static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 	minfo->is_dmx = 0;
+	minfo->is_audio = 0;
 	switch(minfo->chunk_type) {
 		case IDNCT_VOID:
 			col_append_str(pinfo->cinfo, COL_INFO, "-VOID");
