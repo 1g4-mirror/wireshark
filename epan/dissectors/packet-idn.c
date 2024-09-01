@@ -1152,18 +1152,47 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	return offset;
 }
 
+static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+	int max_samples = tvb_reported_length_remaining(tvb, offset);
+	for(int i = 0; i < max_samples; i++){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
+		offset++;
+	}
+	return offset;
+}
+
+static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+	int max_samples = tvb_reported_length_remaining(tvb, offset);
+	max_samples /= 2;
+	for(int i = 0; i < max_samples; i++){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
+		offset += 2;
+	}
+	return offset;
+}
+
+static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+	int max_samples = tvb_reported_length_remaining(tvb, offset);
+	max_samples /= 3;
+	for(int i = 0; i < max_samples; i++){
+		proto_tree_add_item( idn_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
+		offset += 3;
+	}
+	return offset;
+}
+
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
 	guint8 audio_format = * config->audio_format;
 	switch (audio_format) {
 		case 0x00:
-			proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
+			dissect_idn_audio_samples_format_0(tvb, offset, audio_samples_tree);
 			break;
 		case 0x01:
-		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_one, tvb, offset, 2, ENC_BIG_ENDIAN);
+		dissect_idn_audio_samples_format_1(tvb, offset, audio_samples_tree);
 			break;
 		case 0x02:
-		proto_tree_add_item(audio_samples_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
+		dissect_idn_audio_samples_format_2(tvb, offset, audio_samples_tree);
 			break;
 	}
 	return offset;
