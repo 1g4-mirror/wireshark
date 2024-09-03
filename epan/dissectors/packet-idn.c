@@ -127,6 +127,7 @@ static gint ett_idn_header_tree;
 static gint ett_idn_scanreply_header_tree;
 static gint ett_idn_channel_message_header_tree;
 static gint ett_protocol_version;
+static gint ett_unit_id;
 static gint ett_status;
 static gint ett_idn_cnl;
 static gint ett_configuration_header;
@@ -160,6 +161,9 @@ static int hf_idn_ocpd;
 static int hf_idn_rt;
 static int hf_idn_reserved8;
 static int hf_idn_unit_id;
+static int hf_idn_uid_length;
+static int hf_idn_uid_category;
+static int hf_idn_uid;
 static int hf_idn_name;
 
 /* Service Map Response */
@@ -264,6 +268,9 @@ static int hf_idn_dmx_unknown;
 /* Acknowledgement */
 static int hf_idn_result_code;
 static int hf_idn_event_flags;
+
+/* Long Bitmasks that need defining */
+
 
 static const value_string command_code[] = {
 	{ IDNCMD_VOID, "VOID" },
@@ -1325,6 +1332,7 @@ static int dissect_idn_scan_response(tvbuff_t *tvb, int offset, proto_tree *idn_
 			NULL
 	};
 
+
 	proto_tree *idn_scanreply_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 40, ett_idn_header_tree, NULL, "Scan Response");
 	proto_tree_add_item(idn_scanreply_header_tree, hf_idn_struct_size, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
@@ -1334,8 +1342,14 @@ static int dissect_idn_scan_response(tvbuff_t *tvb, int offset, proto_tree *idn_
 	offset += 1;
 	proto_tree_add_item(idn_scanreply_header_tree, hf_idn_reserved8, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	proto_tree_add_item(idn_scanreply_header_tree, hf_idn_unit_id, tvb, offset, 16, ENC_NA);
-	offset += 16;
+	proto_tree *uid_tree = proto_tree_add_subtree(idn_scanreply_header_tree, tvb, offset, 16, ett_unit_id, ENC_BIG_ENDIAN, "Unit ID");
+	proto_tree_add_item(uid_tree, hf_idn_uid_length, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(uid_tree, hf_idn_uid_category, tvb, offset, 1, ENC_BIG_ENDIAN);
+	offset += 1;
+	proto_tree_add_item(uid_tree, hf_idn_unit_id, tvb, offset, 14, ENC_BIG_ENDIAN);
+	offset += 14;
+
 	proto_tree_add_item(idn_scanreply_header_tree, hf_idn_name, tvb, offset, 20, ENC_ASCII);
 	offset += 20;
 	return offset;
@@ -1486,6 +1500,24 @@ void proto_register_idn(void) {
 		},
 		{ &hf_idn_unit_id,
 			{ "Unit ID", "idn.unit_id",
+			FT_BYTES, SEP_SPACE,
+			NULL, 0x0,
+			NULL, HFILL }
+		},
+		{ &hf_idn_uid_length,
+			{ "Length", "idn.unit_id_length",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL }
+		},
+		{ &hf_idn_uid_category,
+			{ "Caregory", "idn.unit_id_category",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL }
+		},
+		{ &hf_idn_uid,
+			{ "Unit ID", "idn.unit_id_number",
 			FT_BYTES, SEP_SPACE,
 			NULL, 0x0,
 			NULL, HFILL }
