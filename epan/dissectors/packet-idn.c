@@ -111,6 +111,7 @@ typedef struct {
 	int sample_size;
 	int *count;
 	int *base;
+	guint8 audio_category;
 	guint8 audio_format;
 	guint8 audio_channels;
 	guint8 audio_layout;
@@ -1081,6 +1082,7 @@ static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *i
 
 
 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_8, ENC_BIG_ENDIAN);
+	offset += 2;
 	return offset;
 }
 
@@ -1095,13 +1097,17 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 		NULL
 	};
 	guint8 channels = tvb_get_gint8(tvb, offset+1);
+	guint8 layout = channels;
 	guint8 audio_format = tvb_get_gint8(tvb, offset);
 	audio_format = audio_format & 0x0F;
 	cinfo->audio_format = audio_format;
 	channels &= 0x0F;
 	cinfo->audio_channels = channels;
+	layout &= 0XF0;
+	cinfo->audio_layout = layout;
 
 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_6, ENC_BIG_ENDIAN);
+	offset += 2;
 	return offset;
 }
 
@@ -1124,17 +1130,16 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 				//determine category
 				det_category = tvb_get_guint8(tvb, offset);
 				det_category = det_category >> 4;
-				printf("%u \n", det_category );
+				config->audio_category = det_category;
 				//dissect depending on category
 				switch (det_category) {
 					case 0x6:
-						dissect_idn_audio_category_6(tvb, offset, dictionary_tree, config);
+						offset = dissect_idn_audio_category_6(tvb, offset, dictionary_tree, config);
 						break;
 					case 0x8:
-						dissect_idn_audio_category_8(tvb, offset, dictionary_tree, config);
+						offset = dissect_idn_audio_category_8(tvb, offset, dictionary_tree, config);
 						break;
 				}
-				offset += 2;
 				break;
 		}
 	}
@@ -1190,8 +1195,70 @@ static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_t
 	return offset;
 }
 
+static void add_audio_sample_description(proto_item *audio_samples_tree, configuration_info * config){
+	guint8 audio_category = config->audio_category;
+	guint8 channels = config->audio_channels;
+	guint8 layout;
+	switch (audio_category) {
+		case 0x06:
+			layout = config->audio_layout;
+			switch (layout) {
+				case 0x1:
+					switch (channels) {
+						case 0x06:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC	LFE	BL	BR");
+							break;
+						case 0x08:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC	LFE	BL	BR	SL	SR");
+							break;
+					}
+					break;
+				case 0x3:
+				proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC	LFE	BL	BR	FLC	FRC");
+					break;
+				case 0x0:
+					switch (channels) {
+						case 0x01:
+							proto_item_append_text(audio_samples_tree, "Channel:	FC");
+							break;
+						case 0x02:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR");
+							break;
+						case 0x03:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC");
+							break;
+						case 0x04:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	BL	BR");
+							break;
+						case 0x05:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC	BL	BR");
+							break;
+						case 0x07:
+							proto_item_append_text(audio_samples_tree, "Channel:	FL	FR	FC	BL	BR	SL	SR");
+							break;
+						default:
+								proto_item_append_text(audio_samples_tree, "Unknown Mapping");
+					}
+					break;
+				default:
+					proto_item_append_text(audio_samples_tree, "Unknown Mapping");
+			}
+			break;
+		case 0x08:
+			proto_item_append_text(audio_samples_tree, "Channel:	");
+			for(guint8 i = 1; i<= channels; i++){
+				proto_item_append_text(audio_samples_tree, "	%u", i);
+			}
+			break;
+		default:
+			proto_item_append_text(audio_samples_tree, "Unknown Category");
+	}
+	return;
+}
+
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
+	add_audio_sample_description(audio_samples_tree, config);
 	guint8 audio_format = config->audio_format;
 	switch (audio_format) {
 		case 0x00:
