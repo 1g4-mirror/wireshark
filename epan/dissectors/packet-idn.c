@@ -1177,32 +1177,6 @@ static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_t
 	return offset;
 }
 
-
-// static int dissect_idn_dmx_sample_values(tvbuff_t *tvb, int offset, proto_tree *idn_dmx_subtree, guint16 data_size, int base) {
-// 	int i, j, l;
-// 	short int rest;
-// 	char values[MAX_BUFFER];
-//
-// 	for(i=0; i+16<=data_size; i+=16) {
-// 		l = 0;
-// 		for(j=1; j<16; j++){
-// 			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_guint8(tvb, offset+j));
-// 		}
-// 		proto_tree_add_int_format(idn_dmx_subtree, hf_idn_gts_sample, tvb, offset, 16, 16, "%3d: %s", base+i, values);
-// 		offset += 16;
-// 	}
-// 	rest = data_size - i;
-// 	if(rest > 0) {
-// 		l = 0;
-// 		for(j=0; j<rest; j++){
-// 			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_guint8(tvb, offset+j));
-// 		}
-// 		proto_tree_add_int_format(idn_dmx_subtree, hf_idn_gts_sample, tvb, offset, rest, rest, "%3d: %s", base+i, values);
-// 		offset += rest;
-// 	}
-// 	return offset;
-// }
-
 static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_tree *idn_tree _U_, configuration_info *config) {
   //  int max_samples = tvb_reported_length_remaining(tvb, offset);
     guint8 channels = config->audio_channels;
@@ -1216,15 +1190,7 @@ static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_t
 			offset += 2;
 		}
 		proto_tree_add_uint_format(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample:     %s", values);
-    // for (i = 0; i < max_samples; i++) {
-    //     l = 0;
-    //     for (j = 0; j < channels; j++) {
-    //         guint16 sample_value = tvb_get_guint16(tvb, offset, 2);
-    //         l += snprintf(values + l, MAX_BUFFER - l, "%3u ", sample_value);
-    //         offset += 2;
-    //     }
-		//}
-		//|||||||||||||||||||||proto_tree_add_int_format(idn_dmx_subtree, hf_idn_gts_sample, tvb, offset, 16, 16, "%3d: %s", base+i, values);
+
 			return offset;
 }
 
