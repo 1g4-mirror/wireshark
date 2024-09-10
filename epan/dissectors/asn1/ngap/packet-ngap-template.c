@@ -27,7 +27,10 @@
 #include <epan/show_exception.h>
 #include <epan/tap.h>
 #include <epan/stats_tree.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <wsutil/wsjson.h>
+#include <wsutil/array.h>
 
 #include "packet-ngap.h"
 #include "packet-per.h"
@@ -186,6 +189,7 @@ static int ett_ngap_UERadioCapabilityForPagingOfNB_IoT;
 static int ett_ngap_GlobalCable_ID;
 static int ett_ngap_UpdateFeedback;
 static int ett_ngap_successfulHOReportContainer;
+static int ett_ngap_successfulPSCellChangeReportContainer;
 #include "packet-ngap-ett.c"
 
 static expert_field ei_ngap_number_pages_le15;
@@ -655,7 +659,7 @@ dissect_ngap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree,
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
 
-  nb_of_pages = tvb_get_guint8(warning_msg_tvb, 0);
+  nb_of_pages = tvb_get_uint8(warning_msg_tvb, 0);
   ti = proto_tree_add_uint(tree, hf_nb_pages, warning_msg_tvb, 0, 1, nb_of_pages);
   if (nb_of_pages > 15) {
     expert_add_info_format(pinfo, ti, &ei_ngap_number_pages_le15,
@@ -663,7 +667,7 @@ dissect_ngap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree,
     nb_of_pages = 15;
   }
   for (i = 0, offset = 1; i < nb_of_pages; i++) {
-    length = tvb_get_guint8(warning_msg_tvb, offset+82);
+    length = tvb_get_uint8(warning_msg_tvb, offset+82);
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dcs, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
@@ -1473,6 +1477,7 @@ void proto_register_ngap(void) {
     &ett_ngap_GlobalCable_ID,
     &ett_ngap_UpdateFeedback,
     &ett_ngap_successfulHOReportContainer,
+    &ett_ngap_successfulPSCellChangeReportContainer,
 #include "packet-ngap-ettarr.c"
   };
 

@@ -1,7 +1,7 @@
 /* packet-lte-rrc-template.c
  * Routines for Evolved Universal Terrestrial Radio Access (E-UTRA);
  * Radio Resource Control (RRC) protocol specification
- * (3GPP TS 36.331 V17.8.0 Release 17) packet dissection
+ * (3GPP TS 36.331 V18.2.0 Release 18) packet dissection
  * Copyright 2008, Vincent Helfre
  * Copyright 2009-2024, Pascal Quantin
  *
@@ -25,9 +25,12 @@
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
 #include <wsutil/str_util.h>
 #include <wsutil/epochs.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-rrc.h"
@@ -65,7 +68,11 @@ static wmem_map_t *lte_rrc_system_info_value_changed_hash;
 static uint8_t    system_info_value_current;
 static bool       system_info_value_current_set;
 
+static wmem_map_t *lte_rrc_dcch_segment_ueid_count_hash;
+static wmem_tree_t *lte_rrc_dcch_segment_id_tree;
+
 static bool lte_rrc_nas_in_root_tree;
+static bool lte_rrc_reassemble_dcch_segments;
 
 extern int proto_mac_lte;
 extern int proto_rlc_lte;
@@ -260,6 +267,17 @@ static int hf_lte_rrc_sib12_fragment_count;
 static int hf_lte_rrc_sib12_reassembled_in;
 static int hf_lte_rrc_sib12_reassembled_length;
 static int hf_lte_rrc_sib12_reassembled_data;
+static int hf_lte_rrc_dcch_segment_fragments;
+static int hf_lte_rrc_dcch_segment_fragment;
+static int hf_lte_rrc_dcch_segment_fragment_overlap;
+static int hf_lte_rrc_dcch_segment_fragment_overlap_conflict;
+static int hf_lte_rrc_dcch_segment_fragment_multiple_tails;
+static int hf_lte_rrc_dcch_segment_fragment_too_long_fragment;
+static int hf_lte_rrc_dcch_segment_fragment_error;
+static int hf_lte_rrc_dcch_segment_fragment_count;
+static int hf_lte_rrc_dcch_segment_reassembled_in;
+static int hf_lte_rrc_dcch_segment_reassembled_length;
+static int hf_lte_rrc_dcch_segment_reassembled_data;
 static int hf_lte_rrc_measGapPatterns_r15_bit1;
 static int hf_lte_rrc_measGapPatterns_r15_bit2;
 static int hf_lte_rrc_measGapPatterns_r15_bit3;
@@ -298,6 +316,8 @@ static int ett_lte_rrc_sib11_fragment;
 static int ett_lte_rrc_sib11_fragments;
 static int ett_lte_rrc_sib12_fragment;
 static int ett_lte_rrc_sib12_fragments;
+static int ett_lte_rrc_dcch_segment_fragment;
+static int ett_lte_rrc_dcch_segment_fragments;
 static int ett_lte_rrc_nr_SecondaryCellGroupConfig_r15;
 static int ett_lte_rrc_nr_RadioBearerConfig_r15;
 static int ett_lte_rrc_nr_RadioBearerConfigS_r15;
@@ -345,6 +365,7 @@ static const unit_name_string units_short_drx_cycles = { " shortDRX-Cycle", " sh
 
 static reassembly_table lte_rrc_sib11_reassembly_table;
 static reassembly_table lte_rrc_sib12_reassembly_table;
+static reassembly_table lte_rrc_dcch_segment_reassembly_table;
 
 static const fragment_items lte_rrc_sib11_frag_items = {
     &ett_lte_rrc_sib11_fragment,
@@ -378,6 +399,23 @@ static const fragment_items lte_rrc_sib12_frag_items = {
     &hf_lte_rrc_sib12_reassembled_length,
     &hf_lte_rrc_sib12_reassembled_data,
     "SIB12 warning message segments"
+};
+
+static const fragment_items lte_rrc_dcch_segment_frag_items = {
+    &ett_lte_rrc_dcch_segment_fragment,
+    &ett_lte_rrc_dcch_segment_fragments,
+    &hf_lte_rrc_dcch_segment_fragments,
+    &hf_lte_rrc_dcch_segment_fragment,
+    &hf_lte_rrc_dcch_segment_fragment_overlap,
+    &hf_lte_rrc_dcch_segment_fragment_overlap_conflict,
+    &hf_lte_rrc_dcch_segment_fragment_multiple_tails,
+    &hf_lte_rrc_dcch_segment_fragment_too_long_fragment,
+    &hf_lte_rrc_dcch_segment_fragment_error,
+    &hf_lte_rrc_dcch_segment_fragment_count,
+    &hf_lte_rrc_dcch_segment_reassembled_in,
+    &hf_lte_rrc_dcch_segment_reassembled_length,
+    &hf_lte_rrc_dcch_segment_reassembled_data,
+    "DCCH message segments"
 };
 
 /* Forward declarations */
@@ -2748,6 +2786,9 @@ typedef struct lte_rrc_private_data_t
   simult_pucch_pusch_cell_type cell_type;
   bool bcch_dl_sch_msg;
   lpp_pos_sib_type_t pos_sib_type;
+  uint8_t dcch_segment_number;
+  tvbuff_t *dcch_segment;
+  bool dcch_segment_last;
 } lte_rrc_private_data_t;
 
 /* Helper function to get or create a struct that will be actx->private_data */
@@ -2948,6 +2989,42 @@ static void private_data_set_pos_sib_type(asn1_ctx_t *actx, lpp_pos_sib_type_t p
   private_data->pos_sib_type = pos_sib_type;
 }
 
+static uint8_t private_data_get_dcch_segment_number(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment_number;
+}
+
+static void private_data_set_dcch_segment_number(asn1_ctx_t *actx, uint8_t dcch_segment_number)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment_number = dcch_segment_number;
+}
+
+static tvbuff_t *private_data_get_dcch_segment(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment;
+}
+
+static void private_data_set_dcch_segment(asn1_ctx_t *actx, tvbuff_t *dcch_segment)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment = dcch_segment;
+}
+
+static bool private_data_get_dcch_segment_last(asn1_ctx_t *actx)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  return private_data->dcch_segment_last;
+}
+
+static void private_data_set_dcch_segment_last(asn1_ctx_t *actx, bool dcch_segment_last)
+{
+  lte_rrc_private_data_t *private_data = (lte_rrc_private_data_t*)lte_rrc_get_private_data(actx);
+  private_data->dcch_segment_last = dcch_segment_last;
+}
+
 /*****************************************************************************/
 
 
@@ -2970,7 +3047,7 @@ dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree 
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
 
-  nb_of_pages = tvb_get_guint8(warning_msg_seg_tvb, 0);
+  nb_of_pages = tvb_get_uint8(warning_msg_seg_tvb, 0);
   ti = proto_tree_add_uint(tree, hf_lte_rrc_warningMessageSegment_nb_pages, warning_msg_seg_tvb, 0, 1, nb_of_pages);
   if (nb_of_pages > 15) {
     expert_add_info_format(pinfo, ti, &ei_lte_rrc_number_pages_le15,
@@ -2978,7 +3055,7 @@ dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree 
     nb_of_pages = 15;
   }
   for (i = 0, offset = 1; i < nb_of_pages; i++) {
-    length = tvb_get_guint8(warning_msg_seg_tvb, offset+82);
+    length = tvb_get_uint8(warning_msg_seg_tvb, offset+82);
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_seg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dataCodingScheme, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
@@ -4373,6 +4450,50 @@ void proto_register_lte_rrc(void) {
       { "Reassembled Data", "lte-rrc.warningMessageSegment_r9.reassembled_data",
          FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragments,
+      { "Fragments", "lte-rrc.dedicatedMessageSegment_r16.fragments",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment,
+      { "Fragment", "lte-rrc.dedicatedMessageSegment_r16.fragment",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_overlap,
+      { "Fragment Overlap", "lte-rrc.dedicatedMessageSegment_r16.fragment_overlap",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_overlap_conflict,
+      { "Fragment Overlap Conflict", "lte-rrc.dedicatedMessageSegment_r16.fragment_overlap_conflict",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_multiple_tails,
+      { "Fragment Multiple Tails", "lte-rrc.dedicatedMessageSegment_r16.fragment_multiple_tails",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_too_long_fragment,
+      { "Too Long Fragment", "lte-rrc.dedicatedMessageSegment_r16.fragment_too_long_fragment",
+         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_error,
+      { "Fragment Error", "lte-rrc.dedicatedMessageSegment_r16.fragment_error",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_fragment_count,
+      { "Fragment Count", "lte-rrc.dedicatedMessageSegment_r16.fragment_count",
+         FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_in,
+      { "Reassembled In", "lte-rrc.dedicatedMessageSegment_r16.reassembled_in",
+         FT_FRAMENUM, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_length,
+      { "Reassembled Length", "lte-rrc.dedicatedMessageSegment_r16.reassembled_length",
+         FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_lte_rrc_dcch_segment_reassembled_data,
+      { "Reassembled Data", "lte-rrc.dedicatedMessageSegment_r16.reassembled_data",
+         FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_lte_rrc_measGapPatterns_r15_bit1,
       { "Gap Pattern 4", "lte-rrc.measGapPatterns_r15.bit1",
         FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x80,
@@ -4436,6 +4557,8 @@ void proto_register_lte_rrc(void) {
     &ett_lte_rrc_sib11_fragments,
     &ett_lte_rrc_sib12_fragment,
     &ett_lte_rrc_sib12_fragments,
+    &ett_lte_rrc_dcch_segment_fragment,
+    &ett_lte_rrc_dcch_segment_fragments,
     &ett_lte_rrc_nr_SecondaryCellGroupConfig_r15,
     &ett_lte_rrc_nr_RadioBearerConfig_r15,
     &ett_lte_rrc_nr_RadioBearerConfigS_r15,
@@ -4527,11 +4650,15 @@ void proto_register_lte_rrc(void) {
 
   lte_rrc_etws_cmas_dcs_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
   lte_rrc_system_info_value_changed_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+  lte_rrc_dcch_segment_ueid_count_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+  lte_rrc_dcch_segment_id_tree = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 
   reassembly_table_register(&lte_rrc_sib11_reassembly_table,
-                        &addresses_reassembly_table_functions);
+                            &addresses_reassembly_table_functions);
   reassembly_table_register(&lte_rrc_sib12_reassembly_table,
-                        &addresses_reassembly_table_functions);
+                            &addresses_reassembly_table_functions);
+  reassembly_table_register(&lte_rrc_dcch_segment_reassembly_table,
+                            &addresses_reassembly_table_functions);
 
   /* Register configuration preferences */
   lte_rrc_module = prefs_register_protocol(proto_lte_rrc, NULL);
@@ -4539,6 +4666,10 @@ void proto_register_lte_rrc(void) {
                                  "Show NAS PDU in root packet details",
                                  "Whether the NAS PDU should be shown in the root packet details tree",
                                  &lte_rrc_nas_in_root_tree);
+  prefs_register_bool_preference(lte_rrc_module, "reassemble_dcch_segments",
+                                 "Try to reassemble DCCH segmented messages",
+                                 "Whether the LTE RRC dissector should attempt to reassemble DCCH segmented messages",
+                                 &lte_rrc_reassemble_dcch_segments);
 }
 
 

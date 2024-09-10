@@ -22,6 +22,7 @@
 #include <epan/expert.h>
 #include <epan/proto_data.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -8406,16 +8407,16 @@ dissect_mms_MMSpdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn
                                 proto_item_append_text(mms_priv->pdu_item, " [GetDataDirectoryResponse ]");
                             }else if (mms_priv->mms_trans_p->conf_serv_pdu_type_req == MMS_IEC_61850_CONF_SERV_PDU_READ){
                                 if(mms_priv->mms_trans_p->itemid == IEC61850_ITEM_ID_$BR$_OR_$RP$){
-                                    col_append_fstr(actx->pinfo->cinfo, COL_INFO, "GetRCBValuesResponse");
+                                    col_append_str(actx->pinfo->cinfo, COL_INFO, "GetRCBValuesResponse");
                                     proto_item_append_text(mms_priv->pdu_item, " [GetRCBValuesResponse]");
                                 }else{
-                                    col_append_fstr(actx->pinfo->cinfo, COL_INFO, "GetDataValueResponse");
+                                    col_append_str(actx->pinfo->cinfo, COL_INFO, "GetDataValueResponse");
                                     proto_item_append_text(mms_priv->pdu_item, " [GetDataValueResponse ]");
                                 }
                                 if(mms_priv->success == 1){
-                                    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " success");
+                                    col_append_str(actx->pinfo->cinfo, COL_INFO, " success");
                                 }else{
-                                     col_append_fstr(actx->pinfo->cinfo, COL_INFO, " failure");
+                                     col_append_str(actx->pinfo->cinfo, COL_INFO, " failure");
                                 }
                             } else if (mms_priv->mms_trans_p->conf_serv_pdu_type_req == MMS_IEC_61850_CONF_SERV_PDU_WRITE){
                                 if(mms_priv->mms_trans_p->itemid == IEC61850_ITEM_ID_$BR$_OR_$RP$){
@@ -8443,7 +8444,7 @@ dissect_mms_MMSpdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn
                     col_append_fstr(actx->pinfo->cinfo, COL_INFO, "%s%s%s",
                             private_data_get_preCinfo(actx), mms_MMSpdu_vals[branch_taken].strptr, private_data_get_moreCinfo(actx));
             }else{
-                    col_append_fstr(actx->pinfo->cinfo, COL_INFO, "%s",
+                    col_append_str(actx->pinfo->cinfo, COL_INFO,
                             mms_MMSpdu_vals[branch_taken].strptr);
             }
     }
@@ -11743,7 +11744,7 @@ dissect_mms_heur(tvbuff_t* tvb, packet_info* pinfo, proto_tree* parent_tree, voi
     }
 
     /* check MMS length  */
-    oct = tvb_get_guint8(tvb, offset) & 0x7F;
+    oct = tvb_get_uint8(tvb, offset) & 0x7F;
     if (oct == 0)
         /* MMS requires length after tag so not MMS if indefinite length*/
         return false;

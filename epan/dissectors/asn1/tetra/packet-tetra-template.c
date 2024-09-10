@@ -22,6 +22,7 @@
 #include <epan/oids.h>
 #include <epan/conversation.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-tetra.h"
@@ -216,7 +217,7 @@ void tetra_dissect_pdu(int channel_type, int dir, tvbuff_t *pdu, proto_tree *tre
 		dissect_AACH_PDU(pdu, pinfo, tetra_sub_tree, NULL);
 		break;
 	case TETRA_CHAN_SCH_F:
-		p = tvb_get_guint8(pdu, 0);
+		p = tvb_get_uint8(pdu, 0);
 		switch(p >> 6) {
 		case 0:
 			if (dir == TETRA_DOWNLINK)
@@ -240,7 +241,7 @@ void tetra_dissect_pdu(int channel_type, int dir, tvbuff_t *pdu, proto_tree *tre
 		}
 		break;
 	case TETRA_CHAN_SCH_D:
-		p = tvb_get_guint8(pdu, 0);
+		p = tvb_get_uint8(pdu, 0);
 		switch(p >> 6) {
 		case 0:
 			dissect_MAC_RESOURCE_PDU(pdu, pinfo, tetra_sub_tree, NULL);
@@ -257,7 +258,7 @@ void tetra_dissect_pdu(int channel_type, int dir, tvbuff_t *pdu, proto_tree *tre
 		}
 		break;
 	case TETRA_CHAN_SCH_HU:
-		p = tvb_get_guint8(pdu, 0);
+		p = tvb_get_uint8(pdu, 0);
 		switch(p >> 7) {
 		case 0: /* MAC-ACCESS */
 			dissect_MAC_ACCESS_PDU(pdu, pinfo, tetra_sub_tree, NULL);
@@ -276,7 +277,7 @@ void tetra_dissect_pdu(int channel_type, int dir, tvbuff_t *pdu, proto_tree *tre
 		dissect_BNCH_PDU(pdu, pinfo, tetra_sub_tree, NULL);
 		break;
 	case TETRA_CHAN_STCH:
-		p = tvb_get_guint8(pdu, 0);
+		p = tvb_get_uint8(pdu, 0);
 		switch(p >> 6) {
 		case 0:
 			dissect_MAC_RESOURCE_PDU(pdu, pinfo, tetra_sub_tree, NULL);
@@ -432,10 +433,10 @@ dissect_tetra(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	 * This is not a good way of dissecting packets.  The tvb length should
 	 * be sanity checked so we aren't going past the actual size of the buffer.
 	 */
-	type = tvb_get_guint8(tvb, 0);
+	type = tvb_get_uint8(tvb, 0);
 
 	if(include_carrier_number) {
-		carriernumber = tvb_get_guint8(tvb, 1);
+		carriernumber = tvb_get_uint8(tvb, 1);
 	}
 
 
@@ -445,35 +446,35 @@ dissect_tetra(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ, Carrier: %d",
 					carriernumber);
 		else
-			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ");
+			col_set_str(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ");
 		break;
 	case 2:
 		if(include_carrier_number)
 			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND, Carrier: %d",
 					carriernumber);
 		else
-			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND");
+			col_set_str(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND");
 		break;
 	case 3:
 		if(include_carrier_number)
 			col_add_fstr(pinfo->cinfo, COL_INFO, "MAC-Timer, Carrier: %d",
 					carriernumber);
 		else
-			col_add_fstr(pinfo->cinfo, COL_INFO, "MAC-Timer");
+			col_set_str(pinfo->cinfo, COL_INFO, "MAC-Timer");
 		break;
 	case 127:
 		if(include_carrier_number)
 			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND Done, Carrier: %d",
 					carriernumber);
 		else
-			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND Done");
+			col_set_str(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-IND Done");
 		break;
 	case 128:
 		if(include_carrier_number)
 			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ Done, Carrier: %d",
 					carriernumber);
 	  else
-			col_add_fstr(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ Done");
+			col_set_str(pinfo->cinfo, COL_INFO, "Tetra-UNITDATA-REQ Done");
 		break;
 	default:
 		col_add_fstr(pinfo->cinfo, COL_INFO, "Unknown command: %d", type);

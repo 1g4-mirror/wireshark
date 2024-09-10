@@ -19,7 +19,7 @@
 
 /*
  * The generated Ui_WiresharkMainWindow::setupUi() can grow larger than our configured limit,
- * so turn off -Wframe-larger-than= for ui_main_window.h.
+ * so turn off -Wframe-larger-than= for ui_wireshark_main_window.h.
  */
 DIAG_OFF(frame-larger-than=)
 #include <ui_wireshark_main_window.h>
@@ -366,6 +366,16 @@ void WiresharkMainWindow::layoutToolbars()
     }
 }
 
+static const char* layout_icons[] = {
+    NULL,
+    "x-reset-layout_5",
+    "x-reset-layout_2",
+    "x-reset-layout_1",
+    "x-reset-layout_4",
+    "x-reset-layout_3",
+    "x-reset-layout_6"
+};
+
 void WiresharkMainWindow::updatePreferenceActions()
 {
     main_ui_->actionViewPacketList->setEnabled(prefs_has_layout_pane_content(layout_pane_content_plist));
@@ -376,6 +386,9 @@ void WiresharkMainWindow::updatePreferenceActions()
     main_ui_->actionViewNameResolutionPhysical->setChecked(gbl_resolv_flags.mac_name);
     main_ui_->actionViewNameResolutionNetwork->setChecked(gbl_resolv_flags.network_name);
     main_ui_->actionViewNameResolutionTransport->setChecked(gbl_resolv_flags.transport_name);
+
+    if (prefs.gui_layout_type > 0)
+        main_ui_->actionViewResetLayout->setIcon(StockIcon(layout_icons[prefs.gui_layout_type]));
 }
 
 void WiresharkMainWindow::updateRecentActions()
@@ -1056,7 +1069,9 @@ void WiresharkMainWindow::updateRecentCaptures() {
 
     /* Iterate through the actions in menuOpenRecentCaptureFile,
      * removing special items, a maybe duplicate entry and every item above count_max */
+#if defined(Q_OS_MAC)
     int shortcut = Qt::Key_0;
+#endif
     foreach(recent_item_status *ri, mainApp->recentItems()) {
         // Add the new item
         ra = new QAction(recentMenu);
@@ -1065,10 +1080,12 @@ void WiresharkMainWindow::updateRecentCaptures() {
         ra->setEnabled(ri->accessible);
         recentMenu->insertAction(NULL, ra);
         action_cf_name = ra->data().toString();
+#if defined(Q_OS_MAC)
         if (shortcut <= Qt::Key_9) {
             ra->setShortcut(Qt::META | (Qt::Key)shortcut);
             shortcut++;
         }
+#endif
         ra->setText(action_cf_name);
         connect(ra, &QAction::triggered, this, &WiresharkMainWindow::recentActionTriggered);
 
@@ -1249,14 +1266,16 @@ void WiresharkMainWindow::setMenusForSelectedPacket()
         have_frames = capture_file_.capFile()->count > 0;
         have_marked = capture_file_.capFile()->marked_count > 0;
         another_is_marked = have_marked && rows.count() <= 1 &&
-                !(capture_file_.capFile()->marked_count == 1 && frame_selected && current_frame->marked);
+                !(capture_file_.capFile()->marked_count == 1 && frame_selected &&
+                current_frame && current_frame->marked);
         have_filtered = capture_file_.capFile()->displayed_count > 0 && capture_file_.capFile()->displayed_count != capture_file_.capFile()->count;
         have_ignored = capture_file_.capFile()->ignored_count > 0;
         have_time_ref = capture_file_.capFile()->ref_time_count > 0;
         another_is_time_ref = have_time_ref && rows.count() <= 1 &&
-                !(capture_file_.capFile()->ref_time_count == 1 && frame_selected && current_frame->ref_time);
+                !(capture_file_.capFile()->ref_time_count == 1 && frame_selected &&
+                current_frame && current_frame->ref_time);
 
-        if (capture_file_.capFile()->edt && ! multi_selection)
+        if (capture_file_.capFile()->edt && ! multi_selection && frame_selected)
         {
             proto_get_frame_protocols(capture_file_.capFile()->edt->pi.layers,
                                       &is_ip, &is_tcp, &is_udp, &is_sctp,
@@ -1280,6 +1299,10 @@ void WiresharkMainWindow::setMenusForSelectedPacket()
                 } else {
                     follow_action->setEnabled(is_frame);
                 }
+            }
+        } else {
+            foreach (FollowStreamAction *follow_action, main_ui_->menuFollow->findChildren<FollowStreamAction *>()) {
+                follow_action->setEnabled(false);
             }
         }
     }
@@ -3574,7 +3597,7 @@ void WiresharkMainWindow::showIOGraphDialog(io_graph_item_unit_t value_units, QS
         foreach(iog_dialog, iographdialogs) {
             if (!iog_dialog->fileClosed()) {
                 iog_found = true;
-                iog_dialog->addGraph(true, displayFilter, value_units, yfield);
+                iog_dialog->addGraph(true, false, displayFilter, value_units, yfield);
                 break;
             }
         }

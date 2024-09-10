@@ -15,6 +15,7 @@
 
 #include <wiretap/wtap.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 #include "packet-bblog.h"
 
 #define PEN_NFLX 10949
@@ -293,7 +294,7 @@ dissect_bblog_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     uint8_t pru;
     uint8_t timer_type, timer_event;
 
-    event_identifier = tvb_get_guint8(tvb, 25);
+    event_identifier = tvb_get_uint8(tvb, 25);
     flex1 = tvb_get_letohl(tvb, 140);
     flex2 = tvb_get_letohl(tvb, 144);
     switch (event_identifier) {
@@ -315,7 +316,7 @@ dissect_bblog_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     default:
         event_name = try_val_to_str(event_identifier, event_identifier_values);
         if (event_name != NULL) {
-            col_append_fstr(pinfo->cinfo, COL_INFO, "%s", event_name);
+            col_append_str(pinfo->cinfo, COL_INFO, event_name);
         } else {
             col_append_fstr(pinfo->cinfo, COL_INFO, "Unknown (flex1 0x%08x, flex2 0x%08x0)", flex1, flex2);
         }

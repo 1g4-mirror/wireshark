@@ -16,8 +16,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
-
-#include "packet-btsdp.h"
+#include <epan/unit_strings.h>
 
 static int proto_btmcap;
 
@@ -118,7 +117,7 @@ dissect_btmcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     }
 
     pitem = proto_tree_add_item(main_tree, hf_btmcap_op_code, tvb, offset, 1, ENC_BIG_ENDIAN);
-    op_code = tvb_get_guint8(tvb, offset);
+    op_code = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     col_append_str(pinfo->cinfo, COL_INFO, val_to_str_const(op_code, op_code_vals, "Unknown Op Code"));
@@ -160,7 +159,7 @@ dissect_btmcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
                 if (op_code == 0x01) {
                     /* only MD_CREATE_MDL_REQ */
                     pitem = proto_tree_add_item(main_tree, hf_btmcap_mdep_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-                    mdep_id = tvb_get_guint8(tvb, offset);
+                    mdep_id = tvb_get_uint8(tvb, offset);
                     offset += 1;
 
                     if (mdep_id <= 0x7F) {
@@ -214,7 +213,7 @@ dissect_btmcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         /* isResponse */
 
         proto_tree_add_item(main_tree, hf_btmcap_response_code, tvb, offset, 1, ENC_BIG_ENDIAN);
-        response_code = tvb_get_guint8(tvb, offset);
+        response_code = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", val_to_str_const(response_code, response_code_vals, "Unknown ResponseCode"));
@@ -333,7 +332,7 @@ proto_register_btmcap(void)
         },
         { &hf_btmcap_timestamp_required_accuracy,
             { "Timestamp Required Accuracy",     "btmcap.timestamp_required_accuracy",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_ppm, 0x00,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_ppm), 0x00,
             NULL, HFILL }
         },
         { &hf_btmcap_timestamp_update_information,
@@ -353,7 +352,7 @@ proto_register_btmcap(void)
         },
         { &hf_btmcap_timestamp_sample_accuracy,
             { "Timestamp Sample Accuracy",       "btmcap.timestamp_sample_accuracy",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x00,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_btmcap_bluetooth_clock_access_resolution,
@@ -363,17 +362,17 @@ proto_register_btmcap(void)
         },
         { &hf_btmcap_sync_lead_time,
             { "Sync Lead Time",                  "btmcap.sync_lead_time",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0x00,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_btmcap_timestamp_native_resolution,
             { "Timestamp Native Resolution",     "btmcap.timestamp_native_resolution",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x00,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_btmcap_timestamp_native_accuracy,
             { "Timestamp Native Accuracy",       "btmcap.timestamp_native_accuracy",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_ppm, 0x00,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_ppm), 0x00,
             NULL, HFILL }
         },
         { &hf_btmcap_response_parameters,

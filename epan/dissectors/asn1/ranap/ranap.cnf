@@ -243,7 +243,7 @@ MAX_VAL = asn1_param_get_integer(%(ACTX)s,"upperBound")
          */
 
         /* Assume a TargetRNC-ToSourceRNC-Container.  Peek the RRC octetstream to guess the choice*/
-        container_choice = tvb_get_guint8(rrc_message_tvb, 0) >> 5;
+        container_choice = tvb_get_uint8(rrc_message_tvb, 0) >> 5;
         if (container_choice < 7) {
           /* Normal case (0-6): dissect as TargetRNC-ToSourceRNC-Container */
           call_dissector(rrc_t_to_srnc_handle,rrc_message_tvb,%(ACTX)s->pinfo, proto_tree_get_root(tree));
@@ -1198,8 +1198,6 @@ id-Correlation-ID                               ProtocolIE-ID
 id-IRAT-Measurement-Configuration               ProtocolIE-ID
 id-MDT-Configuration                            ProtocolIE-ID
 id-Priority-Class-Indicator                     ProtocolIE-ID
-# Ws Extension
-id-Not-Used-246                                 ProtocolIE-ID
 id-RNSAPRelocationParameters                    ProtocolIE-ID
 id-RABParametersList                            ProtocolIE-ID
 id-Management-Based-MDT-Allowed                 ProtocolIE-ID

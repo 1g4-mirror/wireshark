@@ -22,6 +22,7 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/tfs.h>
 #include <epan/uat.h>
 #include "packet-socketcan.h"
 
@@ -512,7 +513,7 @@ dissect_autosar_nm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
       break;
       }
 
-      ctrl_bit_vector = tvb_get_guint8(tvb, g_autosar_nm_pos_cbv);
+      ctrl_bit_vector = tvb_get_uint8(tvb, g_autosar_nm_pos_cbv);
   }
 
   if (g_autosar_nm_pos_sni != byte_pos_off && g_autosar_nm_pos_sni >= g_autosar_nm_pos_cbv) {
@@ -526,7 +527,7 @@ dissect_autosar_nm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
       offset = g_autosar_nm_pos_sni + 1;
   }
 
-  col_add_fstr(pinfo->cinfo, COL_INFO, "NM (");
+  col_set_str(pinfo->cinfo, COL_INFO, "NM (");
   if (g_autosar_nm_pos_cbv != byte_pos_off) {
       col_append_fstr(pinfo->cinfo, COL_INFO, "CBV: 0x%02x", ctrl_bit_vector);
       proto_item_append_text(ti, ", Control Bit Vector: 0x%02x", ctrl_bit_vector);
@@ -540,7 +541,7 @@ dissect_autosar_nm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
           proto_item_append_text(ti, ", Source Node: %i", src_node_id);
       }
   }
-  col_append_fstr(pinfo->cinfo, COL_INFO, ")");
+  col_append_str(pinfo->cinfo, COL_INFO, ")");
 
   /* now we need to process the user defined fields ... */
   ti = proto_tree_add_item(autosar_nm_tree, hf_autosar_nm_user_data, tvb, offset, msg_length - offset, ENC_NA);

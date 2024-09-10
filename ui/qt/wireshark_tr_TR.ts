@@ -44,8 +44,8 @@
         <translation>Klasörler</translation>
     </message>
     <message>
-        <source>Filter by path</source>
-        <translation>Yola göre filtrele</translation>
+        <source>Search Folders</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Plugins</source>
@@ -887,10 +887,6 @@
     <message>
         <source>Read filter:</source>
         <translation>Filtreyi oku:</translation>
-    </message>
-    <message>
-        <source>Compress with g&amp;zip</source>
-        <translation>G&amp;zip ile sıkıştır</translation>
     </message>
     <message>
         <source>Open Capture File</source>
@@ -1939,29 +1935,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>ColumnTypeDelegate</name>
-    <message>
-        <source>Default</source>
-        <translation>Öntanımlı</translation>
-    </message>
-    <message>
-        <source>Left</source>
-        <translation>Sol</translation>
-    </message>
-    <message>
-        <source>Center</source>
-        <translation>Merkez</translation>
-    </message>
-    <message>
-        <source>Right</source>
-        <translation>Sağ</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>Bilinmiyor</translation>
-    </message>
-</context>
-<context>
     <name>CompiledFilterOutput</name>
     <message>
         <source>Compiled Filter Output</source>
@@ -1974,6 +1947,25 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Copy filter text to the clipboard.</source>
         <translation>Filtre metnini panoya kopyalayın.</translation>
+    </message>
+</context>
+<context>
+    <name>CompressionGroupBox</name>
+    <message>
+        <source>Compression options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Uncompressed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compress with g&amp;zip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compress with &amp;LZ4</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2717,6 +2709,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Uç Nokta Haritasını Kaydet</translation>
     </message>
     <message>
+        <source>Hide aggregated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide IPv4 aggregated endpoints (see subnets file &amp; IPv4 preferences)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to save map file %1.</source>
         <translation>%1 harita dosyası kaydedilemedi.</translation>
     </message>
@@ -3003,6 +3003,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Display filter:</source>
         <translation>Ekran filtresi:</translation>
+    </message>
+    <message>
+        <source>Export PDUs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4501,6 +4505,30 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>%1 Intervals </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6881,6 +6909,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>En son kullanılan klasör</translation>
     </message>
     <message>
+        <source>The current working directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Show up to</source>
         <translation>Kadar göster</translation>
     </message>
@@ -7311,6 +7343,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Alan Değerlerini Göster</translation>
     </message>
     <message>
+        <source>Refresh</source>
+        <translation type="unfinished">Yenile</translation>
+    </message>
+    <message>
         <source>Save Diagram As…</source>
         <translation>Şemayı Farklı Kaydet…</translation>
     </message>
@@ -7463,10 +7499,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>PacketList</name>
-    <message>
-        <source>Protocol Preferences</source>
-        <translation>Protokol Tercihleri</translation>
-    </message>
     <message>
         <source>Summary as Text</source>
         <translation>Metin Olarak Özet</translation>
@@ -8740,6 +8772,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>DRB-%1</source>
         <translation>DRB-%1</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation type="unfinished">Sol</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation type="unfinished">Sağa</translation>
     </message>
     <message>
         <source>Unknown</source>
@@ -11331,6 +11375,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>ShortcutListModel</name>
     <message>
+        <source>Display Filter Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jump to display filter input box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Shortcut</source>
         <translation>Kısayol</translation>
     </message>
@@ -11585,6 +11637,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Display filter:</source>
         <translation>Görüntüleme filtresi:</translation>
+    </message>
+    <message>
+        <source>Strip Headers</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -14122,10 +14178,6 @@ a:üzerine gelin{
         <translation>Düzeni Sıfırla</translation>
     </message>
     <message>
-        <source>Reset appearance layout to default size</source>
-        <translation>Görünüm düzenini varsayılan boyuta sıfırla</translation>
-    </message>
-    <message>
         <source>Seconds Since First Captured Packet</source>
         <translation>İlk Yakalanan Paketten Beri Saniye</translation>
     </message>
@@ -14492,6 +14544,10 @@ a:üzerine gelin{
     <message>
         <source>Normal Size</source>
         <translation>Normal Boyut</translation>
+    </message>
+    <message>
+        <source>Reset layout to default size</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Resize Columns</source>

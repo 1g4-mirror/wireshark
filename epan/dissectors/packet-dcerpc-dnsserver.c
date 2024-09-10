@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -574,12 +575,12 @@ static int dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer(tvbuff_t *
 static int dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 int
-dnsserver_dissect_struct_DNS_RPC_NAME(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+dnsserver_dissect_struct_DNS_RPC_NAME(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
-	guint8 len;
+	uint8_t len;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
 		return offset;
@@ -596,9 +597,9 @@ dnsserver_dissect_struct_DNS_RPC_NAME(tvbuff_t *tvb _U_, int offset _U_, packet_
 	proto_item_set_len(item, offset-old_offset);
 	return offset;
 }
-static guint16 node_record_count;
+static uint16_t node_record_count;
 static int
-dnsserver_dissect_element_DNS_RPC_NODE_RecordCount(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+dnsserver_dissect_element_DNS_RPC_NODE_RecordCount(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -608,7 +609,7 @@ dnsserver_dissect_element_DNS_RPC_NODE_RecordCount(tvbuff_t *tvb _U_, int offset
 	return offset;
 }
 static int
-dnsserver_dissect_element_DNS_RPC_NODE_records(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+dnsserver_dissect_element_DNS_RPC_NODE_records(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -2407,13 +2408,13 @@ dnsserver_dissect_struct_DNS_RECORD_BUFFER(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 dnsserver_dissect_DnssrvOperation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvOperation";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2432,13 +2433,13 @@ dnsserver_dissect_DnssrvOperation_request(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 dnsserver_dissect_DnssrvQuery_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvQuery";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2457,13 +2458,13 @@ dnsserver_dissect_DnssrvQuery_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 dnsserver_dissect_DnssrvComplexOperation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvComplexOperation";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2482,13 +2483,13 @@ dnsserver_dissect_DnssrvComplexOperation_request(tvbuff_t *tvb _U_, int offset _
 static int
 dnsserver_dissect_DnssrvEnumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvEnumRecords";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2507,13 +2508,13 @@ dnsserver_dissect_DnssrvEnumRecords_request(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 dnsserver_dissect_DnssrvUpdateRecord_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvUpdateRecord";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2532,13 +2533,13 @@ dnsserver_dissect_DnssrvUpdateRecord_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dnsserver_dissect_DnssrvOperation2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvOperation2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2668,7 +2669,7 @@ dnsserver_dissect_element_DnssrvQuery2_data_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dnsserver_dissect_DnssrvQuery2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvQuery2";
 	offset = dnsserver_dissect_element_DnssrvQuery2_type_id(tvb, offset, pinfo, tree, di, drep);
@@ -2680,7 +2681,7 @@ dnsserver_dissect_DnssrvQuery2_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2709,13 +2710,13 @@ dnsserver_dissect_DnssrvQuery2_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 dnsserver_dissect_DnssrvComplexOperation2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvComplexOperation2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2900,12 +2901,12 @@ dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer(tvbuff_t *tvb _U_, in
 static int
 dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint3264 size;
+	uint3264_t size;
 	int conformant = di->conformant_run;
 	tvbuff_t *subtvb;
 
 	if (!conformant) {
-		guint32 saved_flags = di->call_data->flags;
+		uint32_t saved_flags = di->call_data->flags;
 		offset = dissect_ndr_uint3264(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_DnssrvEnumRecords2_record_buffer_, &size);
 		di->call_data->flags &= ~DCERPC_IS_NDR64;
 		subtvb = tvb_new_subset_length_caplen(tvb, offset, (const int)size, -1);
@@ -2943,7 +2944,7 @@ dnsserver_dissect_element_DnssrvEnumRecords2_record_buffer__(tvbuff_t *tvb _U_, 
 static int
 dnsserver_dissect_DnssrvEnumRecords2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvEnumRecords2";
 	offset = dnsserver_dissect_element_DnssrvEnumRecords2_buffer_length(tvb, offset, pinfo, tree, di, drep);
@@ -2955,7 +2956,7 @@ dnsserver_dissect_DnssrvEnumRecords2_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2994,13 +2995,13 @@ dnsserver_dissect_DnssrvEnumRecords2_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dnsserver_dissect_DnssrvUpdateRecord2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DnssrvUpdateRecord2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_dnsserver_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -3323,7 +3324,7 @@ void proto_register_dcerpc_dnsserver(void)
 	{ &hf_dnsserver_opnum,
 	  { "Operation", "dnsserver.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_dnsserver_status,
-	  { "NT Error", "dnsserver.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "dnsserver.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	};
 
 

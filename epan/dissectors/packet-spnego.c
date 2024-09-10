@@ -29,7 +29,9 @@
 #include <epan/asn1.h>
 #include <epan/conversation.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
 #include <wsutil/wsgcrypt.h>
+#include <wsutil/array.h>
 #include "packet-gssapi.h"
 #include "packet-kerberos.h"
 #include "packet-ber.h"
@@ -1474,7 +1476,7 @@ dissect_spnego_krb5_cfx_wrap_base(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
   /* Now, the sign and seal algorithms ... */
 
-  flags = tvb_get_guint8(tvb, offset);
+  flags = tvb_get_uint8(tvb, offset);
   offset = dissect_spnego_krb5_cfx_flags(tvb, offset, tree, flags);
 
   if (gssapi_encrypt != NULL)
@@ -1641,7 +1643,7 @@ dissect_spnego_krb5_cfx_getmic_base(tvbuff_t *tvb, int offset, packet_info *pinf
    *   and so on }
    */
 
-  flags = tvb_get_guint8(tvb, offset);
+  flags = tvb_get_uint8(tvb, offset);
   offset = dissect_spnego_krb5_cfx_flags(tvb, offset, tree, flags);
 
   /* Skip the filler */

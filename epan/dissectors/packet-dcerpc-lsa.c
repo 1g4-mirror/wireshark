@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -1775,7 +1776,7 @@ static int lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation2_collision_i
 static int lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation2_collision_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation2_collision_info__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static void
-lsarpc_policy_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+lsarpc_policy_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_lsarpc_lsa_PolicyAccessMask_LSA_POLICY_NOTIFICATION,
@@ -1796,7 +1797,7 @@ lsarpc_policy_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guin
 	proto_tree_add_bitmask_list_value(tree, tvb, offset, 4, access_flags, access);
 }
 static void
-lsarpc_account_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+lsarpc_account_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_lsarpc_lsa_AccountAccessMask_LSA_ACCOUNT_ADJUST_SYSTEM_ACCESS,
@@ -1808,7 +1809,7 @@ lsarpc_account_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, gui
 	proto_tree_add_bitmask_list_value(tree, tvb, offset, 4, access_flags, access);
 }
 static void
-lsarpc_secret_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+lsarpc_secret_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_lsarpc_lsa_SecretAccessMask_LSA_SECRET_QUERY_VALUE,
@@ -1818,7 +1819,7 @@ lsarpc_secret_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guin
 	proto_tree_add_bitmask_list_value(tree, tvb, offset, 4, access_flags, access);
 }
 static void
-lsarpc_domain_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+lsarpc_domain_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_lsarpc_lsa_TrustedAccessMask_LSA_TRUSTED_QUERY_AUTH,
@@ -1857,7 +1858,7 @@ static struct access_mask_info lsarpc_domain_access_mask_info = {
 	NULL				/* Standard mapping table */
 };
 int
-lsarpc_dissect_bitmap_lsa_PolicyAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+lsarpc_dissect_bitmap_lsa_PolicyAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_lsarpc_policy_access_mask,
@@ -1865,7 +1866,7 @@ lsarpc_dissect_bitmap_lsa_PolicyAccessMask(tvbuff_t *tvb, int offset, packet_inf
 	return offset;
 }
 int
-lsarpc_dissect_bitmap_lsa_AccountAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+lsarpc_dissect_bitmap_lsa_AccountAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_lsarpc_account_access_mask,
@@ -1873,7 +1874,7 @@ lsarpc_dissect_bitmap_lsa_AccountAccessMask(tvbuff_t *tvb, int offset, packet_in
 	return offset;
 }
 int
-lsarpc_dissect_bitmap_lsa_SecretAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+lsarpc_dissect_bitmap_lsa_SecretAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_lsarpc_secret_access_mask,
@@ -1882,7 +1883,7 @@ lsarpc_dissect_bitmap_lsa_SecretAccessMask(tvbuff_t *tvb, int offset, packet_inf
 }
 /* TODO: not called, so couldn't make static. Delete? */
 int
-lsarpc_dissect_bitmap_lsa_DomainAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+lsarpc_dissect_bitmap_lsa_DomainAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_lsarpc_domain_access_mask,
@@ -1890,12 +1891,12 @@ lsarpc_dissect_bitmap_lsa_DomainAccessMask(tvbuff_t *tvb, int offset, packet_inf
 	return offset;
 }
 static int
-cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint32 len;
+	uint32_t len;
 	e_ctx_hnd *polhnd = NULL;
 	dcerpc_call_value *dcv = NULL;
-	guint32 type=0;
+	uint32_t type=0;
 	struct access_mask_info *ami=NULL;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -1925,14 +1926,14 @@ cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_t
 		ami=&lsarpc_domain_access_mask_info;
 		break;
 	}
-	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, TRUE, len, ami);
+	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, true, len, ami);
 	offset += len;
 	return offset;
 }
 static int
-cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint32 len;
+	uint32_t len;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
 		return offset;
@@ -1945,26 +1946,26 @@ cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 	return offset;
 }
 int
-lsarpc_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep){
+lsarpc_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep){
 	return cnf_dissect_sec_desc_buf(tvb, offset, pinfo, tree, di, drep);
 }
 static int
-lsarpc_dissect_struct_security_descriptor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_, int unused1 _U_, int unused2 _U_){
+lsarpc_dissect_struct_security_descriptor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_, int unused1 _U_, int unused2 _U_){
 	return cnf_dissect_sec_desc_buf(tvb, offset, pinfo, tree, di, drep);
 } 
 int
-lsarpc_dissect_struct_dom_sid2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_, int unused1 _U_, int unused2 _U_) {
+lsarpc_dissect_struct_dom_sid2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_, int unused1 _U_, int unused2 _U_) {
 	/* sid */
 	return dissect_ndr_nt_SID(tvb, offset, pinfo, tree, di, drep);
 }
 static int
-cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, guint32 param _U_, int hfindex)
+cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, uint32_t param _U_, int hfindex)
 {
 	offset = dissect_ndr_uint64(tvb, offset, pinfo, tree, di, drep, hfindex, NULL);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_LookupNames3_names_X(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_LookupNames3_names_X(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1978,50 +1979,50 @@ lsarpc_dissect_element_lsa_LookupNames3_names_X(tvbuff_t *tvb _U_, int offset _U
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_LookupNames_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_LookupNames_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, lsarpc_dissect_element_lsa_LookupNames3_names_X, NDR_POINTER_REF, "Pointer to Names", hf_lsarpc_names);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_LookupNames2_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_LookupNames2_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, lsarpc_dissect_element_lsa_LookupNames3_names_X, NDR_POINTER_REF, "Pointer to Names", hf_lsarpc_names);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_LookupNames3_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_LookupNames3_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, lsarpc_dissect_element_lsa_LookupNames3_names_X, NDR_POINTER_REF, "Pointer to Names", hf_lsarpc_names);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_LookupNames4_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_LookupNames4_names(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, lsarpc_dissect_element_lsa_LookupNames3_names_X, NDR_POINTER_REF, "Pointer to Names", hf_lsarpc_names);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_String_string_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_String_string_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	char *data;
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_lsarpc_String_name, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_lsarpc_String_name, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_StringLarge_string_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_StringLarge_string_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	char *data;
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_lsarpc_String_name, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_lsarpc_String_name, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 	return offset;
 }
 static int
-lsarpc_dissect_element_lsa_DomainInfoEfs_efs_blob_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+lsarpc_dissect_element_lsa_DomainInfoEfs_efs_blob_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	tvbuff_t *next_tvb;
-	gint len, reported_len;
+	int len, reported_len;
 	dissector_handle_t efsblob_handle;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -3551,7 +3552,7 @@ lsarpc_dissect_element_lsa_ModificationInfo_modified_id(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_element_lsa_ModificationInfo_db_create_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ModificationInfo_db_create_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ModificationInfo_db_create_time);
 
 	return offset;
 }
@@ -5427,7 +5428,7 @@ lsarpc_dissect_enum_lsa_TrustAuthType(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 lsarpc_dissect_element_lsa_TrustDomainInfoBuffer_last_update_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_TrustDomainInfoBuffer_last_update_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_TrustDomainInfoBuffer_last_update_time);
 
 	return offset;
 }
@@ -7679,7 +7680,7 @@ lsarpc_dissect_element_lsa_ForestTrustRecord_type(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_element_lsa_ForestTrustRecord_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ForestTrustRecord_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ForestTrustRecord_time);
 
 	return offset;
 }
@@ -8220,7 +8221,7 @@ lsarpc_dissect_element_lsa_ForestTrustRecord2_type(tvbuff_t *tvb _U_, int offset
 static int
 lsarpc_dissect_element_lsa_ForestTrustRecord2_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ForestTrustRecord2_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_ForestTrustRecord2_time);
 
 	return offset;
 }
@@ -8369,7 +8370,7 @@ lsarpc_dissect_element_lsa_Close_handle_(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 lsarpc_dissect_lsa_Close_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_Close";
 	offset = lsarpc_dissect_element_lsa_Close_handle(tvb, offset, pinfo, tree, di, drep);
@@ -8378,7 +8379,7 @@ lsarpc_dissect_lsa_Close_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8415,13 +8416,13 @@ lsarpc_dissect_element_lsa_Delete_handle_(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 lsarpc_dissect_lsa_Delete_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_Delete";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8501,7 +8502,7 @@ lsarpc_dissect_element_lsa_EnumPrivs_max_count(tvbuff_t *tvb _U_, int offset _U_
 static int
 lsarpc_dissect_lsa_EnumPrivs_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumPrivs";
 	offset = lsarpc_dissect_element_lsa_EnumPrivs_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -8513,7 +8514,7 @@ lsarpc_dissect_lsa_EnumPrivs_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8588,7 +8589,7 @@ lsarpc_dissect_element_lsa_QuerySecurity_sdbuf__(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_lsa_QuerySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QuerySecurity";
 	offset = lsarpc_dissect_element_lsa_QuerySecurity_sdbuf(tvb, offset, pinfo, tree, di, drep);
@@ -8597,7 +8598,7 @@ lsarpc_dissect_lsa_QuerySecurity_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8662,13 +8663,13 @@ lsarpc_dissect_element_lsa_SetSecObj_sdbuf_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 lsarpc_dissect_lsa_SetSecObj_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetSecObj";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8693,13 +8694,13 @@ lsarpc_dissect_lsa_SetSecObj_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 static int
 lsarpc_dissect_lsa_ChangePassword_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_ChangePassword";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8777,7 +8778,7 @@ lsarpc_dissect_element_lsa_OpenPolicy_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 lsarpc_dissect_lsa_OpenPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenPolicy";
 	offset = lsarpc_dissect_element_lsa_OpenPolicy_handle(tvb, offset, pinfo, tree, di, drep);
@@ -8786,7 +8787,7 @@ lsarpc_dissect_lsa_OpenPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8861,7 +8862,7 @@ lsarpc_dissect_element_lsa_QueryInfoPolicy_info__(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_lsa_QueryInfoPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryInfoPolicy";
 	offset = lsarpc_dissect_element_lsa_QueryInfoPolicy_info(tvb, offset, pinfo, tree, di, drep);
@@ -8870,7 +8871,7 @@ lsarpc_dissect_lsa_QueryInfoPolicy_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8935,13 +8936,13 @@ lsarpc_dissect_element_lsa_SetInfoPolicy_info_(tvbuff_t *tvb _U_, int offset _U_
 static int
 lsarpc_dissect_lsa_SetInfoPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetInfoPolicy";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -8966,13 +8967,13 @@ lsarpc_dissect_lsa_SetInfoPolicy_request(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 lsarpc_dissect_lsa_ClearAuditLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_ClearAuditLog";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9050,7 +9051,7 @@ lsarpc_dissect_element_lsa_CreateAccount_acct_handle_(tvbuff_t *tvb _U_, int off
 static int
 lsarpc_dissect_lsa_CreateAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateAccount";
 	offset = lsarpc_dissect_element_lsa_CreateAccount_acct_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9059,7 +9060,7 @@ lsarpc_dissect_lsa_CreateAccount_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9143,7 +9144,7 @@ lsarpc_dissect_element_lsa_EnumAccounts_num_entries(tvbuff_t *tvb _U_, int offse
 static int
 lsarpc_dissect_lsa_EnumAccounts_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumAccounts";
 	offset = lsarpc_dissect_element_lsa_EnumAccounts_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9155,7 +9156,7 @@ lsarpc_dissect_lsa_EnumAccounts_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9239,7 +9240,7 @@ lsarpc_dissect_element_lsa_CreateTrustedDomain_trustdom_handle_(tvbuff_t *tvb _U
 static int
 lsarpc_dissect_lsa_CreateTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateTrustedDomain";
 	offset = lsarpc_dissect_element_lsa_CreateTrustedDomain_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9248,7 +9249,7 @@ lsarpc_dissect_lsa_CreateTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9332,7 +9333,7 @@ lsarpc_dissect_element_lsa_EnumTrustDom_max_size(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_lsa_EnumTrustDom_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumTrustDom";
 	offset = lsarpc_dissect_element_lsa_EnumTrustDom_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9344,7 +9345,7 @@ lsarpc_dissect_lsa_EnumTrustDom_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9463,7 +9464,7 @@ lsarpc_dissect_element_lsa_LookupNames_count_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 lsarpc_dissect_lsa_LookupNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupNames";
 	offset = lsarpc_dissect_element_lsa_LookupNames_domains(tvb, offset, pinfo, tree, di, drep);
@@ -9478,7 +9479,7 @@ lsarpc_dissect_lsa_LookupNames_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9610,7 +9611,7 @@ lsarpc_dissect_element_lsa_LookupSids_count_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 lsarpc_dissect_lsa_LookupSids_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupSids";
 	offset = lsarpc_dissect_element_lsa_LookupSids_domains(tvb, offset, pinfo, tree, di, drep);
@@ -9625,7 +9626,7 @@ lsarpc_dissect_lsa_LookupSids_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9705,7 +9706,7 @@ lsarpc_dissect_element_lsa_CreateSecret_sec_handle_(tvbuff_t *tvb _U_, int offse
 static int
 lsarpc_dissect_lsa_CreateSecret_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateSecret";
 	offset = lsarpc_dissect_element_lsa_CreateSecret_sec_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9714,7 +9715,7 @@ lsarpc_dissect_lsa_CreateSecret_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9798,7 +9799,7 @@ lsarpc_dissect_element_lsa_OpenAccount_acct_handle_(tvbuff_t *tvb _U_, int offse
 static int
 lsarpc_dissect_lsa_OpenAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenAccount";
 	offset = lsarpc_dissect_element_lsa_OpenAccount_acct_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9807,7 +9808,7 @@ lsarpc_dissect_lsa_OpenAccount_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9873,7 +9874,7 @@ lsarpc_dissect_element_lsa_EnumPrivsAccount_privs__(tvbuff_t *tvb _U_, int offse
 static int
 lsarpc_dissect_lsa_EnumPrivsAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumPrivsAccount";
 	offset = lsarpc_dissect_element_lsa_EnumPrivsAccount_privs(tvb, offset, pinfo, tree, di, drep);
@@ -9882,7 +9883,7 @@ lsarpc_dissect_lsa_EnumPrivsAccount_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9936,13 +9937,13 @@ lsarpc_dissect_element_lsa_AddPrivilegesToAccount_privs_(tvbuff_t *tvb _U_, int 
 static int
 lsarpc_dissect_lsa_AddPrivilegesToAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_AddPrivilegesToAccount";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10007,13 +10008,13 @@ lsarpc_dissect_element_lsa_RemovePrivilegesFromAccount_privs_(tvbuff_t *tvb _U_,
 static int
 lsarpc_dissect_lsa_RemovePrivilegesFromAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_RemovePrivilegesFromAccount";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10038,13 +10039,13 @@ lsarpc_dissect_lsa_RemovePrivilegesFromAccount_request(tvbuff_t *tvb _U_, int of
 static int
 lsarpc_dissect_lsa_GetQuotasForAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_GetQuotasForAccount";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10063,13 +10064,13 @@ lsarpc_dissect_lsa_GetQuotasForAccount_request(tvbuff_t *tvb _U_, int offset _U_
 static int
 lsarpc_dissect_lsa_SetQuotasForAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetQuotasForAccount";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10121,7 +10122,7 @@ lsarpc_dissect_element_lsa_GetSystemAccessAccount_access_mask_(tvbuff_t *tvb _U_
 static int
 lsarpc_dissect_lsa_GetSystemAccessAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_GetSystemAccessAccount";
 	offset = lsarpc_dissect_element_lsa_GetSystemAccessAccount_access_mask(tvb, offset, pinfo, tree, di, drep);
@@ -10130,7 +10131,7 @@ lsarpc_dissect_lsa_GetSystemAccessAccount_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10176,13 +10177,13 @@ lsarpc_dissect_element_lsa_SetSystemAccessAccount_access_mask(tvbuff_t *tvb _U_,
 static int
 lsarpc_dissect_lsa_SetSystemAccessAccount_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetSystemAccessAccount";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10264,7 +10265,7 @@ lsarpc_dissect_element_lsa_OpenTrustedDomain_trustdom_handle_(tvbuff_t *tvb _U_,
 static int
 lsarpc_dissect_lsa_OpenTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenTrustedDomain";
 	offset = lsarpc_dissect_element_lsa_OpenTrustedDomain_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10273,7 +10274,7 @@ lsarpc_dissect_lsa_OpenTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10348,7 +10349,7 @@ lsarpc_dissect_element_lsa_QueryTrustedDomainInfo_info__(tvbuff_t *tvb _U_, int 
 static int
 lsarpc_dissect_lsa_QueryTrustedDomainInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryTrustedDomainInfo";
 	offset = lsarpc_dissect_element_lsa_QueryTrustedDomainInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -10357,7 +10358,7 @@ lsarpc_dissect_lsa_QueryTrustedDomainInfo_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10422,13 +10423,13 @@ lsarpc_dissect_element_lsa_SetInformationTrustedDomain_info_(tvbuff_t *tvb _U_, 
 static int
 lsarpc_dissect_lsa_SetInformationTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetInformationTrustedDomain";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10504,7 +10505,7 @@ lsarpc_dissect_element_lsa_OpenSecret_sec_handle_(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_lsa_OpenSecret_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenSecret";
 	offset = lsarpc_dissect_element_lsa_OpenSecret_sec_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10513,7 +10514,7 @@ lsarpc_dissect_lsa_OpenSecret_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10588,13 +10589,13 @@ lsarpc_dissect_element_lsa_SetSecret_old_val_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 lsarpc_dissect_lsa_SetSecret_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetSecret";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10655,7 +10656,7 @@ lsarpc_dissect_element_lsa_QuerySecret_new_mtime(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_element_lsa_QuerySecret_new_mtime_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_QuerySecret_new_mtime);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_QuerySecret_new_mtime);
 
 	return offset;
 }
@@ -10687,7 +10688,7 @@ lsarpc_dissect_element_lsa_QuerySecret_old_mtime(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_element_lsa_QuerySecret_old_mtime_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_QuerySecret_old_mtime);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_lsa_QuerySecret_old_mtime);
 
 	return offset;
 }
@@ -10703,7 +10704,7 @@ lsarpc_dissect_element_lsa_QuerySecret_old_mtime_(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_lsa_QuerySecret_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QuerySecret";
 	offset = lsarpc_dissect_element_lsa_QuerySecret_new_val(tvb, offset, pinfo, tree, di, drep);
@@ -10721,7 +10722,7 @@ lsarpc_dissect_lsa_QuerySecret_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10800,7 +10801,7 @@ lsarpc_dissect_element_lsa_LookupPrivValue_luid_(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_lsa_LookupPrivValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupPrivValue";
 	offset = lsarpc_dissect_element_lsa_LookupPrivValue_luid(tvb, offset, pinfo, tree, di, drep);
@@ -10809,7 +10810,7 @@ lsarpc_dissect_lsa_LookupPrivValue_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10890,7 +10891,7 @@ lsarpc_dissect_element_lsa_LookupPrivName_name__(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_lsa_LookupPrivName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupPrivName";
 	offset = lsarpc_dissect_element_lsa_LookupPrivName_name(tvb, offset, pinfo, tree, di, drep);
@@ -10899,7 +10900,7 @@ lsarpc_dissect_lsa_LookupPrivName_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11015,7 +11016,7 @@ lsarpc_dissect_element_lsa_LookupPrivDisplayName_returned_language_id_(tvbuff_t 
 static int
 lsarpc_dissect_lsa_LookupPrivDisplayName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupPrivDisplayName";
 	offset = lsarpc_dissect_element_lsa_LookupPrivDisplayName_disp_name(tvb, offset, pinfo, tree, di, drep);
@@ -11027,7 +11028,7 @@ lsarpc_dissect_lsa_LookupPrivDisplayName_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11070,7 +11071,7 @@ lsarpc_dissect_element_lsa_DeleteObject_handle_(tvbuff_t *tvb _U_, int offset _U
 static int
 lsarpc_dissect_lsa_DeleteObject_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_DeleteObject";
 	offset = lsarpc_dissect_element_lsa_DeleteObject_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11079,7 +11080,7 @@ lsarpc_dissect_lsa_DeleteObject_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11150,7 +11151,7 @@ lsarpc_dissect_element_lsa_EnumAccountsWithUserRight_sids_(tvbuff_t *tvb _U_, in
 static int
 lsarpc_dissect_lsa_EnumAccountsWithUserRight_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumAccountsWithUserRight";
 	offset = lsarpc_dissect_element_lsa_EnumAccountsWithUserRight_sids(tvb, offset, pinfo, tree, di, drep);
@@ -11159,7 +11160,7 @@ lsarpc_dissect_lsa_EnumAccountsWithUserRight_response(tvbuff_t *tvb _U_, int off
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11232,7 +11233,7 @@ lsarpc_dissect_element_lsa_EnumAccountRights_rights_(tvbuff_t *tvb _U_, int offs
 static int
 lsarpc_dissect_lsa_EnumAccountRights_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumAccountRights";
 	offset = lsarpc_dissect_element_lsa_EnumAccountRights_rights(tvb, offset, pinfo, tree, di, drep);
@@ -11241,7 +11242,7 @@ lsarpc_dissect_lsa_EnumAccountRights_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11314,13 +11315,13 @@ lsarpc_dissect_element_lsa_AddAccountRights_rights_(tvbuff_t *tvb _U_, int offse
 static int
 lsarpc_dissect_lsa_AddAccountRights_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_AddAccountRights";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11404,13 +11405,13 @@ lsarpc_dissect_element_lsa_RemoveAccountRights_rights_(tvbuff_t *tvb _U_, int of
 static int
 lsarpc_dissect_lsa_RemoveAccountRights_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_RemoveAccountRights";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11504,7 +11505,7 @@ lsarpc_dissect_element_lsa_QueryTrustedDomainInfoBySid_info__(tvbuff_t *tvb _U_,
 static int
 lsarpc_dissect_lsa_QueryTrustedDomainInfoBySid_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryTrustedDomainInfoBySid";
 	offset = lsarpc_dissect_element_lsa_QueryTrustedDomainInfoBySid_info(tvb, offset, pinfo, tree, di, drep);
@@ -11513,7 +11514,7 @@ lsarpc_dissect_lsa_QueryTrustedDomainInfoBySid_response(tvbuff_t *tvb _U_, int o
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11597,13 +11598,13 @@ lsarpc_dissect_element_lsa_SetTrustedDomainInfo_info_(tvbuff_t *tvb _U_, int off
 static int
 lsarpc_dissect_lsa_SetTrustedDomainInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetTrustedDomainInfo";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11663,13 +11664,13 @@ lsarpc_dissect_element_lsa_DeleteTrustedDomain_dom_sid_(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_DeleteTrustedDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_DeleteTrustedDomain";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11742,13 +11743,13 @@ lsarpc_dissect_element_lsa_StorePrivateData_val_(tvbuff_t *tvb _U_, int offset _
 static int
 lsarpc_dissect_lsa_StorePrivateData_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_StorePrivateData";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11831,7 +11832,7 @@ lsarpc_dissect_element_lsa_RetrievePrivateData_val__(tvbuff_t *tvb _U_, int offs
 static int
 lsarpc_dissect_lsa_RetrievePrivateData_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_RetrievePrivateData";
 	offset = lsarpc_dissect_element_lsa_RetrievePrivateData_val(tvb, offset, pinfo, tree, di, drep);
@@ -11840,7 +11841,7 @@ lsarpc_dissect_lsa_RetrievePrivateData_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11927,7 +11928,7 @@ lsarpc_dissect_element_lsa_OpenPolicy2_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 lsarpc_dissect_lsa_OpenPolicy2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenPolicy2";
 	offset = lsarpc_dissect_element_lsa_OpenPolicy2_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11936,7 +11937,7 @@ lsarpc_dissect_lsa_OpenPolicy2_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12030,7 +12031,7 @@ lsarpc_dissect_element_lsa_GetUserName_authority_name__(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_GetUserName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_GetUserName";
 	offset = lsarpc_dissect_element_lsa_GetUserName_account_name(tvb, offset, pinfo, tree, di, drep);
@@ -12042,7 +12043,7 @@ lsarpc_dissect_lsa_GetUserName_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12117,7 +12118,7 @@ lsarpc_dissect_element_lsa_QueryInfoPolicy2_info__(tvbuff_t *tvb _U_, int offset
 static int
 lsarpc_dissect_lsa_QueryInfoPolicy2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryInfoPolicy2";
 	offset = lsarpc_dissect_element_lsa_QueryInfoPolicy2_info(tvb, offset, pinfo, tree, di, drep);
@@ -12126,7 +12127,7 @@ lsarpc_dissect_lsa_QueryInfoPolicy2_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12191,13 +12192,13 @@ lsarpc_dissect_element_lsa_SetInfoPolicy2_info_(tvbuff_t *tvb _U_, int offset _U
 static int
 lsarpc_dissect_lsa_SetInfoPolicy2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetInfoPolicy2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12289,7 +12290,7 @@ lsarpc_dissect_element_lsa_QueryTrustedDomainInfoByName_info__(tvbuff_t *tvb _U_
 static int
 lsarpc_dissect_lsa_QueryTrustedDomainInfoByName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryTrustedDomainInfoByName";
 	offset = lsarpc_dissect_element_lsa_QueryTrustedDomainInfoByName_info(tvb, offset, pinfo, tree, di, drep);
@@ -12298,7 +12299,7 @@ lsarpc_dissect_lsa_QueryTrustedDomainInfoByName_response(tvbuff_t *tvb _U_, int 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12382,13 +12383,13 @@ lsarpc_dissect_element_lsa_SetTrustedDomainInfoByName_info_(tvbuff_t *tvb _U_, i
 static int
 lsarpc_dissect_lsa_SetTrustedDomainInfoByName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetTrustedDomainInfoByName";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12474,7 +12475,7 @@ lsarpc_dissect_element_lsa_EnumTrustedDomainsEx_max_size(tvbuff_t *tvb _U_, int 
 static int
 lsarpc_dissect_lsa_EnumTrustedDomainsEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_EnumTrustedDomainsEx";
 	offset = lsarpc_dissect_element_lsa_EnumTrustedDomainsEx_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -12486,7 +12487,7 @@ lsarpc_dissect_lsa_EnumTrustedDomainsEx_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12587,7 +12588,7 @@ lsarpc_dissect_element_lsa_CreateTrustedDomainEx_trustdom_handle_(tvbuff_t *tvb 
 static int
 lsarpc_dissect_lsa_CreateTrustedDomainEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateTrustedDomainEx";
 	offset = lsarpc_dissect_element_lsa_CreateTrustedDomainEx_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -12596,7 +12597,7 @@ lsarpc_dissect_lsa_CreateTrustedDomainEx_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12639,7 +12640,7 @@ lsarpc_dissect_element_lsa_CloseTrustedDomainEx_handle_(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_CloseTrustedDomainEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CloseTrustedDomainEx";
 	offset = lsarpc_dissect_element_lsa_CloseTrustedDomainEx_handle(tvb, offset, pinfo, tree, di, drep);
@@ -12648,7 +12649,7 @@ lsarpc_dissect_lsa_CloseTrustedDomainEx_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12719,7 +12720,7 @@ lsarpc_dissect_element_lsa_QueryDomainInformationPolicy_info__(tvbuff_t *tvb _U_
 static int
 lsarpc_dissect_lsa_QueryDomainInformationPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_QueryDomainInformationPolicy";
 	offset = lsarpc_dissect_element_lsa_QueryDomainInformationPolicy_info(tvb, offset, pinfo, tree, di, drep);
@@ -12728,7 +12729,7 @@ lsarpc_dissect_lsa_QueryDomainInformationPolicy_response(tvbuff_t *tvb _U_, int 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12793,13 +12794,13 @@ lsarpc_dissect_element_lsa_SetDomainInformationPolicy_info_(tvbuff_t *tvb _U_, i
 static int
 lsarpc_dissect_lsa_SetDomainInformationPolicy_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_SetDomainInformationPolicy";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12875,7 +12876,7 @@ lsarpc_dissect_element_lsa_OpenTrustedDomainByName_trustdom_handle_(tvbuff_t *tv
 static int
 lsarpc_dissect_lsa_OpenTrustedDomainByName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenTrustedDomainByName";
 	offset = lsarpc_dissect_element_lsa_OpenTrustedDomainByName_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -12884,7 +12885,7 @@ lsarpc_dissect_lsa_OpenTrustedDomainByName_response(tvbuff_t *tvb _U_, int offse
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12909,13 +12910,13 @@ lsarpc_dissect_lsa_OpenTrustedDomainByName_request(tvbuff_t *tvb _U_, int offset
 static int
 lsarpc_dissect_lsa_TestCall_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_TestCall";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13053,7 +13054,7 @@ lsarpc_dissect_element_lsa_LookupSids2_client_revision(tvbuff_t *tvb _U_, int of
 static int
 lsarpc_dissect_lsa_LookupSids2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupSids2";
 	offset = lsarpc_dissect_element_lsa_LookupSids2_domains(tvb, offset, pinfo, tree, di, drep);
@@ -13068,7 +13069,7 @@ lsarpc_dissect_lsa_LookupSids2_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13213,7 +13214,7 @@ lsarpc_dissect_element_lsa_LookupNames2_client_revision(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_LookupNames2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupNames2";
 	offset = lsarpc_dissect_element_lsa_LookupNames2_domains(tvb, offset, pinfo, tree, di, drep);
@@ -13228,7 +13229,7 @@ lsarpc_dissect_lsa_LookupNames2_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13339,7 +13340,7 @@ lsarpc_dissect_element_lsa_CreateTrustedDomainEx2_trustdom_handle_(tvbuff_t *tvb
 static int
 lsarpc_dissect_lsa_CreateTrustedDomainEx2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateTrustedDomainEx2";
 	offset = lsarpc_dissect_element_lsa_CreateTrustedDomainEx2_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -13348,7 +13349,7 @@ lsarpc_dissect_lsa_CreateTrustedDomainEx2_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13375,13 +13376,13 @@ lsarpc_dissect_lsa_CreateTrustedDomainEx2_request(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_lsa_CREDRWRITE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRWRITE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13400,13 +13401,13 @@ lsarpc_dissect_lsa_CREDRWRITE_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 lsarpc_dissect_lsa_CREDRREAD_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRREAD";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13425,13 +13426,13 @@ lsarpc_dissect_lsa_CREDRREAD_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 static int
 lsarpc_dissect_lsa_CREDRENUMERATE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRENUMERATE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13450,13 +13451,13 @@ lsarpc_dissect_lsa_CREDRENUMERATE_request(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 lsarpc_dissect_lsa_CREDRWRITEDOMAINCREDENTIALS_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRWRITEDOMAINCREDENTIALS";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13475,13 +13476,13 @@ lsarpc_dissect_lsa_CREDRWRITEDOMAINCREDENTIALS_request(tvbuff_t *tvb _U_, int of
 static int
 lsarpc_dissect_lsa_CREDRREADDOMAINCREDENTIALS_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRREADDOMAINCREDENTIALS";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13500,13 +13501,13 @@ lsarpc_dissect_lsa_CREDRREADDOMAINCREDENTIALS_request(tvbuff_t *tvb _U_, int off
 static int
 lsarpc_dissect_lsa_CREDRDELETE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRDELETE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13525,13 +13526,13 @@ lsarpc_dissect_lsa_CREDRDELETE_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 lsarpc_dissect_lsa_CREDRGETTARGETINFO_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRGETTARGETINFO";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13550,13 +13551,13 @@ lsarpc_dissect_lsa_CREDRGETTARGETINFO_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 lsarpc_dissect_lsa_CREDRPROFILELOADED_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRPROFILELOADED";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13695,7 +13696,7 @@ lsarpc_dissect_element_lsa_LookupNames3_client_revision(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_LookupNames3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupNames3";
 	offset = lsarpc_dissect_element_lsa_LookupNames3_domains(tvb, offset, pinfo, tree, di, drep);
@@ -13710,7 +13711,7 @@ lsarpc_dissect_lsa_LookupNames3_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13745,13 +13746,13 @@ lsarpc_dissect_lsa_LookupNames3_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 lsarpc_dissect_lsa_CREDRGETSESSIONTYPES_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRGETSESSIONTYPES";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13770,13 +13771,13 @@ lsarpc_dissect_lsa_CREDRGETSESSIONTYPES_request(tvbuff_t *tvb _U_, int offset _U
 static int
 lsarpc_dissect_lsa_LSARREGISTERAUDITEVENT_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARREGISTERAUDITEVENT";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13795,13 +13796,13 @@ lsarpc_dissect_lsa_LSARREGISTERAUDITEVENT_request(tvbuff_t *tvb _U_, int offset 
 static int
 lsarpc_dissect_lsa_LSARGENAUDITEVENT_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARGENAUDITEVENT";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13820,13 +13821,13 @@ lsarpc_dissect_lsa_LSARGENAUDITEVENT_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 lsarpc_dissect_lsa_LSARUNREGISTERAUDITEVENT_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARUNREGISTERAUDITEVENT";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13912,7 +13913,7 @@ lsarpc_dissect_element_lsa_lsaRQueryForestTrustInformation_forest_trust_info__(t
 static int
 lsarpc_dissect_lsa_lsaRQueryForestTrustInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_lsaRQueryForestTrustInformation";
 	offset = lsarpc_dissect_element_lsa_lsaRQueryForestTrustInformation_forest_trust_info(tvb, offset, pinfo, tree, di, drep);
@@ -13921,7 +13922,7 @@ lsarpc_dissect_lsa_lsaRQueryForestTrustInformation_response(tvbuff_t *tvb _U_, i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14039,7 +14040,7 @@ lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation_collision_info__(tvbuff
 static int
 lsarpc_dissect_lsa_lsaRSetForestTrustInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_lsaRSetForestTrustInformation";
 	offset = lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation_collision_info(tvb, offset, pinfo, tree, di, drep);
@@ -14048,7 +14049,7 @@ lsarpc_dissect_lsa_lsaRSetForestTrustInformation_response(tvbuff_t *tvb _U_, int
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14077,13 +14078,13 @@ lsarpc_dissect_lsa_lsaRSetForestTrustInformation_request(tvbuff_t *tvb _U_, int 
 static int
 lsarpc_dissect_lsa_CREDRRENAME_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CREDRRENAME";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14204,7 +14205,7 @@ lsarpc_dissect_element_lsa_LookupSids3_client_revision(tvbuff_t *tvb _U_, int of
 static int
 lsarpc_dissect_lsa_LookupSids3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupSids3";
 	offset = lsarpc_dissect_element_lsa_LookupSids3_domains(tvb, offset, pinfo, tree, di, drep);
@@ -14219,7 +14220,7 @@ lsarpc_dissect_lsa_LookupSids3_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14345,7 +14346,7 @@ lsarpc_dissect_element_lsa_LookupNames4_client_revision(tvbuff_t *tvb _U_, int o
 static int
 lsarpc_dissect_lsa_LookupNames4_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LookupNames4";
 	offset = lsarpc_dissect_element_lsa_LookupNames4_domains(tvb, offset, pinfo, tree, di, drep);
@@ -14360,7 +14361,7 @@ lsarpc_dissect_lsa_LookupNames4_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14393,13 +14394,13 @@ lsarpc_dissect_lsa_LookupNames4_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 lsarpc_dissect_lsa_LSAROPENPOLICYSCE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSAROPENPOLICYSCE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14418,13 +14419,13 @@ lsarpc_dissect_lsa_LSAROPENPOLICYSCE_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 lsarpc_dissect_lsa_LSARADTREGISTERSECURITYEVENTSOURCE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARADTREGISTERSECURITYEVENTSOURCE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14443,13 +14444,13 @@ lsarpc_dissect_lsa_LSARADTREGISTERSECURITYEVENTSOURCE_request(tvbuff_t *tvb _U_,
 static int
 lsarpc_dissect_lsa_LSARADTUNREGISTERSECURITYEVENTSOURCE_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARADTUNREGISTERSECURITYEVENTSOURCE";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14468,13 +14469,13 @@ lsarpc_dissect_lsa_LSARADTUNREGISTERSECURITYEVENTSOURCE_request(tvbuff_t *tvb _U
 static int
 lsarpc_dissect_lsa_LSARADTREPORTSECURITYEVENT_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_LSARADTREPORTSECURITYEVENT";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -15415,7 +15416,7 @@ lsarpc_dissect_element_lsa_CreateTrustedDomainEx3_trustdom_handle_(tvbuff_t *tvb
 static int
 lsarpc_dissect_lsa_CreateTrustedDomainEx3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_CreateTrustedDomainEx3";
 	offset = lsarpc_dissect_element_lsa_CreateTrustedDomainEx3_trustdom_handle(tvb, offset, pinfo, tree, di, drep);
@@ -15424,7 +15425,7 @@ lsarpc_dissect_lsa_CreateTrustedDomainEx3_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -15573,7 +15574,7 @@ lsarpc_dissect_element_lsa_OpenPolicy3_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 lsarpc_dissect_lsa_OpenPolicy3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_OpenPolicy3";
 	offset = lsarpc_dissect_element_lsa_OpenPolicy3_out_version(tvb, offset, pinfo, tree, di, drep);
@@ -15588,7 +15589,7 @@ lsarpc_dissect_lsa_OpenPolicy3_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -15702,7 +15703,7 @@ lsarpc_dissect_element_lsa_lsaRQueryForestTrustInformation2_forest_trust_info__(
 static int
 lsarpc_dissect_lsa_lsaRQueryForestTrustInformation2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_lsaRQueryForestTrustInformation2";
 	offset = lsarpc_dissect_element_lsa_lsaRQueryForestTrustInformation2_forest_trust_info(tvb, offset, pinfo, tree, di, drep);
@@ -15711,7 +15712,7 @@ lsarpc_dissect_lsa_lsaRQueryForestTrustInformation2_response(tvbuff_t *tvb _U_, 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -15829,7 +15830,7 @@ lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation2_collision_info__(tvbuf
 static int
 lsarpc_dissect_lsa_lsaRSetForestTrustInformation2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="lsa_lsaRSetForestTrustInformation2";
 	offset = lsarpc_dissect_element_lsa_lsaRSetForestTrustInformation2_collision_info(tvb, offset, pinfo, tree, di, drep);
@@ -15838,7 +15839,7 @@ lsarpc_dissect_lsa_lsaRSetForestTrustInformation2_response(tvbuff_t *tvb _U_, in
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_lsarpc_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -17229,7 +17230,7 @@ void proto_register_dcerpc_lsarpc(void)
 	{ &hf_lsarpc_secret_access_mask,
 	  { "Access Mask", "lsarpc.policy.access_mask", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_lsarpc_status,
-	  { "NT Error", "lsarpc.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "lsarpc.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	};
 
 

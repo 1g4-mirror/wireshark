@@ -21,6 +21,7 @@
 #include <epan/strutil.h>
 
 #include <wsutil/str_util.h>
+#include <wsutil/array.h>
 
 #include "packet-tcp.h"
 
@@ -164,7 +165,7 @@ static int dissect_idmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 
     proto_tree_add_item(tree, hf_idmp_version, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
     proto_tree_add_item(tree, hf_idmp_final, tvb, offset, 1, ENC_BIG_ENDIAN);
-    idmp_final = tvb_get_guint8(tvb, offset); offset++;
+    idmp_final = tvb_get_uint8(tvb, offset); offset++;
     proto_tree_add_item(tree, hf_idmp_length, tvb, offset, 4, ENC_BIG_ENDIAN);
     idmp_length = tvb_get_ntohl(tvb, offset); offset += 4;
 

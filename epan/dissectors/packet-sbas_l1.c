@@ -16,7 +16,10 @@
 #include <epan/expert.h>
 #include <epan/packet.h>
 
-#include <wsutil/pint.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 #include <wsutil/utf8_entities.h>
 
 #include "packet-ubx.h"
@@ -108,7 +111,7 @@ static const value_string DEGRADATION_FACTOR_INDICATOR[] = {
 };
 
 // table for SBAS L1 CRC24Q computation
-static const guint32 CRC24Q_TBL[] = {
+static const uint32_t CRC24Q_TBL[] = {
     0x000000, 0x864CFB, 0x8AD50D, 0x0C99F6, 0x93E6E1, 0x15AA1A, 0x1933EC, 0x9F7F17,
     0xA18139, 0x27CDC2, 0x2B5434, 0xAD18CF, 0x3267D8, 0xB42B23, 0xB8B2D5, 0x3EFE2E,
     0xC54E89, 0x430272, 0x4F9B84, 0xC9D77F, 0x56A868, 0xD0E493, 0xDC7D65, 0x5A319E,
@@ -431,6 +434,97 @@ static int * const sbas_l1_mt17_health_and_status_fields[] = {
     NULL
 };
 
+// see ICAO Annex 10, Vol I, Table B-46
+static int hf_sbas_l1_mt18;
+static int hf_sbas_l1_mt18_nr_igp_bands;
+static int hf_sbas_l1_mt18_igp_band_id;
+static int hf_sbas_l1_mt18_iodi_k;
+static int hf_sbas_l1_mt18_igp_mask_180w;
+static int hf_sbas_l1_mt18_igp_mask_175w;
+static int hf_sbas_l1_mt18_igp_mask_170w;
+static int hf_sbas_l1_mt18_igp_mask_165w;
+static int hf_sbas_l1_mt18_igp_mask_160w;
+static int hf_sbas_l1_mt18_igp_mask_155w;
+static int hf_sbas_l1_mt18_igp_mask_150w;
+static int hf_sbas_l1_mt18_igp_mask_145w;
+static int hf_sbas_l1_mt18_igp_mask_140w;
+static int hf_sbas_l1_mt18_igp_mask_135w;
+static int hf_sbas_l1_mt18_igp_mask_130w;
+static int hf_sbas_l1_mt18_igp_mask_125w;
+static int hf_sbas_l1_mt18_igp_mask_120w;
+static int hf_sbas_l1_mt18_igp_mask_115w;
+static int hf_sbas_l1_mt18_igp_mask_110w;
+static int hf_sbas_l1_mt18_igp_mask_105w;
+static int hf_sbas_l1_mt18_igp_mask_100w;
+static int hf_sbas_l1_mt18_igp_mask_95w;
+static int hf_sbas_l1_mt18_igp_mask_90w;
+static int hf_sbas_l1_mt18_igp_mask_85w;
+static int hf_sbas_l1_mt18_igp_mask_80w;
+static int hf_sbas_l1_mt18_igp_mask_75w;
+static int hf_sbas_l1_mt18_igp_mask_70w;
+static int hf_sbas_l1_mt18_igp_mask_65w;
+static int hf_sbas_l1_mt18_igp_mask_60w;
+static int hf_sbas_l1_mt18_igp_mask_55w;
+static int hf_sbas_l1_mt18_igp_mask_50w;
+static int hf_sbas_l1_mt18_igp_mask_45w;
+static int hf_sbas_l1_mt18_igp_mask_40w;
+static int hf_sbas_l1_mt18_igp_mask_35w;
+static int hf_sbas_l1_mt18_igp_mask_30w;
+static int hf_sbas_l1_mt18_igp_mask_25w;
+static int hf_sbas_l1_mt18_igp_mask_20w;
+static int hf_sbas_l1_mt18_igp_mask_15w;
+static int hf_sbas_l1_mt18_igp_mask_10w;
+static int hf_sbas_l1_mt18_igp_mask_5w;
+static int hf_sbas_l1_mt18_igp_mask_0;
+static int hf_sbas_l1_mt18_igp_mask_5e;
+static int hf_sbas_l1_mt18_igp_mask_10e;
+static int hf_sbas_l1_mt18_igp_mask_15e;
+static int hf_sbas_l1_mt18_igp_mask_20e;
+static int hf_sbas_l1_mt18_igp_mask_25e;
+static int hf_sbas_l1_mt18_igp_mask_30e;
+static int hf_sbas_l1_mt18_igp_mask_35e;
+static int hf_sbas_l1_mt18_igp_mask_40e;
+static int hf_sbas_l1_mt18_igp_mask_45e;
+static int hf_sbas_l1_mt18_igp_mask_50e;
+static int hf_sbas_l1_mt18_igp_mask_55e;
+static int hf_sbas_l1_mt18_igp_mask_60e;
+static int hf_sbas_l1_mt18_igp_mask_65e;
+static int hf_sbas_l1_mt18_igp_mask_70e;
+static int hf_sbas_l1_mt18_igp_mask_75e;
+static int hf_sbas_l1_mt18_igp_mask_80e;
+static int hf_sbas_l1_mt18_igp_mask_85e;
+static int hf_sbas_l1_mt18_igp_mask_90e;
+static int hf_sbas_l1_mt18_igp_mask_95e;
+static int hf_sbas_l1_mt18_igp_mask_100e;
+static int hf_sbas_l1_mt18_igp_mask_105e;
+static int hf_sbas_l1_mt18_igp_mask_110e;
+static int hf_sbas_l1_mt18_igp_mask_115e;
+static int hf_sbas_l1_mt18_igp_mask_120e;
+static int hf_sbas_l1_mt18_igp_mask_125e;
+static int hf_sbas_l1_mt18_igp_mask_130e;
+static int hf_sbas_l1_mt18_igp_mask_135e;
+static int hf_sbas_l1_mt18_igp_mask_140e;
+static int hf_sbas_l1_mt18_igp_mask_145e;
+static int hf_sbas_l1_mt18_igp_mask_150e;
+static int hf_sbas_l1_mt18_igp_mask_155e;
+static int hf_sbas_l1_mt18_igp_mask_160e;
+static int hf_sbas_l1_mt18_igp_mask_165e;
+static int hf_sbas_l1_mt18_igp_mask_170e;
+static int hf_sbas_l1_mt18_igp_mask_175e;
+static int hf_sbas_l1_mt18_igp_mask_60n_1;
+static int hf_sbas_l1_mt18_igp_mask_60n_2;
+static int hf_sbas_l1_mt18_igp_mask_65n;
+static int hf_sbas_l1_mt18_igp_mask_70n;
+static int hf_sbas_l1_mt18_igp_mask_75n;
+static int hf_sbas_l1_mt18_igp_mask_85n;
+static int hf_sbas_l1_mt18_igp_mask_60s_1;
+static int hf_sbas_l1_mt18_igp_mask_60s_2;
+static int hf_sbas_l1_mt18_igp_mask_65s;
+static int hf_sbas_l1_mt18_igp_mask_70s;
+static int hf_sbas_l1_mt18_igp_mask_75s;
+static int hf_sbas_l1_mt18_igp_mask_85s;
+static int hf_sbas_l1_mt18_spare;
+
 // see ICAO Annex 10, Vol I, Table B-47
 static int hf_sbas_l1_mt24;
 static int hf_sbas_l1_mt24_fc_i1;
@@ -597,6 +691,7 @@ static int ett_sbas_l1_mt7;
 static int ett_sbas_l1_mt17;
 static int ett_sbas_l1_mt17_prn_data[3];
 static int ett_sbas_l1_mt17_health_and_status;
+static int ett_sbas_l1_mt18;
 static int ett_sbas_l1_mt24;
 static int ett_sbas_l1_mt25;
 static int ett_sbas_l1_mt26;
@@ -604,17 +699,17 @@ static int ett_sbas_l1_mt63;
 
 // compute the CRC24Q checksum for an SBAS L1 nav msg
 // see ICAO Annex 10, Vol I, Appendix B, Section 3.5.3.5
-static guint32 sbas_crc24q(const guint8 *data) {
-    guint32 crc = 0;
+static uint32_t sbas_crc24q(const uint8_t *data) {
+    uint32_t crc = 0;
 
     // source byte and bit level index
-    gint s8 = 0, s1 = 7;
+    int s8 = 0, s1 = 7;
 
-    guint8 s,d = 0;
+    uint8_t s,d = 0;
 
     // At byte level, nav msg needs to be right aligned.
     // So, pretend that 6 bits (with value zero) have been processed.
-    guint8 d1 = 6;
+    uint8_t d1 = 6;
 
     // process 226 bits nav msg (= 28 bytes + 2 bits)
     while ((s8 < 28) || (s8 == 28 && s1 > 5)) {
@@ -650,38 +745,38 @@ static guint32 sbas_crc24q(const guint8 *data) {
 }
 
 /* Format GEO position (X or Y axis) with 2600m resolution */
-static void fmt_geo_xy_position(gchar *label, gint32 c) {
+static void fmt_geo_xy_position(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d m", c * 2600);
 }
 
 /* Format GEO position (Z axis) with 26000m resolution */
-static void fmt_geo_z_position(gchar *label, gint32 c) {
+static void fmt_geo_z_position(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d m", c * 26000);
 }
 
 /* Format GEO velocity (X or Y axis) with 10m/s resolution */
-static void fmt_geo_xy_velocity(gchar *label, gint32 c) {
+static void fmt_geo_xy_velocity(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d m/s", c * 10);
 }
 
 /* Format GEO velocity (Z axis) with 60m/s resolution */
-static void fmt_geo_z_velocity(gchar *label, gint32 c) {
+static void fmt_geo_z_velocity(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d m/s", c * 60);
 }
 
 /* Format time of almanac with 64s resolution */
-static void fmt_time_of_almanac(gchar *label, guint32 c) {
+static void fmt_time_of_almanac(char *label, uint32_t c) {
     c = c * 64;
     snprintf(label, ITEM_LABEL_LENGTH, "%us (%02u:%02u:%02u)", c, c / 3600, (c / 60) % 60, c % 60);
 }
 
 /* Format clock corrections */
-static void fmt_clock_correction(gchar *label, gint32 c) {
+static void fmt_clock_correction(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-31 s", c);
 }
 
 /* Format corrections with 0.125m resolution */
-static void fmt_correction_125m(gchar *label, gint32 c) {
+static void fmt_correction_125m(char *label, int32_t c) {
     c = c * 125;
     if (c >= 0) {
         snprintf(label, ITEM_LABEL_LENGTH, "%d.%03dm", c / 1000, c % 1000);
@@ -692,23 +787,23 @@ static void fmt_correction_125m(gchar *label, gint32 c) {
 }
 
 /* Format velocity corrections with 2^-11 m/s resolution */
-static void fmt_velo_correction(gchar *label, gint32 c) {
-    gint64 temp = c * INT64_C(48828125);
+static void fmt_velo_correction(char *label, int32_t c) {
+    int64_t temp = c * INT64_C(48828125);
     if (c >= 0) {
-        snprintf(label, ITEM_LABEL_LENGTH, " %" G_GINT64_FORMAT ".%011" G_GINT64_FORMAT "m/s", temp / 100000000000, temp % 100000000000);
+        snprintf(label, ITEM_LABEL_LENGTH, " %" PRId64 ".%011" PRId64 "m/s", temp / 100000000000, temp % 100000000000);
     }
     else {
-        snprintf(label, ITEM_LABEL_LENGTH, "-%" G_GINT64_FORMAT ".%011" G_GINT64_FORMAT "m/s", -temp / 100000000000, -temp % 100000000000);
+        snprintf(label, ITEM_LABEL_LENGTH, "-%" PRId64 ".%011" PRId64 "m/s", -temp / 100000000000, -temp % 100000000000);
     }
 }
 
 /* Format clock rate corrections with 2^-39 s/s resolution */
-static void fmt_clk_rate_correction(gchar *label, gint32 c) {
+static void fmt_clk_rate_correction(char *label, int32_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-39s/s", c);
 }
 
 /* Format time of applicability with 16s resolution */
-static void fmt_time_of_applicability(gchar *label, guint32 c) {
+static void fmt_time_of_applicability(char *label, uint32_t c) {
     c = c * 16;
     snprintf(label, ITEM_LABEL_LENGTH, "%us (%02u:%02u:%02u)", c, c / 3600, (c / 60) % 60, c % 60);
 }
@@ -716,7 +811,7 @@ static void fmt_time_of_applicability(gchar *label, guint32 c) {
 /* Dissect SBAS L1 message */
 static int dissect_sbas_l1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     tvbuff_t *next_tvb;
-    guint32 preamble, mt, cmp_crc;
+    uint32_t preamble, mt, cmp_crc;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SBAS L1");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -746,7 +841,7 @@ static int dissect_sbas_l1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     }
 
     // checksum
-    cmp_crc = sbas_crc24q((guint8 *)tvb_memdup(pinfo->pool, tvb, 0, 29));
+    cmp_crc = sbas_crc24q((uint8_t *)tvb_memdup(pinfo->pool, tvb, 0, 29));
     proto_tree_add_checksum(sbas_l1_tree, tvb, 28, hf_sbas_l1_chksum, -1,
             &ei_sbas_l1_crc, NULL, cmp_crc, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
 
@@ -1092,7 +1187,7 @@ static int dissect_sbas_l1_mt7(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
 /* Dissect SBAS L1 MT 17 */
 static int dissect_sbas_l1_mt17(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-    guint8 i;
+    uint8_t i;
     tvbuff_t *prn_tvb;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SBAS L1 MT17");
@@ -1107,7 +1202,7 @@ static int dissect_sbas_l1_mt17(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
         if (prn_tvb) {
             add_new_data_source(pinfo, prn_tvb, "PRN data");
 
-            guint16 prn = (tvb_get_guint16(prn_tvb, 0, ENC_BIG_ENDIAN) >> 6) & 0xff;
+            uint16_t prn = (tvb_get_uint16(prn_tvb, 0, ENC_BIG_ENDIAN) >> 6) & 0xff;
 
             proto_tree *prn_tree = proto_tree_add_subtree_format(sbas_l1_mt17_tree, tvb, (6 + i * 67) / 8, (i == 0) ? 10 : 9, ett_sbas_l1_mt17_prn_data[i], NULL, "PRN %u", prn);
 
@@ -1130,9 +1225,135 @@ static int dissect_sbas_l1_mt17(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     return tvb_captured_length(tvb);
 }
 
+/* Dissect SBAS L1 MT 18 */
+static int dissect_sbas_l1_mt18(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+    guint32 band_id;
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "SBAS L1 MT18");
+    col_clear(pinfo->cinfo, COL_INFO);
+
+    proto_item *ti = proto_tree_add_item(tree, hf_sbas_l1_mt18, tvb, 0, 32, ENC_NA);
+    proto_tree *sbas_l1_mt18_tree = proto_item_add_subtree(ti, ett_sbas_l1_mt18);
+
+    proto_tree_add_item(sbas_l1_mt18_tree,     hf_sbas_l1_mt18_nr_igp_bands,     tvb,  0, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_band_id, tvb,  0, 2, ENC_BIG_ENDIAN, &band_id);
+    proto_tree_add_item(sbas_l1_mt18_tree,     hf_sbas_l1_mt18_iodi_k,           tvb,  0, 2, ENC_BIG_ENDIAN);
+
+    if (band_id == 0) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_180w,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_175w,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_170w,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_165w,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_160w,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_155w,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_150w,    tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_145w,    tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 1) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_140w,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_135w,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_130w,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_125w,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_120w,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_115w,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_110w,    tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_105w,    tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 2) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_100w,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_95w,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_90w,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_85w,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_80w,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_75w,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_70w,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_65w,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 3) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60w,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_55w,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_50w,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_45w,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_40w,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_35w,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_30w,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_25w,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 4) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_20w,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_15w,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_10w,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_5w,      tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_0,       tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_5e,      tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_10e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_15e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 5) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_20e,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_25e,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_30e,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_35e,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_40e,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_45e,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_50e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_55e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 6) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60e,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_65e,     tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_70e,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_75e,     tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_80e,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_85e,     tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_90e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_95e,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 7) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_100e,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_105e,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_110e,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_115e,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_120e,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_125e,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_130e,    tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_135e,    tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 8) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_140e,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_145e,    tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_150e,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_155e,    tvb,  8, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_160e,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_165e,    tvb, 14, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_170e,    tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_175e,    tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 9) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60n_1,   tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60n_2,   tvb,  3, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_65n,     tvb, 11, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_70n,     tvb, 12, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_75n,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_85n,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+    else if (band_id == 10) {
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60s_1,   tvb,  2, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_60s_2,   tvb,  3, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_65s,     tvb, 11, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_70s,     tvb, 12, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_75s,     tvb, 20, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(sbas_l1_mt18_tree, hf_sbas_l1_mt18_igp_mask_85s,     tvb, 20, 8, ENC_BIG_ENDIAN);
+    }
+
+    proto_tree_add_item(sbas_l1_mt18_tree,     hf_sbas_l1_mt18_spare,            tvb, 27, 1, ENC_NA);
+
+    return tvb_captured_length(tvb);
+}
+
 /* Dissect SBAS L1 MT 24 */
 static int dissect_sbas_l1_mt24(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-    guint32 velocity_code;
+    uint32_t velocity_code;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SBAS L1 MT24");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -1196,7 +1417,7 @@ static int dissect_sbas_l1_mt24(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
 /* Dissect SBAS L1 MT 25 */
 static int dissect_sbas_l1_mt25(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-    guint32 velocity_code;
+    uint32_t velocity_code;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SBAS L1 MT25");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -1337,14 +1558,14 @@ static int dissect_sbas_l1_mt26(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     proto_item *ti = proto_tree_add_item(tree, hf_sbas_l1_mt26, tvb, 0, 32, ENC_NA);
     proto_tree *sbas_l1_mt26_tree = proto_item_add_subtree(ti, ett_sbas_l1_mt26);
 
-    guint32 igp_band_id;
+    uint32_t igp_band_id;
     proto_item* pi_igp_band_id = proto_tree_add_item_ret_uint(sbas_l1_mt26_tree, hf_sbas_l1_mt26_igp_band_id,
             tvb, 0, 2, ENC_BIG_ENDIAN, &igp_band_id);
     if (igp_band_id > 10) {
         expert_add_info_format(pinfo, pi_igp_band_id, &ei_sbas_l1_mt26_igp_band_id, "Invalid IGP Band Identifier");
     }
 
-    guint32 igp_block_id;
+    uint32_t igp_block_id;
     proto_item* pi_igp_block_id = proto_tree_add_item_ret_uint(sbas_l1_mt26_tree, hf_sbas_l1_mt26_igp_block_id,
             tvb, 1, 1, ENC_NA, &igp_block_id);
     if (igp_block_id > 13) {
@@ -1608,7 +1829,7 @@ void proto_register_sbas_l1(void) {
 
         // MT7
         {&hf_sbas_l1_mt7,          {"MT7",                                "sbas_l1.mt7",          FT_NONE,   BASE_NONE, NULL,                               0x0,    NULL, HFILL}},
-        {&hf_sbas_l1_mt7_t_lat,    {"System Latency (t_lat)",             "sbas_l1.mt7.t_lat",    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_seconds,     0x03c0, NULL, HFILL}},
+        {&hf_sbas_l1_mt7_t_lat,    {"System Latency (t_lat)",             "sbas_l1.mt7.t_lat",    FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds),     0x03c0, NULL, HFILL}},
         {&hf_sbas_l1_mt7_iodp,     {"Issue of Data - PRN (IODP)",         "sbas_l1.mt7.iodp",     FT_UINT8,  BASE_DEC,  NULL,                               0x30,   NULL, HFILL}},
         {&hf_sbas_l1_mt7_spare,    {"Spare",                              "sbas_l1.mt7.spare",    FT_UINT8,  BASE_DEC,  NULL,                               0x0c,   NULL, HFILL}},
         {&hf_sbas_l1_mt7_ai_1,     {"Degradation Factor Indicator ai_1",  "sbas_l1.mt7.ai_1",     FT_UINT16, BASE_DEC,  VALS(DEGRADATION_FACTOR_INDICATOR), 0x03c0, NULL, HFILL}},
@@ -1680,6 +1901,97 @@ void proto_register_sbas_l1(void) {
         {&hf_sbas_l1_mt17_y_ga_vel,                                       {"Y_G,A velocity",                         "sbas_l1.mt17.y_ga_vel",                                       FT_INT32,   BASE_CUSTOM, CF_FUNC(&fmt_geo_xy_velocity), 0x0000000e, NULL, HFILL}},
         {&hf_sbas_l1_mt17_z_ga_vel,                                       {"Z_G,A velocity",                         "sbas_l1.mt17.z_ga_vel",                                       FT_INT32,   BASE_CUSTOM, CF_FUNC(&fmt_geo_z_velocity),  0x000001e0, NULL, HFILL}},
         {&hf_sbas_l1_mt17_t_a,                                            {"t_almanac",                              "sbas_l1.mt17.t_a",                                            FT_UINT32,  BASE_CUSTOM, CF_FUNC(&fmt_time_of_almanac), 0x0001ffc0, NULL, HFILL}},
+
+        // MT18
+        {&hf_sbas_l1_mt18,                {"MT18",                                "sbas_l1.mt18",                FT_NONE,   BASE_NONE, NULL, 0x0,                NULL, HFILL}},
+        {&hf_sbas_l1_mt18_nr_igp_bands,   {"Number of IGP Bands",                 "sbas_l1.mt18.nr_igp_bands",   FT_UINT16, BASE_DEC,  NULL, 0x03c0,             NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_band_id,    {"IGP Band ID",                         "sbas_l1.mt18.igp_band_id",    FT_UINT16, BASE_DEC,  NULL, 0x003c,             NULL, HFILL}},
+        {&hf_sbas_l1_mt18_iodi_k,         {"Issue of Data - Ionosphere (IODI_k)", "sbas_l1.mt18.iodi_k",         FT_UINT16, BASE_DEC,  NULL, 0x0003,             NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_180w,  {"IGP Mask 180W /  75S -  85N",         "sbas_l1.mt18.igp_mask_180w",  FT_UINT64, BASE_HEX,  NULL, 0xfffffff000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_175w,  {"IGP Mask 175W /  55S -  55N",         "sbas_l1.mt18.igp_mask_175w",  FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffe000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_170w,  {"IGP Mask 170W /  75S -  75N",         "sbas_l1.mt18.igp_mask_170w",  FT_UINT64, BASE_HEX,  NULL, 0x1ffffffc00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_165w,  {"IGP Mask 165W /  55S -  55N",         "sbas_l1.mt18.igp_mask_165w",  FT_UINT64, BASE_HEX,  NULL, 0x00000003fffff800, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_160w,  {"IGP Mask 160W /  75S -  75N",         "sbas_l1.mt18.igp_mask_160w",  FT_UINT64, BASE_HEX,  NULL, 0x07ffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_155w,  {"IGP Mask 155W /  55S -  55N",         "sbas_l1.mt18.igp_mask_155w",  FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_150w,  {"IGP Mask 150W /  75S -  75N",         "sbas_l1.mt18.igp_mask_150w",  FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_145w,  {"IGP Mask 145W /  55S -  55N",         "sbas_l1.mt18.igp_mask_145w",  FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_140w,  {"IGP Mask 140W /  85S -  75N",         "sbas_l1.mt18.igp_mask_i40w",  FT_UINT64, BASE_HEX,  NULL, 0xfffffff000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_135w,  {"IGP Mask 135W /  55S -  55N",         "sbas_l1.mt18.igp_mask_135w",  FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffe000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_130w,  {"IGP Mask 130W /  75S -  75N",         "sbas_l1.mt18.igp_mask_130w",  FT_UINT64, BASE_HEX,  NULL, 0x1ffffffc00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_125w,  {"IGP Mask 125W /  55S -  55N",         "sbas_l1.mt18.igp_mask_125w",  FT_UINT64, BASE_HEX,  NULL, 0x00000003fffff800, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_120w,  {"IGP Mask 120W /  75S -  75N",         "sbas_l1.mt18.igp_mask_120w",  FT_UINT64, BASE_HEX,  NULL, 0x07ffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_115w,  {"IGP Mask 115W /  55S -  55N",         "sbas_l1.mt18.igp_mask_115w",  FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_110w,  {"IGP Mask 110W /  75S -  75N",         "sbas_l1.mt18.igp_mask_110w",  FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_105w,  {"IGP Mask 105W /  55S -  55N",         "sbas_l1.mt18.igp_mask_105w",  FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_100w,  {"IGP Mask 100W /  75S -  75N",         "sbas_l1.mt18.igp_mask_i00w",  FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_95w,   {"IGP Mask  95W /  55S -  55N",         "sbas_l1.mt18.igp_mask_95w",   FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_90w,   {"IGP Mask  90W /  75S -  85N",         "sbas_l1.mt18.igp_mask_90w",   FT_UINT64, BASE_HEX,  NULL, 0x3ffffffc00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_85w,   {"IGP Mask  85W /  55S -  55N",         "sbas_l1.mt18.igp_mask_85w",   FT_UINT64, BASE_HEX,  NULL, 0x00000003fffff800, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_80w,   {"IGP Mask  80W /  75S -  75N",         "sbas_l1.mt18.igp_mask_80w",   FT_UINT64, BASE_HEX,  NULL, 0x07ffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_75w,   {"IGP Mask  75W /  55S -  55N",         "sbas_l1.mt18.igp_mask_75w",   FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_70w,   {"IGP Mask  70W /  75S -  75N",         "sbas_l1.mt18.igp_mask_70w",   FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_65w,   {"IGP Mask  65W /  55S -  55N",         "sbas_l1.mt18.igp_mask_65w",   FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60w,   {"IGP Mask  60W /  75S -  75N",         "sbas_l1.mt18.igp_mask_60w",   FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_55w,   {"IGP Mask  55W /  55S -  55N",         "sbas_l1.mt18.igp_mask_55w",   FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_50w,   {"IGP Mask  50W /  85S -  75N",         "sbas_l1.mt18.igp_mask_50w",   FT_UINT64, BASE_HEX,  NULL, 0x3ffffffc00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_45w,   {"IGP Mask  45W /  55S -  55N",         "sbas_l1.mt18.igp_mask_45w",   FT_UINT64, BASE_HEX,  NULL, 0x00000003fffff800, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_40w,   {"IGP Mask  40W /  75S -  75N",         "sbas_l1.mt18.igp_mask_40w",   FT_UINT64, BASE_HEX,  NULL, 0x07ffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_35w,   {"IGP Mask  35W /  55S -  55N",         "sbas_l1.mt18.igp_mask_35w",   FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_30w,   {"IGP Mask  30W /  75S -  75N",         "sbas_l1.mt18.igp_mask_30w",   FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_25w,   {"IGP Mask  25W /  55S -  55N",         "sbas_l1.mt18.igp_mask_25w",   FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_20w,   {"IGP Mask  20W /  75S -  75N",         "sbas_l1.mt18.igp_mask_20w",   FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_15w,   {"IGP Mask  15W /  55S -  55N",         "sbas_l1.mt18.igp_mask_15w",   FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_10w,   {"IGP Mask  10W /  75S -  75N",         "sbas_l1.mt18.igp_mask_10w",   FT_UINT64, BASE_HEX,  NULL, 0x3ffffff800000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_5w,    {"IGP Mask   5W /  55S -  55N",         "sbas_l1.mt18.igp_mask_5w",    FT_UINT64, BASE_HEX,  NULL, 0x00000007fffff000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_0,     {"IGP Mask    0 /  75S -  85N",         "sbas_l1.mt18.igp_mask_0",     FT_UINT64, BASE_HEX,  NULL, 0x0fffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_5e,    {"IGP Mask   5E /  55S -  55N",         "sbas_l1.mt18.igp_mask_5e",    FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_10e,   {"IGP Mask  10E /  75S -  75N",         "sbas_l1.mt18.igp_mask_10e",   FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_15e,   {"IGP Mask  15E /  55S -  55N",         "sbas_l1.mt18.igp_mask_15e",   FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_20e,   {"IGP Mask  20E /  75S -  75N",         "sbas_l1.mt18.igp_mask_20e",   FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_25e,   {"IGP Mask  25E /  55S -  55N",         "sbas_l1.mt18.igp_mask_25e",   FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_30e,   {"IGP Mask  30E /  75S -  75N",         "sbas_l1.mt18.igp_mask_30e",   FT_UINT64, BASE_HEX,  NULL, 0x3ffffff800000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_35e,   {"IGP Mask  35E /  55S -  55N",         "sbas_l1.mt18.igp_mask_35e",   FT_UINT64, BASE_HEX,  NULL, 0x00000007fffff000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_40e,   {"IGP Mask  40E /  85S -  75N",         "sbas_l1.mt18.igp_mask_40e",   FT_UINT64, BASE_HEX,  NULL, 0x0fffffff00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_45e,   {"IGP Mask  45E /  55S -  55N",         "sbas_l1.mt18.igp_mask_45e",   FT_UINT64, BASE_HEX,  NULL, 0x00000000fffffe00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_50e,   {"IGP Mask  50E /  75S -  75N",         "sbas_l1.mt18.igp_mask_50e",   FT_UINT64, BASE_HEX,  NULL, 0x01ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_55e,   {"IGP Mask  55E /  55S -  55N",         "sbas_l1.mt18.igp_mask_55e",   FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60e,   {"IGP Mask  60E /  75S -  75N",         "sbas_l1.mt18.igp_mask_60e",   FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_65e,   {"IGP Mask  65E /  55S -  55N",         "sbas_l1.mt18.igp_mask_65e",   FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_70e,   {"IGP Mask  70E /  75S -  75N",         "sbas_l1.mt18.igp_mask_70e",   FT_UINT64, BASE_HEX,  NULL, 0x3ffffff800000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_75e,   {"IGP Mask  75E /  55S -  55N",         "sbas_l1.mt18.igp_mask_75e",   FT_UINT64, BASE_HEX,  NULL, 0x00000007fffff000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_80e,   {"IGP Mask  80E /  75S -  75N",         "sbas_l1.mt18.igp_mask_80e",   FT_UINT64, BASE_HEX,  NULL, 0x0ffffffe00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_85e,   {"IGP Mask  85E /  55S -  55N",         "sbas_l1.mt18.igp_mask_85e",   FT_UINT64, BASE_HEX,  NULL, 0x00000001fffffc00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_90e,   {"IGP Mask  90E /  75S -  85N",         "sbas_l1.mt18.igp_mask_90e",   FT_UINT64, BASE_HEX,  NULL, 0x03ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_95e,   {"IGP Mask  95E /  55S -  55N",         "sbas_l1.mt18.igp_mask_95e",   FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_100e,  {"IGP Mask 100E /  75S -  75N",         "sbas_l1.mt18.igp_mask_100e",  FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_105e,  {"IGP Mask 105E /  55S -  55N",         "sbas_l1.mt18.igp_mask_105e",  FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_110e,  {"IGP Mask 110E /  75S -  75N",         "sbas_l1.mt18.igp_mask_110e",  FT_UINT64, BASE_HEX,  NULL, 0x3ffffff800000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_115e,  {"IGP Mask 115E /  55S -  55N",         "sbas_l1.mt18.igp_mask_115e",  FT_UINT64, BASE_HEX,  NULL, 0x00000007fffff000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_120e,  {"IGP Mask 120E /  75S -  75N",         "sbas_l1.mt18.igp_mask_120e",  FT_UINT64, BASE_HEX,  NULL, 0x0ffffffe00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_125e,  {"IGP Mask 125E /  55S -  55N",         "sbas_l1.mt18.igp_mask_125e",  FT_UINT64, BASE_HEX,  NULL, 0x00000001fffffc00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_130e,  {"IGP Mask 130E /  85S -  75N",         "sbas_l1.mt18.igp_mask_130e",  FT_UINT64, BASE_HEX,  NULL, 0x03ffffffc0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_135e,  {"IGP Mask 135E /  55S -  55N",         "sbas_l1.mt18.igp_mask_135e",  FT_UINT64, BASE_HEX,  NULL, 0x000000003fffff80, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_140e,  {"IGP Mask 140E /  75S -  75N",         "sbas_l1.mt18.igp_mask_140e",  FT_UINT64, BASE_HEX,  NULL, 0xffffffe000000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_145e,  {"IGP Mask 145E /  55S -  55N",         "sbas_l1.mt18.igp_mask_145e",  FT_UINT64, BASE_HEX,  NULL, 0x0000001fffffc000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_150e,  {"IGP Mask 150E /  75S -  75N",         "sbas_l1.mt18.igp_mask_150e",  FT_UINT64, BASE_HEX,  NULL, 0x3ffffff800000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_155e,  {"IGP Mask 155E /  55S -  55N",         "sbas_l1.mt18.igp_mask_155e",  FT_UINT64, BASE_HEX,  NULL, 0x00000007fffff000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_160e,  {"IGP Mask 160E /  75S -  75N",         "sbas_l1.mt18.igp_mask_160e",  FT_UINT64, BASE_HEX,  NULL, 0x0ffffffe00000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_165e,  {"IGP Mask 165E /  55S -  55N",         "sbas_l1.mt18.igp_mask_165e",  FT_UINT64, BASE_HEX,  NULL, 0x00000001fffffc00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_170e,  {"IGP Mask 170E /  75S -  75N",         "sbas_l1.mt18.igp_mask_170e",  FT_UINT64, BASE_HEX,  NULL, 0x03ffffff80000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_175e,  {"IGP Mask 175E /  55S -  55N",         "sbas_l1.mt18.igp_mask_175e",  FT_UINT64, BASE_HEX,  NULL, 0x000000007fffff00, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60n_1, {"IGP Mask  60N / 180W -   5W",         "sbas_l1.mt18.igp_mask_60n_1", FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60n_2, {"IGP Mask  60N /   5E - 175E",         "sbas_l1.mt18.igp_mask_60n_2", FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffffff, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_65n,   {"IGP Mask  65N / 180W - 170E",         "sbas_l1.mt18.igp_mask_65n",   FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_70n,   {"IGP Mask  70N / 180W - 170E",         "sbas_l1.mt18.igp_mask_70n",   FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffffff, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_75n,   {"IGP Mask  75N / 180W - 170E",         "sbas_l1.mt18.igp_mask_75n",   FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_85n,   {"IGP Mask  85N / 180W - 150E",         "sbas_l1.mt18.igp_mask_85n",   FT_UINT64, BASE_HEX,  NULL, 0x000000000fff0000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60s_1, {"IGP Mask  60S / 180W -   5W",         "sbas_l1.mt18.igp_mask_60s_1", FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_60s_2, {"IGP Mask  60S /   5E - 175E",         "sbas_l1.mt18.igp_mask_60s_2", FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffffff, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_65s,   {"IGP Mask  65S / 180W - 170E",         "sbas_l1.mt18.igp_mask_65s",   FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_70s,   {"IGP Mask  70S / 180W - 170E",         "sbas_l1.mt18.igp_mask_70s",   FT_UINT64, BASE_HEX,  NULL, 0x0000000fffffffff, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_75s,   {"IGP Mask  75S / 180W - 170E",         "sbas_l1.mt18.igp_mask_75s",   FT_UINT64, BASE_HEX,  NULL, 0xfffffffff0000000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_igp_mask_85s,   {"IGP Mask  85S / 170W - 160E",         "sbas_l1.mt18.igp_mask_85s",   FT_UINT64, BASE_HEX,  NULL, 0x000000000fff0000, NULL, HFILL}},
+        {&hf_sbas_l1_mt18_spare,          {"Spare",                               "sbas_l1.mt18.spare",          FT_UINT8,  BASE_HEX,  NULL, 0x40,               NULL, HFILL}},
 
         // MT24
         {&hf_sbas_l1_mt24,                  {"MT24",                                     "sbas_l1.mt24",                  FT_NONE,   BASE_NONE,   NULL,                          0x0,        NULL, HFILL}},
@@ -1838,7 +2150,7 @@ void proto_register_sbas_l1(void) {
         {&ei_sbas_l1_mt26_igp_block_id, {"sbas_l1.mt26.illegal_igp_block_id", PI_PROTOCOL, PI_WARN, "Illegal IGP Block Identifier", EXPFILL}},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_sbas_l1,
         &ett_sbas_l1_mt0,
         &ett_sbas_l1_mt1,
@@ -1853,6 +2165,7 @@ void proto_register_sbas_l1(void) {
         &ett_sbas_l1_mt17_prn_data[1],
         &ett_sbas_l1_mt17_prn_data[2],
         &ett_sbas_l1_mt17_health_and_status,
+        &ett_sbas_l1_mt18,
         &ett_sbas_l1_mt24,
         &ett_sbas_l1_mt25,
         &ett_sbas_l1_mt26,
@@ -1887,6 +2200,7 @@ void proto_reg_handoff_sbas_l1(void) {
     dissector_add_uint("sbas_l1.mt", 6,  create_dissector_handle(dissect_sbas_l1_mt6,  proto_sbas_l1));
     dissector_add_uint("sbas_l1.mt", 7,  create_dissector_handle(dissect_sbas_l1_mt7,  proto_sbas_l1));
     dissector_add_uint("sbas_l1.mt", 17, create_dissector_handle(dissect_sbas_l1_mt17, proto_sbas_l1));
+    dissector_add_uint("sbas_l1.mt", 18, create_dissector_handle(dissect_sbas_l1_mt18, proto_sbas_l1));
     dissector_add_uint("sbas_l1.mt", 24, create_dissector_handle(dissect_sbas_l1_mt24, proto_sbas_l1));
     dissector_add_uint("sbas_l1.mt", 25, create_dissector_handle(dissect_sbas_l1_mt25, proto_sbas_l1));
     dissector_add_uint("sbas_l1.mt", 26, create_dissector_handle(dissect_sbas_l1_mt26, proto_sbas_l1));

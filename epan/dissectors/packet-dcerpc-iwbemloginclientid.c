@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -58,7 +59,7 @@ static int IWbemLoginClientID_dissect_element_SetClientInfo_orpcthat_(tvbuff_t *
 	#include "packet-dcom.h"
 /* SetClientInfo */
 static int
-IWbemLoginClientID_dissect_element_SetClientInfo_orpcthis(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+IWbemLoginClientID_dissect_element_SetClientInfo_orpcthis(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	proto_item *sub_item;
 	proto_tree *sub_tree;
@@ -68,7 +69,7 @@ IWbemLoginClientID_dissect_element_SetClientInfo_orpcthis(tvbuff_t *tvb _U_, int
 	return offset;
 }
 static int
-IWbemLoginClientID_dissect_element_SetClientInfo_orpcthat_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+IWbemLoginClientID_dissect_element_SetClientInfo_orpcthat_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	proto_item *sub_item;
 	proto_tree *sub_tree;
@@ -131,13 +132,13 @@ IWbemLoginClientID_dissect_struct_ORPCTHAT(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 IWbemLoginClientID_dissect_iwbemloginclientid_opnum0_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="iwbemloginclientid_opnum0";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_IWbemLoginClientID_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -156,13 +157,13 @@ IWbemLoginClientID_dissect_iwbemloginclientid_opnum0_request(tvbuff_t *tvb _U_, 
 static int
 IWbemLoginClientID_dissect_iwbemloginclientid_opnum1_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="iwbemloginclientid_opnum1";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_IWbemLoginClientID_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -181,13 +182,13 @@ IWbemLoginClientID_dissect_iwbemloginclientid_opnum1_request(tvbuff_t *tvb _U_, 
 static int
 IWbemLoginClientID_dissect_iwbemloginclientid_opnum2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="iwbemloginclientid_opnum2";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_IWbemLoginClientID_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -253,7 +254,7 @@ IWbemLoginClientID_dissect_element_SetClientInfo_orpcthat(tvbuff_t *tvb _U_, int
 static int
 IWbemLoginClientID_dissect_SetClientInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetClientInfo";
 	offset = IWbemLoginClientID_dissect_element_SetClientInfo_orpcthat(tvb, offset, pinfo, tree, di, drep);
@@ -262,7 +263,7 @@ IWbemLoginClientID_dissect_SetClientInfo_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_IWbemLoginClientID_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -311,7 +312,7 @@ void proto_register_dcerpc_IWbemLoginClientID(void)
 	{ &hf_IWbemLoginClientID_opnum,
 	  { "Operation", "IWbemLoginClientID.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_IWbemLoginClientID_werror,
-	  { "Windows Error", "IWbemLoginClientID.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "IWbemLoginClientID.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 

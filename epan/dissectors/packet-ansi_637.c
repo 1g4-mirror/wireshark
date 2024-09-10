@@ -29,7 +29,9 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/strutil.h>
-#include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <epan/value_string.h>
+#include <wsutil/array.h>
 
 #include "packet-gsm_sms.h"
 #include "packet-ansi_a.h"
@@ -472,7 +474,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     EXACT_DATA_CHECK(len, 6);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f);
     temp += ((temp < 96) ? 2000 : 1900);
@@ -484,7 +486,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f) - 1;
 
@@ -496,7 +498,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f);
 
@@ -507,7 +509,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f);
 
@@ -518,7 +520,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f);
 
@@ -528,7 +530,7 @@ tele_param_timestamp(tvbuff_t *tvb, packet_info *pinfo , proto_tree *tree, unsig
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     temp = (((oct & 0xf0) >> 4) * 10) + (oct & 0x0f);
 
@@ -548,7 +550,7 @@ tele_param_msg_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
     proto_tree_add_item(tree, hf_ansi_637_tele_msg_id, tvb, offset, 3, ENC_BIG_ENDIAN);
 
     proto_tree_add_item(tree, hf_ansi_637_tele_msg_header_ind, tvb, offset, 3, ENC_BIG_ENDIAN);
-    if ((tvb_get_guint8(tvb, offset + 2) & 0x08) == 0x08)
+    if ((tvb_get_uint8(tvb, offset + 2) & 0x08) == 0x08)
     {
         *has_private_data_p = true;
     }
@@ -674,7 +676,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
     while ((required_octs - offset) > 2)
     {
-        record_type = tvb_get_guint8(tvb_out, offset);
+        record_type = tvb_get_uint8(tvb_out, offset);
         subtree_idx = record_type;
 
         switch (record_type)
@@ -685,7 +687,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
         case 0x02: str = "Type 2 Elements"; break;
         }
 
-        record_len = tvb_get_guint8(tvb_out, offset + 1);
+        record_len = tvb_get_uint8(tvb_out, offset + 1);
 
         subtree =
             proto_tree_add_subtree(tree, tvb_out, offset, record_len + 2,
@@ -714,7 +716,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
             break;
 
         case 0x00:
-            encoding = (tvb_get_guint8(tvb_out, offset) & 0xf8) >> 3;
+            encoding = (tvb_get_uint8(tvb_out, offset) & 0xf8) >> 3;
 
             str = val_to_str_const(encoding, ansi_tsb58_encoding_vals, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_char_set, tvb_out, offset, 1,
@@ -747,7 +749,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
                 if ((num_bits % 7) == 0)
                 {
-                    oct2 = tvb_get_guint8(tvb_out, offset + record_len - 1);
+                    oct2 = tvb_get_uint8(tvb_out, offset + record_len - 1);
                     if ((oct2 & 0x7f) == 0)
                     {
                         /*
@@ -776,7 +778,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
             break;
 
         case 0x01:
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_const(oct, cmas_category_strings, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_category, tvb_out, offset, 1,
@@ -786,7 +788,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_const(oct, cmas_response_type_strings, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_response_type, tvb_out, offset, 1,
@@ -796,7 +798,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_const((oct & 0xf0) >> 4, cmas_severity_strings, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_severity, tvb_out, offset, 1,
@@ -812,7 +814,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_const((oct & 0xf0) >> 4, cmas_certainty_strings, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_certainty, tvb_out, offset, 1,
@@ -834,7 +836,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             /*
              * TIA-1149 does not say whether this should be encoded in the same way as IS-637
@@ -849,7 +851,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_const(oct - 1, ansi_tele_month_strings, "Invalid");
 
@@ -876,7 +878,7 @@ tele_param_user_data_cmas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
             offset += 1;
 
-            oct = tvb_get_guint8(tvb_out, offset);
+            oct = tvb_get_uint8(tvb_out, offset);
 
             str = val_to_str_ext_const(oct, &ansi_tsb58_language_ind_vals_ext, "Reserved");
             proto_tree_add_uint_format_value(subtree, hf_ansi_637_tele_cmas_language, tvb_out, offset, 1,
@@ -1162,7 +1164,7 @@ tele_param_timestamp_rel(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
     const char *str = NULL;
     const char *str2 = NULL;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     switch (oct)
     {
@@ -1277,7 +1279,7 @@ tele_param_num_messages(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uns
 
     EXACT_DATA_CHECK(len, 1);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_uint_format_value(tree, hf_ansi_637_tele_num_messages, tvb, offset, 1,
         ((oct & 0xf0) >> 4) * 10 + (oct & 0x0f),
@@ -1310,7 +1312,7 @@ tele_param_lang_ind(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigne
 
     EXACT_DATA_CHECK(len, 1);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     str = val_to_str_ext_const(oct, &ansi_tsb58_language_ind_vals_ext, "Reserved");
     proto_tree_add_uint_format_value(tree, hf_ansi_637_tele_language, tvb, offset, 1,
@@ -1332,7 +1334,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
 
     proto_tree_add_item(tree, hf_ansi_637_tele_cb_num_digit_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     if (oct & 0x80)
     {
@@ -1343,7 +1345,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
 
         proto_tree_add_item(tree, hf_ansi_637_tele_cb_num_num_fields, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-        num_fields = tvb_get_guint8(tvb, offset);
+        num_fields = tvb_get_uint8(tvb, offset);
 
         if (num_fields == 0) return;
 
@@ -1362,7 +1364,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
     {
         offset += 1;
 
-        oct2 = tvb_get_guint8(tvb, offset);
+        oct2 = tvb_get_uint8(tvb, offset);
         num_fields = ((oct & 0x7f) << 1) | ((oct2 & 0x80) >> 7);
 
         proto_tree_add_item(tree, hf_ansi_637_tele_cb_num_num_fields07f8, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -1390,7 +1392,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
                 i += 1;
                 if (i >= num_fields) break;
 
-                oct2 = tvb_get_guint8(tvb, offset);
+                oct2 = tvb_get_uint8(tvb, offset);
                 offset += 1;
 
                 ansi_637_bigbuf[i] = air_digits[((oct & 0x07) << 1) | ((oct2 & 0x80) >> 7)];
@@ -1775,7 +1777,7 @@ tele_param_msg_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig
     proto_tree_add_item(tree, hf_ansi_637_tele_msg_status, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_ansi_637_tele_msg_status_error_class, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     msg_status_code = (oct & 0x3f);
 
@@ -1990,7 +1992,7 @@ trans_param_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigne
 
     SHORT_DATA_CHECK(len, 2);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_item(tree, hf_ansi_637_trans_addr_param_digit_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_ansi_637_trans_addr_param_number_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2070,7 +2072,7 @@ trans_param_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigne
         proto_tree_add_bits_ret_val(tree, hf_ansi_637_trans_addr_param_num_fields, tvb, (offset*8)+2, 8, &num_fields, ENC_BIG_ENDIAN);
         offset += 1;
 
-        oct = tvb_get_guint8(tvb, offset);
+        oct = tvb_get_uint8(tvb, offset);
         odd = false;
 
         if (num_fields > 0)
@@ -2094,7 +2096,7 @@ trans_param_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigne
                 i += 1;
                 if (i >= num_fields) break;
 
-                oct2 = tvb_get_guint8(tvb, offset);
+                oct2 = tvb_get_uint8(tvb, offset);
                 offset += 1;
 
                 ansi_637_bigbuf[i] =
@@ -2166,7 +2168,7 @@ trans_param_bearer_reply_opt(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
     proto_tree_add_item(tree, hf_ansi_637_reserved_bits_8_03, tvb, offset, 1, ENC_BIG_ENDIAN);
 
     snprintf(add_string, string_len, " - Reply Sequence Number (%u)",
-        (tvb_get_guint8(tvb, offset) & 0xfc) >> 2);
+        (tvb_get_uint8(tvb, offset) & 0xfc) >> 2);
 }
 
 static const value_string trans_param_cause_codes_error_class_strings[] = {
@@ -2186,7 +2188,7 @@ trans_param_cause_codes(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
     proto_tree_add_item(tree, hf_ansi_637_trans_cause_codes_seq_num, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_ansi_637_trans_cause_codes_error_class, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     snprintf(add_string, string_len, " - Reply Sequence Number (%u)", (oct & 0xfc) >> 2);
 
@@ -2196,7 +2198,7 @@ trans_param_cause_codes(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
     offset += 1;
 
-    oct = tvb_get_guint8(tvb, offset);
+    oct = tvb_get_uint8(tvb, offset);
 
     switch (oct)
     {
@@ -2296,7 +2298,7 @@ dissect_ansi_637_tele_param(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     curr_offset = *offset;
 
-    oct = tvb_get_guint8(tvb, curr_offset);
+    oct = tvb_get_uint8(tvb, curr_offset);
     str = try_val_to_str_idx_ext((uint32_t) oct, &ansi_tele_param_strings_ext, &idx);
 
     if (NULL == str)
@@ -2315,7 +2317,7 @@ dissect_ansi_637_tele_param(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     curr_offset += 1;
 
-    len = tvb_get_guint8(tvb, curr_offset);
+    len = tvb_get_uint8(tvb, curr_offset);
 
     proto_item_set_len(item, (curr_offset - *offset) + len + 1);
 
@@ -2498,7 +2500,7 @@ dissect_ansi_637_trans_param(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
     curr_offset = *offset;
 
-    oct = tvb_get_guint8(tvb, curr_offset);
+    oct = tvb_get_uint8(tvb, curr_offset);
     str = try_val_to_str_idx((uint32_t) oct, ansi_trans_param_strings, &idx);
 
     if (NULL == str)
@@ -2515,7 +2517,7 @@ dissect_ansi_637_trans_param(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
     curr_offset += 1;
 
-    len = tvb_get_guint8(tvb, curr_offset);
+    len = tvb_get_uint8(tvb, curr_offset);
 
     proto_item_set_len(item, (curr_offset - *offset) + len + 1);
 
@@ -2580,7 +2582,7 @@ dissect_ansi_637_trans(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         /*
          * create the ansi_637 protocol tree
          */
-        oct = tvb_get_guint8(tvb, 0);
+        oct = tvb_get_uint8(tvb, 0);
 
         str = try_val_to_str_idx(oct, ansi_trans_msg_type_strings, &idx);
 

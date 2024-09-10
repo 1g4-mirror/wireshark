@@ -17,6 +17,7 @@
 #include <epan/oids.h>
 #include <epan/osi-utils.h>
 #include <epan/to_str.h>
+#include <wsutil/array.h>
 
 static void
 bytes_fvalue_new(fvalue_t *fv)

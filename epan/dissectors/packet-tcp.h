@@ -115,9 +115,10 @@ struct tcpinfo {
 	uint32_t seq;             /* Sequence number of first byte in the data */
 	uint32_t nxtseq;          /* Sequence number of first byte after data */
 	uint32_t lastackseq;      /* Sequence number of last ack */
-	bool    is_reassembled;  /* This is reassembled data. */
+	bool    is_reassembled;   /* This is reassembled data. */
 	uint16_t flags;           /* TCP flags */
 	uint16_t urgent_pointer;  /* Urgent pointer value for the current packet. */
+	uint32_t stream;          /* Stream id passed to export PDU */
 };
 
 /*
@@ -238,7 +239,7 @@ typedef struct _mptcp_meta_flow_t {
 
 	uint8_t static_flags;	/* remember which fields are set */
 
-	/* flags exchanged between hosts during 3WHS. Gives checksum/extensiblity/hmac information */
+	/* flags exchanged between hosts during 3WHS. Gives checksum/extensibility/hmac information */
 	uint8_t flags;
 	uint64_t base_dsn;	/* first data seq number (used by relative sequence numbers) seen. */
 	uint64_t nextseq;	/* highest seen nextseq */
@@ -483,7 +484,6 @@ struct tcp_analysis {
 	 * help determine which dissector to call
 	 */
 	uint16_t server_port;
-
 	/* Set when the client sends a SYN with data and the cookie in the Fast Open
 	 * option.
 	 */

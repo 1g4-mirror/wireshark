@@ -21,6 +21,10 @@
 */
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 #include "wimax_tlv.h"
 #include "wimax_mac.h"
 #include "wimax_utils.h"
@@ -234,22 +238,22 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 		offset++;
 
 		/* get the ranging backoff start */
-		ucd_ranging_backoff_start = tvb_get_guint8(tvb, offset);
+		ucd_ranging_backoff_start = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint_format_value(ucd_tree, hf_ucd_ranging_backoff_start, tvb, offset, 1, (1 << ucd_ranging_backoff_start), "2^%u = %u", ucd_ranging_backoff_start, (1 << ucd_ranging_backoff_start));
 		offset++;
 
 		/* get the ranging backoff end */
-		ucd_ranging_backoff_end = tvb_get_guint8(tvb, offset);
+		ucd_ranging_backoff_end = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint_format_value(ucd_tree, hf_ucd_ranging_backoff_end, tvb, offset, 1, (1 << ucd_ranging_backoff_end), "2^%u = %u", ucd_ranging_backoff_end, (1 << ucd_ranging_backoff_end));
 		offset++;
 
 		/* get the request backoff start */
-		ucd_request_backoff_start = tvb_get_guint8(tvb, offset);
+		ucd_request_backoff_start = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint_format_value(ucd_tree, hf_ucd_request_backoff_start, tvb, offset, 1, (1 << ucd_request_backoff_start), "2^%u = %u", ucd_request_backoff_start, (1 << ucd_request_backoff_start));
 		offset++;
 
 		/* get the request backoff end */
-		ucd_request_backoff_end = tvb_get_guint8(tvb, offset);
+		ucd_request_backoff_end = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint_format_value(ucd_tree, hf_ucd_request_backoff_end, tvb, offset, 1, (1 << ucd_request_backoff_end), "2^%u = %u", ucd_request_backoff_end, (1 << ucd_request_backoff_end));
 		offset++;
 
@@ -330,7 +334,7 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case UCD_UPLINK_BURST_PROFILE:
 				{
 					/* get the UIUC */
-					ul_burst_uiuc = tvb_get_guint8(tvb, offset) & 0x0F;
+					ul_burst_uiuc = tvb_get_uint8(tvb, offset) & 0x0F;
 					/* add TLV subtree */
 					proto_str = wmem_strdup_printf(pinfo->pool, "Uplink Burst Profile (UIUC = %u)", ul_burst_uiuc);
 					tlv_tree = add_protocol_subtree(&tlv_info, ett_mac_mgmt_msg_ucd_decoder, ucd_tree, proto_mac_mgmt_msg_ucd_decoder, tvb, offset-tlv_value_offset, tlv_len, proto_str);
@@ -405,14 +409,14 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case UCD_TLV_T_7_HO_RANGING_START:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_ho_ranging_start, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_ho_ranging_start, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
 				case UCD_TLV_T_8_RANGING_HO_END:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_ho_ranging_end, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_ho_ranging_end, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
@@ -473,7 +477,7 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				}
 				case UCD_TLV_T_176_SIZE_OF_CQICH_ID_FIELD:
 				{
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					cqich_id_size = 0;	/* Default is 0 */
 					if (utemp && utemp < 8) {
 					    /* Set for CQICH_Alloc_IE */
@@ -561,28 +565,28 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case UCD_TLV_T_198_INTIAL_RANGING_BACKOFF_START:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_initial_range_backoff_start, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_initial_range_backoff_start, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
 				case UCD_TLV_T_199_INITIAL_RANGING_BACKOFF_END:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_initial_range_backoff_end, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_initial_range_backoff_end, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
 				case UCD_TLV_T_200_BANDWIDTH_REQUESET_BACKOFF_START:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_bandwidth_backoff_start, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_bandwidth_backoff_start, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
 				case UCD_TLV_T_201_BANDWIDTH_REQUEST_BACKOFF_END:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_bandwidth_backoff_end, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_bandwidth_backoff_end, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
@@ -609,7 +613,7 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case UCD_PERIODIC_RANGING_BACKOFF_START:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_periodic_ranging_backoff_start, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_periodic_ranging_backoff_start, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 
@@ -617,7 +621,7 @@ static int dissect_mac_mgmt_msg_ucd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case UCD_PERIODIC_RANGING_BACKOFF_END:
 				{
 					tlv_tree = add_tlv_subtree_no_item(&tlv_info, ucd_tree, hf_ucd_periodic_ranging_backoff_end, tvb, offset-tlv_value_offset);
-					utemp = tvb_get_guint8(tvb, offset);
+					utemp = tvb_get_uint8(tvb, offset);
 					proto_tree_add_uint_format_value(tlv_tree, hf_ucd_periodic_ranging_backoff_end, tvb, offset, tvb_len, utemp, "2^%u = %u", utemp, (1 << utemp));
 					break;
 				}
@@ -681,42 +685,42 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_tlv_t_159_band_amc_allocation_threshold,
 			{
 				"Band AMC Allocation Threshold", "wmx.ucd.band_amc.allocation_threshold",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_db, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_db), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_161_band_amc_allocation_timer,
 			{
 				"Band AMC Allocation Timer", "wmx.ucd.band_amc.allocation_timer",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_160_band_amc_release_threshold,
 			{
 				"Band AMC Release Threshold", "wmx.ucd.band_amc.release_threshold",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_db, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_db), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_162_band_amc_release_timer,
 			{
 				"Band AMC Release Timer", "wmx.ucd.band_amc.release_timer",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_164_band_amc_retry_timer,
 			{
 				"Band AMC Retry Timer", "wmx.ucd.band_amc.retry_timer",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_163_band_status_report_max_period,
 			{
 				"Band Status Report MAC Period", "wmx.ucd.band_status.report_max_period",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{
@@ -737,7 +741,7 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_burst_ranging_data_ratio,
 			{
 				"Ranging Data Ratio", "wmx.ucd.burst.ranging_data_ratio",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_db, 0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_db), 0, NULL, HFILL
 			}
 		},
 		{
@@ -757,7 +761,7 @@ void proto_register_mac_mgmt_msg_ucd(void)
 #if 0
 		{
 			&hf_ucd_burst_power_boost,
-			{"Focused Contention Power Boost", "wmx.ucd.burst.power_boost", FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_db, 0, NULL, HFILL}
+			{"Focused Contention Power Boost", "wmx.ucd.burst.power_boost", FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_db), 0, NULL, HFILL}
 		},
 		{
 			&hf_ucd_burst_tcs_enable,
@@ -768,21 +772,21 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_bw_req_size,
 			{
 				"Bandwidth Request Opportunity Size", "wmx.ucd.bw_req_size",
-				FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ps, 0, NULL, HFILL
+				FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ps), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_tlv_t_172_cqich_band_amc_transition_delay,
 			{
 				"CQICH Band AMC-Transition Delay", "wmx.ucd.cqich_band_amc_transition_delay",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{
 			&hf_ucd_freq,
 			{
 				"Frequency", "wmx.ucd.frequency",
-				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_khz, 0, NULL, HFILL
+				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_khz), 0, NULL, HFILL
 			}
 		},
 		{
@@ -796,7 +800,7 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_tlv_t_171_harq_ack_delay_dl_burst,
 			{
 				"HARQ ACK Delay for DL Burst", "wmx.ucd.harq_ack_delay_dl_burst",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_offset, 0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_offset), 0, NULL, HFILL
 			}
 		},
 		{
@@ -917,7 +921,7 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_ranging_req_size,
 			{
 				"Ranging Request Opportunity Size", "wmx.ucd.ranging_req_size",
-				FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_db, 0, NULL, HFILL
+				FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_db), 0, NULL, HFILL
 			}
 		},
 		{
@@ -931,7 +935,7 @@ void proto_register_mac_mgmt_msg_ucd(void)
 			&hf_ucd_tlv_t_170_safety_channel_retry_timer,
 			{
 				"Safety Channel Release Timer", "wmx.ucd.safety_channel_release_timer",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_frame_frames, 0, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0, NULL, HFILL
 			}
 		},
 		{

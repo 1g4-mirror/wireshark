@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <wsutil/filesystem.h>
-#include <epan/address.h>
 #include <epan/addr_resolv.h>
 #include <epan/oids.h>
 #include <epan/maxmind_db.h>
@@ -35,11 +34,11 @@
 #include <epan/column.h>
 #include <epan/decode_as.h>
 #include <capture_opts.h>
-#include "print.h"
 #include <wsutil/file_util.h>
 #include <wsutil/report_message.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
+#include <wsutil/array.h>
 
 #include <epan/prefs-int.h>
 #include <epan/uat-int.h>
@@ -115,8 +114,9 @@ static const enum_val_t gui_version_placement_type[] = {
 };
 
 static const enum_val_t gui_fileopen_style[] = {
-    {"LAST_OPENED", "LAST_OPENED", 0},
-    {"SPECIFIED", "SPECIFIED", 1},
+    {"LAST_OPENED", "LAST_OPENED", FO_STYLE_LAST_OPENED},
+    {"SPECIFIED", "SPECIFIED", FO_STYLE_SPECIFIED},
+    {"CWD", "CWD", FO_STYLE_CWD},
     {NULL, NULL, -1}
 };
 
@@ -1308,13 +1308,10 @@ bool prefs_get_bool_value(pref_t *pref, pref_source_t source)
     {
     case pref_default:
         return pref->default_val.boolval;
-        break;
     case pref_stashed:
         return pref->stashed_val.boolval;
-        break;
     case pref_current:
         return *pref->varp.boolp;
-        break;
     default:
         ws_assert_not_reached();
         break;
@@ -1391,13 +1388,10 @@ int prefs_get_enum_value(pref_t *pref, pref_source_t source)
     {
     case pref_default:
         return pref->default_val.enumval;
-        break;
     case pref_stashed:
         return pref->stashed_val.enumval;
-        break;
     case pref_current:
         return *pref->varp.enump;
-        break;
     default:
         ws_assert_not_reached();
         break;
@@ -1765,10 +1759,8 @@ range_t* prefs_get_range_value_real(pref_t *pref, pref_source_t source)
         return pref->default_val.range;
     case pref_stashed:
         return pref->stashed_val.range;
-        break;
     case pref_current:
         return *pref->varp.range;
-        break;
     default:
         ws_assert_not_reached();
         break;
@@ -1906,10 +1898,8 @@ color_t* prefs_get_color_value(pref_t *pref, pref_source_t source)
         return &pref->default_val.color;
     case pref_stashed:
         return &pref->stashed_val.color;
-        break;
     case pref_current:
         return pref->varp.colorp;
-        break;
     default:
         ws_assert_not_reached();
         break;
@@ -5109,13 +5099,10 @@ unsigned prefs_get_uint_value_real(pref_t *pref, pref_source_t source)
     {
     case pref_default:
         return pref->default_val.uint;
-        break;
     case pref_stashed:
         return pref->stashed_val.uint;
-        break;
     case pref_current:
         return *pref->varp.uint;
-        break;
     default:
         ws_assert_not_reached();
         break;

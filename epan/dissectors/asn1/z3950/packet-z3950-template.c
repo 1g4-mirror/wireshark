@@ -36,6 +36,7 @@
 #include <epan/proto_data.h>
 #include <wsutil/str_util.h>
 
+
 #include <string.h>
 
 #include "packet-ber.h"
@@ -1588,7 +1589,7 @@ dissect_marc_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void * 
                 proto_tree_add_item(field_tree, hf_marc_field_subfield_tag,
                         tvb, offset, 1, ENC_ASCII);
                 offset += 1;
-                next_subfield = tvb_find_guint8(tvb, offset, next_offset - offset,
+                next_subfield = tvb_find_uint8(tvb, offset, next_offset - offset,
                                                 MARC_SUBFIELD_INDICATOR);
                 if (next_subfield >= 0) {
                     proto_tree_add_item(field_tree, hf_marc_field_subfield,

@@ -21,6 +21,9 @@
 */
 
 #include <epan/packet.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 #include "wimax_tlv.h"
 #include "wimax_mac.h"
 #include "wimax_utils.h"
@@ -383,7 +386,7 @@ static int dissect_mac_mgmt_msg_dcd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				case DCD_DOWNLINK_BURST_PROFILE:
 				{	/* Downlink Burst Profile TLV (table 363)*/
 					/* get the DIUC */
-					dl_burst_diuc = (tvb_get_guint8(tvb, offset) & 0x0F);
+					dl_burst_diuc = (tvb_get_uint8(tvb, offset) & 0x0F);
 					/* display TLV info */
 					/* add TLV subtree */
 					proto_str = wmem_strdup_printf(pinfo->pool, "Downlink_Burst_Profile (DIUC=%u)", dl_burst_diuc);
@@ -562,7 +565,7 @@ static int dissect_mac_mgmt_msg_dcd_decoder(tvbuff_t *tvb, packet_info *pinfo, p
 				{
 					tlv_item = add_tlv_subtree(&tlv_info, dcd_tree, hf_dcd_tlv_t_34_dl_region_definition, tvb, offset-tlv_value_offset, ENC_NA);
 					tlv_tree = proto_item_add_subtree(tlv_item, ett_mac_mgmt_msg_dcd_decoder);
-					dl_num_regions = tvb_get_guint8(tvb, offset);
+					dl_num_regions = tvb_get_uint8(tvb, offset);
 					proto_tree_add_item(tlv_tree, hf_dcd_tlv_t_34_dl_region_definition_num_region, tvb, offset, 1, ENC_BIG_ENDIAN);
 					proto_tree_add_item(tlv_tree, hf_dcd_tlv_t_34_dl_region_definition_reserved, tvb, offset, 1, ENC_BIG_ENDIAN);
 					tlv_offset = offset;
@@ -725,21 +728,21 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_tlv_t_33_asr_l,
 			{
 				"ASR Switching Period (L)", "wmx.dcd.asr.l",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_frames, 0x0f, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0x0f, NULL, HFILL
 			}
 		},
 			{
 			&hf_dcd_tlv_t_33_asr_m,
 			{
 				"ASR Slot Length (M)", "wmx.dcd.asr.m",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_frames, 0xf0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_frames), 0xf0, NULL, HFILL
 			}
 		},
 		{
 			&hf_dcd_bs_eirp,
 			{
 				"BS EIRP", "wmx.dcd.bs_eirp",
-				FT_INT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_dbm, 0x00, NULL, HFILL
+				FT_INT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_dbm), 0x00, NULL, HFILL
 			}
 		},
 		{
@@ -790,7 +793,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_burst_freq,
 			{
 				"Frequency", "wmx.dcd.burst.freq",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_khz, 0x00, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_khz), 0x00, NULL, HFILL
 			}
 		},
 #if 0
@@ -933,7 +936,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_eirxp,
 			{
 				"EIRXP (IR, max)", "wmx.dcd.eirxp",
-				FT_INT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_dbm, 0x00, NULL, HFILL
+				FT_INT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_dbm), 0x00, NULL, HFILL
 			}
 		},
 #endif
@@ -962,14 +965,14 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_frequency,
 			{
 				"Downlink Center Frequency", "wmx.dcd.frequency",
-				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_khz, 0x00, NULL, HFILL
+				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_khz), 0x00, NULL, HFILL
 			}
 		},
 			{
 			&hf_dcd_tlv_t_31_h_add_threshold,
 			{
 				"H_add Threshold", "wmx.dcd.h_add_threshold",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_db, 0x0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_db), 0x0, NULL, HFILL
 			}
 		},
 #ifdef WIMAX_16D_2004
@@ -977,7 +980,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_h_arq_ack_delay_dl,
 			{
 				"H-ARQ ACK Delay for DL Burst", "wmx.dcd.h_arq_ack_delay_dl_burst",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_offset, 0x00, "", HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_offset), 0x00, "", HFILL
 			}
 		},
 #else
@@ -985,7 +988,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_h_arq_ack_delay_ul,
 			{
 				"H-ARQ ACK Delay for UL Burst", "wmx.dcd.h_arq_ack_delay_ul_burst",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_frame_offset, 0x00, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_frame_offset), 0x00, NULL, HFILL
 			}
 		},
 #endif
@@ -993,7 +996,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_tlv_t_32_h_delete_threshold,
 			{
 				"H_delete Threshold", "wmx.dcd.h_delete_threshold",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_db, 0x0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_db), 0x0, NULL, HFILL
 			}
 		},
 			{
@@ -1035,7 +1038,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_tlv_t_51_hysteresis_margin,
 			{
 				"Hysteresis Margin", "wmx.dcd.hysteresis_margin",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_db, 0x0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_db), 0x0, NULL, HFILL
 			}
 		},
 		{
@@ -1127,7 +1130,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_rss,
 			{
 				"RSS (IR, max)", "wmx.dcd.rss",
-				FT_INT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_dbm, 0x00, "", HFILL
+				FT_INT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_dbm), 0x00, "", HFILL
 			}
 		},
 #endif
@@ -1135,7 +1138,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_rtg,
 			{
 				"RTG", "wmx.dcd.rtg",
-				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, &wimax_units_ps, 0x00, NULL, HFILL
+				FT_UINT8, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_ps), 0x00, NULL, HFILL
 			}
 		},
 #ifdef WIMAX_16D_2004
@@ -1158,7 +1161,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_tlv_t_52_time_to_trigger_duration,
 			{
 				"Time to Trigger Duration", "wmx.dcd.time_trigger_duration",
-				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL
+				FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL
 			}
 		},
 			{
@@ -1179,7 +1182,7 @@ void proto_register_mac_mgmt_msg_dcd(void)
 			&hf_dcd_ttg,
 			{
 				"TTG", "wmx.dcd.ttg",
-				FT_UINT16, BASE_HEX|BASE_UNIT_STRING, &wimax_units_ps, 0x00, NULL, HFILL
+				FT_UINT16, BASE_HEX|BASE_UNIT_STRING, UNS(&wimax_units_ps), 0x00, NULL, HFILL
 			}
 		},
 			{

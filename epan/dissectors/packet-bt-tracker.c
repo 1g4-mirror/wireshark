@@ -15,6 +15,7 @@
 #include <epan/conversation.h>
 #include <epan/to_str.h>
 #include <epan/prefs.h>
+#include <epan/unit_strings.h>
 
 void proto_register_bt_tracker(void);
 void proto_reg_handoff_bt_tracker(void);
@@ -181,11 +182,11 @@ dissect_bt_tracker_extension(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *t
   int32_t tot_length;
 
   while (offset < (int)tvb_reported_length(tvb)) {
-    extension_type = tvb_get_guint8(tvb, offset);
+    extension_type = tvb_get_uint8(tvb, offset);
 
     tot_length = 1;
     if (extension_type == EXT_URLDATA) {
-      tot_length += 1 + tvb_get_guint8(tvb, offset + 1);
+      tot_length += 1 + tvb_get_uint8(tvb, offset + 1);
     } else if (extension_type >= EXT_MAX) {
       tot_length = -1;
     }
@@ -565,7 +566,7 @@ proto_register_bt_tracker(void)
     },
     { &hf_bt_tracker_extension_len,
       { "Extension Length", "bt-tracker.extension_len",
-      FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0x0,
+      FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
       NULL, HFILL }
     },
     { &hf_bt_tracker_extension_unknown,

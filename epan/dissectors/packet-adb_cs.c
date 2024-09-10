@@ -103,7 +103,7 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         p_item = proto_tree_add_uint(main_tree, hf_role, tvb, offset, 0, 0x02);
         proto_item_set_generated(p_item);
 
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Client");
+        col_set_str(pinfo->cinfo, COL_INFO, "Client");
 
         if (pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID)
             wireshark_interface_id = pinfo->rec->rec_header.packet_header.interface_id;
@@ -233,7 +233,7 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         }
 
         if (!client_request_service && tvb_reported_length_remaining(tvb, offset) > 0) {
-            col_append_fstr(pinfo->cinfo, COL_INFO, " Unknown service");
+            col_append_str(pinfo->cinfo, COL_INFO, " Unknown service");
             proto_tree_add_item(main_tree, hf_data, tvb, offset, -1, ENC_NA);
         } else if (tvb_reported_length_remaining(tvb, offset) > 0) {
             proto_tree_add_item(main_tree, hf_service, tvb, offset, -1, ENC_NA | ENC_ASCII);
@@ -278,10 +278,10 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         p_item = proto_tree_add_string(main_tree, hf_service, tvb, offset, 0, service);
         proto_item_set_generated(p_item);
 
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Server");
+        col_set_str(pinfo->cinfo, COL_INFO, "Server");
 
         if (!service) {
-            col_append_fstr(pinfo->cinfo, COL_INFO, " Unknown service");
+            col_append_str(pinfo->cinfo, COL_INFO, " Unknown service");
             proto_tree_add_item(main_tree, hf_data, tvb, offset, -1, ENC_NA);
 
             return tvb_captured_length(tvb);
@@ -289,8 +289,8 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
 
         if (response_frame == -1 || response_frame == (int64_t) pinfo->num) {
             proto_tree_add_item(main_tree, hf_status, tvb, offset, 4, ENC_NA | ENC_ASCII);
-            col_append_fstr(pinfo->cinfo, COL_INFO, " Status=%c%c%c%c", tvb_get_guint8(tvb, offset),
-            tvb_get_guint8(tvb, offset + 1), tvb_get_guint8(tvb, offset + 2), tvb_get_guint8(tvb, offset + 3));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " Status=%c%c%c%c", tvb_get_uint8(tvb, offset),
+            tvb_get_uint8(tvb, offset + 1), tvb_get_uint8(tvb, offset + 2), tvb_get_uint8(tvb, offset + 3));
             offset += 4;
 
             if (tvb_memeql(tvb, offset - 4, (const uint8_t *) "FAIL", 4) == 0) {
@@ -342,7 +342,7 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         call_dissector_with_data(adb_service_handle, next_tvb, pinfo, tree, &adb_service_data);
         offset = tvb_captured_length(tvb);
     } else {
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Unknown role");
+        col_set_str(pinfo->cinfo, COL_INFO, "Unknown role");
 
         p_item = proto_tree_add_uint(main_tree, hf_role, tvb, offset, 0, 0x00);
         proto_item_set_generated(p_item);

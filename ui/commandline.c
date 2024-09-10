@@ -579,7 +579,7 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
                 global_commandline_info.jump_backwards = SD_BACKWARD;
                 break;
             case 'g':        /* Go to packet with the given packet number */
-                global_commandline_info.go_to_packet = get_nonzero_guint32(ws_optarg, "go to packet");
+                global_commandline_info.go_to_packet = get_nonzero_uint32(ws_optarg, "go to packet");
                 break;
             case 'J':        /* Jump to the first packet which matches the filter criteria */
                 global_commandline_info.jfilter = ws_optarg;
@@ -845,6 +845,41 @@ void commandline_options_reapply(void) {
         if (errmsg != NULL) {
             g_free(errmsg);
             errmsg = NULL;
+        }
+    }
+}
+
+void commandline_options_apply_extcap(void) {
+    char *errmsg = NULL;
+    GSList *entry = NULL;
+
+    if (prefs.capture_no_extcap)
+        return;
+
+    for (entry = global_commandline_info.user_opts; entry != NULL; entry = g_slist_next(entry)) {
+        if (g_str_has_prefix((char *)entry->data, "extcap.")) {
+            switch (prefs_set_pref(ws_optarg, &errmsg)) {
+                case PREFS_SET_OK:
+                    break;
+                case PREFS_SET_SYNTAX_ERR:
+                    cmdarg_err("Invalid -o flag \"%s\"%s%s", ws_optarg,
+                            errmsg ? ": " : "", errmsg ? errmsg : "");
+                    g_free(errmsg);
+                    exit_application(1);
+                    break;
+                case PREFS_SET_NO_SUCH_PREF:
+                    cmdarg_err("-o flag \"%s\" specifies unknown preference/recent value",
+                               ws_optarg);
+                    exit_application(1);
+                    break;
+                case PREFS_SET_OBSOLETE:
+                    cmdarg_err("-o flag \"%s\" specifies obsolete preference",
+                               ws_optarg);
+                    exit_application(1);
+                    break;
+                default:
+                    ws_assert_not_reached();
+            }
         }
     }
 }

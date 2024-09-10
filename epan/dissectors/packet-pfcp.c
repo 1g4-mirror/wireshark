@@ -28,8 +28,11 @@
 #include <epan/addr_resolv.h> /* Needed for BASE_ENTERPRISES */
 #include <epan/tap.h>
 #include <epan/srt_table.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <proto.h>
 #include <tvbuff.h>
+#include <wsutil/array.h>
 #include "packet-e164.h"
 #include "packet-e212.h"
 #include "packet-ip.h"
@@ -2490,12 +2493,12 @@ decode_pfcp_network_instance(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
     int      name_len;
 
     if (length > 0) {
-        name_len = tvb_get_guint8(tvb, offset);
+        name_len = tvb_get_uint8(tvb, offset);
         if (name_len < 0x41) {
             /* APN */
             uint8_t *apn = NULL;
 
-            name_len = tvb_get_guint8(tvb, offset);
+            name_len = tvb_get_uint8(tvb, offset);
 
             if (name_len < 0x20) {
                 apn = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_APN_STR);
@@ -3862,7 +3865,7 @@ decode_pfcp_fqdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item
     */
     if (length > 0)
     {
-        name_len = tvb_get_guint8(tvb, offset);
+        name_len = tvb_get_uint8(tvb, offset);
         /* NOTE 1: The FQDN field in the IE is not encoded as a dotted string as commonly used in DNS master zone files. */
         if (name_len < 0x40) {
             fqdn = tvb_get_string_enc(pinfo->pool, tvb, offset, length - 1, ENC_APN_STR);
@@ -4622,7 +4625,7 @@ decode_pfcp_urr_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, prot
     * or predefined in the UP function. If set to 0, it indicates that the Rule is dynamically provisioned
     * by the CP Function. If set to 1, it indicates that the Rule is predefined in the UP Function
     */
-    urr_id = tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN);
+    urr_id = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
 
     proto_tree_add_item(tree, hf_pfcp_urr_id_flg, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_pfcp_urr_id, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -5384,7 +5387,7 @@ decode_pfcp_far_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, prot
      * the Rule is dynamically provisioned by the CP Function. If set to 1, it indicates that
      * the Rule is predefined in the UP Function.
      */
-    far_id = tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN);
+    far_id = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
 
     proto_tree_add_item(tree, hf_pfcp_far_id_flg, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_pfcp_far_id, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -5425,7 +5428,7 @@ decode_pfcp_qer_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, prot
     * or predefined in the UP function. If set to 0, it indicates that the Rule is dynamically provisioned
     * by the CP Function. If set to 1, it indicates that the Rule is predefined in the UP Function
     */
-    qer_id = tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN);
+    qer_id = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
 
     proto_tree_add_item(tree, hf_pfcp_qer_id_flg, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_pfcp_qer_id, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -10101,7 +10104,6 @@ pfcp_match_response(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int 
             pcrp->is_request = true;
             wmem_map_insert(pfcp_info->unmatched, pcrp, pcrp);
             return NULL;
-            break;
         case PFCP_MSG_HEARTBEAT_RESPONSE:
         case PFCP_MSG_PFD_MANAGEMENT_RESPONSE:
         case PFCP_MSG_ASSOCIATION_SETUP_RESPONSE:
@@ -10882,7 +10884,7 @@ dissect_pfcp_generic_enterprise_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 static void pfcp_register_generic_ie_dissector(uint16_t enterprise_id, const char* dissector_name, const char* table_name, const char* ui_name, pfcp_generic_ie_t* ies, unsigned num_ies)
 {
     // Register a tree-type for each IE and store it in the ie-struct
-    int** ie_refs = g_alloca(sizeof(int*) * num_ies);
+    int** ie_refs = (int** )wmem_alloc(wmem_epan_scope(), (sizeof(int*) * num_ies));
     for (unsigned i = 0; i < num_ies; i++) {
         ies[i].ett = -1;
         ie_refs[i] = &ies[i].ett;
@@ -11027,7 +11029,7 @@ dissect_pfcp_message(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree)
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "PFCP");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    message_type = tvb_get_guint8(tvb, 1);
+    message_type = tvb_get_uint8(tvb, 1);
     col_set_str(pinfo->cinfo, COL_INFO, val_to_str_ext_const(message_type, &pfcp_message_type_ext, "Unknown"));
 
     args = wmem_new0(pinfo->pool, pfcp_session_args_t);
@@ -11079,7 +11081,7 @@ dissect_pfcp_message(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree)
     offset += 1;
 
     /* Octet 2 Message Type */
-    pfcp_hdr->message = tvb_get_guint8(tvb, offset);
+    pfcp_hdr->message = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(sub_tree, hf_pfcp_msg_type, tvb, offset, 1, pfcp_hdr->message);
     offset += 1;
 
@@ -11155,10 +11157,10 @@ dissect_pfcp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void *data 
     {
         /* The first octet of header, Bit 3 represents the "FO" (Follow On) flag. */
         /* If the "FO" flag is set to "1", then another PFCP message follows in the UDP/IP packet */
-        bool follow_on = (tvb_get_guint8(tvb, offset) & 0x04);
+        bool follow_on = (tvb_get_uint8(tvb, offset) & 0x04);
 
         /* length of the message in octets plus the excluded mandatory part of the PFCP header (the first 4 octets) */
-        uint16_t message_length = (tvb_get_guint16(tvb, (offset + 2), 0) + 4);
+        uint16_t message_length = (tvb_get_uint16(tvb, (offset + 2), 0) + 4);
 
         tvbuff_t *message_tvb = tvb_new_subset_length(tvb, offset, message_length);
         offset += dissect_pfcp_message(message_tvb, pinfo, tree);
@@ -12079,7 +12081,7 @@ static int dissect_pfcp_nokia_detailed_statistics(tvbuff_t *tvb, packet_info *pi
 
            uint64_t octets;
            it = proto_tree_add_item_ret_uint64(tree, hf_pfcp_nokia_detailed_stats_octets, tvb, offset, len, ENC_BIG_ENDIAN, &octets);
-           proto_item_set_text(it, "%s: %" G_GINT64_MODIFIER "u", counter_name, octets);
+           proto_item_set_text(it, "%s: %" PRIu64, counter_name, octets);
 
            num++;
            offset += len;
@@ -14755,7 +14757,7 @@ proto_register_pfcp(void)
         },
         { &hf_pfcp_user_plane_inactivity_timer,
         { "User Plane Inactivity Timer", "pfcp.user_plane_inactivity_time",
-            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
             NULL, HFILL }
         },
 
@@ -15112,7 +15114,7 @@ proto_register_pfcp(void)
 
         { &hf_pfcp_ethernet_inactivity_timer,
         { "Ethernet Inactivity Timer", "pfcp.ethernet",
-            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
             NULL, HFILL }
         },
 
@@ -15331,7 +15333,7 @@ proto_register_pfcp(void)
 
         { &hf_pfcp_validity_time_value,
         { "Validity Time value", "pfcp.validity_time_value",
-            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0x0,
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0x0,
             NULL, HFILL }
         },
         { &hf_pfcp_validity_time_str,

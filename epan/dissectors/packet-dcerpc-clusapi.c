@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -5693,7 +5694,7 @@ clusapi_dissect_element_CloseCluster_Cluster_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_CloseCluster_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseCluster";
 	offset = clusapi_dissect_element_CloseCluster_Cluster(tvb, offset, pinfo, tree, di, drep);
@@ -5702,7 +5703,7 @@ clusapi_dissect_CloseCluster_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5759,7 +5760,7 @@ clusapi_dissect_element_SetClusterName_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_SetClusterName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetClusterName";
 	offset = clusapi_dissect_element_SetClusterName_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -5768,7 +5769,7 @@ clusapi_dissect_SetClusterName_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5844,7 +5845,7 @@ clusapi_dissect_element_GetClusterName_NodeName__(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_GetClusterName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetClusterName";
 	offset = clusapi_dissect_element_GetClusterName_ClusterName(tvb, offset, pinfo, tree, di, drep);
@@ -5856,7 +5857,7 @@ clusapi_dissect_GetClusterName_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5981,7 +5982,7 @@ clusapi_dissect_element_GetClusterVersion_lpszCSDVersion__(tvbuff_t *tvb _U_, in
 static int
 clusapi_dissect_GetClusterVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetClusterVersion";
 	offset = clusapi_dissect_element_GetClusterVersion_lpwMajorVersion(tvb, offset, pinfo, tree, di, drep);
@@ -6002,7 +6003,7 @@ clusapi_dissect_GetClusterVersion_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6110,7 +6111,7 @@ clusapi_dissect_element_GetQuorumResource_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_GetQuorumResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetQuorumResource";
 	offset = clusapi_dissect_element_GetQuorumResource_lpszResourceName(tvb, offset, pinfo, tree, di, drep);
@@ -6128,7 +6129,7 @@ clusapi_dissect_GetQuorumResource_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6201,7 +6202,7 @@ clusapi_dissect_element_SetQuorumResource_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_SetQuorumResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetQuorumResource";
 	offset = clusapi_dissect_element_SetQuorumResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -6210,7 +6211,7 @@ clusapi_dissect_SetQuorumResource_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6285,7 +6286,7 @@ clusapi_dissect_element_CreateEnum_rpc_status_(tvbuff_t *tvb _U_, int offset _U_
 static int
 clusapi_dissect_CreateEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateEnum";
 	offset = clusapi_dissect_element_CreateEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -6297,7 +6298,7 @@ clusapi_dissect_CreateEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6585,7 +6586,7 @@ clusapi_dissect_element_DeleteResource_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_DeleteResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteResource";
 	offset = clusapi_dissect_element_DeleteResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -6594,7 +6595,7 @@ clusapi_dissect_DeleteResource_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6631,7 +6632,7 @@ clusapi_dissect_element_CloseResource_Resource_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_CloseResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseResource";
 	offset = clusapi_dissect_element_CloseResource_Resource(tvb, offset, pinfo, tree, di, drep);
@@ -6640,7 +6641,7 @@ clusapi_dissect_CloseResource_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6759,7 +6760,7 @@ clusapi_dissect_element_GetResourceState_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_GetResourceState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetResourceState";
 	offset = clusapi_dissect_element_GetResourceState_State(tvb, offset, pinfo, tree, di, drep);
@@ -6777,7 +6778,7 @@ clusapi_dissect_GetResourceState_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6843,7 +6844,7 @@ clusapi_dissect_element_SetResourceName_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_SetResourceName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetResourceName";
 	offset = clusapi_dissect_element_SetResourceName_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -6852,7 +6853,7 @@ clusapi_dissect_SetResourceName_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6928,7 +6929,7 @@ clusapi_dissect_element_GetResourceId_rpc_status_(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_GetResourceId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetResourceId";
 	offset = clusapi_dissect_element_GetResourceId_pGuid(tvb, offset, pinfo, tree, di, drep);
@@ -6940,7 +6941,7 @@ clusapi_dissect_GetResourceId_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7014,7 +7015,7 @@ clusapi_dissect_element_GetResourceType_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_GetResourceType_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetResourceType";
 	offset = clusapi_dissect_element_GetResourceType_lpszResourceType(tvb, offset, pinfo, tree, di, drep);
@@ -7026,7 +7027,7 @@ clusapi_dissect_GetResourceType_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7072,7 +7073,7 @@ clusapi_dissect_element_FailResource_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_FailResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="FailResource";
 	offset = clusapi_dissect_element_FailResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7081,7 +7082,7 @@ clusapi_dissect_FailResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7127,7 +7128,7 @@ clusapi_dissect_element_OnlineResource_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_OnlineResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OnlineResource";
 	offset = clusapi_dissect_element_OnlineResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7136,7 +7137,7 @@ clusapi_dissect_OnlineResource_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7182,7 +7183,7 @@ clusapi_dissect_element_OfflineResource_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_OfflineResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OfflineResource";
 	offset = clusapi_dissect_element_OfflineResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7191,7 +7192,7 @@ clusapi_dissect_OfflineResource_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7246,7 +7247,7 @@ clusapi_dissect_element_AddResourceDependency_rpc_status_(tvbuff_t *tvb _U_, int
 static int
 clusapi_dissect_AddResourceDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddResourceDependency";
 	offset = clusapi_dissect_element_AddResourceDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7255,7 +7256,7 @@ clusapi_dissect_AddResourceDependency_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7312,7 +7313,7 @@ clusapi_dissect_element_RemoveResourceDependency_rpc_status_(tvbuff_t *tvb _U_, 
 static int
 clusapi_dissect_RemoveResourceDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveResourceDependency";
 	offset = clusapi_dissect_element_RemoveResourceDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7321,7 +7322,7 @@ clusapi_dissect_RemoveResourceDependency_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7378,7 +7379,7 @@ clusapi_dissect_element_CanResourceBeDependent_rpc_status_(tvbuff_t *tvb _U_, in
 static int
 clusapi_dissect_CanResourceBeDependent_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CanResourceBeDependent";
 	offset = clusapi_dissect_element_CanResourceBeDependent_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7387,7 +7388,7 @@ clusapi_dissect_CanResourceBeDependent_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7469,7 +7470,7 @@ clusapi_dissect_element_CreateResEnum_rpc_status_(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_CreateResEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateResEnum";
 	offset = clusapi_dissect_element_CreateResEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -7481,7 +7482,7 @@ clusapi_dissect_CreateResEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7538,7 +7539,7 @@ clusapi_dissect_element_AddResourceNode_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_AddResourceNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddResourceNode";
 	offset = clusapi_dissect_element_AddResourceNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7547,7 +7548,7 @@ clusapi_dissect_AddResourceNode_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7604,7 +7605,7 @@ clusapi_dissect_element_RemoveResourceNode_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_RemoveResourceNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveResourceNode";
 	offset = clusapi_dissect_element_RemoveResourceNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7613,7 +7614,7 @@ clusapi_dissect_RemoveResourceNode_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7670,7 +7671,7 @@ clusapi_dissect_element_ChangeResourceGroup_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_ChangeResourceGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeResourceGroup";
 	offset = clusapi_dissect_element_ChangeResourceGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7679,7 +7680,7 @@ clusapi_dissect_ChangeResourceGroup_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7796,7 +7797,7 @@ clusapi_dissect_element_CreateResourceType_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_CreateResourceType_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateResourceType";
 	offset = clusapi_dissect_element_CreateResourceType_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7805,7 +7806,7 @@ clusapi_dissect_CreateResourceType_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7870,7 +7871,7 @@ clusapi_dissect_element_DeleteResourceType_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_DeleteResourceType_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteResourceType";
 	offset = clusapi_dissect_element_DeleteResourceType_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -7879,7 +7880,7 @@ clusapi_dissect_DeleteResourceType_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8359,7 +8360,7 @@ clusapi_dissect_element_EnumKey_rpc_status_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 clusapi_dissect_EnumKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumKey";
 	offset = clusapi_dissect_element_EnumKey_KeyName(tvb, offset, pinfo, tree, di, drep);
@@ -8374,7 +8375,7 @@ clusapi_dissect_EnumKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8485,7 +8486,7 @@ clusapi_dissect_element_SetValue_rpc_status_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 clusapi_dissect_SetValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetValue";
 	offset = clusapi_dissect_element_SetValue_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -8494,7 +8495,7 @@ clusapi_dissect_SetValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8568,7 +8569,7 @@ clusapi_dissect_element_DeleteValue_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_DeleteValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteValue";
 	offset = clusapi_dissect_element_DeleteValue_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -8577,7 +8578,7 @@ clusapi_dissect_DeleteValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8713,7 +8714,7 @@ clusapi_dissect_element_QueryValue_rpc_status_(tvbuff_t *tvb _U_, int offset _U_
 static int
 clusapi_dissect_QueryValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryValue";
 	offset = clusapi_dissect_element_QueryValue_lpValueType(tvb, offset, pinfo, tree, di, drep);
@@ -8731,7 +8732,7 @@ clusapi_dissect_QueryValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8801,7 +8802,7 @@ clusapi_dissect_element_DeleteKey_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_DeleteKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteKey";
 	offset = clusapi_dissect_element_DeleteKey_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -8810,7 +8811,7 @@ clusapi_dissect_DeleteKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8971,7 +8972,7 @@ clusapi_dissect_element_EnumValue_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_EnumValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumValue";
 	offset = clusapi_dissect_element_EnumValue_lpValueName(tvb, offset, pinfo, tree, di, drep);
@@ -8995,7 +8996,7 @@ clusapi_dissect_EnumValue_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9036,7 +9037,7 @@ clusapi_dissect_element_CloseKey_pKey_(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 clusapi_dissect_CloseKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseKey";
 	offset = clusapi_dissect_element_CloseKey_pKey(tvb, offset, pinfo, tree, di, drep);
@@ -9045,7 +9046,7 @@ clusapi_dissect_CloseKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9210,7 +9211,7 @@ clusapi_dissect_element_QueryInfoKey_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_QueryInfoKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryInfoKey";
 	offset = clusapi_dissect_element_QueryInfoKey_lpcSubKeys(tvb, offset, pinfo, tree, di, drep);
@@ -9240,7 +9241,7 @@ clusapi_dissect_QueryInfoKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9312,7 +9313,7 @@ clusapi_dissect_element_SetKeySecurity_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_SetKeySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetKeySecurity";
 	offset = clusapi_dissect_element_SetKeySecurity_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -9321,7 +9322,7 @@ clusapi_dissect_SetKeySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9397,7 +9398,7 @@ clusapi_dissect_element_GetKeySecurity_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_GetKeySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetKeySecurity";
 	offset = clusapi_dissect_element_GetKeySecurity_pRpcSecurityDescriptor(tvb, offset, pinfo, tree, di, drep);
@@ -9409,7 +9410,7 @@ clusapi_dissect_GetKeySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9666,7 +9667,7 @@ clusapi_dissect_element_DeleteGroup_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_DeleteGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteGroup";
 	offset = clusapi_dissect_element_DeleteGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -9675,7 +9676,7 @@ clusapi_dissect_DeleteGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9714,7 +9715,7 @@ clusapi_dissect_element_CloseGroup_Group_(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 clusapi_dissect_CloseGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseGroup";
 	offset = clusapi_dissect_element_CloseGroup_Group(tvb, offset, pinfo, tree, di, drep);
@@ -9723,7 +9724,7 @@ clusapi_dissect_CloseGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9814,7 +9815,7 @@ clusapi_dissect_element_GetGroupState_rpc_status_(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_GetGroupState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetGroupState";
 	offset = clusapi_dissect_element_GetGroupState_State(tvb, offset, pinfo, tree, di, drep);
@@ -9829,7 +9830,7 @@ clusapi_dissect_GetGroupState_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9895,7 +9896,7 @@ clusapi_dissect_element_SetGroupName_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_SetGroupName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetGroupName";
 	offset = clusapi_dissect_element_SetGroupName_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -9904,7 +9905,7 @@ clusapi_dissect_SetGroupName_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9980,7 +9981,7 @@ clusapi_dissect_element_GetGroupId_rpc_status_(tvbuff_t *tvb _U_, int offset _U_
 static int
 clusapi_dissect_GetGroupId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetGroupId";
 	offset = clusapi_dissect_element_GetGroupId_pGuid(tvb, offset, pinfo, tree, di, drep);
@@ -9992,7 +9993,7 @@ clusapi_dissect_GetGroupId_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10066,7 +10067,7 @@ clusapi_dissect_element_GetNodeId_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_GetNodeId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNodeId";
 	offset = clusapi_dissect_element_GetNodeId_pGuid(tvb, offset, pinfo, tree, di, drep);
@@ -10078,7 +10079,7 @@ clusapi_dissect_GetNodeId_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10124,7 +10125,7 @@ clusapi_dissect_element_OnlineGroup_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_OnlineGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OnlineGroup";
 	offset = clusapi_dissect_element_OnlineGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10133,7 +10134,7 @@ clusapi_dissect_OnlineGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10179,7 +10180,7 @@ clusapi_dissect_element_OfflineGroup_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_OfflineGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OfflineGroup";
 	offset = clusapi_dissect_element_OfflineGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10188,7 +10189,7 @@ clusapi_dissect_OfflineGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10234,7 +10235,7 @@ clusapi_dissect_element_MoveGroup_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_MoveGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="MoveGroup";
 	offset = clusapi_dissect_element_MoveGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10243,7 +10244,7 @@ clusapi_dissect_MoveGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10298,7 +10299,7 @@ clusapi_dissect_element_MoveGroupToNode_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_MoveGroupToNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="MoveGroupToNode";
 	offset = clusapi_dissect_element_MoveGroupToNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10307,7 +10308,7 @@ clusapi_dissect_MoveGroupToNode_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10389,7 +10390,7 @@ clusapi_dissect_element_CreateGroupResourceEnum_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_CreateGroupResourceEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateGroupResourceEnum";
 	offset = clusapi_dissect_element_CreateGroupResourceEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -10401,7 +10402,7 @@ clusapi_dissect_CreateGroupResourceEnum_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10483,7 +10484,7 @@ clusapi_dissect_element_SetGroupNodeList_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_SetGroupNodeList_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetGroupNodeList";
 	offset = clusapi_dissect_element_SetGroupNodeList_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10492,7 +10493,7 @@ clusapi_dissect_SetGroupNodeList_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10610,7 +10611,7 @@ clusapi_dissect_element_CloseNotify_Notify_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 clusapi_dissect_CloseNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseNotify";
 	offset = clusapi_dissect_element_CloseNotify_Notify(tvb, offset, pinfo, tree, di, drep);
@@ -10619,7 +10620,7 @@ clusapi_dissect_CloseNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10692,7 +10693,7 @@ clusapi_dissect_element_AddNotifyCluster_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_AddNotifyCluster_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyCluster";
 	offset = clusapi_dissect_element_AddNotifyCluster_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -10701,7 +10702,7 @@ clusapi_dissect_AddNotifyCluster_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10797,7 +10798,7 @@ clusapi_dissect_element_AddNotifyNode_rpc_status_(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_AddNotifyNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyNode";
 	offset = clusapi_dissect_element_AddNotifyNode_dwStateSequence(tvb, offset, pinfo, tree, di, drep);
@@ -10809,7 +10810,7 @@ clusapi_dissect_AddNotifyNode_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -10905,7 +10906,7 @@ clusapi_dissect_element_AddNotifyGroup_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_AddNotifyGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyGroup";
 	offset = clusapi_dissect_element_AddNotifyGroup_dwStateSequence(tvb, offset, pinfo, tree, di, drep);
@@ -10917,7 +10918,7 @@ clusapi_dissect_AddNotifyGroup_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11013,7 +11014,7 @@ clusapi_dissect_element_AddNotifyResource_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_AddNotifyResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyResource";
 	offset = clusapi_dissect_element_AddNotifyResource_dwStateSequence(tvb, offset, pinfo, tree, di, drep);
@@ -11025,7 +11026,7 @@ clusapi_dissect_AddNotifyResource_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11113,7 +11114,7 @@ clusapi_dissect_element_AddNotifyKey_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_AddNotifyKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyKey";
 	offset = clusapi_dissect_element_AddNotifyKey_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11122,7 +11123,7 @@ clusapi_dissect_AddNotifyKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11212,7 +11213,7 @@ clusapi_dissect_element_ReAddNotifyNode_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_ReAddNotifyNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReAddNotifyNode";
 	offset = clusapi_dissect_element_ReAddNotifyNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11221,7 +11222,7 @@ clusapi_dissect_ReAddNotifyNode_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11311,7 +11312,7 @@ clusapi_dissect_element_ReAddNotifyGroup_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_ReAddNotifyGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReAddNotifyGroup";
 	offset = clusapi_dissect_element_ReAddNotifyGroup_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11320,7 +11321,7 @@ clusapi_dissect_ReAddNotifyGroup_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11410,7 +11411,7 @@ clusapi_dissect_element_ReAddNotifyResource_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_ReAddNotifyResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReAddNotifyResource";
 	offset = clusapi_dissect_element_ReAddNotifyResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11419,7 +11420,7 @@ clusapi_dissect_ReAddNotifyResource_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11552,7 +11553,7 @@ clusapi_dissect_element_GetNotify_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_GetNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNotify";
 	offset = clusapi_dissect_element_GetNotify_dwNotifyKey(tvb, offset, pinfo, tree, di, drep);
@@ -11573,7 +11574,7 @@ clusapi_dissect_GetNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11709,7 +11710,7 @@ clusapi_dissect_element_CloseNode_Node_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 clusapi_dissect_CloseNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseNode";
 	offset = clusapi_dissect_element_CloseNode_Node(tvb, offset, pinfo, tree, di, drep);
@@ -11718,7 +11719,7 @@ clusapi_dissect_CloseNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11781,7 +11782,7 @@ clusapi_dissect_element_GetNodeState_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_GetNodeState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNodeState";
 	offset = clusapi_dissect_element_GetNodeState_State(tvb, offset, pinfo, tree, di, drep);
@@ -11793,7 +11794,7 @@ clusapi_dissect_GetNodeState_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11839,7 +11840,7 @@ clusapi_dissect_element_PauseNode_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_PauseNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="PauseNode";
 	offset = clusapi_dissect_element_PauseNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11848,7 +11849,7 @@ clusapi_dissect_PauseNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11894,7 +11895,7 @@ clusapi_dissect_element_ResumeNode_rpc_status_(tvbuff_t *tvb _U_, int offset _U_
 static int
 clusapi_dissect_ResumeNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ResumeNode";
 	offset = clusapi_dissect_element_ResumeNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11903,7 +11904,7 @@ clusapi_dissect_ResumeNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -11949,7 +11950,7 @@ clusapi_dissect_element_EvictNode_rpc_status_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_EvictNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EvictNode";
 	offset = clusapi_dissect_element_EvictNode_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -11958,7 +11959,7 @@ clusapi_dissect_EvictNode_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -12124,7 +12125,7 @@ clusapi_dissect_element_NodeResourceControl_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_NodeResourceControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeResourceControl";
 	offset = clusapi_dissect_element_NodeResourceControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -12142,7 +12143,7 @@ clusapi_dissect_NodeResourceControl_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -12309,7 +12310,7 @@ clusapi_dissect_element_ResourceControl_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_ResourceControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ResourceControl";
 	offset = clusapi_dissect_element_ResourceControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -12327,7 +12328,7 @@ clusapi_dissect_ResourceControl_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -12521,7 +12522,7 @@ clusapi_dissect_element_NodeResourceTypeControl_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_NodeResourceTypeControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeResourceTypeControl";
 	offset = clusapi_dissect_element_NodeResourceTypeControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -12539,7 +12540,7 @@ clusapi_dissect_NodeResourceTypeControl_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -12728,7 +12729,7 @@ clusapi_dissect_element_ResourceTypeControl_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_ResourceTypeControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ResourceTypeControl";
 	offset = clusapi_dissect_element_ResourceTypeControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -12746,7 +12747,7 @@ clusapi_dissect_ResourceTypeControl_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -12922,7 +12923,7 @@ clusapi_dissect_element_NodeGroupControl_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_NodeGroupControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeGroupControl";
 	offset = clusapi_dissect_element_NodeGroupControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -12940,7 +12941,7 @@ clusapi_dissect_NodeGroupControl_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13107,7 +13108,7 @@ clusapi_dissect_element_GroupControl_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_GroupControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GroupControl";
 	offset = clusapi_dissect_element_GroupControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -13125,7 +13126,7 @@ clusapi_dissect_GroupControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13299,7 +13300,7 @@ clusapi_dissect_element_NodeNodeControl_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_NodeNodeControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeNodeControl";
 	offset = clusapi_dissect_element_NodeNodeControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -13317,7 +13318,7 @@ clusapi_dissect_NodeNodeControl_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13484,7 +13485,7 @@ clusapi_dissect_element_NodeControl_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_NodeControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeControl";
 	offset = clusapi_dissect_element_NodeControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -13502,7 +13503,7 @@ clusapi_dissect_NodeControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13531,13 +13532,13 @@ clusapi_dissect_NodeControl_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 static int
 clusapi_dissect_Opnum80NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum80NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13671,7 +13672,7 @@ clusapi_dissect_element_CloseNetwork_Network_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_CloseNetwork_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseNetwork";
 	offset = clusapi_dissect_element_CloseNetwork_Network(tvb, offset, pinfo, tree, di, drep);
@@ -13680,7 +13681,7 @@ clusapi_dissect_CloseNetwork_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13743,7 +13744,7 @@ clusapi_dissect_element_GetNetworkState_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_GetNetworkState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNetworkState";
 	offset = clusapi_dissect_element_GetNetworkState_State(tvb, offset, pinfo, tree, di, drep);
@@ -13755,7 +13756,7 @@ clusapi_dissect_GetNetworkState_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13821,7 +13822,7 @@ clusapi_dissect_element_SetNetworkName_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_SetNetworkName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetNetworkName";
 	offset = clusapi_dissect_element_SetNetworkName_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -13830,7 +13831,7 @@ clusapi_dissect_SetNetworkName_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -13912,7 +13913,7 @@ clusapi_dissect_element_CreateNetworkEnum_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_CreateNetworkEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateNetworkEnum";
 	offset = clusapi_dissect_element_CreateNetworkEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -13924,7 +13925,7 @@ clusapi_dissect_CreateNetworkEnum_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14000,7 +14001,7 @@ clusapi_dissect_element_GetNetworkId_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_GetNetworkId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNetworkId";
 	offset = clusapi_dissect_element_GetNetworkId_pGuid(tvb, offset, pinfo, tree, di, drep);
@@ -14012,7 +14013,7 @@ clusapi_dissect_GetNetworkId_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14070,7 +14071,7 @@ clusapi_dissect_element_SetNetworkPriorityOrder_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_SetNetworkPriorityOrder_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetNetworkPriorityOrder";
 	offset = clusapi_dissect_element_SetNetworkPriorityOrder_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -14079,7 +14080,7 @@ clusapi_dissect_SetNetworkPriorityOrder_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14247,7 +14248,7 @@ clusapi_dissect_element_NodeNetworkControl_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_NodeNetworkControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeNetworkControl";
 	offset = clusapi_dissect_element_NodeNetworkControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -14265,7 +14266,7 @@ clusapi_dissect_NodeNetworkControl_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14432,7 +14433,7 @@ clusapi_dissect_element_NetworkControl_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_NetworkControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NetworkControl";
 	offset = clusapi_dissect_element_NetworkControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -14450,7 +14451,7 @@ clusapi_dissect_NetworkControl_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14548,7 +14549,7 @@ clusapi_dissect_element_AddNotifyNetwork_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_AddNotifyNetwork_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyNetwork";
 	offset = clusapi_dissect_element_AddNotifyNetwork_dwStateSequence(tvb, offset, pinfo, tree, di, drep);
@@ -14560,7 +14561,7 @@ clusapi_dissect_AddNotifyNetwork_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14648,7 +14649,7 @@ clusapi_dissect_element_ReAddNotifyNetwork_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_ReAddNotifyNetwork_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReAddNotifyNetwork";
 	offset = clusapi_dissect_element_ReAddNotifyNetwork_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -14657,7 +14658,7 @@ clusapi_dissect_ReAddNotifyNetwork_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14801,7 +14802,7 @@ clusapi_dissect_element_CloseNetInterface_NetInterface_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_CloseNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseNetInterface";
 	offset = clusapi_dissect_element_CloseNetInterface_NetInterface(tvb, offset, pinfo, tree, di, drep);
@@ -14810,7 +14811,7 @@ clusapi_dissect_CloseNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14873,7 +14874,7 @@ clusapi_dissect_element_GetNetInterfaceState_rpc_status_(tvbuff_t *tvb _U_, int 
 static int
 clusapi_dissect_GetNetInterfaceState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNetInterfaceState";
 	offset = clusapi_dissect_element_GetNetInterfaceState_State(tvb, offset, pinfo, tree, di, drep);
@@ -14885,7 +14886,7 @@ clusapi_dissect_GetNetInterfaceState_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -14990,7 +14991,7 @@ clusapi_dissect_element_GetNetInterface_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_GetNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNetInterface";
 	offset = clusapi_dissect_element_GetNetInterface_lppszInterfaceName(tvb, offset, pinfo, tree, di, drep);
@@ -15002,7 +15003,7 @@ clusapi_dissect_GetNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15078,7 +15079,7 @@ clusapi_dissect_element_GetNetInterfaceId_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_GetNetInterfaceId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNetInterfaceId";
 	offset = clusapi_dissect_element_GetNetInterfaceId_pGuid(tvb, offset, pinfo, tree, di, drep);
@@ -15090,7 +15091,7 @@ clusapi_dissect_GetNetInterfaceId_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15256,7 +15257,7 @@ clusapi_dissect_element_NodeNetInterfaceControl_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_NodeNetInterfaceControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeNetInterfaceControl";
 	offset = clusapi_dissect_element_NodeNetInterfaceControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -15274,7 +15275,7 @@ clusapi_dissect_NodeNetInterfaceControl_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15441,7 +15442,7 @@ clusapi_dissect_element_NetInterfaceControl_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_NetInterfaceControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NetInterfaceControl";
 	offset = clusapi_dissect_element_NetInterfaceControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -15459,7 +15460,7 @@ clusapi_dissect_NetInterfaceControl_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15557,7 +15558,7 @@ clusapi_dissect_element_AddNotifyNetInterface_rpc_status_(tvbuff_t *tvb _U_, int
 static int
 clusapi_dissect_AddNotifyNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyNetInterface";
 	offset = clusapi_dissect_element_AddNotifyNetInterface_dwStateSequence(tvb, offset, pinfo, tree, di, drep);
@@ -15569,7 +15570,7 @@ clusapi_dissect_AddNotifyNetInterface_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15657,7 +15658,7 @@ clusapi_dissect_element_ReAddNotifyNetInterface_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_ReAddNotifyNetInterface_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReAddNotifyNetInterface";
 	offset = clusapi_dissect_element_ReAddNotifyNetInterface_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -15666,7 +15667,7 @@ clusapi_dissect_ReAddNotifyNetInterface_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15754,7 +15755,7 @@ clusapi_dissect_element_CreateNodeEnum_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_CreateNodeEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateNodeEnum";
 	offset = clusapi_dissect_element_CreateNodeEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -15766,7 +15767,7 @@ clusapi_dissect_CreateNodeEnum_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -15937,7 +15938,7 @@ clusapi_dissect_element_GetClusterVersion2_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_GetClusterVersion2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetClusterVersion2";
 	offset = clusapi_dissect_element_GetClusterVersion2_lpwMajorVersion(tvb, offset, pinfo, tree, di, drep);
@@ -15964,7 +15965,7 @@ clusapi_dissect_GetClusterVersion2_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16053,7 +16054,7 @@ clusapi_dissect_element_CreateResTypeEnum_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_CreateResTypeEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateResTypeEnum";
 	offset = clusapi_dissect_element_CreateResTypeEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -16065,7 +16066,7 @@ clusapi_dissect_CreateResTypeEnum_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16124,7 +16125,7 @@ clusapi_dissect_element_BackupClusterDatabase_rpc_status_(tvbuff_t *tvb _U_, int
 static int
 clusapi_dissect_BackupClusterDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="BackupClusterDatabase";
 	offset = clusapi_dissect_element_BackupClusterDatabase_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -16133,7 +16134,7 @@ clusapi_dissect_BackupClusterDatabase_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16299,7 +16300,7 @@ clusapi_dissect_element_NodeClusterControl_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_NodeClusterControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeClusterControl";
 	offset = clusapi_dissect_element_NodeClusterControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -16317,7 +16318,7 @@ clusapi_dissect_NodeClusterControl_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16484,7 +16485,7 @@ clusapi_dissect_element_ClusterControl_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_ClusterControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClusterControl";
 	offset = clusapi_dissect_element_ClusterControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -16502,7 +16503,7 @@ clusapi_dissect_ClusterControl_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16539,13 +16540,13 @@ clusapi_dissect_element_UnblockGetNotifyCall_hNotify(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_UnblockGetNotifyCall_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="UnblockGetNotifyCall";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16654,7 +16655,7 @@ clusapi_dissect_element_SetServiceAccountPassword_ExpectedBufferSize_(tvbuff_t *
 static int
 clusapi_dissect_SetServiceAccountPassword_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetServiceAccountPassword";
 	offset = clusapi_dissect_element_SetServiceAccountPassword_ReturnStatusBufferPtr(tvb, offset, pinfo, tree, di, drep);
@@ -16669,7 +16670,7 @@ clusapi_dissect_SetServiceAccountPassword_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16739,7 +16740,7 @@ clusapi_dissect_element_SetResourceDependencyExpression_rpc_status_(tvbuff_t *tv
 static int
 clusapi_dissect_SetResourceDependencyExpression_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetResourceDependencyExpression";
 	offset = clusapi_dissect_element_SetResourceDependencyExpression_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -16748,7 +16749,7 @@ clusapi_dissect_SetResourceDependencyExpression_response(tvbuff_t *tvb _U_, int 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16824,7 +16825,7 @@ clusapi_dissect_element_GetResourceDependencyExpression_rpc_status_(tvbuff_t *tv
 static int
 clusapi_dissect_GetResourceDependencyExpression_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetResourceDependencyExpression";
 	offset = clusapi_dissect_element_GetResourceDependencyExpression_lpszDependencyExpression(tvb, offset, pinfo, tree, di, drep);
@@ -16836,7 +16837,7 @@ clusapi_dissect_GetResourceDependencyExpression_response(tvbuff_t *tvb _U_, int 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16857,13 +16858,13 @@ clusapi_dissect_GetResourceDependencyExpression_request(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_Opnum111NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum111NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -16935,7 +16936,7 @@ clusapi_dissect_element_GetResourceNetworkName_rpc_status_(tvbuff_t *tvb _U_, in
 static int
 clusapi_dissect_GetResourceNetworkName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetResourceNetworkName";
 	offset = clusapi_dissect_element_GetResourceNetworkName_lpszName(tvb, offset, pinfo, tree, di, drep);
@@ -16947,7 +16948,7 @@ clusapi_dissect_GetResourceNetworkName_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -17044,7 +17045,7 @@ clusapi_dissect_element_ExecuteBatch_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_ExecuteBatch_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ExecuteBatch";
 	offset = clusapi_dissect_element_ExecuteBatch_pdwFailedCommand(tvb, offset, pinfo, tree, di, drep);
@@ -17056,7 +17057,7 @@ clusapi_dissect_ExecuteBatch_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -17123,7 +17124,7 @@ clusapi_dissect_element_CreateBatchPort_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_CreateBatchPort_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateBatchPort";
 	offset = clusapi_dissect_element_CreateBatchPort_phBatchPort(tvb, offset, pinfo, tree, di, drep);
@@ -17135,7 +17136,7 @@ clusapi_dissect_CreateBatchPort_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -17214,7 +17215,7 @@ clusapi_dissect_element_GetBatchNotification_lpData___(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_GetBatchNotification_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetBatchNotification";
 	offset = clusapi_dissect_element_GetBatchNotification_cbData(tvb, offset, pinfo, tree, di, drep);
@@ -17226,7 +17227,7 @@ clusapi_dissect_GetBatchNotification_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -17263,7 +17264,7 @@ clusapi_dissect_element_CloseBatchPort_phBatchPort_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_CloseBatchPort_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseBatchPort";
 	offset = clusapi_dissect_element_CloseBatchPort_phBatchPort(tvb, offset, pinfo, tree, di, drep);
@@ -17272,7 +17273,7 @@ clusapi_dissect_CloseBatchPort_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18065,7 +18066,7 @@ clusapi_dissect_element_ChangeCsvState_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_ChangeCsvState_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeCsvState";
 	offset = clusapi_dissect_element_ChangeCsvState_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18074,7 +18075,7 @@ clusapi_dissect_ChangeCsvState_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18190,7 +18191,7 @@ clusapi_dissect_element_CreateNodeEnumEx_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_CreateNodeEnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateNodeEnumEx";
 	offset = clusapi_dissect_element_CreateNodeEnumEx_ReturnIdEnum(tvb, offset, pinfo, tree, di, drep);
@@ -18205,7 +18206,7 @@ clusapi_dissect_CreateNodeEnumEx_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18323,7 +18324,7 @@ clusapi_dissect_element_CreateEnumEx_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_CreateEnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateEnumEx";
 	offset = clusapi_dissect_element_CreateEnumEx_ReturnIdEnum(tvb, offset, pinfo, tree, di, drep);
@@ -18338,7 +18339,7 @@ clusapi_dissect_CreateEnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18406,7 +18407,7 @@ clusapi_dissect_element_PauseNodeEx_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_PauseNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="PauseNodeEx";
 	offset = clusapi_dissect_element_PauseNodeEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18415,7 +18416,7 @@ clusapi_dissect_PauseNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18483,7 +18484,7 @@ clusapi_dissect_element_PauseNodeWithDrainTarget_rpc_status_(tvbuff_t *tvb _U_, 
 static int
 clusapi_dissect_PauseNodeWithDrainTarget_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="PauseNodeWithDrainTarget";
 	offset = clusapi_dissect_element_PauseNodeWithDrainTarget_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18492,7 +18493,7 @@ clusapi_dissect_PauseNodeWithDrainTarget_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18560,7 +18561,7 @@ clusapi_dissect_element_ResumeNodeEx_rpc_status_(tvbuff_t *tvb _U_, int offset _
 static int
 clusapi_dissect_ResumeNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ResumeNodeEx";
 	offset = clusapi_dissect_element_ResumeNodeEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18569,7 +18570,7 @@ clusapi_dissect_ResumeNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18780,7 +18781,7 @@ clusapi_dissect_element_OnlineGroupEx_rpc_status_(tvbuff_t *tvb _U_, int offset 
 static int
 clusapi_dissect_OnlineGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OnlineGroupEx";
 	offset = clusapi_dissect_element_OnlineGroupEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18789,7 +18790,7 @@ clusapi_dissect_OnlineGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18884,7 +18885,7 @@ clusapi_dissect_element_OfflineGroupEx_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_OfflineGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OfflineGroupEx";
 	offset = clusapi_dissect_element_OfflineGroupEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18893,7 +18894,7 @@ clusapi_dissect_OfflineGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -18988,7 +18989,7 @@ clusapi_dissect_element_MoveGroupEx_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_MoveGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="MoveGroupEx";
 	offset = clusapi_dissect_element_MoveGroupEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -18997,7 +18998,7 @@ clusapi_dissect_MoveGroupEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19101,7 +19102,7 @@ clusapi_dissect_element_MoveGroupToNodeEx_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_MoveGroupToNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="MoveGroupToNodeEx";
 	offset = clusapi_dissect_element_MoveGroupToNodeEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -19110,7 +19111,7 @@ clusapi_dissect_MoveGroupToNodeEx_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19173,7 +19174,7 @@ clusapi_dissect_element_CancelClusterGroupOperation_rpc_status_(tvbuff_t *tvb _U
 static int
 clusapi_dissect_CancelClusterGroupOperation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CancelClusterGroupOperation";
 	offset = clusapi_dissect_element_CancelClusterGroupOperation_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -19182,7 +19183,7 @@ clusapi_dissect_CancelClusterGroupOperation_response(tvbuff_t *tvb _U_, int offs
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19273,7 +19274,7 @@ clusapi_dissect_element_OnlineResourceEx_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_OnlineResourceEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OnlineResourceEx";
 	offset = clusapi_dissect_element_OnlineResourceEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -19282,7 +19283,7 @@ clusapi_dissect_OnlineResourceEx_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19377,7 +19378,7 @@ clusapi_dissect_element_OfflineResourceEx_rpc_status_(tvbuff_t *tvb _U_, int off
 static int
 clusapi_dissect_OfflineResourceEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OfflineResourceEx";
 	offset = clusapi_dissect_element_OfflineResourceEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -19386,7 +19387,7 @@ clusapi_dissect_OfflineResourceEx_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19560,7 +19561,7 @@ clusapi_dissect_element_AddNotifyV2_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_AddNotifyV2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyV2";
 	offset = clusapi_dissect_element_AddNotifyV2_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -19569,7 +19570,7 @@ clusapi_dissect_AddNotifyV2_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19658,7 +19659,7 @@ clusapi_dissect_element_GetNotifyV2_dwNumNotifications_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_GetNotifyV2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNotifyV2";
 	offset = clusapi_dissect_element_GetNotifyV2_Notifications(tvb, offset, pinfo, tree, di, drep);
@@ -19670,7 +19671,7 @@ clusapi_dissect_GetNotifyV2_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19774,7 +19775,7 @@ clusapi_dissect_element_QueryAllValues_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_QueryAllValues_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryAllValues";
 	offset = clusapi_dissect_element_QueryAllValues_pcbData(tvb, offset, pinfo, tree, di, drep);
@@ -19789,7 +19790,7 @@ clusapi_dissect_QueryAllValues_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -19923,7 +19924,7 @@ clusapi_dissect_element_StmFindDisk_rpc_status_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_StmFindDisk_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="StmFindDisk";
 	offset = clusapi_dissect_element_StmFindDisk_pDiskId(tvb, offset, pinfo, tree, di, drep);
@@ -19938,7 +19939,7 @@ clusapi_dissect_StmFindDisk_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20112,7 +20113,7 @@ clusapi_dissect_element_ClusterMrr_rpc_status_(tvbuff_t *tvb _U_, int offset _U_
 static int
 clusapi_dissect_ClusterMrr_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClusterMrr";
 	offset = clusapi_dissect_element_ClusterMrr_ppInfo(tvb, offset, pinfo, tree, di, drep);
@@ -20124,7 +20125,7 @@ clusapi_dissect_ClusterMrr_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20277,7 +20278,7 @@ clusapi_dissect_element_CreateGroupEnum_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_CreateGroupEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateGroupEnum";
 	offset = clusapi_dissect_element_CreateGroupEnum_ppResultList(tvb, offset, pinfo, tree, di, drep);
@@ -20289,7 +20290,7 @@ clusapi_dissect_CreateGroupEnum_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20436,7 +20437,7 @@ clusapi_dissect_element_CreateResourceEnum_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_CreateResourceEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateResourceEnum";
 	offset = clusapi_dissect_element_CreateResourceEnum_ppResultList(tvb, offset, pinfo, tree, di, drep);
@@ -20448,7 +20449,7 @@ clusapi_dissect_CreateResourceEnum_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20586,7 +20587,7 @@ clusapi_dissect_element_ExecuteReadBatch_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_ExecuteReadBatch_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ExecuteReadBatch";
 	offset = clusapi_dissect_element_ExecuteReadBatch_cbOutData(tvb, offset, pinfo, tree, di, drep);
@@ -20601,7 +20602,7 @@ clusapi_dissect_ExecuteReadBatch_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20660,7 +20661,7 @@ clusapi_dissect_element_RestartResource_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_RestartResource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RestartResource";
 	offset = clusapi_dissect_element_RestartResource_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -20669,7 +20670,7 @@ clusapi_dissect_RestartResource_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20750,7 +20751,7 @@ clusapi_dissect_element_GetNotifyAsync_dwNumNotifications_(tvbuff_t *tvb _U_, in
 static int
 clusapi_dissect_GetNotifyAsync_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNotifyAsync";
 	offset = clusapi_dissect_element_GetNotifyAsync_Notifications(tvb, offset, pinfo, tree, di, drep);
@@ -20762,7 +20763,7 @@ clusapi_dissect_GetNotifyAsync_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20783,13 +20784,13 @@ clusapi_dissect_GetNotifyAsync_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 clusapi_dissect_Opnum148NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum148NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20808,13 +20809,13 @@ clusapi_dissect_Opnum148NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum149otUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum149otUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20833,13 +20834,13 @@ clusapi_dissect_Opnum149otUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 clusapi_dissect_Opnum150NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum150NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20858,13 +20859,13 @@ clusapi_dissect_Opnum150NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum151NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum151NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20883,13 +20884,13 @@ clusapi_dissect_Opnum151NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum152NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum152NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20908,13 +20909,13 @@ clusapi_dissect_Opnum152NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum153NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum153NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -20933,13 +20934,13 @@ clusapi_dissect_Opnum153NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum154NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum154NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21030,7 +21031,7 @@ clusapi_dissect_element_AddNotifyResourceTypeV2_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_AddNotifyResourceTypeV2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddNotifyResourceTypeV2";
 	offset = clusapi_dissect_element_AddNotifyResourceTypeV2_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21039,7 +21040,7 @@ clusapi_dissect_AddNotifyResourceTypeV2_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21068,13 +21069,13 @@ clusapi_dissect_AddNotifyResourceTypeV2_request(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_Opnum156NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum156NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21211,7 +21212,7 @@ clusapi_dissect_element_ExecuteReadBatchEx_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_ExecuteReadBatchEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ExecuteReadBatchEx";
 	offset = clusapi_dissect_element_ExecuteReadBatchEx_cbOutData(tvb, offset, pinfo, tree, di, drep);
@@ -21226,7 +21227,7 @@ clusapi_dissect_ExecuteReadBatchEx_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21253,13 +21254,13 @@ clusapi_dissect_ExecuteReadBatchEx_request(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 clusapi_dissect_Opnum158NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum158NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21278,13 +21279,13 @@ clusapi_dissect_Opnum158NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum159NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum159NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21303,13 +21304,13 @@ clusapi_dissect_Opnum159NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum160NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum160NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21328,13 +21329,13 @@ clusapi_dissect_Opnum160NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum161NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum161NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21353,13 +21354,13 @@ clusapi_dissect_Opnum161NotUsedOnWire_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 clusapi_dissect_Opnum162NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum162NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21592,7 +21593,7 @@ clusapi_dissect_element_CloseGroupSet_GroupSet_(tvbuff_t *tvb _U_, int offset _U
 static int
 clusapi_dissect_CloseGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseGroupSet";
 	offset = clusapi_dissect_element_CloseGroupSet_GroupSet(tvb, offset, pinfo, tree, di, drep);
@@ -21601,7 +21602,7 @@ clusapi_dissect_CloseGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21647,7 +21648,7 @@ clusapi_dissect_element_DeleteGroupSet_rpc_status_(tvbuff_t *tvb _U_, int offset
 static int
 clusapi_dissect_DeleteGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteGroupSet";
 	offset = clusapi_dissect_element_DeleteGroupSet_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21656,7 +21657,7 @@ clusapi_dissect_DeleteGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21711,7 +21712,7 @@ clusapi_dissect_element_AddGroupToGroupSet_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_AddGroupToGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddGroupToGroupSet";
 	offset = clusapi_dissect_element_AddGroupToGroupSet_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21720,7 +21721,7 @@ clusapi_dissect_AddGroupToGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21768,7 +21769,7 @@ clusapi_dissect_element_RemoveGroupFromGroupSet_rpc_status_(tvbuff_t *tvb _U_, i
 static int
 clusapi_dissect_RemoveGroupFromGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveGroupFromGroupSet";
 	offset = clusapi_dissect_element_RemoveGroupFromGroupSet_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21777,7 +21778,7 @@ clusapi_dissect_RemoveGroupFromGroupSet_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21832,7 +21833,7 @@ clusapi_dissect_element_MoveGroupToGroupSet_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_MoveGroupToGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="MoveGroupToGroupSet";
 	offset = clusapi_dissect_element_MoveGroupToGroupSet_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21841,7 +21842,7 @@ clusapi_dissect_MoveGroupToGroupSet_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21864,13 +21865,13 @@ clusapi_dissect_MoveGroupToGroupSet_request(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 clusapi_dissect_Opnum170NotUsedOnWire_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Opnum170NotUsedOnWire";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21923,7 +21924,7 @@ clusapi_dissect_element_AddGroupSetDependency_rpc_status_(tvbuff_t *tvb _U_, int
 static int
 clusapi_dissect_AddGroupSetDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddGroupSetDependency";
 	offset = clusapi_dissect_element_AddGroupSetDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21932,7 +21933,7 @@ clusapi_dissect_AddGroupSetDependency_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -21989,7 +21990,7 @@ clusapi_dissect_element_AddGroupToGroupSetDependency_rpc_status_(tvbuff_t *tvb _
 static int
 clusapi_dissect_AddGroupToGroupSetDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddGroupToGroupSetDependency";
 	offset = clusapi_dissect_element_AddGroupToGroupSetDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -21998,7 +21999,7 @@ clusapi_dissect_AddGroupToGroupSetDependency_response(tvbuff_t *tvb _U_, int off
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22166,7 +22167,7 @@ clusapi_dissect_element_NodeGroupSetControl_rpc_status_(tvbuff_t *tvb _U_, int o
 static int
 clusapi_dissect_NodeGroupSetControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NodeGroupSetControl";
 	offset = clusapi_dissect_element_NodeGroupSetControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -22184,7 +22185,7 @@ clusapi_dissect_NodeGroupSetControl_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22351,7 +22352,7 @@ clusapi_dissect_element_GroupSetControl_rpc_status_(tvbuff_t *tvb _U_, int offse
 static int
 clusapi_dissect_GroupSetControl_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GroupSetControl";
 	offset = clusapi_dissect_element_GroupSetControl_lpOutBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -22369,7 +22370,7 @@ clusapi_dissect_GroupSetControl_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22443,7 +22444,7 @@ clusapi_dissect_element_SetGroupDependencyExpression_rpc_status_(tvbuff_t *tvb _
 static int
 clusapi_dissect_SetGroupDependencyExpression_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetGroupDependencyExpression";
 	offset = clusapi_dissect_element_SetGroupDependencyExpression_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -22452,7 +22453,7 @@ clusapi_dissect_SetGroupDependencyExpression_response(tvbuff_t *tvb _U_, int off
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22509,7 +22510,7 @@ clusapi_dissect_element_RemoveClusterGroupDependency_rpc_status_(tvbuff_t *tvb _
 static int
 clusapi_dissect_RemoveClusterGroupDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveClusterGroupDependency";
 	offset = clusapi_dissect_element_RemoveClusterGroupDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -22518,7 +22519,7 @@ clusapi_dissect_RemoveClusterGroupDependency_response(tvbuff_t *tvb _U_, int off
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22586,7 +22587,7 @@ clusapi_dissect_element_SetGroupSetDependencyExpression_rpc_status_(tvbuff_t *tv
 static int
 clusapi_dissect_SetGroupSetDependencyExpression_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetGroupSetDependencyExpression";
 	offset = clusapi_dissect_element_SetGroupSetDependencyExpression_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -22595,7 +22596,7 @@ clusapi_dissect_SetGroupSetDependencyExpression_response(tvbuff_t *tvb _U_, int 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22652,7 +22653,7 @@ clusapi_dissect_element_RemoveGroupSetDependency_rpc_status_(tvbuff_t *tvb _U_, 
 static int
 clusapi_dissect_RemoveGroupSetDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveGroupSetDependency";
 	offset = clusapi_dissect_element_RemoveGroupSetDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -22661,7 +22662,7 @@ clusapi_dissect_RemoveGroupSetDependency_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22718,7 +22719,7 @@ clusapi_dissect_element_RemoveClusterGroupToGroupSetDependency_rpc_status_(tvbuf
 static int
 clusapi_dissect_RemoveClusterGroupToGroupSetDependency_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveClusterGroupToGroupSetDependency";
 	offset = clusapi_dissect_element_RemoveClusterGroupToGroupSetDependency_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -22727,7 +22728,7 @@ clusapi_dissect_RemoveClusterGroupToGroupSetDependency_response(tvbuff_t *tvb _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22800,7 +22801,7 @@ clusapi_dissect_element_CreateGroupSetEnum_rpc_status_(tvbuff_t *tvb _U_, int of
 static int
 clusapi_dissect_CreateGroupSetEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateGroupSetEnum";
 	offset = clusapi_dissect_element_CreateGroupSetEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -22812,7 +22813,7 @@ clusapi_dissect_CreateGroupSetEnum_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -22923,7 +22924,7 @@ clusapi_dissect_element_CreateNetInterfaceEnum_rpc_status_(tvbuff_t *tvb _U_, in
 static int
 clusapi_dissect_CreateNetInterfaceEnum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateNetInterfaceEnum";
 	offset = clusapi_dissect_element_CreateNetInterfaceEnum_ReturnEnum(tvb, offset, pinfo, tree, di, drep);
@@ -22935,7 +22936,7 @@ clusapi_dissect_CreateNetInterfaceEnum_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -23014,7 +23015,7 @@ clusapi_dissect_element_ChangeCsvStateEx_rpc_status_(tvbuff_t *tvb _U_, int offs
 static int
 clusapi_dissect_ChangeCsvStateEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeCsvStateEx";
 	offset = clusapi_dissect_element_ChangeCsvStateEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -23023,7 +23024,7 @@ clusapi_dissect_ChangeCsvStateEx_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -23126,7 +23127,7 @@ clusapi_dissect_element_AddGroupToGroupSetEx_rpc_status_(tvbuff_t *tvb _U_, int 
 static int
 clusapi_dissect_AddGroupToGroupSetEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddGroupToGroupSetEx";
 	offset = clusapi_dissect_element_AddGroupToGroupSetEx_rpc_status(tvb, offset, pinfo, tree, di, drep);
@@ -23135,7 +23136,7 @@ clusapi_dissect_AddGroupToGroupSetEx_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_clusapi_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -23544,7 +23545,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_CLUSTER_DISKID_DiskIdType,
 	  { "DiskIdType", "clusapi.CLUSTER_DISKID.DiskIdType", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_CLUSTER_MRR_NODE_RESPONSE_ResultCode,
-	  { "ResultCode", "clusapi.CLUSTER_MRR_NODE_RESPONSE.ResultCode", FT_UINT32, BASE_DEC, VALS(HRES_errors), 0, NULL, HFILL }},
+	  { "ResultCode", "clusapi.CLUSTER_MRR_NODE_RESPONSE.ResultCode", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &HRES_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_CLUSTER_MRR_NODE_RESPONSE_ResultSize,
 	  { "ResultSize", "clusapi.CLUSTER_MRR_NODE_RESPONSE.ResultSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_CLUSTER_MRR_NODE_RESPONSE_pResultData,
@@ -23694,13 +23695,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddGroupSetDependency_ProviderGroupSet,
 	  { "ProviderGroupSet", "clusapi.clusapi_AddGroupSetDependency.ProviderGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupSetDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddGroupSetDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddGroupSetDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetDependency_DependentGroup,
 	  { "DependentGroup", "clusapi.clusapi_AddGroupToGroupSetDependency.DependentGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetDependency_ProviderGroupSet,
 	  { "ProviderGroupSet", "clusapi.clusapi_AddGroupToGroupSetDependency.ProviderGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSetDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSetDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetEx_FaultDomain,
 	  { "FaultDomain", "clusapi.clusapi_AddGroupToGroupSetEx.FaultDomain", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetEx_Group,
@@ -23714,13 +23715,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetEx_UseDomains,
 	  { "UseDomains", "clusapi.clusapi_AddGroupToGroupSetEx.UseDomains", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSetEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSetEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSetEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSet_Group,
 	  { "Group", "clusapi.clusapi_AddGroupToGroupSet.Group", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSet_GroupSet,
 	  { "GroupSet", "clusapi.clusapi_AddGroupToGroupSet.GroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddGroupToGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddGroupToGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyCluster_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyCluster.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyCluster_dwNotifyKey,
@@ -23730,7 +23731,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyCluster_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyCluster.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyCluster_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyCluster.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyCluster.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyGroup_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyGroup.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyGroup_dwNotifyKey,
@@ -23742,7 +23743,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyGroup_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyGroup.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyKey_Filter,
 	  { "Filter", "clusapi.clusapi_AddNotifyKey.Filter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyKey_WatchSubTree,
@@ -23754,7 +23755,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyKey_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyKey.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetInterface_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyNetInterface.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetInterface_dwNotifyKey,
@@ -23766,7 +23767,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyNetInterface_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyNetInterface.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetInterface_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyNetInterface.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyNetInterface.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetwork_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyNetwork.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetwork_dwNotifyKey,
@@ -23778,7 +23779,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyNetwork_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyNetwork.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNetwork_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyNetwork.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyNetwork.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNode_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyNode.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNode_dwNotifyKey,
@@ -23790,7 +23791,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyNode_hNotify,
 	  { "HNotify", "clusapi.clusapi_AddNotifyNode.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResourceTypeV2_dwNotifyKey,
 	  { "DwNotifyKey", "clusapi.clusapi_AddNotifyResourceTypeV2.dwNotifyKey", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResourceTypeV2_dwVersion,
@@ -23802,7 +23803,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyResourceTypeV2_resTypeName,
 	  { "ResTypeName", "clusapi.clusapi_AddNotifyResourceTypeV2.resTypeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResourceTypeV2_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyResourceTypeV2.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyResourceTypeV2.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResource_dwFilter,
 	  { "DwFilter", "clusapi.clusapi_AddNotifyResource.dwFilter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResource_dwNotifyKey,
@@ -23814,7 +23815,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyResource_hResource,
 	  { "HResource", "clusapi.clusapi_AddNotifyResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyV2_dwNotifyKey,
 	  { "DwNotifyKey", "clusapi.clusapi_AddNotifyV2.dwNotifyKey", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyV2_dwVersion,
@@ -23828,35 +23829,35 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_AddNotifyV2_isTargetedAtObject,
 	  { "IsTargetedAtObject", "clusapi.clusapi_AddNotifyV2.isTargetedAtObject", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddNotifyV2_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddNotifyV2.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddNotifyV2.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceDependency_hDependsOn,
 	  { "HDependsOn", "clusapi.clusapi_AddResourceDependency.hDependsOn", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceDependency_hResource,
 	  { "HResource", "clusapi.clusapi_AddResourceDependency.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddResourceDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddResourceDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceNode_hNode,
 	  { "HNode", "clusapi.clusapi_AddResourceNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceNode_hResource,
 	  { "HResource", "clusapi.clusapi_AddResourceNode.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_AddResourceNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_AddResourceNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_AddResourceNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_BackupClusterDatabase_lpszPathName,
 	  { "LpszPathName", "clusapi.clusapi_BackupClusterDatabase.lpszPathName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_BackupClusterDatabase_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_BackupClusterDatabase.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_BackupClusterDatabase.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CanResourceBeDependent_hResource,
 	  { "HResource", "clusapi.clusapi_CanResourceBeDependent.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CanResourceBeDependent_hResourceDependent,
 	  { "HResourceDependent", "clusapi.clusapi_CanResourceBeDependent.hResourceDependent", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CanResourceBeDependent_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CanResourceBeDependent.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CanResourceBeDependent.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CancelClusterGroupOperation_dwCancelFlags,
 	  { "DwCancelFlags", "clusapi.clusapi_CancelClusterGroupOperation.dwCancelFlags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CancelClusterGroupOperation_hGroup,
 	  { "HGroup", "clusapi.clusapi_CancelClusterGroupOperation.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CancelClusterGroupOperation_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CancelClusterGroupOperation.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CancelClusterGroupOperation.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvStateEx_dwState,
 	  { "DwState", "clusapi.clusapi_ChangeCsvStateEx.dwState", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvStateEx_hResource,
@@ -23864,19 +23865,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ChangeCsvStateEx_lpszVolumeName,
 	  { "LpszVolumeName", "clusapi.clusapi_ChangeCsvStateEx.lpszVolumeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvStateEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ChangeCsvStateEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ChangeCsvStateEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvState_dwState,
 	  { "DwState", "clusapi.clusapi_ChangeCsvState.dwState", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvState_hResource,
 	  { "HResource", "clusapi.clusapi_ChangeCsvState.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeCsvState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ChangeCsvState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ChangeCsvState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeResourceGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_ChangeResourceGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeResourceGroup_hResource,
 	  { "HResource", "clusapi.clusapi_ChangeResourceGroup.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ChangeResourceGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ChangeResourceGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ChangeResourceGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CloseBatchPort_phBatchPort,
 	  { "PhBatchPort", "clusapi.clusapi_CloseBatchPort.phBatchPort", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CloseCluster_Cluster,
@@ -23914,7 +23915,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ClusterControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_ClusterControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ClusterControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ClusterControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ClusterControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ClusterMrr_dwComponent,
 	  { "DwComponent", "clusapi.clusapi_ClusterMrr.dwComponent", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ClusterMrr_dwControlCode,
@@ -23934,13 +23935,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ClusterMrr_ppInfo,
 	  { "PpInfo", "clusapi.clusapi_ClusterMrr.ppInfo", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ClusterMrr_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ClusterMrr.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ClusterMrr.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateBatchPort_hKey,
 	  { "HKey", "clusapi.clusapi_CreateBatchPort.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateBatchPort_phBatchPort,
 	  { "PhBatchPort", "clusapi.clusapi_CreateBatchPort.phBatchPort", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateBatchPort_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateBatchPort.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateBatchPort.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnumEx_ReturnIdEnum,
 	  { "ReturnIdEnum", "clusapi.clusapi_CreateEnumEx.ReturnIdEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnumEx_ReturnNameEnum,
@@ -23952,13 +23953,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateEnumEx_hCluster,
 	  { "HCluster", "clusapi.clusapi_CreateEnumEx.hCluster", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnumEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateEnumEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateEnumEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnum_dwType,
 	  { "DwType", "clusapi.clusapi_CreateEnum.dwType", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEnum_cbProperties,
 	  { "CbProperties", "clusapi.clusapi_CreateGroupEnum.cbProperties", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEnum_cbRoProperties,
@@ -23972,9 +23973,9 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateGroupEnum_ppResultList,
 	  { "PpResultList", "clusapi.clusapi_CreateGroupEnum.ppResultList", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroupEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroupEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEx_Status,
-	  { "Status", "clusapi.clusapi_CreateGroupEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateGroupEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEx_hGroup,
 	  { "HGroup", "clusapi.clusapi_CreateGroupEx.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEx_lpszGroupName,
@@ -23982,7 +23983,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateGroupEx_pGroupInfo,
 	  { "PGroupInfo", "clusapi.clusapi_CreateGroupEx.pGroupInfo", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroupEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroupEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupResourceEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateGroupResourceEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupResourceEnum_dwType,
@@ -23990,31 +23991,31 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateGroupResourceEnum_hGroup,
 	  { "HGroup", "clusapi.clusapi_CreateGroupResourceEnum.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupResourceEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroupResourceEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroupResourceEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSetEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateGroupSetEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSetEnum_hCluster,
 	  { "HCluster", "clusapi.clusapi_CreateGroupSetEnum.hCluster", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSetEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroupSetEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroupSetEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSet_Status,
-	  { "Status", "clusapi.clusapi_CreateGroupSet.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateGroupSet.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSet_hGroupSet,
 	  { "HGroupSet", "clusapi.clusapi_CreateGroupSet.hGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSet_lpszGroupSetName,
 	  { "LpszGroupSetName", "clusapi.clusapi_CreateGroupSet.lpszGroupSetName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroup_Status,
-	  { "Status", "clusapi.clusapi_CreateGroup.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateGroup.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_CreateGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroup_lpszGroupName,
 	  { "LpszGroupName", "clusapi.clusapi_CreateGroup.lpszGroupName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateKey_Status,
-	  { "Status", "clusapi.clusapi_CreateKey.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateKey.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateKey_dwOptions,
 	  { "DwOptions", "clusapi.clusapi_CreateKey.dwOptions", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateKey_hKey,
@@ -24028,7 +24029,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateKey_phKey,
 	  { "PhKey", "clusapi.clusapi_CreateKey.phKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateKey_samDesired,
 	  { "SamDesired", "clusapi.clusapi_CreateKey.samDesired", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNetInterfaceEnum_ReturnEnum,
@@ -24040,7 +24041,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateNetInterfaceEnum_lpszNodeName,
 	  { "LpszNodeName", "clusapi.clusapi_CreateNetInterfaceEnum.lpszNodeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNetInterfaceEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNetInterfaceEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNetInterfaceEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNetworkEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateNetworkEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNetworkEnum_dwType,
@@ -24048,7 +24049,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateNetworkEnum_hNetwork,
 	  { "HNetwork", "clusapi.clusapi_CreateNetworkEnum.hNetwork", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNetworkEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNetworkEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNetworkEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnumEx_ReturnIdEnum,
 	  { "ReturnIdEnum", "clusapi.clusapi_CreateNodeEnumEx.ReturnIdEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnumEx_ReturnNameEnum,
@@ -24060,7 +24061,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateNodeEnumEx_hNode,
 	  { "HNode", "clusapi.clusapi_CreateNodeEnumEx.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnumEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNodeEnumEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNodeEnumEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateNodeEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnum_dwType,
@@ -24068,19 +24069,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateNodeEnum_hNode,
 	  { "HNode", "clusapi.clusapi_CreateNodeEnum.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNodeEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNodeEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNodeEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotifyV2_hNotify,
 	  { "HNotify", "clusapi.clusapi_CreateNotifyV2.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotifyV2_rpc_error,
-	  { "Rpc Error", "clusapi.clusapi_CreateNotifyV2.rpc_error", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Error", "clusapi.clusapi_CreateNotifyV2.rpc_error", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotifyV2_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNotifyV2.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNotifyV2.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotify_Status,
-	  { "Status", "clusapi.clusapi_CreateNotify.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateNotify.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotify_hNotify,
 	  { "HNotify", "clusapi.clusapi_CreateNotify.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateNotify_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateNotify.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateNotify.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateResEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResEnum_dwType,
@@ -24088,7 +24089,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateResEnum_hResource,
 	  { "HResource", "clusapi.clusapi_CreateResEnum.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateResEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateResEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResTypeEnum_ReturnEnum,
 	  { "ReturnEnum", "clusapi.clusapi_CreateResTypeEnum.ReturnEnum", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResTypeEnum_dwType,
@@ -24096,7 +24097,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateResTypeEnum_lpszTypeName,
 	  { "LpszTypeName", "clusapi.clusapi_CreateResTypeEnum.lpszTypeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResTypeEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateResTypeEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateResTypeEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceEnum_cbProperties,
 	  { "CbProperties", "clusapi.clusapi_CreateResourceEnum.cbProperties", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceEnum_cbRoProperties,
@@ -24110,7 +24111,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateResourceEnum_ppResultList,
 	  { "PpResultList", "clusapi.clusapi_CreateResourceEnum.ppResultList", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceEnum_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateResourceEnum.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateResourceEnum.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceType_dwIsAlive,
 	  { "DwIsAlive", "clusapi.clusapi_CreateResourceType.dwIsAlive", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceType_dwLooksAlive,
@@ -24122,9 +24123,9 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateResourceType_lpszTypeName,
 	  { "LpszTypeName", "clusapi.clusapi_CreateResourceType.lpszTypeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResourceType_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateResourceType.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateResourceType.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResource_Status,
-	  { "Status", "clusapi.clusapi_CreateResource.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_CreateResource.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResource_dwFlags,
 	  { "DwFlags", "clusapi.clusapi_CreateResource.dwFlags", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_CreateResourceFlags_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResource_hGroup,
@@ -24136,37 +24137,37 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_CreateResource_lpszResourceType,
 	  { "LpszResourceType", "clusapi.clusapi_CreateResource.lpszResourceType", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_CreateResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_CreateResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_CreateResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteGroupSet_GroupSet,
 	  { "GroupSet", "clusapi.clusapi_DeleteGroupSet.GroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteGroup_Group,
 	  { "Group", "clusapi.clusapi_DeleteGroup.Group", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteGroup_force,
 	  { "Force", "clusapi.clusapi_DeleteGroup.force", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteKey_hKey,
 	  { "HKey", "clusapi.clusapi_DeleteKey.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteKey_lpSubKey,
 	  { "LpSubKey", "clusapi.clusapi_DeleteKey.lpSubKey", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteResourceType_lpszTypeName,
 	  { "LpszTypeName", "clusapi.clusapi_DeleteResourceType.lpszTypeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteResourceType_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteResourceType.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteResourceType.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteResource_hResource,
 	  { "HResource", "clusapi.clusapi_DeleteResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteValue_hKey,
 	  { "HKey", "clusapi.clusapi_DeleteValue.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteValue_lpValueName,
 	  { "LpValueName", "clusapi.clusapi_DeleteValue.lpValueName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DeleteValue_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_DeleteValue.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_DeleteValue.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DesiredAccessMask_CLUSAPI_CHANGE_ACCESS,
 	  { "CLUSAPI CHANGE ACCESS", "clusapi.clusapi_DesiredAccessMask.CLUSAPI_CHANGE_ACCESS", FT_BOOLEAN, 32, TFS(&clusapi_DesiredAccessMask_CLUSAPI_CHANGE_ACCESS_tfs), ( 0x00000002 ), NULL, HFILL }},
 	{ &hf_clusapi_clusapi_DesiredAccessMask_CLUSAPI_GENERIC_ALL,
@@ -24190,7 +24191,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_EnumKey_lpftLastWriteTime,
 	  { "LpftLastWriteTime", "clusapi.clusapi_EnumKey.lpftLastWriteTime", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EnumKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_EnumKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_EnumKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EnumValue_TotalSize,
 	  { "TotalSize", "clusapi.clusapi_EnumValue.TotalSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EnumValue_dwIndex,
@@ -24206,11 +24207,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_EnumValue_lpcbData,
 	  { "LpcbData", "clusapi.clusapi_EnumValue.lpcbData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EnumValue_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_EnumValue.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_EnumValue.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EvictNode_hNode,
 	  { "HNode", "clusapi.clusapi_EvictNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_EvictNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_EvictNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_EvictNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteBatch_cbData,
 	  { "CbData", "clusapi.clusapi_ExecuteBatch.cbData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteBatch_hKey,
@@ -24220,7 +24221,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ExecuteBatch_pdwFailedCommand,
 	  { "PdwFailedCommand", "clusapi.clusapi_ExecuteBatch.pdwFailedCommand", FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteBatch_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ExecuteBatch.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ExecuteBatch.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatchEx_cbInData,
 	  { "CbInData", "clusapi.clusapi_ExecuteReadBatchEx.cbInData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatchEx_cbOutData,
@@ -24234,7 +24235,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ExecuteReadBatchEx_lpOutData,
 	  { "LpOutData", "clusapi.clusapi_ExecuteReadBatchEx.lpOutData", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatchEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ExecuteReadBatchEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ExecuteReadBatchEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatch_cbInData,
 	  { "CbInData", "clusapi.clusapi_ExecuteReadBatch.cbInData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatch_cbOutData,
@@ -24246,11 +24247,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ExecuteReadBatch_lpOutData,
 	  { "LpOutData", "clusapi.clusapi_ExecuteReadBatch.lpOutData", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ExecuteReadBatch_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ExecuteReadBatch.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ExecuteReadBatch.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_FailResource_hResource,
 	  { "HResource", "clusapi.clusapi_FailResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_FailResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_FailResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_FailResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetBatchNotification_cbData,
 	  { "CbData", "clusapi.clusapi_GetBatchNotification.cbData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetBatchNotification_hBatchNotify,
@@ -24274,7 +24275,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetClusterVersion2_ppClusterOpVerInfo,
 	  { "PpClusterOpVerInfo", "clusapi.clusapi_GetClusterVersion2.ppClusterOpVerInfo", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetClusterVersion2_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetClusterVersion2.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetClusterVersion2.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetClusterVersion_lpszCSDVersion,
 	  { "LpszCSDVersion", "clusapi.clusapi_GetClusterVersion.lpszCSDVersion", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetClusterVersion_lpszVendorId,
@@ -24290,7 +24291,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetGroupId_pGuid,
 	  { "PGuid", "clusapi.clusapi_GetGroupId.pGuid", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetGroupId_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetGroupId.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetGroupId.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetGroupState_NodeName,
 	  { "NodeName", "clusapi.clusapi_GetGroupState.NodeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetGroupState_State,
@@ -24298,7 +24299,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetGroupState_hGroup,
 	  { "HGroup", "clusapi.clusapi_GetGroupState.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetGroupState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetGroupState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetGroupState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetKeySecurity_SecurityInformation,
 	  { "SecurityInformation", "clusapi.clusapi_GetKeySecurity.SecurityInformation", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetKeySecurity_hKey,
@@ -24306,19 +24307,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetKeySecurity_pRpcSecurityDescriptor,
 	  { "PRpcSecurityDescriptor", "clusapi.clusapi_GetKeySecurity.pRpcSecurityDescriptor", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetKeySecurity_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetKeySecurity.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetKeySecurity.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceId_hNetInterface,
 	  { "HNetInterface", "clusapi.clusapi_GetNetInterfaceId.hNetInterface", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceId_pGuid,
 	  { "PGuid", "clusapi.clusapi_GetNetInterfaceId.pGuid", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceId_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNetInterfaceId.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNetInterfaceId.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceState_State,
 	  { "State", "clusapi.clusapi_GetNetInterfaceState.State", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_ClusterNetInterfaceState_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceState_hNetInterface,
 	  { "HNetInterface", "clusapi.clusapi_GetNetInterfaceState.hNetInterface", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterfaceState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNetInterfaceState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNetInterfaceState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterface_lppszInterfaceName,
 	  { "LppszInterfaceName", "clusapi.clusapi_GetNetInterface.lppszInterfaceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterface_lpszNetworkName,
@@ -24326,31 +24327,31 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetNetInterface_lpszNodeName,
 	  { "LpszNodeName", "clusapi.clusapi_GetNetInterface.lpszNodeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetInterface_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNetInterface.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNetInterface.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkId_hNetwork,
 	  { "HNetwork", "clusapi.clusapi_GetNetworkId.hNetwork", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkId_pGuid,
 	  { "PGuid", "clusapi.clusapi_GetNetworkId.pGuid", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkId_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNetworkId.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNetworkId.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkState_State,
 	  { "State", "clusapi.clusapi_GetNetworkState.State", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_ClusterNetworkState_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkState_hNetwork,
 	  { "HNetwork", "clusapi.clusapi_GetNetworkState.hNetwork", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNetworkState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNetworkState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNetworkState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeId_hNode,
 	  { "HNode", "clusapi.clusapi_GetNodeId.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeId_pGuid,
 	  { "PGuid", "clusapi.clusapi_GetNodeId.pGuid", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeId_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNodeId.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNodeId.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeState_State,
 	  { "State", "clusapi.clusapi_GetNodeState.State", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_ClusterNodeState_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeState_hNode,
 	  { "HNode", "clusapi.clusapi_GetNodeState.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNodeState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNodeState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNodeState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNotifyAsync_Notifications,
 	  { "Notifications", "clusapi.clusapi_GetNotifyAsync.Notifications", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNotifyAsync_dwNumNotifications,
@@ -24374,7 +24375,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetNotify_hNotify,
 	  { "HNotify", "clusapi.clusapi_GetNotify.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetNotify_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetNotify.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetNotify.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetQuorumResource_lpszDeviceName,
 	  { "LpszDeviceName", "clusapi.clusapi_GetQuorumResource.lpszDeviceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetQuorumResource_lpszResourceName,
@@ -24382,25 +24383,25 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetQuorumResource_pdwMaxQuorumLogSize,
 	  { "PdwMaxQuorumLogSize", "clusapi.clusapi_GetQuorumResource.pdwMaxQuorumLogSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetQuorumResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetQuorumResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetQuorumResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceDependencyExpression_hResource,
 	  { "HResource", "clusapi.clusapi_GetResourceDependencyExpression.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceDependencyExpression_lpszDependencyExpression,
 	  { "LpszDependencyExpression", "clusapi.clusapi_GetResourceDependencyExpression.lpszDependencyExpression", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceDependencyExpression_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetResourceDependencyExpression.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetResourceDependencyExpression.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceId_hResource,
 	  { "HResource", "clusapi.clusapi_GetResourceId.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceId_pGuid,
 	  { "PGuid", "clusapi.clusapi_GetResourceId.pGuid", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceId_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetResourceId.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetResourceId.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceNetworkName_hResource,
 	  { "HResource", "clusapi.clusapi_GetResourceNetworkName.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceNetworkName_lpszName,
 	  { "LpszName", "clusapi.clusapi_GetResourceNetworkName.lpszName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceNetworkName_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetResourceNetworkName.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetResourceNetworkName.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceState_GroupName,
 	  { "GroupName", "clusapi.clusapi_GetResourceState.GroupName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceState_NodeName,
@@ -24410,19 +24411,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GetResourceState_hResource,
 	  { "HResource", "clusapi.clusapi_GetResourceState.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceState_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetResourceState.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetResourceState.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceType_hResource,
 	  { "HResource", "clusapi.clusapi_GetResourceType.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceType_lpszResourceType,
 	  { "LpszResourceType", "clusapi.clusapi_GetResourceType.lpszResourceType", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetResourceType_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetResourceType.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetResourceType.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetRootKey_Status,
-	  { "Status", "clusapi.clusapi_GetRootKey.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_GetRootKey.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetRootKey_phKey,
 	  { "PhKey", "clusapi.clusapi_GetRootKey.phKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetRootKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GetRootKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GetRootKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GetRootKey_samDesired,
 	  { "SamDesired", "clusapi.clusapi_GetRootKey.samDesired", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GroupControl_dwControlCode,
@@ -24442,7 +24443,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GroupControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_GroupControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GroupControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GroupControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GroupControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GroupSetControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_GroupSetControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GroupSetControl_hGroupSet,
@@ -24460,7 +24461,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_GroupSetControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_GroupSetControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_GroupSetControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_GroupSetControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_GroupSetControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_MoveGroupEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupEx_dwMoveFlags,
@@ -24470,13 +24471,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_MoveGroupEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_MoveGroupEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_MoveGroupEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_MoveGroupEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToGroupSet_Group,
 	  { "Group", "clusapi.clusapi_MoveGroupToGroupSet.Group", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToGroupSet_GroupSet,
 	  { "GroupSet", "clusapi.clusapi_MoveGroupToGroupSet.GroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_MoveGroupToGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_MoveGroupToGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNodeEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_MoveGroupToNodeEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNodeEx_dwMoveFlags,
@@ -24488,17 +24489,17 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_MoveGroupToNodeEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_MoveGroupToNodeEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNodeEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_MoveGroupToNodeEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_MoveGroupToNodeEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNode_hGroup,
 	  { "HGroup", "clusapi.clusapi_MoveGroupToNode.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNode_hNode,
 	  { "HNode", "clusapi.clusapi_MoveGroupToNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroupToNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_MoveGroupToNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_MoveGroupToNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_MoveGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_MoveGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_MoveGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_MoveGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetInterfaceControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NetInterfaceControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetInterfaceControl_hNetInterface,
@@ -24516,7 +24517,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NetInterfaceControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NetInterfaceControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetInterfaceControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NetInterfaceControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NetInterfaceControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetworkControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NetworkControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetworkControl_hNetwork,
@@ -24534,7 +24535,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NetworkControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NetworkControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NetworkControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NetworkControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NetworkControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeClusterControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeClusterControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeClusterControl_hCluster,
@@ -24554,7 +24555,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeClusterControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeClusterControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeClusterControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeClusterControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeClusterControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeControl.dwControlCode", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_NodeControlCode_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeControl_hNode,
@@ -24572,7 +24573,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeGroupControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupControl_hGroup,
@@ -24592,7 +24593,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeGroupControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeGroupControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeGroupControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeGroupControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupSetControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeGroupSetControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupSetControl_hGroupSet,
@@ -24612,7 +24613,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeGroupSetControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeGroupSetControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeGroupSetControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeGroupSetControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeGroupSetControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetInterfaceControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeNetInterfaceControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetInterfaceControl_hNetInterface,
@@ -24632,7 +24633,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeNetInterfaceControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeNetInterfaceControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetInterfaceControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeNetInterfaceControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeNetInterfaceControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetworkControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeNetworkControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetworkControl_hNetwork,
@@ -24652,7 +24653,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeNetworkControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeNetworkControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNetworkControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeNetworkControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeNetworkControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNodeControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeNodeControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNodeControl_hHostNode,
@@ -24672,7 +24673,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeNodeControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeNodeControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeNodeControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeNodeControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeNodeControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeResourceControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceControl_hNode,
@@ -24692,7 +24693,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeResourceControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeResourceControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeResourceControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeResourceControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceTypeControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_NodeResourceTypeControl.dwControlCode", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceTypeControl_hCluster,
@@ -24714,7 +24715,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_NodeResourceTypeControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_NodeResourceTypeControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_NodeResourceTypeControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_NodeResourceTypeControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_NodeResourceTypeControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineGroupEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_OfflineGroupEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineGroupEx_dwOfflineFlags,
@@ -24724,11 +24725,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OfflineGroupEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_OfflineGroupEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineGroupEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OfflineGroupEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OfflineGroupEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_OfflineGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OfflineGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OfflineGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineResourceEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_OfflineResourceEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineResourceEx_dwOfflineFlags,
@@ -24738,11 +24739,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OfflineResourceEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_OfflineResourceEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineResourceEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OfflineResourceEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OfflineResourceEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineResource_hResource,
 	  { "HResource", "clusapi.clusapi_OfflineResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OfflineResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OfflineResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OfflineResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineGroupEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_OnlineGroupEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineGroupEx_dwOnlineFlags,
@@ -24752,11 +24753,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OnlineGroupEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_OnlineGroupEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineGroupEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OnlineGroupEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OnlineGroupEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_OnlineGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OnlineGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OnlineGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineResourceEx_cbInBufferSize,
 	  { "CbInBufferSize", "clusapi.clusapi_OnlineResourceEx.cbInBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineResourceEx_dwOnlineFlags,
@@ -24766,13 +24767,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OnlineResourceEx_lpInBuffer,
 	  { "LpInBuffer", "clusapi.clusapi_OnlineResourceEx.lpInBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineResourceEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OnlineResourceEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OnlineResourceEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineResource_hResource,
 	  { "HResource", "clusapi.clusapi_OnlineResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OnlineResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OnlineResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OnlineResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenClusterEx_Status,
-	  { "Status", "clusapi.clusapi_OpenClusterEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenClusterEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenClusterEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenClusterEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenClusterEx_hCluster,
@@ -24782,9 +24783,9 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenCluster_Cluster,
 	  { "Cluster", "clusapi.clusapi_OpenCluster.Cluster", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenCluster_Status,
-	  { "Status", "clusapi.clusapi_OpenCluster.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenCluster.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupEx_Status,
-	  { "Status", "clusapi.clusapi_OpenGroupEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenGroupEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenGroupEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupEx_hGroup,
@@ -24794,25 +24795,25 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenGroupEx_lpszGroupName,
 	  { "LpszGroupName", "clusapi.clusapi_OpenGroupEx.lpszGroupName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenGroupEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenGroupEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupSet_Status,
-	  { "Status", "clusapi.clusapi_OpenGroupSet.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenGroupSet.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupSet_hGroupSet,
 	  { "HGroupSet", "clusapi.clusapi_OpenGroupSet.hGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupSet_lpszGroupSetName,
 	  { "LpszGroupSetName", "clusapi.clusapi_OpenGroupSet.lpszGroupSetName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroup_Status,
-	  { "Status", "clusapi.clusapi_OpenGroup.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenGroup.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroup_hGroup,
 	  { "HGroup", "clusapi.clusapi_OpenGroup.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroup_lpszGroupName,
 	  { "LpszGroupName", "clusapi.clusapi_OpenGroup.lpszGroupName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenKey_Status,
-	  { "Status", "clusapi.clusapi_OpenKey.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenKey.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenKey_hKey,
 	  { "HKey", "clusapi.clusapi_OpenKey.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenKey_lpSubKey,
@@ -24820,11 +24821,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenKey_phKey,
 	  { "PhKey", "clusapi.clusapi_OpenKey.phKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenKey_samDesired,
 	  { "SamDesired", "clusapi.clusapi_OpenKey.samDesired", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterfaceEx_Status,
-	  { "Status", "clusapi.clusapi_OpenNetInterfaceEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNetInterfaceEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterfaceEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenNetInterfaceEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterfaceEx_hNetInterface,
@@ -24834,17 +24835,17 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenNetInterfaceEx_lpszNetInterfaceName,
 	  { "LpszNetInterfaceName", "clusapi.clusapi_OpenNetInterfaceEx.lpszNetInterfaceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterfaceEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNetInterfaceEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNetInterfaceEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterface_Status,
-	  { "Status", "clusapi.clusapi_OpenNetInterface.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNetInterface.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterface_hNetInterface,
 	  { "HNetInterface", "clusapi.clusapi_OpenNetInterface.hNetInterface", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterface_lpszNetInterfaceName,
 	  { "LpszNetInterfaceName", "clusapi.clusapi_OpenNetInterface.lpszNetInterfaceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetInterface_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNetInterface.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNetInterface.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetworkEx_Status,
-	  { "Status", "clusapi.clusapi_OpenNetworkEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNetworkEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetworkEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenNetworkEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetworkEx_hNetwork,
@@ -24854,17 +24855,17 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenNetworkEx_lpszNetworkName,
 	  { "LpszNetworkName", "clusapi.clusapi_OpenNetworkEx.lpszNetworkName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetworkEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNetworkEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNetworkEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetwork_Status,
-	  { "Status", "clusapi.clusapi_OpenNetwork.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNetwork.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetwork_hNetwork,
 	  { "HNetwork", "clusapi.clusapi_OpenNetwork.hNetwork", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetwork_lpszNetworkName,
 	  { "LpszNetworkName", "clusapi.clusapi_OpenNetwork.lpszNetworkName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNetwork_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNetwork.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNetwork.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNodeEx_Status,
-	  { "Status", "clusapi.clusapi_OpenNodeEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNodeEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNodeEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenNodeEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNodeEx_hNode,
@@ -24874,17 +24875,17 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenNodeEx_lpszNodeName,
 	  { "LpszNodeName", "clusapi.clusapi_OpenNodeEx.lpszNodeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNodeEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNodeEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNodeEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNode_Status,
-	  { "Status", "clusapi.clusapi_OpenNode.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenNode.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNode_hNode,
 	  { "HNode", "clusapi.clusapi_OpenNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNode_lpszNodeName,
 	  { "LpszNodeName", "clusapi.clusapi_OpenNode.lpszNodeName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResourceEx_Status,
-	  { "Status", "clusapi.clusapi_OpenResourceEx.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenResourceEx.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResourceEx_dwDesiredAccess,
 	  { "DwDesiredAccess", "clusapi.clusapi_OpenResourceEx.dwDesiredAccess", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResourceEx_hResource,
@@ -24894,15 +24895,15 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_OpenResourceEx_lpszResourceName,
 	  { "LpszResourceName", "clusapi.clusapi_OpenResourceEx.lpszResourceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResourceEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenResourceEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenResourceEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResource_Status,
-	  { "Status", "clusapi.clusapi_OpenResource.Status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "clusapi.clusapi_OpenResource.Status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResource_hResource,
 	  { "HResource", "clusapi.clusapi_OpenResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResource_lpszResourceName,
 	  { "LpszResourceName", "clusapi.clusapi_OpenResource.lpszResourceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_OpenResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_OpenResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_OpenResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeEx_bDrainNode,
 	  { "BDrainNode", "clusapi.clusapi_PauseNodeEx.bDrainNode", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeEx_dwPauseFlags,
@@ -24910,7 +24911,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_PauseNodeEx_hNode,
 	  { "HNode", "clusapi.clusapi_PauseNodeEx.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_PauseNodeEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_PauseNodeEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeWithDrainTarget_dwPauseFlags,
 	  { "DwPauseFlags", "clusapi.clusapi_PauseNodeWithDrainTarget.dwPauseFlags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeWithDrainTarget_hNode,
@@ -24918,11 +24919,11 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_PauseNodeWithDrainTarget_hNodeDrainTarget,
 	  { "HNodeDrainTarget", "clusapi.clusapi_PauseNodeWithDrainTarget.hNodeDrainTarget", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNodeWithDrainTarget_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_PauseNodeWithDrainTarget.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_PauseNodeWithDrainTarget.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNode_hNode,
 	  { "HNode", "clusapi.clusapi_PauseNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_PauseNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_PauseNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_PauseNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryAllValues_hKey,
 	  { "HKey", "clusapi.clusapi_QueryAllValues.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryAllValues_pcbData,
@@ -24930,7 +24931,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_QueryAllValues_ppData,
 	  { "PpData", "clusapi.clusapi_QueryAllValues.ppData", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryAllValues_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_QueryAllValues.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_QueryAllValues.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryInfoKey_hKey,
 	  { "HKey", "clusapi.clusapi_QueryInfoKey.hKey", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryInfoKey_lpcSubKeys,
@@ -24948,7 +24949,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_QueryInfoKey_lpftLastWriteTime,
 	  { "LpftLastWriteTime", "clusapi.clusapi_QueryInfoKey.lpftLastWriteTime", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryInfoKey_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_QueryInfoKey.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_QueryInfoKey.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryValue_cbData,
 	  { "CbData", "clusapi.clusapi_QueryValue.cbData", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryValue_hKey,
@@ -24962,7 +24963,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_QueryValue_lpcbRequired,
 	  { "LpcbRequired", "clusapi.clusapi_QueryValue.lpcbRequired", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_QueryValue_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_QueryValue.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_QueryValue.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyGroup_StateSequence,
 	  { "StateSequence", "clusapi.clusapi_ReAddNotifyGroup.StateSequence", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyGroup_dwFilter,
@@ -24974,7 +24975,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ReAddNotifyGroup_hNotify,
 	  { "HNotify", "clusapi.clusapi_ReAddNotifyGroup.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyGroup_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyGroup.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyGroup.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetInterface_StateSequence,
 	  { "StateSequence", "clusapi.clusapi_ReAddNotifyNetInterface.StateSequence", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetInterface_dwFilter,
@@ -24986,7 +24987,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ReAddNotifyNetInterface_hNotify,
 	  { "HNotify", "clusapi.clusapi_ReAddNotifyNetInterface.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetInterface_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNetInterface.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNetInterface.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetwork_StateSequence,
 	  { "StateSequence", "clusapi.clusapi_ReAddNotifyNetwork.StateSequence", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetwork_dwFilter,
@@ -24998,7 +24999,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ReAddNotifyNetwork_hNotify,
 	  { "HNotify", "clusapi.clusapi_ReAddNotifyNetwork.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNetwork_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNetwork.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNetwork.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNode_StateSequence,
 	  { "StateSequence", "clusapi.clusapi_ReAddNotifyNode.StateSequence", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNode_dwFilter,
@@ -25010,7 +25011,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ReAddNotifyNode_hNotify,
 	  { "HNotify", "clusapi.clusapi_ReAddNotifyNode.hNotify", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyResource_StateSequence,
 	  { "StateSequence", "clusapi.clusapi_ReAddNotifyResource.StateSequence", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyResource_dwFilter,
@@ -25022,41 +25023,41 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ReAddNotifyResource_hResource,
 	  { "HResource", "clusapi.clusapi_ReAddNotifyResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ReAddNotifyResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ReAddNotifyResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupDependency_hDependsOn,
 	  { "HDependsOn", "clusapi.clusapi_RemoveClusterGroupDependency.hDependsOn", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupDependency_hGroup,
 	  { "HGroup", "clusapi.clusapi_RemoveClusterGroupDependency.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveClusterGroupDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveClusterGroupDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupToGroupSetDependency_hDependsOn,
 	  { "HDependsOn", "clusapi.clusapi_RemoveClusterGroupToGroupSetDependency.hDependsOn", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupToGroupSetDependency_hGroup,
 	  { "HGroup", "clusapi.clusapi_RemoveClusterGroupToGroupSetDependency.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveClusterGroupToGroupSetDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveClusterGroupToGroupSetDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveClusterGroupToGroupSetDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveGroupFromGroupSet_Group,
 	  { "Group", "clusapi.clusapi_RemoveGroupFromGroupSet.Group", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveGroupFromGroupSet_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveGroupFromGroupSet.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveGroupFromGroupSet.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveGroupSetDependency_hDependsOn,
 	  { "HDependsOn", "clusapi.clusapi_RemoveGroupSetDependency.hDependsOn", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveGroupSetDependency_hGroupSet,
 	  { "HGroupSet", "clusapi.clusapi_RemoveGroupSetDependency.hGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveGroupSetDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveGroupSetDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveGroupSetDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceDependency_hDependsOn,
 	  { "HDependsOn", "clusapi.clusapi_RemoveResourceDependency.hDependsOn", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceDependency_hResource,
 	  { "HResource", "clusapi.clusapi_RemoveResourceDependency.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceDependency_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveResourceDependency.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveResourceDependency.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceNode_hNode,
 	  { "HNode", "clusapi.clusapi_RemoveResourceNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceNode_hResource,
 	  { "HResource", "clusapi.clusapi_RemoveResourceNode.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RemoveResourceNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RemoveResourceNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RemoveResourceNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_ResourceControl.dwControlCode", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_ResourceControlCode_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceControl_hResource,
@@ -25074,7 +25075,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ResourceControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_ResourceControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ResourceControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ResourceControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceTypeControl_dwControlCode,
 	  { "DwControlCode", "clusapi.clusapi_ResourceTypeControl.dwControlCode", FT_UINT32, BASE_DEC, VALS(clusapi_clusapi_ResourceTypeControlCode_vals), 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceTypeControl_hCluster,
@@ -25094,13 +25095,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ResourceTypeControl_nOutBufferSize,
 	  { "NOutBufferSize", "clusapi.clusapi_ResourceTypeControl.nOutBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResourceTypeControl_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ResourceTypeControl.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ResourceTypeControl.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RestartResource_dwFlags,
 	  { "DwFlags", "clusapi.clusapi_RestartResource.dwFlags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RestartResource_hResource,
 	  { "HResource", "clusapi.clusapi_RestartResource.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_RestartResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_RestartResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_RestartResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResumeNodeEx_dwResumeFailbackType,
 	  { "DwResumeFailbackType", "clusapi.clusapi_ResumeNodeEx.dwResumeFailbackType", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResumeNodeEx_dwResumeFlagsReserved,
@@ -25108,27 +25109,27 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_ResumeNodeEx_hNode,
 	  { "HNode", "clusapi.clusapi_ResumeNodeEx.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResumeNodeEx_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ResumeNodeEx.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ResumeNodeEx.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResumeNode_hNode,
 	  { "HNode", "clusapi.clusapi_ResumeNode.hNode", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_ResumeNode_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_ResumeNode.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_ResumeNode.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetClusterName_NewClusterName,
 	  { "NewClusterName", "clusapi.clusapi_SetClusterName.NewClusterName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetClusterName_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetClusterName.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetClusterName.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupDependencyExpression_hGroup,
 	  { "HGroup", "clusapi.clusapi_SetGroupDependencyExpression.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupDependencyExpression_lpszDependencyExpression,
 	  { "LpszDependencyExpression", "clusapi.clusapi_SetGroupDependencyExpression.lpszDependencyExpression", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupDependencyExpression_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetGroupDependencyExpression.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetGroupDependencyExpression.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupName_hGroup,
 	  { "HGroup", "clusapi.clusapi_SetGroupName.hGroup", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupName_lpszGroupName,
 	  { "LpszGroupName", "clusapi.clusapi_SetGroupName.lpszGroupName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupName_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetGroupName.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetGroupName.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupNodeList_cchListSize,
 	  { "CchListSize", "clusapi.clusapi_SetGroupNodeList.cchListSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupNodeList_hGroup,
@@ -25136,13 +25137,13 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_SetGroupNodeList_multiSzNodeList,
 	  { "MultiSzNodeList", "clusapi.clusapi_SetGroupNodeList.multiSzNodeList", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupNodeList_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetGroupNodeList.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetGroupNodeList.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupSetDependencyExpression_hGroupSet,
 	  { "HGroupSet", "clusapi.clusapi_SetGroupSetDependencyExpression.hGroupSet", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupSetDependencyExpression_lpszDependencyExpression,
 	  { "LpszDependencyExpression", "clusapi.clusapi_SetGroupSetDependencyExpression.lpszDependencyExpression", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetGroupSetDependencyExpression_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetGroupSetDependencyExpression.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetGroupSetDependencyExpression.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetKeySecurity_SecurityInformation,
 	  { "SecurityInformation", "clusapi.clusapi_SetKeySecurity.SecurityInformation", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetKeySecurity_hKey,
@@ -25150,19 +25151,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_SetKeySecurity_pRpcSecurityDescriptor,
 	  { "PRpcSecurityDescriptor", "clusapi.clusapi_SetKeySecurity.pRpcSecurityDescriptor", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetKeySecurity_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetKeySecurity.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetKeySecurity.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkName_hNetwork,
 	  { "HNetwork", "clusapi.clusapi_SetNetworkName.hNetwork", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkName_lpszNetworkName,
 	  { "LpszNetworkName", "clusapi.clusapi_SetNetworkName.lpszNetworkName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkName_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetNetworkName.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetNetworkName.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkPriorityOrder_NetworkCount,
 	  { "NetworkCount", "clusapi.clusapi_SetNetworkPriorityOrder.NetworkCount", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkPriorityOrder_NetworkIdList,
 	  { "NetworkIdList", "clusapi.clusapi_SetNetworkPriorityOrder.NetworkIdList", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetNetworkPriorityOrder_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetNetworkPriorityOrder.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetNetworkPriorityOrder.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetQuorumResource_dwMaxQuorumLogSize,
 	  { "DwMaxQuorumLogSize", "clusapi.clusapi_SetQuorumResource.dwMaxQuorumLogSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetQuorumResource_hResource,
@@ -25170,19 +25171,19 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_SetQuorumResource_lpszDeviceName,
 	  { "LpszDeviceName", "clusapi.clusapi_SetQuorumResource.lpszDeviceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetQuorumResource_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetQuorumResource.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetQuorumResource.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceDependencyExpression_hResource,
 	  { "HResource", "clusapi.clusapi_SetResourceDependencyExpression.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceDependencyExpression_lpszDependencyExpression,
 	  { "LpszDependencyExpression", "clusapi.clusapi_SetResourceDependencyExpression.lpszDependencyExpression", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceDependencyExpression_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetResourceDependencyExpression.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetResourceDependencyExpression.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceName_hResource,
 	  { "HResource", "clusapi.clusapi_SetResourceName.hResource", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceName_lpszResourceName,
 	  { "LpszResourceName", "clusapi.clusapi_SetResourceName.lpszResourceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetResourceName_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetResourceName.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetResourceName.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetServiceAccountPassword_ExpectedBufferSize,
 	  { "ExpectedBufferSize", "clusapi.clusapi_SetServiceAccountPassword.ExpectedBufferSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetServiceAccountPassword_ReturnStatusBufferPtr,
@@ -25206,7 +25207,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_SetValue_lpValueName,
 	  { "LpValueName", "clusapi.clusapi_SetValue.lpValueName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_SetValue_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_SetValue.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_SetValue.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_StmFindDisk_dwFlags,
 	  { "DwFlags", "clusapi.clusapi_StmFindDisk.dwFlags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_StmFindDisk_hCluster,
@@ -25218,7 +25219,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_clusapi_StmFindDisk_ppszDeviceName,
 	  { "PpszDeviceName", "clusapi.clusapi_StmFindDisk.ppszDeviceName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_StmFindDisk_rpc_status,
-	  { "Rpc Status", "clusapi.clusapi_StmFindDisk.rpc_status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Rpc Status", "clusapi.clusapi_StmFindDisk.rpc_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_StmFindDisk_uniqueIdSize,
 	  { "UniqueIdSize", "clusapi.clusapi_StmFindDisk.uniqueIdSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_clusapi_UnblockGetNotifyCall_hNotify,
@@ -25226,7 +25227,7 @@ void proto_register_dcerpc_clusapi(void)
 	{ &hf_clusapi_opnum,
 	  { "Operation", "clusapi.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_clusapi_werror,
-	  { "Windows Error", "clusapi.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "clusapi.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 

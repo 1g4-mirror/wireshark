@@ -206,6 +206,8 @@ typedef enum {
 #define SSL_HND_QUIC_TP_ENABLE_MULTIPATH_DRAFT05            0x0f739bbc1b666d05 /* https://tools.ietf.org/html/draft-ietf-quic-multipath-05 */
 #define SSL_HND_QUIC_TP_ENABLE_MULTIPATH                    0x0f739bbc1b666d06 /* https://tools.ietf.org/html/draft-ietf-quic-multipath-06 */
 #define SSL_HND_QUIC_TP_INITIAL_MAX_PATHS                   0x0f739bbc1b666d07 /* https://tools.ietf.org/html/draft-ietf-quic-multipath-07 */
+#define SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID                 0x0f739bbc1b666d09 /* https://tools.ietf.org/html/draft-ietf-quic-multipath-09 */
+
 /*
  * Lookup tables
  */
@@ -240,6 +242,7 @@ extern const value_string ssl_curve_types[];
 extern const value_string tls_hello_ext_server_name_type_vs[];
 extern const value_string tls_hello_ext_max_fragment_length[];
 extern const value_string tls_hello_ext_psk_ke_mode[];
+extern const value_string tls_hello_ext_trusted_ca_key_type[];
 extern const value_string tls13_key_update_request[];
 extern const value_string compress_certificate_algorithm_vals[];
 extern const val64_string quic_transport_parameter_id[];
@@ -909,6 +912,13 @@ typedef struct ssl_common_dissect {
         int hs_ext_type;
         int hs_ext_connection_id_length;
         int hs_ext_connection_id;
+        int hs_ext_trusted_ca_keys_len;
+        int hs_ext_trusted_ca_keys_list;
+        int hs_ext_trusted_ca_key;
+        int hs_ext_trusted_ca_key_type;
+        int hs_ext_trusted_ca_key_hash;
+        int hs_ext_trusted_ca_key_dname_len;
+        int hs_ext_trusted_ca_key_dname;
         int hs_sig_hash_alg;
         int hs_sig_hash_alg_len;
         int hs_sig_hash_algs;
@@ -1085,6 +1095,7 @@ typedef struct ssl_common_dissect {
         int hs_ext_quictp_parameter_other_version;
         int hs_ext_quictp_parameter_enable_multipath;
         int hs_ext_quictp_parameter_initial_max_paths;
+        int hs_ext_quictp_parameter_initial_max_path_id;
 
         int esni_suite;
         int esni_record_digest_length;
@@ -1146,6 +1157,8 @@ typedef struct ssl_common_dissect {
         int hs_ext_server_name;
         int hs_ext_oid_filter;
         int hs_ext_quictp_parameter;
+        int hs_ext_trusted_ca_keys;
+        int hs_ext_trusted_ca_key;
         int hs_sig_hash_alg;
         int hs_sig_hash_algs;
         int urlhash;
@@ -2022,7 +2035,7 @@ ssl_common_dissect_t name;
     { & name .hf.hs_session_ticket_lifetime_hint,                       \
       { "Session Ticket Lifetime Hint",                                 \
         prefix ".handshake.session_ticket_lifetime_hint",               \
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_second_seconds, 0x0, \
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x0, \
         "New Session Ticket Lifetime Hint", HFILL }                     \
     },                                                                  \
     { & name .hf.hs_session_ticket_age_add,                             \
@@ -2516,6 +2529,11 @@ ssl_common_dissect_t name;
         FT_UINT64, BASE_DEC, NULL, 0x00,                                \
         NULL, HFILL }                                                   \
     },                                                                  \
+    { & name .hf.hs_ext_quictp_parameter_initial_max_path_id,           \
+      { "Initial Max Path ID", prefix ".quic.parameter.initial_max_path_id", \
+        FT_UINT64, BASE_DEC, NULL, 0x00,                                \
+        NULL, HFILL }                                                   \
+    },                                                                  \
     { & name .hf.hs_ext_connection_id_length,                           \
       { "Connection ID length", prefix ".connection_id_length",         \
         FT_UINT8, BASE_DEC, NULL, 0x00,                                 \
@@ -2525,6 +2543,41 @@ ssl_common_dissect_t name;
       { "Connection ID", prefix ".connection_id",                       \
         FT_BYTES, BASE_NONE, NULL, 0x00,                                \
         NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_keys_len,                            \
+      { "Trusted CA keys length", prefix ".handshake.trusted_ca.keys_length", \
+        FT_UINT16, BASE_DEC, NULL, 0x00,                                \
+        "Length of Trusted CA keys extension", HFILL }                  \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_keys_list,                           \
+      { "Trusted CA keys", prefix ".handshake.trusted_ca.keys",         \
+        FT_NONE, BASE_NONE, NULL, 0x00,                                 \
+        "List of Trusted CA keys", HFILL }                              \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_key,                                 \
+      { "Trusted CA key", prefix ".handshake.trusted_ca.key",           \
+        FT_NONE, BASE_NONE, NULL, 0x0,                                  \
+        NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_key_type,                            \
+      { "Trusted CA key type", prefix ".handshake.trusted_ca.key_type", \
+        FT_UINT8, BASE_DEC, VALS(tls_hello_ext_trusted_ca_key_type), 0x00, \
+        "Type of Trusted CA key", HFILL }                               \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_key_hash,                            \
+      { "Trusted CA key hash", prefix ".handshake.trusted_ca.key_hash", \
+        FT_BYTES, BASE_NONE, NULL, 0x00,                                \
+        NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_key_dname_len,                       \
+      { "Distinguished Name Length", prefix ".handshake.trusted_ca.key_dname_len", \
+        FT_UINT16, BASE_DEC, NULL, 0x0,                                 \
+        "Length of distinguished name", HFILL }                         \
+    },                                                                  \
+    { & name .hf.hs_ext_trusted_ca_key_dname,                           \
+      { "Distinguished Name", prefix ".handshake.trusted_ca.key_dname", \
+        FT_NONE, BASE_NONE, NULL, 0x0,                                  \
+        "Distinguished name of a CA that the client trusts", HFILL }    \
     },                                                                  \
     { & name .hf.esni_suite,                                            \
       { "Cipher Suite", prefix ".esni.suite",                           \
@@ -2744,6 +2797,8 @@ ssl_common_dissect_t name;
         & name .ett.hs_ext_server_name,             \
         & name .ett.hs_ext_oid_filter,              \
         & name .ett.hs_ext_quictp_parameter,        \
+        & name .ett.hs_ext_trusted_ca_keys,         \
+        & name .ett.hs_ext_trusted_ca_key,          \
         & name .ett.hs_sig_hash_alg,                \
         & name .ett.hs_sig_hash_algs,               \
         & name .ett.urlhash,                        \

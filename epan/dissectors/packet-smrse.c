@@ -18,6 +18,7 @@
 
 #include <epan/packet.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-smrse.h"
@@ -143,8 +144,8 @@ dissect_smrse_T_octet_format(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offse
 	}
 	strp=tmpstr;
 	for(i=0;i<len;i++){
-		*strp++=n2a[tvb_get_guint8(tvb, offset)&0x0f];
-		*strp++=n2a[(tvb_get_guint8(tvb, offset)>>4)&0x0f];
+		*strp++=n2a[tvb_get_uint8(tvb, offset)&0x0f];
+		*strp++=n2a[(tvb_get_uint8(tvb, offset)>>4)&0x0f];
 		offset++;
 	}
 	*strp=0;
@@ -470,8 +471,8 @@ dissect_smrse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *
 	asn1_ctx_t asn1_ctx;
 	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
-	reserved=tvb_get_guint8(tvb, 0);
-	tag=tvb_get_guint8(tvb, 3);
+	reserved=tvb_get_uint8(tvb, 0);
+	tag=tvb_get_uint8(tvb, 3);
 
 	if( reserved!= 126 )
 		return 0;

@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -596,7 +597,7 @@ dssetup_dissect_element_DsRoleGetPrimaryDomainInformation_info_(tvbuff_t *tvb _U
 static int
 dssetup_dissect_DsRoleGetPrimaryDomainInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleGetPrimaryDomainInformation";
 	offset = dssetup_dissect_element_DsRoleGetPrimaryDomainInformation_info(tvb, offset, pinfo, tree, di, drep);
@@ -605,7 +606,7 @@ dssetup_dissect_DsRoleGetPrimaryDomainInformation_response(tvbuff_t *tvb _U_, in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -626,13 +627,13 @@ dssetup_dissect_DsRoleGetPrimaryDomainInformation_request(tvbuff_t *tvb _U_, int
 static int
 dssetup_dissect_DsRoleDnsNameToFlatName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleDnsNameToFlatName";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -651,13 +652,13 @@ dssetup_dissect_DsRoleDnsNameToFlatName_request(tvbuff_t *tvb _U_, int offset _U
 static int
 dssetup_dissect_DsRoleDcAsDc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleDcAsDc";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -676,13 +677,13 @@ dssetup_dissect_DsRoleDcAsDc_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 static int
 dssetup_dissect_DsRoleDcAsReplica_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleDcAsReplica";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -701,13 +702,13 @@ dssetup_dissect_DsRoleDcAsReplica_request(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 dssetup_dissect_DsRoleDemoteDc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleDemoteDc";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -726,13 +727,13 @@ dssetup_dissect_DsRoleDemoteDc_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 dssetup_dissect_DsRoleGetDcOperationProgress_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleGetDcOperationProgress";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -751,13 +752,13 @@ dssetup_dissect_DsRoleGetDcOperationProgress_request(tvbuff_t *tvb _U_, int offs
 static int
 dssetup_dissect_DsRoleGetDcOperationResults_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleGetDcOperationResults";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -776,13 +777,13 @@ dssetup_dissect_DsRoleGetDcOperationResults_request(tvbuff_t *tvb _U_, int offse
 static int
 dssetup_dissect_DsRoleCancel_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleCancel";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -801,13 +802,13 @@ dssetup_dissect_DsRoleCancel_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 static int
 dssetup_dissect_DsRoleServerSaveStateForUpgrade_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleServerSaveStateForUpgrade";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -826,13 +827,13 @@ dssetup_dissect_DsRoleServerSaveStateForUpgrade_request(tvbuff_t *tvb _U_, int o
 static int
 dssetup_dissect_DsRoleUpgradeDownlevelServer_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleUpgradeDownlevelServer";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -851,13 +852,13 @@ dssetup_dissect_DsRoleUpgradeDownlevelServer_request(tvbuff_t *tvb _U_, int offs
 static int
 dssetup_dissect_DsRoleAbortDownlevelServerUpgrade_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DsRoleAbortDownlevelServerUpgrade";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_dssetup_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -938,7 +939,7 @@ void proto_register_dcerpc_dssetup(void)
 	{ &hf_dssetup_opnum,
 	  { "Operation", "dssetup.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_dssetup_werror,
-	  { "Windows Error", "dssetup.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "dssetup.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 

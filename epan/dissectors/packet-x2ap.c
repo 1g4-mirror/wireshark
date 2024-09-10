@@ -28,6 +28,9 @@
 #include <epan/prefs.h>
 #include <epan/sctpppids.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+#include <wsutil/array.h>
 
 #include "packet-x2ap.h"
 #include "packet-per.h"
@@ -2077,6 +2080,7 @@ static int ett_x2ap_UERadioCapability;
 static int ett_x2ap_LastVisitedPSCell_Item;
 static int ett_x2ap_NRRAReportContainer;
 static int ett_x2ap_rAT_RestrictionInformation;
+static int ett_x2ap_PSCellListContainer;
 static int ett_x2ap_PrivateIE_ID;
 static int ett_x2ap_ProtocolIE_Container;
 static int ett_x2ap_ProtocolIE_Field;
@@ -11812,8 +11816,16 @@ dissect_x2ap_PSCellChangeHistory(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 static int
 dissect_x2ap_PSCellListContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb = NULL;
+  proto_tree *subtree;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, false, NULL);
+                                       NO_BOUND, NO_BOUND, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    subtree = proto_item_add_subtree(actx->created_item, ett_x2ap_PSCellListContainer);
+    dissect_lte_rrc_CellIdListNR_r18_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
+  }
+
 
   return offset;
 }
@@ -23696,7 +23708,7 @@ void proto_register_x2ap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x08,
         NULL, HFILL }},
     { &hf_x2ap_measurementsToActivate_LoggingM1FromEventTriggered,
-      { "LoggingOfM1FromEventTriggeredMeasurementReports", "x2ap.measurementsToActivate.LoggingM1FromEventTriggered",
+      { "LoggingM1FromEventTriggeredMeasurementReports", "x2ap.measurementsToActivate.LoggingM1FromEventTriggered",
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x04,
         NULL, HFILL }},
     { &hf_x2ap_measurementsToActivate_M6,
@@ -24141,7 +24153,7 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_ExtendedBitRate_PDU,
       { "ExtendedBitRate", "x2ap.ExtendedBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         NULL, HFILL }},
     { &hf_x2ap_F1CTrafficContainer_PDU,
       { "F1CTrafficContainer", "x2ap.F1CTrafficContainer",
@@ -26389,7 +26401,7 @@ void proto_register_x2ap(void) {
         "CHO_Probability", HFILL }},
     { &hf_x2ap_cHO_HOWindowStart,
       { "cHO-HOWindowStart", "x2ap.cHO_HOWindowStart",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "CHO_HandoverWindowStart", HFILL }},
     { &hf_x2ap_cHO_HOWindowDuration,
       { "cHO-HOWindowDuration", "x2ap.cHO_HOWindowDuration",
@@ -26609,11 +26621,11 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_usageCountUL,
       { "usageCountUL", "x2ap.usageCountUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_x2ap_usageCountDL,
       { "usageCountDL", "x2ap.usageCountDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_x2ap_fDD,
       { "fDD", "x2ap.fDD_element",
@@ -26633,11 +26645,11 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_expectedActivityPeriod,
       { "expectedActivityPeriod", "x2ap.expectedActivityPeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_x2ap_expectedIdlePeriod,
       { "expectedIdlePeriod", "x2ap.expectedIdlePeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_x2ap_sourceofUEActivityBehaviourInformation,
       { "sourceofUEActivityBehaviourInformation", "x2ap.sourceofUEActivityBehaviourInformation",
@@ -26717,19 +26729,19 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_e_RAB_MaximumBitrateDL,
       { "e-RAB-MaximumBitrateDL", "x2ap.e_RAB_MaximumBitrateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_e_RAB_MaximumBitrateUL,
       { "e-RAB-MaximumBitrateUL", "x2ap.e_RAB_MaximumBitrateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_e_RAB_GuaranteedBitrateDL,
       { "e-RAB-GuaranteedBitrateDL", "x2ap.e_RAB_GuaranteedBitrateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_e_RAB_GuaranteedBitrateUL,
       { "e-RAB-GuaranteedBitrateUL", "x2ap.e_RAB_GuaranteedBitrateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_eNB_ID,
       { "eNB-ID", "x2ap.eNB_ID",
@@ -26837,7 +26849,7 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_time_UE_StayedInCell,
       { "time-UE-StayedInCell", "x2ap.time_UE_StayedInCell",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_x2ap_undefined,
       { "undefined", "x2ap.undefined_element",
@@ -27245,7 +27257,7 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_uESidelinkAggregateMaximumBitRate,
       { "uESidelinkAggregateMaximumBitRate", "x2ap.uESidelinkAggregateMaximumBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_nRencryptionAlgorithms,
       { "nRencryptionAlgorithms", "x2ap.nRencryptionAlgorithms",
@@ -27269,7 +27281,7 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_pc5LinkAggregatedBitRates,
       { "pc5LinkAggregatedBitRates", "x2ap.pc5LinkAggregatedBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_PC5QoSFlowList_item,
       { "PC5QoSFlowItem", "x2ap.PC5QoSFlowItem_element",
@@ -27289,11 +27301,11 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_guaranteedFlowBitRate,
       { "guaranteedFlowBitRate", "x2ap.guaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_maximumFlowBitRate,
       { "maximumFlowBitRate", "x2ap.maximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_rootSequenceIndex,
       { "rootSequenceIndex", "x2ap.rootSequenceIndex",
@@ -27613,7 +27625,7 @@ void proto_register_x2ap(void) {
         NULL, HFILL }},
     { &hf_x2ap_periodicTime,
       { "periodicTime", "x2ap.periodicTime",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_1_3600_", HFILL }},
     { &hf_x2ap_scheduledCommunicationTime,
       { "scheduledCommunicationTime", "x2ap.scheduledCommunicationTime_element",
@@ -27637,11 +27649,11 @@ void proto_register_x2ap(void) {
         "BIT_STRING_SIZE_7", HFILL }},
     { &hf_x2ap_timeofDayStart,
       { "timeofDayStart", "x2ap.timeofDayStart",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_0_86399_", HFILL }},
     { &hf_x2ap_timeofDayEnd,
       { "timeofDayEnd", "x2ap.timeofDayEnd",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_0_86399_", HFILL }},
     { &hf_x2ap_SSBAreaCapacityValue_List_item,
       { "SSBAreaCapacityValue-Item", "x2ap.SSBAreaCapacityValue_Item_element",
@@ -27897,11 +27909,11 @@ void proto_register_x2ap(void) {
         "Port_Number", HFILL }},
     { &hf_x2ap_uEaggregateMaximumBitRateDownlink,
       { "uEaggregateMaximumBitRateDownlink", "x2ap.uEaggregateMaximumBitRateDownlink",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_uEaggregateMaximumBitRateUplink,
       { "uEaggregateMaximumBitRateUplink", "x2ap.uEaggregateMaximumBitRateUplink",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_x2ap_containerForAppLayerMeasConfig,
       { "containerForAppLayerMeasConfig", "x2ap.containerForAppLayerMeasConfig",
@@ -29094,6 +29106,7 @@ void proto_register_x2ap(void) {
     &ett_x2ap_LastVisitedPSCell_Item,
     &ett_x2ap_NRRAReportContainer,
     &ett_x2ap_rAT_RestrictionInformation,
+    &ett_x2ap_PSCellListContainer,
     &ett_x2ap_PrivateIE_ID,
     &ett_x2ap_ProtocolIE_Container,
     &ett_x2ap_ProtocolIE_Field,

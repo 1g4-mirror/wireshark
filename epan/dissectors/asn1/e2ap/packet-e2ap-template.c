@@ -25,6 +25,7 @@
 #include <epan/oids.h>
 #include <epan/tap.h>
 #include <epan/stats_tree.h>
+#include <wsutil/array.h>
 
 #include "packet-e2ap.h"
 #include "packet-per.h"
@@ -282,7 +283,7 @@ static gnb_ran_functions_t s_gnb_ran_functions_table;
 /* Table of available dissectors for each RAN function */
 typedef struct {
     uint32_t                 num_available_dissectors;
-#define MAX_DISSECTORS_PER_RAN_FUNCTION 3
+#define MAX_DISSECTORS_PER_RAN_FUNCTION 8
     ran_function_dissector_t* ran_function_dissectors[MAX_DISSECTORS_PER_RAN_FUNCTION];
 } ran_function_available_dissectors_t;
 
@@ -796,7 +797,11 @@ proto_reg_handoff_e2ap(void)
   /* KPM */
   oid_add_from_string("KPM v1",         "1.3.6.1.4.1.53148.1.1.2.2");
   oid_add_from_string("KPM v2",         "1.3.6.1.4.1.53148.1.2.2.2");
-  oid_add_from_string("KPM v3",         "1.2.6.1.4.1.53148.1.3.2.2");
+  oid_add_from_string("KPM v3",         "1.3.6.1.4.1.53148.1.3.2.2");
+  oid_add_from_string("KPM v4",         "1.3.6.1.4.1.53148.1.4.2.2");
+  oid_add_from_string("KPM v5",         "1.3.6.1.4.1.53148.1.5.2.2");
+  oid_add_from_string("KPM v6",         "1.3.6.1.4.1.53148.1.6.2.2");
+
 
   /* RC */
   // TODO: appears to be the same???  Asking for clarification from ORAN..
@@ -806,16 +811,27 @@ proto_reg_handoff_e2ap(void)
 
   /* NI */
   oid_add_from_string("NI  v1",         "1.3.6.1.4.1.53148.1.1.2.1");
+  oid_add_from_string("NI  v2",         "1.3.6.1.4.1.53148.1.2.2.1");
+  oid_add_from_string("NI  v3",         "1.3.6.1.4.1.53148.1.3.2.1");
+  oid_add_from_string("NI  v4",         "1.3.6.1.4.1.53148.1.4.2.1");
+  oid_add_from_string("NI  v5",         "1.3.6.1.4.1.53148.1.5.2.1");
+  oid_add_from_string("NI  v6",         "1.3.6.1.4.1.53148.1.6.2.1");
+
 
   /* CCC */
   oid_add_from_string("CCC v1",         "1.3.6.1.4.1.53148.1.1.2.4");
+  oid_add_from_string("CCC v2",         "1.3.6.1.4.1.53148.1.2.2.4");
+  oid_add_from_string("CCC v3",         "1.3.6.1.4.1.53148.1.3.2.4");
+  oid_add_from_string("CCC v4",         "1.3.6.1.4.1.53148.1.4.2.4");
+  oid_add_from_string("CCC v5",         "1.3.6.1.4.1.53148.1.5.2.4");
+  oid_add_from_string("CCC v6",         "1.3.6.1.4.1.53148.1.6.2.4");
 
 
-  /********************************/
-  /* Register 'built-in' dissectors */
+  /*********************************************************/
+  /* Register 'built-in' dissectors (i.e., from asn1/e2ap) */
 
   static ran_function_dissector_t kpm_v3 =
-  { "ORAN-E2SM-KPM", "1.2.6.1.4.1.53148.1.3.2.2", 3, 0,
+  { "ORAN-E2SM-KPM", "1.3.6.1.4.1.53148.1.3.2.2", 3, 0,
     {  dissect_E2SM_KPM_RANfunction_Description_PDU,
 
        NULL,
@@ -892,13 +908,100 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
+  static ran_function_dissector_t ccc_v2 =
+  { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.2.2.4", 2, 0,
+    /* See table 5.1 */
+    {  dissect_E2SM_NI_JSON_PDU,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       NULL,
+       NULL,
+       NULL,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU
+    }
+  };
+
+  static ran_function_dissector_t ccc_v3 =
+  { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.3.2.4", 3, 0,
+    /* See table 5.1 */
+    {  dissect_E2SM_NI_JSON_PDU,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       NULL,
+       NULL,
+       NULL,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU
+    }
+  };
+
+  static ran_function_dissector_t ccc_v4 =
+  { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.4.2.4", 4, 0,
+    /* See table 5.1 */
+    {  dissect_E2SM_NI_JSON_PDU,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       NULL,
+       NULL,
+       NULL,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU
+    }
+  };
+
+  static ran_function_dissector_t ccc_v5 =
+  { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.5.2.4", 5, 0,
+    /* See table 5.1 */
+    {  dissect_E2SM_NI_JSON_PDU,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       NULL,
+       NULL,
+       NULL,
+
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU,
+       dissect_E2SM_NI_JSON_PDU
+    }
+  };
+
+
   /* Register available dissectors.
    * Registering one version of each RAN Function here - others will need to be
    * registered in sepparate dissectors (e.g. kpm_v2) */
   register_e2ap_ran_function_dissector(KPM_RANFUNCTIONS, &kpm_v3);
   register_e2ap_ran_function_dissector(RC_RANFUNCTIONS,  &rc_v1);
   register_e2ap_ran_function_dissector(NI_RANFUNCTIONS,  &ni_v1);
+
   register_e2ap_ran_function_dissector(CCC_RANFUNCTIONS,  &ccc_v1);
+  register_e2ap_ran_function_dissector(CCC_RANFUNCTIONS,  &ccc_v2);
+  register_e2ap_ran_function_dissector(CCC_RANFUNCTIONS,  &ccc_v3);
+  register_e2ap_ran_function_dissector(CCC_RANFUNCTIONS,  &ccc_v4);
+  register_e2ap_ran_function_dissector(CCC_RANFUNCTIONS,  &ccc_v5);
+
 
   /* Cache JSON dissector */
   json_handle = find_dissector("json");

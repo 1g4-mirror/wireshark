@@ -12,10 +12,7 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
-#include <epan/xdlc.h>
-#include <epan/reassemble.h>
-#include <epan/conversation.h>
+#include <epan/tfs.h>
 
 void proto_register_gsm_l2rcop(void);
 
@@ -40,7 +37,7 @@ static const value_string addr_vals[] = {
 };
 
 static void
-add_characters(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, guint offset, guint len)
+add_characters(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset, unsigned len)
 {
 	tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, len);
 	call_data_dissector(next_tvb, pinfo, tree);
@@ -51,16 +48,16 @@ static int
 dissect_l2rcop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int reported_len = tvb_reported_length(tvb);
-	guint cur;
+	unsigned cur;
 
 	/* we currently support RLP v0 + v1 (first octet is always status octet) */
 
-	for (cur = 0; cur < (guint)reported_len; ) {
-		guint8 oct = tvb_get_guint8(tvb, cur);
-		guint8 addr = oct & 0x1f;
+	for (cur = 0; cur < (unsigned)reported_len; ) {
+		uint8_t oct = tvb_get_uint8(tvb, cur);
+		uint8_t addr = oct & 0x1f;
 		proto_tree *l2rcop_tree;
 		proto_item *ti;
-		const gchar *addr_str = val_to_str(addr, addr_vals, "%u characters");
+		const char *addr_str = val_to_str(addr, addr_vals, "%u characters");
 
 		ti = proto_tree_add_protocol_format(tree, proto_l2rcop, tvb, 0, reported_len,
 						    "GSM L2RCOP Chunk Status=0x%02x (Addr: %s)", oct, addr_str);
@@ -85,7 +82,7 @@ dissect_l2rcop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			return reported_len;
 		case 27: /* extended address in ext octet */
 			cur++;
-			addr = tvb_get_guint8(tvb, cur) & 0x3f;
+			addr = tvb_get_uint8(tvb, cur) & 0x3f;
 			/* This "cannot happen"; let's abort processing right now. */
 			if (addr == 0)
 				return reported_len;
@@ -137,7 +134,7 @@ proto_register_gsm_l2rcop(void)
 		  { "Break Ack", "gsm_l2rcop.break_ack", FT_UINT8, BASE_DEC, NULL, 0x00,
 		    NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_l2rcop,
 	};
 

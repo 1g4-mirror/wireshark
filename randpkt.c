@@ -144,7 +144,7 @@ main(int argc, char *argv[])
     int file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_UNKNOWN;
     randpkt_example *example;
     uint8_t* type = NULL;
-    int allrandom = false;
+    bool allrandom = false;
     wtap_dumper *savedump;
     int ret = EXIT_SUCCESS;
     static const struct ws_option long_options[] = {
@@ -238,7 +238,6 @@ main(int argc, char *argv[])
                     case 'F':
                         list_capture_types();
                         return WS_EXIT_INVALID_OPTION;
-                        break;
                 }
                 /* FALLTHROUGH */
 

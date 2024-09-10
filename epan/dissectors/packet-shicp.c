@@ -14,6 +14,8 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/addr_resolv.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-udp.h"
 
 void proto_reg_handoff_shicp(void);
@@ -152,7 +154,7 @@ test_shicp(packet_info* pinfo, tvbuff_t* tvb, int offset, void* data _U_)
     }
 
     /* Check that the header tag starts with 0xABC0. */
-    if ((tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN) & 0xFFF8) != 0xABC0) {
+    if ((tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN) & 0xFFF8) != 0xABC0) {
         return false;
     }
 
@@ -213,7 +215,7 @@ dissect_shicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     offset += SHICP_FLAGS_SIZE;
     proto_tree_add_item_ret_uint(shicp_tree, hf_shicp_msgtype, tvb, offset, SHICP_MSG_TYPE_SIZE, ENC_LITTLE_ENDIAN, &msgtype_value);
     offset += SHICP_MSG_TYPE_SIZE;
-    payload_length = tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN);
+    payload_length = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
     offset += 1;
     if (flags_value & SHICP_ERROR_FLAG) {
         proto_item_set_text(flags_pi,
@@ -246,9 +248,9 @@ dissect_shicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         {
         case SHICP_DISCOVER_MSG_TYPE:
             while (offset < payload_end) {
-                keyvalue_key = tvb_get_guint8(tvb, offset);
+                keyvalue_key = tvb_get_uint8(tvb, offset);
                 offset += 1;
-                keyvalue_length = tvb_get_guint8(tvb, offset);
+                keyvalue_length = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 switch (keyvalue_key)
                 {
@@ -264,11 +266,11 @@ dissect_shicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 case SHICP_DISCOVER_SUPPORTED_MSG_KEY:
                     keyvalue_end = offset + keyvalue_length;
                     keyvalue_offset = offset;
-                    supported_message_value = tvb_get_guint8(tvb, keyvalue_offset);
+                    supported_message_value = tvb_get_uint8(tvb, keyvalue_offset);
                     wmem_strbuf_append(supported_messages, val_to_str(supported_message_value, message_types, "%d"));
                     keyvalue_offset += 1;
                     while (keyvalue_offset < keyvalue_end) {
-                        supported_message_value = tvb_get_guint8(tvb, keyvalue_offset);
+                        supported_message_value = tvb_get_uint8(tvb, keyvalue_offset);
                         wmem_strbuf_append_printf(supported_messages, ", %s", val_to_str(supported_message_value, message_types, "%d"));
                         keyvalue_offset += 1;
                     }
@@ -324,9 +326,9 @@ dissect_shicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 break;
             }
             while (offset < payload_end) {
-                keyvalue_key = tvb_get_guint8(tvb, offset);
+                keyvalue_key = tvb_get_uint8(tvb, offset);
                 offset += 1;
-                keyvalue_length = tvb_get_guint8(tvb, offset);
+                keyvalue_length = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 switch (keyvalue_key)
                 {

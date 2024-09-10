@@ -6,6 +6,7 @@
  * https://tools.ietf.org/wg/ancp/
  * https://tools.ietf.org/html/draft-ietf-ancp-protocol-09
  * https://tools.ietf.org/html/rfc6320
+ * https://tools.ietf.org/html/rfc7256
  * https://www.iana.org/assignments/ancp/ancp.xhtml
  *
  * Copyright 2010, Aniruddha.A (anira@cisco.com)
@@ -22,10 +23,12 @@
 
 #include <epan/packet.h>
 #include <epan/stats_tree.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <wsutil/ws_roundup.h>
 #include "packet-tcp.h"
 
-#define ANCP_PORT 6068 /* The ANCP TCP port:draft-ietf-ancp-protocol-09.txt */
+#define ANCP_PORT 6068 /* The ANCP TCP port */
 
 #define ANCP_MIN_HDR  4
 #define ANCP_GSMP_ETHER_TYPE  0x880C
@@ -157,14 +160,21 @@ struct ancp_tap_t {
 
 /* Value Strings */
 static const value_string mtype_names[] = {
-    { 10, "Adjacency" },
-    { 32, "Port-Management" },
-    { 80, "Port-Up" },
-    { 81, "Port-Down" },
-    { 85, "Adjacency Update" },
-    { 91, "Generic Response" },
-    { 93, "Provisioning" },
-    {  0,  NULL }
+    {  10, "Adjacency" },
+    {  32, "Port-Management" },
+    {  80, "Port-Up" },
+    {  81, "Port-Down" },
+    {  85, "Adjacency Update" },
+    {  91, "Generic Response" },
+    {  93, "Provisioning" },
+    { 144, "Multicast Replication Control" },
+    { 145, "Multicast Admission Control" },
+    { 146, "Bandwidth Reallocation Request" },
+    { 147, "Bandwidth Transfer" },
+    { 148, "Delegated Bandwidth Query" },
+    { 149, "Mulicast Flow Query" },
+    { 150, "Committed Bandwidth Report" },
+    {   0,  NULL }
 };
 
 static const value_string adj_code_names[] = {
@@ -201,6 +211,12 @@ static const value_string codetype_names[] = {
     { 0x053, "Malformed message" },
     { 0x054, "Mandatory TLV missing" },
     { 0x055, "Invalid TLV contents" },
+    { 0x064, "Command error" },
+    { 0x065, "Invalid flow address" },
+    { 0x066, "Mulicast flow does not exist" },
+    { 0x067, "Invalid preferred bandwith amount" },
+    { 0x068, "Inconsistent views of delegated bandwidth amount" },
+    { 0x069, "Bandwidth request conflict" },
     { 0x500, "One or more of the specified ports do not exist" },
     { 0x501, "Loopback test timed out" },
     { 0x502, "Reserved" },
@@ -289,6 +305,7 @@ static const value_string function_names[] = {
 };
 
 static const value_string ext_tlv_types[] = {
+    { 0x0000, "Reserved" },
     { 0x0001, "Access-Loop-Circuit-ID" },
     { 0x0002, "Access-Loop-Remote-ID" },
     { 0x0003, "Access-Aggregation-Circuit-ID-ASCII" },
@@ -473,7 +490,7 @@ dissect_ancp_port_up_dn_mgmt(tvbuff_t *tvb, proto_tree *ancp_tree, int offset, u
         tech_type = 0;
     } else {
         proto_tree_add_item(ancp_tree, hf_ancp_tech_type,     tvb, offset, 1, ENC_BIG_ENDIAN);
-        tech_type = tvb_get_guint8(tvb, offset);
+        tech_type = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         proto_tree_add_item(ancp_tree, hf_ancp_reserved,      tvb, offset, 1, ENC_NA);
@@ -516,7 +533,7 @@ dissect_ancp_adj_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ancp_tree,
 
     sti = proto_tree_add_item(ancp_tree, hf_ancp_adj_code, tvb, offset, 1,
             ENC_BIG_ENDIAN);
-    byte = tvb_get_guint8(tvb, offset);
+    byte = tvb_get_uint8(tvb, offset);
     offset += 1;
     adjcode = byte & ADJ_CODE_MASK;
     ancp_info->ancp_adjcode = adjcode; /* stats */
@@ -540,7 +557,7 @@ dissect_ancp_adj_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ancp_tree,
 
     sti = proto_tree_add_item(ancp_tree, hf_ancp_p_info, tvb,
             offset, 1, ENC_BIG_ENDIAN);
-    byte = tvb_get_guint8(tvb, offset);
+    byte = tvb_get_uint8(tvb, offset);
     offset += 1;
     proto_item_append_text(sti, " (Type = %d, Flag = %d)",
             byte >> 4, byte & 0x0F);
@@ -558,7 +575,7 @@ dissect_ancp_adj_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ancp_tree,
     offset += 1;
 
     sti = proto_tree_add_item(ancp_tree, hf_ancp_num_tlvs, tvb, offset, 1, ENC_BIG_ENDIAN);
-    numcaps = tvb_get_guint8(tvb, offset);
+    numcaps = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* Start the capability subtree */
@@ -643,12 +660,12 @@ dissect_ancp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     offset += 2;
 
     sti  = proto_tree_add_item(ancp_tree, hf_ancp_ver, tvb, offset, 1, ENC_BIG_ENDIAN);
-    byte = tvb_get_guint8(tvb, offset);
+    byte = tvb_get_uint8(tvb, offset);
     offset += 1;
     proto_item_append_text(sti, " (%d.%d)", byte >> 4, byte & 0x0F);
 
     sti = proto_tree_add_item(ancp_tree, hf_ancp_mtype, tvb, offset, 1, ENC_BIG_ENDIAN);
-    mtype = tvb_get_guint8(tvb, offset); /* ANCP message type */
+    mtype = tvb_get_uint8(tvb, offset); /* ANCP message type */
     ancp_info->ancp_mtype = mtype; /* stats */
     offset += 1;
 
@@ -761,7 +778,7 @@ proto_register_ancp(void)
         { &hf_ancp_timer,
             { "Timer", "ancp.timer",
                 FT_UINT8, BASE_DEC|BASE_UNIT_STRING,
-                &units_milliseconds, 0x0,
+                UNS(&units_milliseconds), 0x0,
                 NULL, HFILL }
         },
         { &hf_ancp_adj_code,

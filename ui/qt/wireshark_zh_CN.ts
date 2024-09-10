@@ -44,8 +44,8 @@
         <translation>文件夹</translation>
     </message>
     <message>
-        <source>Filter by path</source>
-        <translation>按路径过滤</translation>
+        <source>Search Folders</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Plugins</source>
@@ -887,10 +887,6 @@
     <message>
         <source>Read filter:</source>
         <translation>读取过滤器:</translation>
-    </message>
-    <message>
-        <source>Compress with g&amp;zip</source>
-        <translation>用 gzip 压缩(&amp;Z)</translation>
     </message>
     <message>
         <source>Open Capture File</source>
@@ -1935,29 +1931,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>ColumnTypeDelegate</name>
-    <message>
-        <source>Default</source>
-        <translation>默认</translation>
-    </message>
-    <message>
-        <source>Left</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Center</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Right</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation type="unfinished">未知</translation>
-    </message>
-</context>
-<context>
     <name>CompiledFilterOutput</name>
     <message>
         <source>Compiled Filter Output</source>
@@ -1970,6 +1943,25 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Copy filter text to the clipboard.</source>
         <translation>复制过滤器文本到剪贴板。</translation>
+    </message>
+</context>
+<context>
+    <name>CompressionGroupBox</name>
+    <message>
+        <source>Compression options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Uncompressed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compress with g&amp;zip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Compress with &amp;LZ4</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2711,6 +2703,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Hide aggregated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hide IPv4 aggregated endpoints (see subnets file &amp; IPv4 preferences)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to save map file %1.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2997,6 +2997,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Display filter:</source>
         <translation>显示过滤器:</translation>
+    </message>
+    <message>
+        <source>Export PDUs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4495,6 +4499,30 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>%1 Intervals </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to top right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to bottom right</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6875,6 +6903,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>最近使用的文件夹</translation>
     </message>
     <message>
+        <source>The current working directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Show up to</source>
         <translation>显示最多</translation>
     </message>
@@ -7305,6 +7337,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Refresh</source>
+        <translation type="unfinished">刷新</translation>
+    </message>
+    <message>
         <source>Save Diagram As…</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7457,10 +7493,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>PacketList</name>
-    <message>
-        <source>Protocol Preferences</source>
-        <translation>协议首选项</translation>
-    </message>
     <message>
         <source>Summary as Text</source>
         <translation>摘要为文本</translation>
@@ -8721,6 +8753,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>DRB-%1</source>
         <translation>DRB-%1</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown</source>
@@ -11312,6 +11356,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>ShortcutListModel</name>
     <message>
+        <source>Display Filter Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jump to display filter input box</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Shortcut</source>
         <translation>快捷方式</translation>
     </message>
@@ -11565,6 +11617,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Display filter:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strip Headers</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14057,10 +14113,6 @@ a:hover {
         <translation>重置布局</translation>
     </message>
     <message>
-        <source>Reset appearance layout to default size</source>
-        <translation>重置外观布局为默认尺寸</translation>
-    </message>
-    <message>
         <source>Seconds Since First Captured Packet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -14427,6 +14479,10 @@ a:hover {
     <message>
         <source>Normal Size</source>
         <translation>普通大小</translation>
+    </message>
+    <message>
+        <source>Reset layout to default size</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Resize Columns</source>

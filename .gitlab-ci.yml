@@ -32,6 +32,12 @@ variables:
   # Skip irrelevant SAST scanners:
   SAST_EXCLUDED_ANALYZERS: "brakeman,eslint,security-code-scan,semgrep,spotbugs"
 
+workflow:
+  auto_cancel:
+    # Automatically cancel pipelines if new changes are pushed to a branch
+    # and the job is interruptible. Jobs are not interruptible by default.
+    on_new_commit: interruptible
+
 # Scheduled builds additionally set SCHEDULE_TYPE, which can be one of:
 # - 2x-daily: Twice daily at 07:00 and 19:00 UTC
 # - daily: Daily at 10:00 UTC
@@ -66,10 +72,12 @@ variables:
 # Incoming merge requests.
 .if-merge-request:
   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    interruptible: true
 # Incoming non-detached merge requests. Must be used for runners which are only
 # available in wireshark/wireshark, e.g. wireshark-windows-*
 .if-w-w-only-merge-request:
   - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
+    interruptible: true
 # Scheduled jobs. Care should be taken when changing this since the scheduler
 # often doesn't report errors.
 .if-weekly-schedule:
@@ -176,8 +184,7 @@ variables:
     - $env:Path += ";C:\Program Files\CMake\bin"
     - $env:CMAKE_PREFIX_PATH = "C:\qt\6.5.3\msvc2019_64"
     # https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell
-    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat`" && set > %temp%\vcvars.txt"
-    - Get-Content "$env:temp\vcvars.txt" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
+    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat`" && set " | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
     # Testing / debugging only.
     # - cmd.exe /c "set CI_PIPELINE_SOURCE"
     # - cmd.exe /c "set CI_PROJECT_URL"
@@ -232,7 +239,7 @@ variables:
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
     - ninja
     - ninja test-programs
-    - pytest
+    - pytest --disable-capture
   after_script:
     # The cache should be large enough to be useful but it shouldn't take
     # too long to restore+save each run.
@@ -354,22 +361,23 @@ Fedora RPM Package:
 #     - tshark --version
 #  needs: [ 'Fedora RPM Package' ]
 
-openSUSE 15.5 RPM Package:
+openSUSE 15.6 RPM Package:
   extends: .build-rpm
-  image: registry.gitlab.com/wireshark/wireshark-containers/opensuse-15.5-dev
+  image: registry.gitlab.com/wireshark/wireshark-containers/opensuse-15.6-dev
   script:
+    - source /gcc-latest.env
     - printf "\e[0Ksection_start:%s:cmake_section[collapsed=true]\r\e[0KRunning CMake" "$( date +%s)"
-    - cmake -G Ninja -DUSE_qt6=OFF ..
+    - cmake -G Ninja ..
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
     - ninja wireshark_rpm
 
-openSUSE 15.5 RPM Test:
+openSUSE 15.6 RPM Test:
   extends: .test-rpm
-  image: registry.gitlab.com/wireshark/wireshark-containers/opensuse-15.5-dev
+  image: registry.gitlab.com/wireshark/wireshark-containers/opensuse-15.6-dev
   script:
     - zypper --no-gpg-checks --no-remote install -y build/packaging/rpm/RPMS/x86_64/*.rpm
     - tshark --version
-  needs: [ 'openSUSE 15.5 RPM Package' ]
+  needs: [ 'openSUSE 15.6 RPM Package' ]
 
 Rocky Linux 9 RPM Package:
   extends: .build-rpm
@@ -431,8 +439,7 @@ Windows x64 Package:
     - $env:Configuration = "RelWithDebInfo"
     - $env:CMAKE_PREFIX_PATH = "C:\Qt\6.5.3\msvc2019_64"
     # https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell
-    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat`" && set > %temp%\vcvars.txt"
-    - Get-Content "$env:temp\vcvars.txt" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
+    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat`" && set" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
     - mkdir build
     - cd build
   script:
@@ -477,8 +484,7 @@ Windows Arm64 Package:
     - $env:Configuration = "RelWithDebInfo"
     - $env:CMAKE_PREFIX_PATH = "C:\Qt\6.5.3\msvc2019_arm64"
     # https://help.appveyor.com/discussions/questions/18777-how-to-use-vcvars64bat-from-powershell
-    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsarm64.bat`" && set > %temp%\vcvars.txt"
-    - Get-Content "$env:temp\vcvars.txt" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
+    - cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsarm64.bat`" && set" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
     - mkdir build
     - cd build
   script:
@@ -565,8 +571,7 @@ macOS Arm Package:
     - printf '[DEFAULT]\nsparkle_signature = %s\ndmg_sha256 = %s\n' "$SPARKLE_SIGNATURE" "$DMG_SHA256" > release-info-${WIRESHARK_VERSION}-macos-arm64.ini
     - if [[ -n "$S3_DESTINATION_RELEASE" ]] ; then aws s3 cp release-info-${WIRESHARK_VERSION}-macos-arm64.ini "$S3_DESTINATION_RELEASE/" ; fi
     - cd ..
-    - ninja test-programs
-    - python3 -m pytest
+    - ninja test
   artifacts:
     paths:
       - build/run/release-info-*.ini
@@ -615,8 +620,7 @@ macOS Intel Package:
     - printf '[DEFAULT]\nsparkle_signature = %s\ndmg_sha256 = %s\n' "$SPARKLE_SIGNATURE" "$DMG_SHA256" > release-info-${WIRESHARK_VERSION}-macos-intel64.ini
     - if [[ -n "$S3_DESTINATION_RELEASE" ]] ; then aws s3 cp release-info-${WIRESHARK_VERSION}-macos-intel64.ini "$S3_DESTINATION_RELEASE/" ; fi
     - cd ..
-    - ninja test-programs
-    - python3 -m pytest
+    - ninja test
   artifacts:
     paths:
       - build/run/release-info-*.ini
@@ -629,7 +633,7 @@ Documentation:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
       changes:
-        - "docbook/**/*"
+        - "doc/**/*"
         - "epan/wslua/**/*"
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: manual
@@ -644,11 +648,12 @@ Documentation:
     - printf "\e[0Ksection_start:%s:cmake_section[collapsed=true]\r\e[0KRunning CMake" "$( date +%s)"
     - cmake -GNinja ..
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
-    - ninja all_guides
-    - cd docbook
+    - ninja all_guides faq_html
+    - cd doc
     - for HTML_DIR in ws[ud]g_html{,_chunked} ; do zip -9 -r "$HTML_DIR.zip" "$HTML_DIR" ; done
-    - if [ -n "$MC_DESTINATION_DOCS" ] ; then mc --quiet cp ws[ud]g_html{,_chunked}.zip Wireshark*Guide.{epub,pdf} "$MC_DESTINATION_DOCS/" ; fi
-    - mv -v ws[ud]g_html{,_chunked}.zip Wireshark*Guide.{epub,pdf} ../..
+    - gzip -9 faq.html
+    - if [ -n "$MC_DESTINATION_DOCS" ] ; then mc --quiet cp ws[ud]g_html{,_chunked}.zip Wireshark*Guide.{epub,pdf} faq.html.gz "$MC_DESTINATION_DOCS/" ; fi
+    - mv -v ws[ud]g_html{,_chunked}.zip Wireshark*Guide.{epub,pdf} faq.html.gz ../..
   after_script:
     - if [ "$CI_JOB_STATUS" != "success" ]; then exit 0 ; fi
   artifacts:
@@ -661,6 +666,7 @@ Documentation:
       - "Wireshark Developer's Guide.pdf"
       - "Wireshark User's Guide.epub"
       - "Wireshark Developer's Guide.epub"
+      - faq.html.gz
   needs: []
 
 
@@ -741,6 +747,7 @@ Ubuntu GCC Build:
     CXX: "g++"
   needs: [ 'Commit Check' ]
   script:
+    - source /gcc-latest.env
     # build-ubuntu puts us in `build`.
     - cd ..
     - mv build "🦈 build 🦈"
@@ -792,8 +799,8 @@ Clang + Code Checks:
     # We don't have an "All options" job, so build fuzzshark and tfshark here.
     - cmake -DENABLE_CHECKHF_CONFLICT=on -DCMAKE_EXPORT_COMPILE_COMMANDS=on -DCMAKE_C_CLANG_TIDY=clang-tidy-$CLANG_VERSION -DCMAKE_CXX_CLANG_TIDY=clang-tidy-$CLANG_VERSION -DBUILD_fuzzshark=ON -DBUILD_tfshark=On -DBUILD_logray=ON -DENABLE_DEBUG=ON -DENABLE_CCACHE=ON -DENABLE_WERROR=ON -G Ninja ..
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
-    - printf "\e[0Ksection_start:%s:asn1_section[collapsed=true]\r\e[0KRegenerating ASN.1 dissectors" "$( date +%s)"
-    - ninja asn1
+    - printf "\e[0Ksection_start:%s:asn1_section[collapsed=false]\r\e[0KRegenerating ASN.1 dissectors" "$( date +%s)"
+    - ninja --quiet asn1
     - git diff --exit-code ${CI_COMMIT_SHA} ..
     - printf "\e[0Ksection_end:%s:asn1_section\r\e[0K" "$( date +%s)"
     - printf "\e[0Ksection_start:%s:pidl_section[collapsed=true]\r\e[0KRegenerating PIDL dissectors" "$( date +%s)"
@@ -817,6 +824,7 @@ Clang + Code Checks:
     - ./tools/check_typed_item_calls.py --consecutive --label --mask --check-bitmask-fields --commits $NUM_COMMITS | tee item_calls_check.txt
     - ./tools/check_tfs.py --check-value-strings --commits $NUM_COMMITS | tee tfs_check.txt
     - ./tools/check_val_to_str.py --commits $NUM_COMMITS | tee val_to_str_check.txt
+    - ./tools/check_col_apis.py --commits $NUM_COMMITS | tee col_apis_check.txt
   artifacts:
     paths:
       - clang_report.txt
@@ -826,6 +834,7 @@ Clang + Code Checks:
       - item_calls_check.txt
       - tfs_check.txt
       - val_to_str_check.txt
+      - col_apis_check.txt
       - checkhf_conflict.txt
       - html/
 
@@ -886,7 +895,7 @@ macOS Build:
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
     - ninja
     - ninja test-programs
-    - pytest
+    - pytest --disable-capture
   needs: [ 'Commit Check' ]
 
 # Adapted from https://www.synopsys.com/blogs/software-security/integrating-coverity-scan-with-gitlab-ci/
@@ -1067,7 +1076,7 @@ Code Lines and Data:
       # This file was generated by TShark $(git describe --tags | sed -e 's/^v//') with the
       # command \`tshark -G manuf\`. Its canonical location is
       #
-      # https://www.wireshark.org/download/automated/data/manuf
+      # https://www.wireshark.org/download/automated/data/manuf.gz
       #
       # The first column contains the MAC address block (24, 28 or 36 bits wide,
       # per IEEE allocation sizes), the second column contains the shortened name
@@ -1076,11 +1085,13 @@ Code Lines and Data:
       #
       FIN
     - build/run/tshark -G manuf | sed -e 's,:00:00:00/24,,' >> manuf
+    - gzip --best --keep manuf
     - if [ -n "$MC_DESTINATION_ANALYSIS" ] ; then mc --quiet cp "$CLOC_OUT" "$SCC_OUT" "$SLOC_OUT" "$TOKEI_OUT" "$MC_DESTINATION_ANALYSIS/" ; fi
-    - if [ -n "$MC_DESTINATION_DATA" ] ; then mc --quiet cp manuf "$MC_DESTINATION_DATA/" ; fi
+    - if [ -n "$MC_DESTINATION_DATA" ] ; then mc --quiet cp manuf manuf.gz "$MC_DESTINATION_DATA/" ; fi
   artifacts:
     paths:
     - manuf
+    - manuf.gz
   needs: []
 
 # Fuzz TShark using ASAN and valgrind.
@@ -1119,7 +1130,7 @@ Code Lines and Data:
     - FUZZ_ERRORS="/tmp/fuzz/$( basename "$FUZZ_CAPTURE" .pcap ).err"
     - printf "\nfuzz-test.sh stderr:\n" >> "$FUZZ_ERRORS"
     - cat fuzz-test.err >> "$FUZZ_ERRORS"
-    - if [ -n "$MC_DESTINATION_FUZZ" ] ; then mc --quiet cp "$FUZZ_CAPTURE" "$FUZZ_ERRORS" "$MC_DESTINATION_FUZZ/"
+    - if [ -n "$MC_DESTINATION_FUZZ" ] ; then mc --quiet cp "$FUZZ_CAPTURE" "$FUZZ_ERRORS" "$MC_DESTINATION_FUZZ/" ; fi
 
 ASan Menagerie Fuzz:
   extends: .fuzz-ubuntu

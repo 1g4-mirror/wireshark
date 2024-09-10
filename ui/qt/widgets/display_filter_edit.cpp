@@ -80,8 +80,7 @@ DisplayFilterEdit::DisplayFilterEdit(QWidget *parent, DisplayFilterEditType type
     leftAlignActions_(false),
     last_applied_(QString()),
     filter_word_preamble_(QString()),
-    autocomplete_accepts_field_(true),
-    bookmarks_enabled_(false)
+    autocomplete_accepts_field_(true)
 {
     setAccessibleName(tr("Display filter entry"));
 
@@ -89,37 +88,27 @@ DisplayFilterEdit::DisplayFilterEdit(QWidget *parent, DisplayFilterEditType type
     setCompleter(new QCompleter(completion_model_, this));
     setCompletionTokenChars(fld_abbrev_chars_);
 
-    // Add a margin so that the QLineEdit border is visible even with a
-    // non-transparent background (to block the Syntax color highlighting.)
-    int frameWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
     QString buttonStyle = QString(
         "QToolButton {"
         "  border: none;"
-        "  background: palette(base);"
-        //"  background: transparent;" // Disables platform style on Windows.
-        "  margin: %1px;"
+        "  background: transparent;" // Disables platform style on Windows.
+        "  padding: 0 0 0 0;"
         "}"
         "QToolButton::menu-indicator {"
         "  image: none;"
         "}"
-    ).arg(frameWidth);
+    );
 
     leftAlignActions_ = recent.gui_geometry_leftalign_actions;
 
-    bookmark_button_ = new StockIconToolButton(this, "x-display-filter-bookmark");
-    bookmark_button_->setMenu(new QMenu(bookmark_button_));
-    bookmark_button_->setPopupMode(QToolButton::InstantPopup);
-    bookmark_button_->setToolTip(tr("Manage saved bookmarks."));
-    bookmark_button_->setIconSize(QSize(14, 14));
-    bookmark_button_->setStyleSheet(buttonStyle);
-    bookmark_button_->setVisible(false);
-    bookmarks_enabled_ = true;
-
-    connect(bookmark_button_->menu(), &QMenu::aboutToShow, this, &DisplayFilterEdit::updateBookmarkMenu);
-
-    // DisplayFilterToApply - the Main Window FilterComboBox
-    // (always created before the app is initialized)
     if (type_ == DisplayFilterToApply) {
+        bookmark_button_ = new StockIconToolButton(this, "x-display-filter-bookmark");
+        bookmark_button_->setMenu(new QMenu(bookmark_button_));
+        bookmark_button_->setPopupMode(QToolButton::InstantPopup);
+        bookmark_button_->setToolTip(tr("Manage saved bookmarks."));
+        bookmark_button_->setIconSize(QSize(14, 14));
+        bookmark_button_->setStyleSheet(buttonStyle);
+        bookmark_button_->setVisible(false);
 
         clear_button_ = new StockIconToolButton(this, "x-filter-clear");
         clear_button_->setToolTip(tr("Clear display filter"));
@@ -137,14 +126,18 @@ DisplayFilterEdit::DisplayFilterEdit(QWidget *parent, DisplayFilterEditType type
         connect(clear_button_, &StockIconToolButton::clicked, this, &DisplayFilterEdit::clearFilter);
         connect(apply_button_, &StockIconToolButton::clicked, this, &DisplayFilterEdit::applyDisplayFilter);
         connect(this, &DisplayFilterEdit::returnPressed, this, &DisplayFilterEdit::applyDisplayFilter);
-        connect(mainApp, &MainApplication::appInitialized, this, &DisplayFilterEdit::connectToMainWindow);
     }
 
-    connect(this, &DisplayFilterEdit::textChanged, this,
-            QOverload<const QString &>::of(&DisplayFilterEdit::checkFilter));
+    setDefaultPlaceholderText();
 
-    connect(mainApp, &MainApplication::displayFilterListChanged, this, [=](){ checkFilter(); });
+    connect(this, &DisplayFilterEdit::textChanged, this,
+            static_cast<void (DisplayFilterEdit::*)(const QString &)>(&DisplayFilterEdit::checkFilter));
+
+    connect(mainApp, &MainApplication::appInitialized, this, &DisplayFilterEdit::updateBookmarkMenu);
+    connect(mainApp, &MainApplication::displayFilterListChanged, this, &DisplayFilterEdit::updateBookmarkMenu);
     connect(mainApp, &MainApplication::preferencesChanged, this, [=](){ checkFilter(); });
+
+    connect(mainApp, &MainApplication::appInitialized, this, &DisplayFilterEdit::connectToMainWindow);
 }
 
 void DisplayFilterEdit::connectToMainWindow()
@@ -203,13 +196,10 @@ void DisplayFilterEdit::alignActionButtons()
     QSize bksz, cbsz, apsz;
     bksz = apsz = cbsz = QSize(0, 0);
 
-    if (bookmarks_enabled_) {
+    if (type_ == DisplayFilterToApply) {
         bookmark_button_->setMinimumHeight(contentsRect().height());
         bookmark_button_->setMaximumHeight(contentsRect().height());
         bksz = bookmark_button_->sizeHint();
-    }
-
-    if (type_ == DisplayFilterToApply) {
 
         apsz = apply_button_->sizeHint();
         apply_button_->setMinimumHeight(contentsRect().height());
@@ -223,30 +213,25 @@ void DisplayFilterEdit::alignActionButtons()
         }
     }
 
-    int leftPadding = frameWidth + bksz.width() + 1;
-    int rightPadding = cbsz.width() + apsz.width() + frameWidth + 2;
+    int leftPadding = frameWidth + 1;
+    int leftMargin = bksz.width();
+    int rightMargin = cbsz.width() + apsz.width() + frameWidth + 2;
     if (leftAlignActions_)
     {
-        leftPadding += rightPadding - 2;
-        rightPadding = 0;
+        leftMargin = rightMargin + bksz.width() - 2;
+        rightMargin = 0;
     }
 
-    // The border color is to match the divider line drawn below.
-    // Some platform styles have different QLineEdit borders for
-    // normal and selected, which this disables.
     SyntaxLineEdit::setStyleSheet(style_sheet_ + QString(
             "SyntaxLineEdit {"
-#ifdef Q_OS_MAC
-            "  border: 1px solid gray;"
-#else
-            "  border: 1px solid palette(shadow);"
-#endif
             "  padding-left: %1px;"
-            "  padding-right: %2px;"
+            "  margin-left: %2px;"
+            "  margin-right: %3px;"
             "}"
             )
             .arg(leftPadding)
-            .arg(rightPadding)
+            .arg(leftMargin)
+            .arg(rightMargin)
     );
 
     if (apply_button_) {
@@ -255,7 +240,7 @@ void DisplayFilterEdit::alignActionButtons()
             apply_button_->move(contentsRect().right() - frameWidth - apsz.width(),
                             contentsRect().top());
         } else {
-            apply_button_->move(contentsRect().left() + bksz.width(), contentsRect().top());
+            apply_button_->move(contentsRect().left() + bookmark_button_->width(), contentsRect().top());
         }
     }
 
@@ -265,7 +250,7 @@ void DisplayFilterEdit::alignActionButtons()
             clear_button_->move(contentsRect().right() - frameWidth - cbsz.width() - apsz.width(),
                             contentsRect().top());
         } else {
-            int width = bksz.width() + apsz.width();
+            int width = bookmark_button_->width() + apply_button_->width();
             clear_button_->move(contentsRect().left() + width, contentsRect().top());
         }
     }
@@ -275,47 +260,33 @@ void DisplayFilterEdit::alignActionButtons()
 
 void DisplayFilterEdit::setDefaultPlaceholderText()
 {
-    if (!bookmarks_enabled_) {
-        placeholder_text_ = QString();
-    } else {
-        switch (type_) {
+    switch (type_) {
 
-        case DisplayFilterToApply:
-            placeholder_text_ = QString(tr("Apply a display filter %1 <%2/>")).arg(UTF8_HORIZONTAL_ELLIPSIS)
-        .arg(DEFAULT_MODIFIER);
-            break;
+    case DisplayFilterToApply:
+        placeholder_text_ = QString(tr("Apply a display filter %1 <%2/>")).arg(UTF8_HORIZONTAL_ELLIPSIS)
+    .arg(DEFAULT_MODIFIER);
+        break;
 
-        case DisplayFilterToEnter:
-            placeholder_text_ = QString(tr("Enter a display filter %1")).arg(UTF8_HORIZONTAL_ELLIPSIS);
-            break;
+    case DisplayFilterToEnter:
+        placeholder_text_ = QString(tr("Enter a display filter %1")).arg(UTF8_HORIZONTAL_ELLIPSIS);
+        break;
 
-        case ReadFilterToApply:
-            placeholder_text_ = QString(tr("Apply a read filter %1")).arg(UTF8_HORIZONTAL_ELLIPSIS);
-            break;
-        }
+    case ReadFilterToApply:
+        placeholder_text_ = QString(tr("Apply a read filter %1")).arg(UTF8_HORIZONTAL_ELLIPSIS);
+        break;
     }
     setPlaceholderText(placeholder_text_);
-}
-
-void DisplayFilterEdit::enableBookmarks(bool enabled)
-{
-    bookmarks_enabled_ = enabled;
-    bookmark_button_->setVisible(enabled);
-    setDefaultPlaceholderText();
-    alignActionButtons();
 }
 
 void DisplayFilterEdit::paintEvent(QPaintEvent *evt) {
     SyntaxLineEdit::paintEvent(evt);
 
-    if (bookmarks_enabled_ && isEnabled()) {
+    if (bookmark_button_ && isEnabled()) {
 
         if (! bookmark_button_->isVisible())
         {
             bookmark_button_->setVisible(true);
-            if (apply_button_) {
-                apply_button_->setVisible(true);
-            }
+            apply_button_->setVisible(true);
             setDefaultPlaceholderText();
             alignActionButtons();
             return;
@@ -337,9 +308,9 @@ void DisplayFilterEdit::paintEvent(QPaintEvent *evt) {
         if (leftAlignActions_)
         {
             left_xpos = 1 + bookmark_button_->width();
-            if (clear_button_ && clear_button_->isVisible())
+            if (clear_button_->isVisible())
                 left_xpos += clear_button_->width();
-            if (apply_button_ && apply_button_->isVisible())
+            if (apply_button_->isVisible())
                 left_xpos += apply_button_->width();
             right_xpos = cr.width() - 1;
         }
@@ -347,14 +318,14 @@ void DisplayFilterEdit::paintEvent(QPaintEvent *evt) {
         {
             left_xpos = bookmark_button_->width();
             right_xpos = cr.width() - 4;
-            if (clear_button_ && clear_button_->isVisible())
+            if (clear_button_->isVisible())
                 right_xpos -= clear_button_->width();
-            if (apply_button_ && apply_button_->isVisible())
+            if (apply_button_->isVisible())
                 right_xpos -= apply_button_->width();
         }
 
         painter.drawLine(left_xpos, cr.top(), left_xpos, cr.bottom() + 1);
-        if (!text().isEmpty() && (clear_button_ || apply_button_))
+        if (!text().isEmpty())
             painter.drawLine(right_xpos, cr.top(), right_xpos, cr.bottom() + 1);
     }
 }
@@ -425,7 +396,7 @@ void DisplayFilterEdit::checkFilter(const QString& filter_text)
         break;
     }
 
-    if (bookmarks_enabled_) {
+    if (bookmark_button_) {
 
         bookmark_button_->setStockIcon("x-display-filter-bookmark");
         if (remove_action_ && save_action_)
@@ -463,9 +434,7 @@ void DisplayFilterEdit::checkFilter(const QString& filter_text)
                 save_action_->setEnabled(enable_save_action);
             }
         }
-    }
 
-    if (apply_button_) {
         apply_button_->setEnabled(syntaxState() != Invalid);
     }
 }
@@ -484,10 +453,8 @@ void DisplayFilterEdit::updateBookmarkMenu()
     connect(remove_action_, &QAction::triggered, this, &DisplayFilterEdit::removeFilter);
     QAction *manage_action = bb_menu->addAction(tr("Manage Display Filters"));
     connect(manage_action, &QAction::triggered, this, &DisplayFilterEdit::showFilters);
-    if (type_ == DisplayFilterToApply) {
-        QAction *expr_action = bb_menu->addAction(tr("Filter Button Preferences..."));
-        connect(expr_action, &QAction::triggered, this, &DisplayFilterEdit::showExpressionPrefs);
-    }
+    QAction *expr_action = bb_menu->addAction(tr("Filter Button Preferences..."));
+    connect(expr_action, &QAction::triggered, this, &DisplayFilterEdit::showExpressionPrefs);
     bb_menu->addSeparator();
 
     FilterListModel model(FilterListModel::Display);
@@ -709,9 +676,7 @@ void DisplayFilterEdit::applyDisplayFilter()
 void DisplayFilterEdit::updateClearButton()
 {
     setDefaultPlaceholderText();
-    if (clear_button_) {
-        clear_button_->setVisible(!text().isEmpty());
-    }
+    clear_button_->setVisible(!text().isEmpty());
     alignActionButtons();
 }
 
@@ -765,7 +730,7 @@ void DisplayFilterEdit::removeFilter()
         model.saveList();
     }
 
-    mainApp->emitAppSignal(MainApplication::DisplayFilterListChanged);
+    updateBookmarkMenu();
 }
 
 void DisplayFilterEdit::showFilters()
@@ -910,6 +875,13 @@ void DisplayFilterEdit::createFilterTextDropMenu(QDropEvent *event, bool prepare
 void DisplayFilterEdit::displayFilterExpression()
 {
     DisplayFilterExpressionDialog *dfe_dialog = new DisplayFilterExpressionDialog(this);
+    // Setting the modality also sets the parent of a GeometryStateDialog
+    // and is necessary if our current window is modal. Don't do it for the
+    // main window, where a user might want to change the current dissection
+    // tree while building an expression.
+    if (!mainApp->mainWindow()->isActiveWindow()) {
+        dfe_dialog->setWindowModality(Qt::WindowModal);
+    }
 
     connect(dfe_dialog, &DisplayFilterExpressionDialog::insertDisplayFilter,
             this, &DisplayFilterEdit::insertFilter);

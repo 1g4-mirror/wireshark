@@ -102,6 +102,7 @@ which ATN standard is supported ?
 #include <epan/packet.h>
 #include <epan/address.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 #include <epan/osi-utils.h>
 #include "packet-ber.h"
 #include "packet-per.h"
@@ -601,7 +602,7 @@ dissect_atn_ulcs(
             ett_atn_ses, NULL, ATN_SES_PROTO );
 
         /* get SPDU (1 octet) */
-        value_ses = tvb_get_guint8(tvb, offset);
+        value_ses = tvb_get_uint8(tvb, offset);
 
         /* SPDU type/identifier  */
         proto_tree_add_item(atn_ulcs_tree,
@@ -652,7 +653,7 @@ dissect_atn_ulcs(
             tree, tvb, offset, 0,
             ett_atn_pres, NULL, ATN_PRES_PROTO );
 
-        value_pres = tvb_get_guint8(tvb, offset);
+        value_pres = tvb_get_uint8(tvb, offset);
 
         /* need session context to identify PPDU type */
         /* note: */
@@ -760,7 +761,6 @@ static bool dissect_atn_ulcs_heur(
         /* or an ACSE PDU */
             dissect_atn_ulcs(tvb, pinfo, tree, (void*) false);
             return true;
-            break;
         default:  /* no or unsupported PDU */
             break;
     }

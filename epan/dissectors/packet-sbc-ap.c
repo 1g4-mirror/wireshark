@@ -18,10 +18,13 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/strutil.h>
 #include <epan/asn1.h>
 #include <epan/sctpppids.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-per.h"
@@ -2917,7 +2920,7 @@ void proto_register_sbc_ap(void) {
         NULL, HFILL }},
     { &hf_sbc_ap_Extended_Repetition_Period_PDU,
       { "Extended-Repetition-Period", "sbc-ap.Extended_Repetition_Period",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_sbc_ap_Failed_Cell_List_PDU,
       { "Failed-Cell-List", "sbc-ap.Failed_Cell_List",
@@ -2973,7 +2976,7 @@ void proto_register_sbc_ap(void) {
         NULL, HFILL }},
     { &hf_sbc_ap_Repetition_Period_PDU,
       { "Repetition-Period", "sbc-ap.Repetition_Period",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_sbc_ap_Restarted_Cell_List_PDU,
       { "Restarted-Cell-List", "sbc-ap.Restarted_Cell_List",

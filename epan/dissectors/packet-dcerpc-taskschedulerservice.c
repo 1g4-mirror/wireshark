@@ -12,6 +12,7 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <wsutil/array.h>
 #include "packet-dcerpc.h"
 
 void proto_register_dcerpc_taskschedulerservice(void);
@@ -20,8 +21,8 @@ void proto_reg_handoff_dcerpc_taskschedulerservice(void);
 static int hf_taskschedulerservice_opnum;
 
 static e_guid_t uuid_taskschedulerservice = {0x86d35949, 0x83c9, 0x4044, {0xb4, 0x24, 0xdb, 0x36, 0x32, 0x31, 0xfd, 0x0c}};
-static guint16 ver_taskschedulerservice = 1;
-static gint ett_taskschedulerservice;
+static uint16_t ver_taskschedulerservice = 1;
+static int ett_taskschedulerservice;
 static int proto_taskschedulerservice;
 
 /* sub dissector table of ITaskSchedulerService interface */
@@ -58,7 +59,7 @@ void proto_register_dcerpc_taskschedulerservice(void)
     };
 
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_taskschedulerservice,
     };
 

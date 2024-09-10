@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -2045,7 +2046,7 @@ static int samr_dissect_element_ChangePasswordUser4_account_(tvbuff_t *tvb _U_, 
 static int samr_dissect_element_ChangePasswordUser4_password(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int samr_dissect_element_ChangePasswordUser4_password_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static void
-samr_connect_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+samr_connect_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_samr_samr_ConnectAccessMask_SAMR_ACCESS_LOOKUP_DOMAIN,
@@ -2065,7 +2066,7 @@ static struct access_mask_info samr_connect_access_mask_info = {
 	NULL				/* Standard mapping table */
 };
 int
-samr_dissect_bitmap_ConnectAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+samr_dissect_bitmap_ConnectAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_samr_connect_access_mask,
@@ -2073,7 +2074,7 @@ samr_dissect_bitmap_ConnectAccessMask(tvbuff_t *tvb, int offset, packet_info *pi
 	return offset;
 }
 static void
-samr_alias_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+samr_alias_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_samr_samr_AliasAccessMask_SAMR_ALIAS_ACCESS_ADD_MEMBER,
@@ -2092,7 +2093,7 @@ static struct access_mask_info samr_alias_access_mask_info = {
 	NULL				/* Standard mapping table */
 };
 int
-samr_dissect_bitmap_AliasAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+samr_dissect_bitmap_AliasAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_samr_alias_access_mask,
@@ -2100,7 +2101,7 @@ samr_dissect_bitmap_AliasAccessMask(tvbuff_t *tvb, int offset, packet_info *pinf
 	return offset;
 }
 static void
-samr_group_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+samr_group_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_samr_samr_GroupAccessMask_SAMR_GROUP_ACCESS_GET_MEMBERS,
@@ -2119,7 +2120,7 @@ static struct access_mask_info samr_group_access_mask_info = {
 	NULL				/* Standard mapping table */
 };
 int
-samr_dissect_bitmap_GroupAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+samr_dissect_bitmap_GroupAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_samr_group_access_mask,
@@ -2127,7 +2128,7 @@ samr_dissect_bitmap_GroupAccessMask(tvbuff_t *tvb, int offset, packet_info *pinf
 	return offset;
 }
 static void
-samr_domain_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+samr_domain_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_samr_samr_DomainAccessMask_SAMR_DOMAIN_ACCESS_LOOKUP_INFO_1,
@@ -2152,7 +2153,7 @@ static struct access_mask_info samr_domain_access_mask_info = {
 	NULL				/* Standard mapping table */
 };
 int
-samr_dissect_bitmap_DomainAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+samr_dissect_bitmap_DomainAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_samr_domain_access_mask,
@@ -2160,7 +2161,7 @@ samr_dissect_bitmap_DomainAccessMask(tvbuff_t *tvb, int offset, packet_info *pin
 	return offset;
 }
 static void
-samr_user_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+samr_user_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
 	static int* const access_flags[] = {
 		&hf_samr_samr_UserAccessMask_SAMR_USER_ACCESS_CHANGE_GROUP_MEMBERSHIP,
@@ -2178,14 +2179,14 @@ samr_user_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 
 	};
 	proto_tree_add_bitmask_list_value(tree, tvb, offset, 4, access_flags, access);
 }
-struct access_mask_info samr_user_access_mask_info = {
+static struct access_mask_info samr_user_access_mask_info = {
 	"SAMR User",			/* Name of specific rights */
 	samr_user_specific_rights,	/* Dissection function */
 	NULL,				/* Generic mapping table */
 	NULL				/* Standard mapping table */
 };
 int
-samr_dissect_bitmap_UserAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+samr_dissect_bitmap_UserAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_samr_user_access_mask,
@@ -2193,25 +2194,25 @@ samr_dissect_bitmap_UserAccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo
 	return offset;
 }
 static int
-cnf_dissect_lsa_AsciiString(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, guint32 param _U_, int hfindex)
+cnf_dissect_lsa_AsciiString(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, uint32_t param _U_, int hfindex)
 {
 	offset = dissect_ndr_counted_ascii_string(tvb, offset, pinfo, tree, di, drep,
 		hfindex, 0);
 	return offset;
 }
 static int
-cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, guint32 param _U_, int hfindex)
+cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, uint32_t param _U_, int hfindex)
 {
 	offset = dissect_ndr_uint64(tvb, offset, pinfo, tree, di, drep, hfindex, NULL);
 	return offset;
 }
 static int
-cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint64 len;
+	uint64_t len;
 	e_ctx_hnd *polhnd = NULL;
 	dcerpc_call_value *dcv = NULL;
-	guint32 type=0;
+	uint32_t type=0;
 	struct access_mask_info *ami=NULL;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -2244,14 +2245,14 @@ cnf_dissect_sec_desc_buf_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_t
 		ami=&samr_alias_access_mask_info;
 		break;
 	}
-	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, TRUE, (int)len, ami);
+	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, true, (int)len, ami);
 	offset += (int)len;
 	return offset;
 }
 static int
-cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint64 len;
+	uint64_t len;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
 		return offset;
@@ -2264,19 +2265,19 @@ cnf_dissect_sec_desc_buf(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 	return offset;
 }
 static int
-cnf_dissect_dom_sid2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_dom_sid2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
 	offset = dissect_ndr_nt_SID(tvb, offset, pinfo, tree, di, drep);
 	return offset;
 }
 static int
-cnf_dissect_lsa_SidArray(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+cnf_dissect_lsa_SidArray(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
 	offset = dissect_ndr_nt_PSID_ARRAY(tvb, offset, pinfo, tree, di, drep);
 	return offset;
 }
 static int
-cnf_dissect_samr_security_secinfo(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, guint8 *drep _U_)
+cnf_dissect_samr_security_secinfo(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, uint8_t *drep _U_)
 {
 	offset = dissect_nt_security_information(tvb, offset, tree);
 	return offset;
@@ -8400,7 +8401,7 @@ samr_dissect_element_ValidatePasswordInfo_fields_present(tvbuff_t *tvb _U_, int 
 static int
 samr_dissect_element_ValidatePasswordInfo_last_password_change(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_last_password_change);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_last_password_change);
 
 	return offset;
 }
@@ -8408,7 +8409,7 @@ samr_dissect_element_ValidatePasswordInfo_last_password_change(tvbuff_t *tvb _U_
 static int
 samr_dissect_element_ValidatePasswordInfo_bad_password_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_bad_password_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_bad_password_time);
 
 	return offset;
 }
@@ -8416,7 +8417,7 @@ samr_dissect_element_ValidatePasswordInfo_bad_password_time(tvbuff_t *tvb _U_, i
 static int
 samr_dissect_element_ValidatePasswordInfo_lockout_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_nt_NTTIME(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_lockout_time);
+	offset = dissect_ndr_nt_NTTIME_hyper(tvb, offset, pinfo, tree, di, drep, hf_samr_samr_ValidatePasswordInfo_lockout_time);
 
 	return offset;
 }
@@ -8970,7 +8971,7 @@ samr_dissect_element_Connect_connect_handle_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_Connect_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Connect";
 	offset = samr_dissect_element_Connect_connect_handle(tvb, offset, pinfo, tree, di, drep);
@@ -8979,7 +8980,7 @@ samr_dissect_Connect_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9018,7 +9019,7 @@ samr_dissect_element_Close_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 static int
 samr_dissect_Close_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Close";
 	offset = samr_dissect_element_Close_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9027,7 +9028,7 @@ samr_dissect_Close_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9090,13 +9091,13 @@ samr_dissect_element_SetSecurity_sdbuf_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_SetSecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetSecurity";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9171,7 +9172,7 @@ samr_dissect_element_QuerySecurity_sdbuf__(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_QuerySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QuerySecurity";
 	offset = samr_dissect_element_QuerySecurity_sdbuf(tvb, offset, pinfo, tree, di, drep);
@@ -9180,7 +9181,7 @@ samr_dissect_QuerySecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9219,13 +9220,13 @@ samr_dissect_element_Shutdown_connect_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_Shutdown_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Shutdown";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9304,7 +9305,7 @@ samr_dissect_element_LookupDomain_sid__(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_LookupDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="LookupDomain";
 	offset = samr_dissect_element_LookupDomain_sid(tvb, offset, pinfo, tree, di, drep);
@@ -9313,7 +9314,7 @@ samr_dissect_LookupDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9420,7 +9421,7 @@ samr_dissect_element_EnumDomains_num_entries_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_EnumDomains_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDomains";
 	offset = samr_dissect_element_EnumDomains_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9435,7 +9436,7 @@ samr_dissect_EnumDomains_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9519,7 +9520,7 @@ samr_dissect_element_OpenDomain_domain_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 samr_dissect_OpenDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenDomain";
 	offset = samr_dissect_element_OpenDomain_domain_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9528,7 +9529,7 @@ samr_dissect_OpenDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9603,7 +9604,7 @@ samr_dissect_element_QueryDomainInfo_info__(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 samr_dissect_QueryDomainInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryDomainInfo";
 	offset = samr_dissect_element_QueryDomainInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -9612,7 +9613,7 @@ samr_dissect_QueryDomainInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9677,13 +9678,13 @@ samr_dissect_element_SetDomainInfo_info_(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 samr_dissect_SetDomainInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetDomainInfo";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9784,7 +9785,7 @@ samr_dissect_element_CreateDomainGroup_rid_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 samr_dissect_CreateDomainGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateDomainGroup";
 	offset = samr_dissect_element_CreateDomainGroup_group_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9796,7 +9797,7 @@ samr_dissect_CreateDomainGroup_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -9905,7 +9906,7 @@ samr_dissect_element_EnumDomainGroups_num_entries_(tvbuff_t *tvb _U_, int offset
 static int
 samr_dissect_EnumDomainGroups_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDomainGroups";
 	offset = samr_dissect_element_EnumDomainGroups_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9920,7 +9921,7 @@ samr_dissect_EnumDomainGroups_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10021,7 +10022,7 @@ samr_dissect_element_CreateUser_rid_(tvbuff_t *tvb _U_, int offset _U_, packet_i
 static int
 samr_dissect_CreateUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateUser";
 	offset = samr_dissect_element_CreateUser_user_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10033,7 +10034,7 @@ samr_dissect_CreateUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10151,7 +10152,7 @@ samr_dissect_element_EnumDomainUsers_num_entries_(tvbuff_t *tvb _U_, int offset 
 static int
 samr_dissect_EnumDomainUsers_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDomainUsers";
 	offset = samr_dissect_element_EnumDomainUsers_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10166,7 +10167,7 @@ samr_dissect_EnumDomainUsers_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10269,7 +10270,7 @@ samr_dissect_element_CreateDomAlias_rid_(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 samr_dissect_CreateDomAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateDomAlias";
 	offset = samr_dissect_element_CreateDomAlias_alias_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10281,7 +10282,7 @@ samr_dissect_CreateDomAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10390,7 +10391,7 @@ samr_dissect_element_EnumDomainAliases_num_entries_(tvbuff_t *tvb _U_, int offse
 static int
 samr_dissect_EnumDomainAliases_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDomainAliases";
 	offset = samr_dissect_element_EnumDomainAliases_resume_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10405,7 +10406,7 @@ samr_dissect_EnumDomainAliases_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10480,7 +10481,7 @@ samr_dissect_element_GetAliasMembership_rids_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_GetAliasMembership_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetAliasMembership";
 	offset = samr_dissect_element_GetAliasMembership_rids(tvb, offset, pinfo, tree, di, drep);
@@ -10489,7 +10490,7 @@ samr_dissect_GetAliasMembership_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10588,7 +10589,7 @@ samr_dissect_element_LookupNames_types_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_LookupNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="LookupNames";
 	offset = samr_dissect_element_LookupNames_rids(tvb, offset, pinfo, tree, di, drep);
@@ -10600,7 +10601,7 @@ samr_dissect_LookupNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10709,7 +10710,7 @@ samr_dissect_element_LookupRids_types_(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 samr_dissect_LookupRids_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="LookupRids";
 	offset = samr_dissect_element_LookupRids_names(tvb, offset, pinfo, tree, di, drep);
@@ -10721,7 +10722,7 @@ samr_dissect_LookupRids_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10797,7 +10798,7 @@ samr_dissect_element_OpenGroup_group_handle_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_OpenGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenGroup";
 	offset = samr_dissect_element_OpenGroup_group_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10806,7 +10807,7 @@ samr_dissect_OpenGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10881,7 +10882,7 @@ samr_dissect_element_QueryGroupInfo_info__(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_QueryGroupInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryGroupInfo";
 	offset = samr_dissect_element_QueryGroupInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -10890,7 +10891,7 @@ samr_dissect_QueryGroupInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -10955,13 +10956,13 @@ samr_dissect_element_SetGroupInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_SetGroupInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetGroupInfo";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11020,13 +11021,13 @@ samr_dissect_element_AddGroupMember_flags(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 samr_dissect_AddGroupMember_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddGroupMember";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11067,7 +11068,7 @@ samr_dissect_element_DeleteDomainGroup_group_handle_(tvbuff_t *tvb _U_, int offs
 static int
 samr_dissect_DeleteDomainGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteDomainGroup";
 	offset = samr_dissect_element_DeleteDomainGroup_group_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11076,7 +11077,7 @@ samr_dissect_DeleteDomainGroup_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11122,13 +11123,13 @@ samr_dissect_element_DeleteGroupMember_rid(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_DeleteGroupMember_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteGroupMember";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11192,7 +11193,7 @@ samr_dissect_element_QueryGroupMember_rids__(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_QueryGroupMember_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryGroupMember";
 	offset = samr_dissect_element_QueryGroupMember_rids(tvb, offset, pinfo, tree, di, drep);
@@ -11201,7 +11202,7 @@ samr_dissect_QueryGroupMember_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11256,13 +11257,13 @@ samr_dissect_element_SetMemberAttributesOfGroup_unknown2(tvbuff_t *tvb _U_, int 
 static int
 samr_dissect_SetMemberAttributesOfGroup_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetMemberAttributesOfGroup";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11338,7 +11339,7 @@ samr_dissect_element_OpenAlias_alias_handle_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_OpenAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenAlias";
 	offset = samr_dissect_element_OpenAlias_alias_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11347,7 +11348,7 @@ samr_dissect_OpenAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11422,7 +11423,7 @@ samr_dissect_element_QueryAliasInfo_info__(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_QueryAliasInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryAliasInfo";
 	offset = samr_dissect_element_QueryAliasInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -11431,7 +11432,7 @@ samr_dissect_QueryAliasInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11496,13 +11497,13 @@ samr_dissect_element_SetAliasInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_SetAliasInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetAliasInfo";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11543,7 +11544,7 @@ samr_dissect_element_DeleteDomAlias_alias_handle_(tvbuff_t *tvb _U_, int offset 
 static int
 samr_dissect_DeleteDomAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteDomAlias";
 	offset = samr_dissect_element_DeleteDomAlias_alias_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11552,7 +11553,7 @@ samr_dissect_DeleteDomAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11606,13 +11607,13 @@ samr_dissect_element_AddAliasMember_sid_(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 samr_dissect_AddAliasMember_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddAliasMember";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11668,13 +11669,13 @@ samr_dissect_element_DeleteAliasMember_sid_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 samr_dissect_DeleteAliasMember_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteAliasMember";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11730,7 +11731,7 @@ samr_dissect_element_GetMembersInAlias_sids_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_GetMembersInAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetMembersInAlias";
 	offset = samr_dissect_element_GetMembersInAlias_sids(tvb, offset, pinfo, tree, di, drep);
@@ -11739,7 +11740,7 @@ samr_dissect_GetMembersInAlias_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11811,7 +11812,7 @@ samr_dissect_element_OpenUser_user_handle_(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_OpenUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenUser";
 	offset = samr_dissect_element_OpenUser_user_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11820,7 +11821,7 @@ samr_dissect_OpenUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11861,7 +11862,7 @@ samr_dissect_element_DeleteUser_user_handle_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_DeleteUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteUser";
 	offset = samr_dissect_element_DeleteUser_user_handle(tvb, offset, pinfo, tree, di, drep);
@@ -11870,7 +11871,7 @@ samr_dissect_DeleteUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -11941,7 +11942,7 @@ samr_dissect_element_QueryUserInfo_info__(tvbuff_t *tvb _U_, int offset _U_, pac
 static int
 samr_dissect_QueryUserInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryUserInfo";
 	offset = samr_dissect_element_QueryUserInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -11950,7 +11951,7 @@ samr_dissect_QueryUserInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12015,13 +12016,13 @@ samr_dissect_element_SetUserInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 samr_dissect_SetUserInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetUserInfo";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12200,13 +12201,13 @@ samr_dissect_element_ChangePasswordUser_lm_cross_(tvbuff_t *tvb _U_, int offset 
 static int
 samr_dissect_ChangePasswordUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangePasswordUser";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12288,7 +12289,7 @@ samr_dissect_element_GetGroupsForUser_rids__(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_GetGroupsForUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetGroupsForUser";
 	offset = samr_dissect_element_GetGroupsForUser_rids(tvb, offset, pinfo, tree, di, drep);
@@ -12297,7 +12298,7 @@ samr_dissect_GetGroupsForUser_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12421,7 +12422,7 @@ samr_dissect_element_QueryDisplayInfo_info_(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 samr_dissect_QueryDisplayInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryDisplayInfo";
 	offset = samr_dissect_element_QueryDisplayInfo_total_size(tvb, offset, pinfo, tree, di, drep);
@@ -12436,7 +12437,7 @@ samr_dissect_QueryDisplayInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12524,7 +12525,7 @@ samr_dissect_element_GetDisplayEnumerationIndex_idx_(tvbuff_t *tvb _U_, int offs
 static int
 samr_dissect_GetDisplayEnumerationIndex_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetDisplayEnumerationIndex";
 	offset = samr_dissect_element_GetDisplayEnumerationIndex_idx(tvb, offset, pinfo, tree, di, drep);
@@ -12533,7 +12534,7 @@ samr_dissect_GetDisplayEnumerationIndex_response(tvbuff_t *tvb _U_, int offset _
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12574,13 +12575,13 @@ samr_dissect_element_TestPrivateFunctionsDomain_domain_handle_(tvbuff_t *tvb _U_
 static int
 samr_dissect_TestPrivateFunctionsDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="TestPrivateFunctionsDomain";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12617,13 +12618,13 @@ samr_dissect_element_TestPrivateFunctionsUser_user_handle_(tvbuff_t *tvb _U_, in
 static int
 samr_dissect_TestPrivateFunctionsUser_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="TestPrivateFunctionsUser";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12677,7 +12678,7 @@ samr_dissect_element_GetUserPwInfo_info_(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 samr_dissect_GetUserPwInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetUserPwInfo";
 	offset = samr_dissect_element_GetUserPwInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -12686,7 +12687,7 @@ samr_dissect_GetUserPwInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12740,13 +12741,13 @@ samr_dissect_element_RemoveMemberFromForeignDomain_sid_(tvbuff_t *tvb _U_, int o
 static int
 samr_dissect_RemoveMemberFromForeignDomain_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveMemberFromForeignDomain";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12819,7 +12820,7 @@ samr_dissect_element_QueryDomainInfo2_info__(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_QueryDomainInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryDomainInfo2";
 	offset = samr_dissect_element_QueryDomainInfo2_info(tvb, offset, pinfo, tree, di, drep);
@@ -12828,7 +12829,7 @@ samr_dissect_QueryDomainInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -12901,7 +12902,7 @@ samr_dissect_element_QueryUserInfo2_info__(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_QueryUserInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryUserInfo2";
 	offset = samr_dissect_element_QueryUserInfo2_info(tvb, offset, pinfo, tree, di, drep);
@@ -12910,7 +12911,7 @@ samr_dissect_QueryUserInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13036,7 +13037,7 @@ samr_dissect_element_QueryDisplayInfo2_info_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_QueryDisplayInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryDisplayInfo2";
 	offset = samr_dissect_element_QueryDisplayInfo2_total_size(tvb, offset, pinfo, tree, di, drep);
@@ -13051,7 +13052,7 @@ samr_dissect_QueryDisplayInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13139,7 +13140,7 @@ samr_dissect_element_GetDisplayEnumerationIndex2_idx_(tvbuff_t *tvb _U_, int off
 static int
 samr_dissect_GetDisplayEnumerationIndex2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetDisplayEnumerationIndex2";
 	offset = samr_dissect_element_GetDisplayEnumerationIndex2_idx(tvb, offset, pinfo, tree, di, drep);
@@ -13148,7 +13149,7 @@ samr_dissect_GetDisplayEnumerationIndex2_response(tvbuff_t *tvb _U_, int offset 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13275,7 +13276,7 @@ samr_dissect_element_CreateUser2_rid_(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 samr_dissect_CreateUser2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateUser2";
 	offset = samr_dissect_element_CreateUser2_user_handle(tvb, offset, pinfo, tree, di, drep);
@@ -13290,7 +13291,7 @@ samr_dissect_CreateUser2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13420,7 +13421,7 @@ samr_dissect_element_QueryDisplayInfo3_info_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 samr_dissect_QueryDisplayInfo3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryDisplayInfo3";
 	offset = samr_dissect_element_QueryDisplayInfo3_total_size(tvb, offset, pinfo, tree, di, drep);
@@ -13435,7 +13436,7 @@ samr_dissect_QueryDisplayInfo3_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13497,13 +13498,13 @@ samr_dissect_element_AddMultipleMembersToAlias_sids_(tvbuff_t *tvb _U_, int offs
 static int
 samr_dissect_AddMultipleMembersToAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AddMultipleMembersToAlias";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13559,13 +13560,13 @@ samr_dissect_element_RemoveMultipleMembersFromAlias_sids_(tvbuff_t *tvb _U_, int
 static int
 samr_dissect_RemoveMultipleMembersFromAlias_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RemoveMultipleMembersFromAlias";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13655,13 +13656,13 @@ samr_dissect_element_OemChangePasswordUser2_hash_(tvbuff_t *tvb _U_, int offset 
 static int
 samr_dissect_OemChangePasswordUser2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OemChangePasswordUser2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13798,13 +13799,13 @@ samr_dissect_element_ChangePasswordUser2_lm_verifier_(tvbuff_t *tvb _U_, int off
 static int
 samr_dissect_ChangePasswordUser2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangePasswordUser2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13870,7 +13871,7 @@ samr_dissect_element_GetDomPwInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_GetDomPwInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetDomPwInfo";
 	offset = samr_dissect_element_GetDomPwInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -13879,7 +13880,7 @@ samr_dissect_GetDomPwInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -13945,7 +13946,7 @@ samr_dissect_element_Connect2_connect_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_Connect2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Connect2";
 	offset = samr_dissect_element_Connect2_connect_handle(tvb, offset, pinfo, tree, di, drep);
@@ -13954,7 +13955,7 @@ samr_dissect_Connect2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14019,13 +14020,13 @@ samr_dissect_element_SetUserInfo2_info_(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 samr_dissect_SetUserInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetUserInfo2";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14093,13 +14094,13 @@ samr_dissect_element_SetBootKeyInformation_unknown3(tvbuff_t *tvb _U_, int offse
 static int
 samr_dissect_SetBootKeyInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetBootKeyInformation";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14159,7 +14160,7 @@ samr_dissect_element_GetBootKeyInformation_unknown_(tvbuff_t *tvb _U_, int offse
 static int
 samr_dissect_GetBootKeyInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetBootKeyInformation";
 	offset = samr_dissect_element_GetBootKeyInformation_unknown(tvb, offset, pinfo, tree, di, drep);
@@ -14168,7 +14169,7 @@ samr_dissect_GetBootKeyInformation_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14243,7 +14244,7 @@ samr_dissect_element_Connect3_connect_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_Connect3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Connect3";
 	offset = samr_dissect_element_Connect3_connect_handle(tvb, offset, pinfo, tree, di, drep);
@@ -14252,7 +14253,7 @@ samr_dissect_Connect3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14331,7 +14332,7 @@ samr_dissect_element_Connect4_connect_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_Connect4_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Connect4";
 	offset = samr_dissect_element_Connect4_connect_handle(tvb, offset, pinfo, tree, di, drep);
@@ -14340,7 +14341,7 @@ samr_dissect_Connect4_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14542,7 +14543,7 @@ samr_dissect_element_ChangePasswordUser3_reject__(tvbuff_t *tvb _U_, int offset 
 static int
 samr_dissect_ChangePasswordUser3_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangePasswordUser3";
 	offset = samr_dissect_element_ChangePasswordUser3_dominfo(tvb, offset, pinfo, tree, di, drep);
@@ -14554,7 +14555,7 @@ samr_dissect_ChangePasswordUser3_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14694,7 +14695,7 @@ samr_dissect_element_Connect5_connect_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 samr_dissect_Connect5_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="Connect5";
 	offset = samr_dissect_element_Connect5_level_out(tvb, offset, pinfo, tree, di, drep);
@@ -14709,7 +14710,7 @@ samr_dissect_Connect5_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14786,7 +14787,7 @@ samr_dissect_element_RidToSid_sid__(tvbuff_t *tvb _U_, int offset _U_, packet_in
 static int
 samr_dissect_RidToSid_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RidToSid";
 	offset = samr_dissect_element_RidToSid_sid(tvb, offset, pinfo, tree, di, drep);
@@ -14795,7 +14796,7 @@ samr_dissect_RidToSid_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14860,13 +14861,13 @@ samr_dissect_element_SetDsrmPassword_hash_(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 samr_dissect_SetDsrmPassword_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetDsrmPassword";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -14941,7 +14942,7 @@ samr_dissect_element_ValidatePassword_rep__(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 samr_dissect_ValidatePassword_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ValidatePassword";
 	offset = samr_dissect_element_ValidatePassword_rep(tvb, offset, pinfo, tree, di, drep);
@@ -14950,7 +14951,7 @@ samr_dissect_ValidatePassword_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -15113,13 +15114,13 @@ samr_dissect_element_ChangePasswordUser4_password_(tvbuff_t *tvb _U_, int offset
 static int
 samr_dissect_ChangePasswordUser4_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangePasswordUser4";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_samr_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -16420,7 +16421,7 @@ void proto_register_dcerpc_samr(void)
 	{ &hf_samr_sec_desc_buf_len,
 	  { "Sec Desc Buf Len", "samr.sec_desc_buf_len", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_samr_status,
-	  { "NT Error", "samr.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "samr.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	{ &hf_samr_userPwdChangeFailureInformation_extendedFailureReason,
 	  { "ExtendedFailureReason", "samr.userPwdChangeFailureInformation.extendedFailureReason", FT_UINT32, BASE_DEC, VALS(samr_samPwdChangeReason_vals), 0, NULL, HFILL }},
 	{ &hf_samr_userPwdChangeFailureInformation_filterModuleName,

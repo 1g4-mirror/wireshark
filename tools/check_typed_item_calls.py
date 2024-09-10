@@ -240,13 +240,13 @@ class ProtoTreeAddItemCheck(APICheck):
         if not ptv:
             # proto_item *
             # proto_tree_add_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,
-            #                     const gint start, gint length, const guint encoding)
+            #                     const gint start, gint length, const unsigned encoding)
             self.fun_name = 'proto_tree_add_item'
             self.p = re.compile('[^\n]*' + self.fun_name + r'\s*\(\s*[a-zA-Z0-9_]+?,\s*([a-zA-Z0-9_]+?),\s*[a-zA-Z0-9_\+\s]+?,\s*[^,.]+?,\s*(.+),\s*([^,.]+?)\);')
         else:
             # proto_item *
             # ptvcursor_add(ptvcursor_t *ptvc, int hfindex, gint length,
-            #               const guint encoding)
+            #               const unsigned encoding)
             self.fun_name = 'ptvcursor_add'
             self.p = re.compile('[^\n]*' + self.fun_name + r'\s*\([^,.]+?,\s*([^,.]+?),\s*([^,.]+?),\s*([a-zA-Z0-9_\-\>]+)')
 
@@ -380,7 +380,8 @@ known_non_contiguous_fields = { 'wlan.fixed.capabilities.cfpoll.sta',
                                 'hf_hiqnet_flagmask',
                                 'hf_h223_mux_mpl',
                                 'rdp.flags.pkt',
-                                'erf.flags.if_raw'  # confirmed by Stephen Donnelly
+                                'erf.flags.if_raw',  # confirmed by Stephen Donnelly
+                                'oran_fh_cus.sReSMask'
                               }
 ##################################################################################################
 
@@ -531,7 +532,15 @@ def is_ignored_consecutive_filter(filter):
         'btle.control.phys.le_coded_phy',
         'gsm_rlcmac.ul.gprs_multislot_class_exist',
         'tpm.resp.size',
-        'sasp.flags.quiesce'
+        'sasp.flags.quiesce',
+        'canopen.sdo.n',
+        'cigi.celestial_sphere_control.date',
+        'corosync_totemsrp.orf_token.seq',
+        'dec_dna.flags.msglen',
+        'hiqnet.device',
+        'ipdr.cm_ipv6_addr_len',
+        'ipdr.cm_ipv6_addr_string',
+        'mpeg_descr.phone.nat_code_len'
     }
     if filter in ignore_filters:
         return True
@@ -543,6 +552,7 @@ def is_ignored_consecutive_filter(filter):
         re.compile(r'alcap.*bwt.*.[b|f]w'),
         re.compile(r'btle.control.phys.le_[1|2]m_phy'),
         re.compile(r'ansi_a_bsmap.cm2.scm.bc_entry.opmode[0|1]'),
+        re.compile(r'cemi.[n|x]')
     ]
     for patt in ignore_patterns:
         if patt.match(filter):
@@ -606,14 +616,16 @@ class ValueString:
                                    'other', 'for further study', 'future', 'vendor specific', 'obsolete', 'none',
                                    'shall not be used', 'national use', 'unassigned', 'oem', 'user defined',
                                    'manufacturer specific', 'not specified', 'proprietary', 'operator-defined',
-                                   'dynamically allocated', 'user specified', 'xxx', 'default', 'planned', 'not req' ]
+                                   'dynamically allocated', 'user specified', 'xxx', 'default', 'planned', 'not req',
+                                   'deprecated', 'not measured', 'unspecified', 'nationally defined', 'nondisplay', 'general',
+                                   'tbd' ]
                     excepted = False
                     for ex in exceptions:
                         if label.lower().find(ex) != -1:
                             excepted = True
                             break
 
-                    if not excepted:
+                    if not excepted and len(label)>2:
                         print('Warning:', self.file, ': value_string', self.name, '- label ', label, 'repeated')
                         warnings_found += 1
                 else:
@@ -899,6 +911,98 @@ def findStringStrings(filename, macros, do_extra_checks=False):
     return vals_found
 
 
+# Look for expert entries in a dissector file.  Return ExpertEntries object
+def findExpertItems(filename, macros):
+        with open(filename, 'r', encoding="utf8") as f:
+            contents = f.read()
+
+            # Remove comments so as not to trip up RE.
+            contents = removeComments(contents)
+
+            # Look for array of definitions. Looks something like this
+            #static ei_register_info ei[] = {
+            #    { &ei_oran_unsupported_bfw_compression_method, { "oran_fh_cus.unsupported_bfw_compression_method", PI_UNDECODED, PI_WARN, "Unsupported BFW Compression Method", EXPFILL }},
+            #    { &ei_oran_invalid_sample_bit_width, { "oran_fh_cus.invalid_sample_bit_width", PI_UNDECODED, PI_ERROR, "Unsupported sample bit width", EXPFILL }},
+            #};
+
+            expertEntries = ExpertEntries(filename)
+
+            m = re.search(r'static ei_register_info\s*([a-zA-Z_]*)\s*\[\]\s*=\s*\{(.*?)\};', contents, re.MULTILINE|re.DOTALL)
+            if m:
+                entries = m.group(2)
+
+                # Now separate out each entry
+                matches = re.finditer(r'\{\s*&([a-zA-Z0-9_]*)\s*\,\s*\{\s*\"(.*?)\"\s*\,\s*([A-Z_]*)\,\s*([A-Z_]*)\,\s*\"(.*?)\"\s*\,\s*EXPFILL\s*\}\s*\}',
+                                    entries, re.MULTILINE|re.DOTALL)
+                for match in matches:
+                    expertEntry = ExpertEntry(filename, match.group(1), match.group(2), match.group(3), match.group(4), match.group(5))
+                    expertEntries.AddEntry(expertEntry)
+
+            return expertEntries
+
+
+
+
+# These are the valid valies from expert.h
+valid_groups = set(['PI_GROUP_MASK', 'PI_CHECKSUM', 'PI_SEQUENCE',
+                    'PI_RESPONSE_CODE', 'PI_REQUEST_CODE', 'PI_UNDECODED', 'PI_REASSEMBLE',
+                    'PI_MALFORMED', 'PI_DEBUG', 'PI_PROTOCOL', 'PI_SECURITY', 'PI_COMMENTS_GROUP',
+                    'PI_DECRYPTION', 'PI_ASSUMPTION', 'PI_DEPRECATED', 'PI_RECEIVE',
+                    'PI_INTERFACE', 'PI_DISSECTOR_BUG'])
+
+valid_levels = set(['PI_COMMENT', 'PI_CHAT', 'PI_NOTE',
+                    'PI_WARN', 'PI_ERROR'])
+
+
+# An individual entry
+class ExpertEntry:
+    def __init__(self, filename, name, filter, group, severity, label):
+        self.name = name
+        self.filter = filter
+        self.group = group
+        self.severity = severity
+        self.label = label
+
+        global errors_found, warnings_found
+
+        # Some immediate checks
+        if group not in valid_groups:
+            print('Error:', filename, 'group', group, 'is not in', valid_groups)
+            errors_found += 1
+
+        if severity not in valid_levels:
+            print('Error:', filename, 'severity', severity, 'is not in', valid_levels)
+            errors_found += 1
+
+        if label.startswith(' '):
+            print('Warning:', filename, 'Label', '"' + label + '"', 'for', name, 'starts with space')
+            warnings_found += 1
+        if label.endswith(' '):
+            print('Warning:', filename, 'Label', '"' + label + '"', 'for', name, 'ends with space')
+            warnings_found += 1
+
+
+# Collection of entries for this dissector
+class ExpertEntries:
+    def __init__(self, filename):
+        self.filename = filename
+        self.entries = []
+        self.labels = set()
+
+    def AddEntry(self, entry):
+        self.entries.append(entry)
+
+        global errors_found, warnings_found
+
+        # If these are not unique, can't tell apart from expert window (need to look into frame to see details)
+        # TODO: Maybe ok if have different severities?
+        if entry.label in self.labels:
+            print('Warning:', self.filename, 'label', '"' + entry.label + '"', 'has already been seen (now in', entry.name+')')
+            warnings_found += 1
+        self.labels.add(entry.label)
+
+
+
 # The relevant parts of an hf item.  Used as value in dict where hf variable name is key.
 class Item:
 
@@ -1160,7 +1264,7 @@ class Item:
     def check_bit(self, value, n):
         return (value & (0x1 << n)) != 0
 
-    # Output a warning if non-contiguous bits are found in the mask (guint64).
+    # Output a warning if non-contiguous bits are found in the mask (uint64_t).
     # Note that this legimately happens in several dissectors where multiple reserved/unassigned
     # bits are conflated into one field.
     # - there is probably a cool/efficient way to check this (+1 => 1-bit set?)
@@ -1392,7 +1496,7 @@ class Item:
     def check_boolean_length(self):
         global errors_found
         # If mask is 0, display must be BASE_NONE.
-        if self.item_type == 'FT_BOOLEAN' and self.mask_read and self.mask_value == 0 and self.display != 'BASE_NONE':
+        if self.item_type == 'FT_BOOLEAN' and self.mask_read and self.mask_value == 0 and self.display.find('BASE_NONE') == -1:
             print('Error:', self.filename, self.hf, 'type is FT_BOOLEAN, no mask set (', self.mask, ') - display should be BASE_NONE, is instead', self.display)
             errors_found += 1
         # TODO: check for length > 64?
@@ -1400,7 +1504,7 @@ class Item:
     def check_string_display(self):
         global warnings_found
         if self.item_type in { 'FT_STRING', 'FT_STRINGZ', 'FT_UINT_STRING'}:
-            if self.display != 'BASE_NONE':
+            if self.display.find('BASE_NONE')==-1:
                 print('Warning:', self.filename, self.hf, 'type is', self.item_type, 'display must be BASE_NONE, is instead', self.display)
                 warnings_found += 1
 
@@ -1766,7 +1870,8 @@ def findDissectorFilesInFolder(folder, recursive=False):
 
 # Run checks on the given dissector file.
 def checkFile(filename, check_mask=False, mask_exact_width=False, check_label=False, check_consecutive=False,
-              check_missing_items=False, check_bitmask_fields=False, label_vs_filter=False, extra_value_string_checks=False):
+              check_missing_items=False, check_bitmask_fields=False, label_vs_filter=False, extra_value_string_checks=False,
+              check_expert_items=False):
     # Check file exists - e.g. may have been deleted in a recent commit.
     if not os.path.exists(filename):
         print(filename, 'does not exist!')
@@ -1792,6 +1897,9 @@ def checkFile(filename, check_mask=False, mask_exact_width=False, check_label=Fa
     if extra_value_string_checks:
         for name in string_strings:
             string_strings[name].extraChecks()
+
+    if check_expert_items:
+        expert_items = findExpertItems(filename, macros)
 
 
     # Find important parts of items.
@@ -1880,6 +1988,8 @@ parser.add_argument('--label-vs-filter', action='store_true',
                     help='when set, check whether label matches last part of filter')
 parser.add_argument('--extra-value-string-checks', action='store_true',
                     help='when set, do extra checks on parsed value_strings')
+parser.add_argument('--check-expert-items', action='store_true',
+                    help='when set, do extra checks on expert items')
 parser.add_argument('--all-checks', action='store_true',
                     help='when set, apply all checks to selected files')
 
@@ -1894,7 +2004,8 @@ if args.all_checks:
     args.check_bitmask_fields = True
     args.label = True
     args.label_vs_filter = True
-    args.extra_value_string_checks
+    #args.extra_value_string_checks = True
+    #args.check_expert_items = True
 
 if args.check_bitmask_fields:
     args.mask = True
@@ -1966,7 +2077,8 @@ for f in files:
     checkFile(f, check_mask=args.mask, mask_exact_width=args.mask_exact_width, check_label=args.label,
               check_consecutive=args.consecutive, check_missing_items=args.missing_items,
               check_bitmask_fields=args.check_bitmask_fields, label_vs_filter=args.label_vs_filter,
-              extra_value_string_checks=args.extra_value_string_checks)
+              extra_value_string_checks=args.extra_value_string_checks,
+              check_expert_items=args.check_expert_items)
 
     # Do checks against all calls.
     if args.consecutive:

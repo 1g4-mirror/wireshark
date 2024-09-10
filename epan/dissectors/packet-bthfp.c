@@ -21,6 +21,8 @@
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/strutil.h>
+#include <epan/unit_strings.h>
+
 #include "packet-btrfcomm.h"
 #include "packet-btsdp.h"
 
@@ -1304,14 +1306,14 @@ dissect_chld_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         value = get_uint_parameter(parameter_stream, 1);
 
         if (parameter_length >= 2) {
-            if (tvb_get_guint8(tvb, offset + 1) == 'x') {
+            if (tvb_get_uint8(tvb, offset + 1) == 'x') {
                 if (value == 1)
                     proto_tree_add_item(tree, hf_chld_mode_1x, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
                 else if (value == 2)
                     proto_tree_add_item(tree, hf_chld_mode_2x, tvb, offset, parameter_length, ENC_NA | ENC_ASCII);
             }
 
-            if (tvb_get_guint8(tvb, offset + 1) != 'x' || value > 4) {
+            if (tvb_get_uint8(tvb, offset + 1) != 'x' || value > 4) {
                 proto_tree_add_expert(tree, pinfo, &ei_chld_mode, tvb, offset, parameter_length);
             }
         }
@@ -2647,12 +2649,12 @@ proto_register_bthfp(void)
         },
         { &hf_vgs,
            { "Gain",                             "bthfp.vgs",
-           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_slash15, 0,
+           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_slash15), 0,
            NULL, HFILL}
         },
         { &hf_vgm,
            { "Gain",                             "bthfp.vgm",
-           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_slash15, 0,
+           FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_slash15), 0,
            NULL, HFILL}
         },
         { &hf_nrec,

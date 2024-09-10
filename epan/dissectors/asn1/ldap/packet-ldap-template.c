@@ -84,7 +84,9 @@
 #include <epan/expert.h>
 #include <epan/uat.h>
 #include <epan/charsets.h>
+#include <epan/tfs.h>
 #include <wsutil/str_util.h>
+#include <wsutil/array.h>
 #include "packet-frame.h"
 #include "packet-tcp.h"
 #include "packet-windows-common.h"
@@ -855,7 +857,6 @@ ldap_match_call_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, un
         lcrp->is_request=true;
         wmem_map_insert(ldap_info->unmatched, lcrp, lcrp);
         return NULL;
-        break;
       case LDAP_RES_BIND:
       case LDAP_RES_SEARCH_ENTRY:
       case LDAP_RES_SEARCH_REF:
@@ -1104,8 +1105,8 @@ static void
   if(!doing_sasl_security && tvb_bytes_exist(tvb, offset, 6)) {
       sasl_length = tvb_get_ntohl(tvb, offset);
       remaining_length = tvb_reported_length_remaining(tvb, offset);
-      sasl_start[0] = tvb_get_guint8(tvb, offset+4);
-      sasl_start[1] = tvb_get_guint8(tvb, offset+5);
+      sasl_start[0] = tvb_get_uint8(tvb, offset+4);
+      sasl_start[1] = tvb_get_uint8(tvb, offset+5);
   }
   if ((sasl_length + 4) <= remaining_length) {
       if (sasl_start[0] == 0x05 && sasl_start[1] == 0x04) {
@@ -1163,7 +1164,7 @@ static void
   * huge lengths).
   */
 
-  if (doing_sasl_security && tvb_get_guint8(tvb, offset) == 0) {
+  if (doing_sasl_security && tvb_get_uint8(tvb, offset) == 0) {
     proto_tree *sasl_tree;
     tvbuff_t *sasl_tvb;
     unsigned sasl_len, sasl_msg_len, length;
@@ -1825,7 +1826,7 @@ this_was_not_sasl:
    * <64k
    * (no ldap PDUs are ever >64kb? )
    */
-  if(tvb_get_guint8(tvb, 0)!=0x30){
+  if(tvb_get_uint8(tvb, 0)!=0x30){
     goto this_was_not_normal_ldap;
   }
 

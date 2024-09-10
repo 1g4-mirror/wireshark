@@ -17,6 +17,9 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+
+#include <wsutil/array.h>
 #include "wimax_tlv.h"
 #include "wimax_mac.h"
 #include "wimax_utils.h"
@@ -317,7 +320,7 @@ static int dissect_mac_mgmt_msg_rng_rsp_decoder(tvbuff_t *tvb, packet_info *pinf
 				}
 				case RNG_RSP_POWER_LEVEL_ADJUST: {
 					sub_tree = add_tlv_subtree_no_item(&tlv_info, rng_rsp_tree, hf_rng_rsp_power_level_adjust, tvb, offset);
-					power_level_adjust = (float)(tvb_get_guint8(tvb, tlv_offset) / 4.0);
+					power_level_adjust = (float)(tvb_get_uint8(tvb, tlv_offset) / 4.0);
 					proto_tree_add_float_format_value(sub_tree, hf_rng_rsp_power_level_adjust, tvb, tlv_offset, 1,
 								power_level_adjust, " %.2f dB", power_level_adjust);
 					break;
@@ -566,7 +569,7 @@ void proto_register_mac_mgmt_msg_rng_rsp(void)
 			&hf_rng_rsp_dl_freq_override,
 			{
 				"Downlink Frequency Override", "wmx.rng_rsp.dl_freq_override",
-				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_hz, 0x00, NULL, HFILL
+				FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_hz), 0x00, NULL, HFILL
 			}
 		},
 		{
@@ -757,7 +760,7 @@ void proto_register_mac_mgmt_msg_rng_rsp(void)
 			&hf_rng_rsp_offset_freq_adjust,
 			{
 				"Offset Frequency Adjust", "wmx.rng_rsp.offset_freq_adjust",
-				FT_INT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_hz, 0x00, NULL, HFILL
+				FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_hz), 0x00, NULL, HFILL
 			}
 		},
 		{

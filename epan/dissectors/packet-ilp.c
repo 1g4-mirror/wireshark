@@ -23,6 +23,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-tcp.h"
@@ -6000,7 +6001,7 @@ void proto_register_ilp(void) {
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_6", HFILL }},
     { &hf_ilp_LocationDataLCI_longitude,
-      { "longitude", "ilp.longitude",
+      { "longitude", "ilp.locationdatalci.longitude",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_34", HFILL }},
     { &hf_ilp_altitudeType,

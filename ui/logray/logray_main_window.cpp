@@ -12,7 +12,7 @@
 
 /*
  * The generated Ui_LograyMainWindow::setupUi() can grow larger than our configured limit,
- * so turn off -Wframe-larger-than= for ui_main_window.h.
+ * so turn off -Wframe-larger-than= for ui_logray_main_window.h.
  */
 DIAG_OFF(frame-larger-than=)
 #include <ui_logray_main_window.h>
@@ -2013,11 +2013,10 @@ void LograyMainWindow::initMainToolbarIcons()
     main_ui_->actionCaptureRestart->setIcon(StockIcon("x-capture-restart-circle"));
     main_ui_->actionCaptureOptions->setIcon(StockIcon("x-capture-options"));
 
-    // Menu icons are disabled in main_window.ui for these items.
+    // Menu icons are disabled in logray_main_window.ui for these File-> items.
     main_ui_->actionFileOpen->setIcon(StockIcon("document-open"));
     main_ui_->actionFileSave->setIcon(StockIcon("x-capture-file-save"));
     main_ui_->actionFileClose->setIcon(StockIcon("x-capture-file-close"));
-    main_ui_->actionViewReload->setIcon(StockIcon("x-capture-file-reload"));
 
     main_ui_->actionEditFindPacket->setIcon(StockIcon("edit-find"));
     main_ui_->actionGoPreviousPacket->setIcon(StockIcon("go-previous"));
@@ -2044,6 +2043,8 @@ void LograyMainWindow::initMainToolbarIcons()
     main_ui_->actionViewZoomOut->setIcon(StockIcon("zoom-out"));
     main_ui_->actionViewNormalSize->setIcon(StockIcon("zoom-original"));
     main_ui_->actionViewResizeColumns->setIcon(StockIcon("x-resize-columns"));
+    main_ui_->actionViewResetLayout->setIcon(StockIcon("x-reset-layout_2"));
+    main_ui_->actionViewReload->setIcon(StockIcon("x-capture-file-reload"));
 
     main_ui_->actionNewDisplayFilterExpression->setIcon(StockIcon("list-add"));
 }
@@ -2165,6 +2166,11 @@ void LograyMainWindow::initConversationMenus()
             << main_ui_->actionViewColorizeConversation5 << main_ui_->actionViewColorizeConversation6
             << main_ui_->actionViewColorizeConversation7 << main_ui_->actionViewColorizeConversation8
             << main_ui_->actionViewColorizeConversation9 << main_ui_->actionViewColorizeConversation10;
+
+    packet_list_->conversationMenu()->clear();
+    packet_list_->colorizeMenu()->clear();
+    proto_tree_->colorizeMenu()->clear();
+    main_ui_->menuConversationFilter->clear();
 
     for (GList *conv_filter_list_entry = log_conv_filter_list; conv_filter_list_entry; conv_filter_list_entry = gxx_list_next(conv_filter_list_entry)) {
         // Main menu items
@@ -2556,6 +2562,9 @@ void LograyMainWindow::changeEvent(QEvent* event)
             main_ui_->retranslateUi(this);
             // make sure that the "Clear Menu" item is retranslated
             mainApp->emitAppSignal(WiresharkApplication::RecentCapturesChanged);
+            // make sure that the color actions in the PacketList and ProtoTree
+            // are retranslated
+            initConversationMenus();
             updateTitlebar();
             break;
         case QEvent::LocaleChange: {

@@ -21,7 +21,10 @@
 #include <epan/sctpppids.h>
 #include <epan/proto_data.h>
 #include <epan/conversation.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
+#include <wsutil/array.h>
 #include "packet-xnap.h"
 #include "packet-per.h"
 #include "packet-lte-rrc.h"
@@ -166,6 +169,8 @@ static int ett_xnap_cellmeasurementFailedReportCharacteristics;
 static int ett_xnap_nodemeasurementFailedReportCharacteristics;
 static int ett_xnap_ReportCharacteristicsForDataCollection;
 static int ett_xnap_SRSConfiguration;
+static int ett_xnap_PSCellListContainer;
+static int ett_xnap_SuccessfulPSCellChangeReportContainer;
 #include "packet-xnap-ett.c"
 
 enum {
@@ -433,7 +438,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x04,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_nR_OTHERSAT,
-      { "nR-unlicensed", "xnap.primaryRATRestriction.nR_OTHERSAT",
+      { "nR-OTHERSAT", "xnap.primaryRATRestriction.nR_OTHERSAT",
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x02,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_e_UTRA_LEO,
@@ -449,7 +454,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x40,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_e_UTRA_OTHERSAT,
-      { "e-UTRA-unlicensed", "xnap.primaryRATRestriction.e_UTRA_OTHERSAT",
+      { "e-UTRA-OTHERSAT", "xnap.primaryRATRestriction.e_UTRA_OTHERSAT",
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x20,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_reserved,
@@ -505,7 +510,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x08,
         NULL, HFILL }},
     { &hf_xnap_MeasurementsToActivate_LoggingM1FromEventTriggered,
-      { "LoggingOfM1FromEventTriggeredMeasurementReports", "xnap.MeasurementsToActivate.LoggingM1FromEventTriggered",
+      { "LoggingM1FromEventTriggeredMeasurementReports", "xnap.MeasurementsToActivate.LoggingM1FromEventTriggered",
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x04,
         NULL, HFILL }},
     { &hf_xnap_MeasurementsToActivate_M6,
@@ -578,7 +583,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_ReportCharacteristicsForDataCollection_MeasuredUETrajectory,
       { "MeasuredUETrajectory", "xnap.ReportCharacteristicsForDataCollection.MeasuredUETrajectory",
-        FT_BOOLEAN, 32, TFS(&tfs_requested_not_requested), 0x008000000,
+        FT_BOOLEAN, 32, TFS(&tfs_requested_not_requested), 0x00800000,
         NULL, HFILL }},
     { &hf_xnap_ReportCharacteristicsForDataCollection_Reserved,
       { "Reserved", "xnap.ReportCharacteristicsForDataCollection.Reserved",
@@ -687,6 +692,8 @@ void proto_register_xnap(void) {
     &ett_xnap_nodemeasurementFailedReportCharacteristics,
     &ett_xnap_ReportCharacteristicsForDataCollection,
     &ett_xnap_SRSConfiguration,
+    &ett_xnap_PSCellListContainer,
+    &ett_xnap_SuccessfulPSCellChangeReportContainer,
 #include "packet-xnap-ettarr.c"
   };
 

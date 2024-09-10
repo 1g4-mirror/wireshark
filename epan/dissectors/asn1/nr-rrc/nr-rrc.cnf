@@ -65,13 +65,18 @@ CG-ConfigInfo_PDU
 CondReconfigExecCondSCG-r17_PDU
 ConfigRestrictInfoDAPS-r16_PDU
 ConfigRestrictInfoSCG_PDU
+EarlyUL-SyncConfig-r18_PDU
 FeatureSetEntryIndex_PDU
 FreqBandList_PDU
 HandoverCommand_PDU
 HandoverPreparationInformation_PDU
 LocationMeasurementInfo_PDU
+LTM-CSI-ResourceConfigToAddModList-r18_PDU
+LTM-CSI-ResourceConfigToReleaseList-r18_PDU
+LTM-TCI-Info-r18_PDU
 MBS-NeighbourCellList-r17_PDU
 MBSInterestIndication-r17_PDU
+MBSMulticastConfiguration-r18_PDU
 MeasConfig_PDU
 MeasGapConfig_PDU
 MeasGapSharingConfig_PDU
@@ -80,10 +85,13 @@ MeasResultSCG-Failure_PDU
 MeasurementTimingConfiguration_PDU
 MIB_PDU
 MRB-PDCP-ConfigBroadcast-r17_PDU
+MTCH-NeighbourCell-r18_PDU
+MUSIM-CandidateBandList-r18_PDU
 MUSIM-GapConfig-r17_PDU
 NeedForGapsInfoNR-r16_PDU
 NeedForGapNCSG-InfoEUTRA-r17_PDU
 NeedForGapNCSG-InfoNR-r17_PDU
+NeedForInterruptionInfoNR-r18_PDU
 NonCellDefiningSSB-r17_PDU
 NZP-CSI-RS-Resource_PDU
 OverheatingAssistance_PDU
@@ -126,6 +134,10 @@ SIB18-r17_PDU
 SIB19-r17_PDU
 SIB20-r17_PDU
 SIB21-r17_PDU
+SIB22-r18_PDU
+SIB23-r18_PDU
+SIB24-r18_PDU
+SIB25-r18_PDU
 SidelinkParametersNR-r16_PDU
 SidelinkUEInformationNR-r16_PDU
 SL-ConfigDedicatedEUTRA-Info-r16_PDU
@@ -134,10 +146,13 @@ SL-PHY-MAC-RLC-Config-r16_PDU
 SL-PHY-MAC-RLC-Config-v1700_PDU
 SL-RLC-ChannelToAddModList-r17_PDU
 SRS-PosRRC-InactiveConfig-r17_PDU
+SRS-PosRRC-InactiveValidityAreaConfig-r18_PDU
 SuccessHO-Report-r17_PDU
+SuccessPSCell-Report-r18_PDU
 TCI-StateId_PDU
 TCI-UL-StateId-r17_PDU
 TDD-UL-DL-ConfigCommon_PDU
+ThresholdMBS-List-r18_PDU
 UE-CapabilityRAT-ContainerList_PDU
 UE-CapabilityRequestFilterCommon_PDU
 UE-CapabilityRequestFilterNR_PDU
@@ -166,13 +181,18 @@ ConfigRestrictInfoSCG
 DL-CCCH-Message                    @dl.ccch
 DL-DCCH-Message                    @dl.dcch
 DRX-Config
+EarlyUL-SyncConfig-r18
 FeatureSetEntryIndex
 FreqBandList
 HandoverCommand
 HandoverPreparationInformation
 LocationMeasurementInfo
+LTM-CSI-ResourceConfigToAddModList-r18
+LTM-CSI-ResourceConfigToReleaseList-r18
+LTM-TCI-Info-r18
 MBS-NeighbourCellList-r17
 MBSInterestIndication-r17
+MBSMulticastConfiguration-r18
 MCCH-Message-r17                   @mcch
 MeasConfig
 MeasGapConfig
@@ -182,10 +202,14 @@ MeasResultSCG-Failure
 MeasurementTimingConfiguration
 MIB
 MRB-PDCP-ConfigBroadcast-r17
+MTCH-NeighbourCell-r18
+MulticastMCCH-Message-r18          @multicast_mcch
+MUSIM-CandidateBandList-r18
 MUSIM-GapConfig-r17
 NeedForGapsInfoNR-r16
 NeedForGapNCSG-InfoEUTRA-r17
 NeedForGapNCSG-InfoNR-r17
+NeedForInterruptionInfoNR-r18
 NonCellDefiningSSB-r17
 NZP-CSI-RS-Resource
 OverheatingAssistance
@@ -230,9 +254,14 @@ SIB15-r17                          @sib15
 SIB16-r17                          @sib16
 SIB17-r17                          @sib17
 SIB18-r17                          @sib18
-SIB19-r17                          @sib21
-SIB20-r17                          @sib22
-SIB21-r17                          @sib23
+SIB19-r17                          @sib19
+SIB20-r17                          @sib20
+SIB21-r17                          @sib21
+SIB22-r18                          @sib22
+SIB23-r18                          @sib23
+SIB24-r18                          @sib24
+SIB25-r18                          @sib25
+SIB17bis-r18                       @sib17bis
 SL-ConfigDedicatedEUTRA-Info-r16
 SL-ConfigDedicatedNR-r16
 SL-MeasResultListRelay-r17
@@ -241,10 +270,13 @@ SL-PHY-MAC-RLC-Config-r16
 SL-PHY-MAC-RLC-Config-v1700
 SL-RLC-ChannelToAddModList-r17
 SRS-PosRRC-InactiveConfig-r17
+SRS-PosRRC-InactiveValidityAreaConfig-r18
 SuccessHO-Report-r17
+SuccessPSCell-Report-r18
 TCI-StateId
 TCI-UL-StateId-r17
 TDD-UL-DL-ConfigCommon
+ThresholdMBS-List-r18
 UE-CapabilityRAT-ContainerList
 UE-CapabilityRequestFilterCommon
 UE-CapabilityRequestFilterNR
@@ -270,17 +302,24 @@ CG-CandidateList
 CG-CandidateList-r17-IEs
 SIB12-IEs-r16
 SIB17-IEs-r17
+SIB17bis-IEs-r18
+SIB23-IEs-r18
 SL-BWP-ConfigCommon-r16
 SL-BWP-DiscPoolConfigCommon-r17
 SL-BWP-PoolConfigCommon-r16
+SL-BWP-PRS-PoolConfigCommon-r18
 SL-ConfigCommonNR-r16
 SL-DiscConfigCommon-r17
+SL-DiscConfigCommon-v1800
 SL-EUTRA-AnchorCarrierFreqList-r16
 SL-FreqConfigCommon-r16
 SL-MeasConfigCommon-r16
 SL-NR-AnchorCarrierFreqList-r16
+SL-PosBWP-ConfigCommon-r18
+SL-PosConfigCommonNR-r18
 SL-ServingCellInfo-r17
 TRS-ResourceSet-r17
+TRS-ResourceSet-r18
 UE-TimersAndConstantsRemoteUE-r17
 
 #.FIELD_RENAME
@@ -797,6 +836,21 @@ RAT-Type TYPE_PREFIX
 #.FN_HDR SIB21-r17
   col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB21 ");
 
+#.FN_HDR SIB22-r18
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB22 ");
+
+#.FN_HDR SIB23-r18
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB23 ");
+
+#.FN_HDR SIB24-r18
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB24 ");
+
+#.FN_HDR SIB25-r18
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB25 ");
+
+#.FN_HDR SIB17bis-r18
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB17bis ");
+
 #.FN_HDR SIB1
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "SIB1 ");
 
@@ -961,6 +1015,9 @@ RAT-Type TYPE_PREFIX
 #.FN_HDR MeasurementReportAppLayer-r17
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "Measurement Report App Layer");
 
+#.FN_HDR IndirectPathFailureInformation-r18
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "Indirect Path Failure Information");
+
 #.FN_BODY MRDC-SecondaryCellGroupConfig/mrdc-SecondaryCellGroup/eutra-SCG VAL_PTR = &eutra_scg_tvb
   tvbuff_t *eutra_scg_tvb = NULL;
 %(DEFAULT_BODY)s
@@ -1101,7 +1158,7 @@ RAT-Type TYPE_PREFIX
   }
 
 #.TYPE_ATTR
-RejectWaitTime DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+RejectWaitTime DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_RENAME
 MeasTriggerQuantityUTRA-FDD-r16/utra-FDD-RSCP-r16 MeasTriggerQuantityUTRA_FDD_RSCP_r16
@@ -1119,7 +1176,7 @@ MeasTriggerQuantityUTRA-FDD-r16/utra-FDD-EcN0-r16 DISPLAY=BASE_CUSTOM STRINGS=CF
 SIB1/cellSelectionInfo/q-RxLevMinOffset DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-SIB1/cellSelectionInfo/q-QualMinOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+SIB1/cellSelectionInfo/q-QualMinOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.FN_BODY SL-TxResourceReq-r16/sl-CapabilityInformationSidelink-r16 VAL_PTR = &sl_cap_info_sidelink_tvb
   tvbuff_t *sl_cap_info_sidelink_tvb = NULL;
@@ -1140,7 +1197,7 @@ SIB1/cellSelectionInfo/q-QualMinOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS
   }
 
 #.TYPE_ATTR
-LogMeasInfo-r16/relativeTimeStamp-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+LogMeasInfo-r16/relativeTimeStamp-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_ATTR
 RLF-Report-r16/nr-RLF-Report-r16/timeConnFailure-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_timeConnFailure_r16_fmt)
@@ -1164,16 +1221,31 @@ RLF-Report-r16/nr-RLF-Report-r16/timeConnFailure-r16 DISPLAY=BASE_CUSTOM STRINGS
   }
 
 #.TYPE_ATTR
-TimeSinceFailure-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+TimeSinceFailure-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_ATTR
-TimeUntilReconnection-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+TimeUntilReconnection-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_ATTR
 TimeSinceCHO-Reconfig-r17 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_TimeSinceCHO_Reconfig_r17_fmt)
 
 #.TYPE_ATTR
-UPInterruptionTimeAtHO-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_milliseconds
+TimeSinceCPAC-Reconfig-r18 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_TimeSinceCHO_Reconfig_r17_fmt)
+
+#.TYPE_ATTR
+TimeConnSourceDAPS-Failure-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.TYPE_ATTR
+UPInterruptionTimeAtHO-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.TYPE_ATTR
+ElapsedTimeT316-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.TYPE_ATTR
+ElapsedTimeSCG-Failure-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.TYPE_ATTR
+TimeSinceSHR-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.FN_BODY ULInformationTransferIRAT-r16-IEs/ul-DCCH-MessageEUTRA-r16 VAL_PTR = &ul_dcch_msg_eutra_tvb
   tvbuff_t *ul_dcch_msg_eutra_tvb = NULL;
@@ -1191,7 +1263,7 @@ IntraFreqNeighCellInfo/q-RxLevMinOffsetCell DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(
 IntraFreqNeighCellInfo/q-RxLevMinOffsetCellSUL DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-IntraFreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+IntraFreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 InterFreqNeighCellInfo/q-RxLevMinOffsetCell DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
@@ -1200,22 +1272,22 @@ InterFreqNeighCellInfo/q-RxLevMinOffsetCell DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(
 InterFreqNeighCellInfo/q-RxLevMinOffsetCellSUL DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-InterFreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+InterFreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 CarrierFreqEUTRA/q-RxLevMin DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-CarrierFreqEUTRA/q-QualMin DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+CarrierFreqEUTRA/q-QualMin DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-CarrierFreqEUTRA/p-MaxEUTRA DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+CarrierFreqEUTRA/p-MaxEUTRA DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 EUTRA-FreqNeighCellInfo/q-RxLevMinOffsetCell DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-EUTRA-FreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+EUTRA-FreqNeighCellInfo/q-QualMinOffsetCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 SIB6/messageIdentifier TYPE=FT_UINT16 DISPLAY=BASE_DEC|BASE_EXT_STRING STRINGS=&lte_rrc_messageIdentifier_vals_ext
@@ -1443,7 +1515,7 @@ SIB9/timeInfo/dayLightSavingTime TYPE=FT_UINT8 DISPLAY=BASE_DEC STRINGS=VALS(nr_
   }
 
 #.TYPE_ATTR
-SIB9/timeInfo/leapSeconds DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+SIB9/timeInfo/leapSeconds DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_ATTR
 SIB9/timeInfo/localTimeOffset DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_localTimeOffset_fmt)
@@ -1500,16 +1572,16 @@ RSSI-Range-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSSI_Range_r16_fmt)
   }
 
 #.TYPE_ATTR
-ConfiguredGrantConfig/configuredGrantTimer DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_periodicities
+ConfiguredGrantConfig/configuredGrantTimer DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_periodicities)
 
 #.TYPE_ATTR
-ConnEstFailureControl/connEstFailOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+ConnEstFailureControl/connEstFailOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 DRX-Config/drx-SlotOffset DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_drx_SlotOffset_fmt)
 
 #.TYPE_ATTR
-FrequencyInfoDL-SIB/offsetToPointA DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_prbs
+FrequencyInfoDL-SIB/offsetToPointA DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_prbs)
 
 #.TYPE_ATTR
 Hysteresis DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_Hysteresis_fmt)
@@ -1536,10 +1608,10 @@ RSRQ-RangeEUTRA-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRQ_RangeEUTRA_r
   }
 
 #.TYPE_ATTR
-ChannelAccessConfig-r16/maxEnergyDetectionThreshold-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+ChannelAccessConfig-r16/maxEnergyDetectionThreshold-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-ChannelAccessConfig-r16/energyDetectionThresholdOffset-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+ChannelAccessConfig-r16/energyDetectionThresholdOffset-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 MeasResultUTRA-FDD-r16/measResult-r16/utra-FDD-RSCP-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_utra_FDD_RSCP_r16_fmt)
@@ -1548,61 +1620,61 @@ MeasResultUTRA-FDD-r16/measResult-r16/utra-FDD-RSCP-r16 DISPLAY=BASE_CUSTOM STRI
 MeasResultUTRA-FDD-r16/measResult-r16/utra-FDD-EcN0-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_utra_FDD_EcN0_r16_fmt)
 
 #.TYPE_ATTR
-MeasResultForRSSI-r16/channelOccupancy-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_percent
+MeasResultForRSSI-r16/channelOccupancy-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_percent)
 
 #.TYPE_ATTR
 UL-PDCP-DelayValueResult-r16/averageDelay-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_averageDelay_r16_fmt)
 
 #.TYPE_ATTR
-NZP-CSI-RS-Resource/powerControlOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+NZP-CSI-RS-Resource/powerControlOffset DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-P-Max DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+P-Max DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-PUCCH-ResourceSet/maxPayloadMinus1 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_bit_bits
+PUCCH-ResourceSet/maxPayloadMinus1 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_bit_bits)
 
 #.TYPE_ATTR
-PUCCH-ConfigCommon/p0-nominal DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+PUCCH-ConfigCommon/p0-nominal DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-PUCCH-PowerControl/deltaF-PUCCH-f0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+PUCCH-PowerControl/deltaF-PUCCH-f0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-PUCCH-PowerControl/deltaF-PUCCH-f1 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+PUCCH-PowerControl/deltaF-PUCCH-f1 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-PUCCH-PowerControl/deltaF-PUCCH-f2 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+PUCCH-PowerControl/deltaF-PUCCH-f2 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-PUCCH-PowerControl/deltaF-PUCCH-f3 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+PUCCH-PowerControl/deltaF-PUCCH-f3 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-PUCCH-PowerControl/deltaF-PUCCH-f4 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+PUCCH-PowerControl/deltaF-PUCCH-f4 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-P0-PUCCH/p0-PUCCH-Value DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+P0-PUCCH/p0-PUCCH-Value DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 PUSCH-ConfigCommon/msg3-DeltaPreamble DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_msg3_DeltaPreamble_fmt)
 
 #.TYPE_ATTR
-PUSCH-ConfigCommon/p0-NominalWithGrant DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+PUSCH-ConfigCommon/p0-NominalWithGrant DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-PUSCH-PowerControl/p0-NominalWithoutGrant DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+PUSCH-PowerControl/p0-NominalWithoutGrant DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-P0-PUSCH-AlphaSet/p0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+P0-PUSCH-AlphaSet/p0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
-Q-QualMin DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+Q-QualMin DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 Q-RxLevMin DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_Q_RxLevMin_fmt)
 
 #.TYPE_ATTR
-RACH-ConfigGeneric/preambleReceivedTargetPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+RACH-ConfigGeneric/preambleReceivedTargetPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 RSRP-RangeEUTRA DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRP_RangeEUTRA_fmt)
@@ -1614,7 +1686,7 @@ RSRQ-RangeEUTRA DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRQ_RangeEUTRA_fmt)
 SINR-RangeEUTRA DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_SINR_RangeEUTRA_fmt)
 
 #.TYPE_ATTR
-MsgA-PUSCH-Config-r16/msgA-DeltaPreamble-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+MsgA-PUSCH-Config-r16/msgA-DeltaPreamble-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 MeasTriggerQuantityOffset/rsrp DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_MeasTriggerQuantityOffset_fmt)
@@ -1629,7 +1701,7 @@ MeasTriggerQuantityOffset/sinr DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_MeasTr
 ReselectionThreshold DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_ReselectionThreshold_fmt)
 
 #.TYPE_ATTR
-ReselectionThresholdQ DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_decibels
+ReselectionThresholdQ DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.TYPE_ATTR
 RSRP-Range DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRP_Range_fmt)
@@ -1638,28 +1710,28 @@ RSRP-Range DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRP_Range_fmt)
 RSRQ-Range DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRQ_Range_fmt)
 
 #.TYPE_ATTR
-SearchSpace/duration DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_slots
+SearchSpace/duration DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_slots)
 
 #.TYPE_ATTR
-ServingCellConfigCommon/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+ServingCellConfigCommon/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-ServingCellConfigCommonSIB/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+ServingCellConfigCommonSIB/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 SINR-Range DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_SINR_Range_fmt)
 
 #.TYPE_ATTR
-SRS-ResourceSet/p0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+SRS-ResourceSet/p0 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
-SRS-PosResourceSet-r16/p0-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+SRS-PosResourceSet-r16/p0-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 SRS-RSRP-Range-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_SRS_RSRP_r16_fmt)
 
 #.TYPE_ATTR
-T-Reselection DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+T-Reselection DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.FN_BODY BandParametersSidelinkEUTRA-NR-r16/eutra/bandParametersSidelinkEUTRA1-r16 VAL_PTR = &band_params_sl_tvb
   tvbuff_t *band_params_sl_tvb = NULL;
@@ -1790,7 +1862,7 @@ T-Reselection DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
   }
 
 #.TYPE_ATTR
-EUTRA-NS-PmaxValue/additionalPmax DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_dbm
+EUTRA-NS-PmaxValue/additionalPmax DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 WLAN-Identifiers-r16/ssid-r16 TYPE=FT_STRING DISPLAY=BASE_NONE
@@ -1808,10 +1880,10 @@ WLAN-Identifiers-r16/bssid-r16 TYPE=FT_ETHER
 WLAN-Identifiers-r16/hessid-r16 TYPE=FT_ETHER
 
 #.TYPE_ATTR
-VisitedCellInfo-r16/timeSpent-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+VisitedCellInfo-r16/timeSpent-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.TYPE_ATTR
-VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_seconds
+VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item
   nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_UNKNOWN;
@@ -1956,6 +2028,33 @@ VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&u
 
 #.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib2-20a-v1770
   nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_2_20a;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib1-11-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_1_11;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib1-12-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_1_12;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib2-26-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_2_26;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib2-27-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_2_27;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib6-7-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_6_7;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib7-1-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_7_1;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib7-2-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_7_2;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib7-3-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_7_3;
+
+#.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item/posSib7-4-v1800
+  nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_7_4;
 
 #.FN_BODY SIBpos-r16/assistanceDataSIB-Element-r16 VAL_PTR = &assist_data_sib_elem_tvb
   tvbuff_t *assist_data_sib_elem_tvb = NULL;
@@ -2269,7 +2368,7 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (sl_v2x_configcommon_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_sl_V2X_ConfigCommon_r16);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_sl_V2X_ConfigCommon_r16);
     dissect_lte_rrc_SystemInformationBlockType21_r14_PDU(sl_v2x_configcommon_tvb, actx->pinfo, subtree, NULL);
   }
 
@@ -2278,7 +2377,7 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (tdd_config_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_tdd_Config_r16);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_tdd_Config_r16);
     dissect_lte_rrc_TDD_Config_PDU(tdd_config_tvb, actx->pinfo, subtree, NULL);
   }
 
@@ -2287,7 +2386,7 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (ellipsoid_point_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_coarseLocationInfo_r17);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_coarseLocationInfo_r17);
     dissect_lpp_Ellipsoid_Point_PDU(ellipsoid_point_tvb, actx->pinfo, subtree, NULL);
   }
 
@@ -2296,7 +2395,7 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (sl_meas_result_list_relay_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_sl_MeasResultsCandRelay_r17);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_sl_MeasResultsCandRelay_r17);
     dissect_SL_MeasResultListRelay_r17_PDU(sl_meas_result_list_relay_tvb, actx->pinfo, subtree, NULL);
   }
 
@@ -2305,7 +2404,7 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (sl_meas_result_serving_relay_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_sl_MeasResultServingRelay_r17);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_sl_MeasResultServingRelay_r17);
     dissect_SL_MeasResultRelay_r17_PDU(sl_meas_result_serving_relay_tvb, actx->pinfo, subtree, NULL);
   }
 
@@ -2314,21 +2413,180 @@ CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRI
 %(DEFAULT_BODY)s
   if (ellipsoid_point_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_coarseLocationInfo_r17);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_coarseLocationInfo_r17);
     dissect_lpp_Ellipsoid_Point_PDU(ellipsoid_point_tvb, actx->pinfo, subtree, NULL);
   }
 
 #.TYPE_ATTR
-TimeBetweenEvent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_milliseconds
+TimeBetweenEvent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
 
 #.FN_BODY ReferenceLocation-r17 VAL_PTR = &ellipsoid_point_tvb
   tvbuff_t *ellipsoid_point_tvb = NULL;
 %(DEFAULT_BODY)s
   if (ellipsoid_point_tvb) {
     proto_tree *subtree;
-    subtree = proto_item_add_subtree(actx->created_item, ett_nr_ReferenceLocation_r17);
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_ReferenceLocation_r17);
     dissect_lpp_Ellipsoid_Point_PDU(ellipsoid_point_tvb, actx->pinfo, subtree, NULL);
   }
+
+#.FN_BODY WayPoint-r18/wayPointLocation-r18 VAL_PTR = &location_coordinate_tvb
+  tvbuff_t *location_coordinate_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (location_coordinate_tvb) {
+    proto_tree *subtree;
+    subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_wayPointLocation_r18);
+    dissect_lpp_LocationCoordinates_PDU(location_coordinate_tvb, actx->pinfo, subtree, NULL);
+  }
+
+#.TYPE_ATTR
+FlightPathUpdateDistanceThr-r18 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_FlightPathUpdateDistanceThr_r18_fmt)
+
+#.TYPE_ATTR
+flightPathUpdateTimeThr-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
+
+#.TYPE_ATTR
+Altitude-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_meters)
+
+#.TYPE_ATTR
+ATG-Config-r18/heightgNB-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_meters)
+
+#.TYPE_ATTR
+HysteresisAltitude-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_meters)
+
+#.TYPE_ATTR
+LCG-DSR-Config-r18/remainingTimeThreshold-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.FN_FTR DLDedicatedMessageSegment-r16-IEs
+  if (nr_rrc_reassemble_dcch_segments) {
+    uint16_t *p_ueid = nr_rrc_get_ueid_from_lower_layers(wmem_file_scope(), actx->pinfo);
+    uint32_t ueid, id, count;
+    fragment_head *frag_data;
+    tvbuff_t *reassembled_tvb;
+    wmem_tree_key_t key[3];
+    nr_rrc_private_data_t *nr_priv = nr_rrc_get_private_data(actx);
+
+    if (p_ueid != NULL) {
+      ueid = *p_ueid;
+    } else {
+      ueid = 0;
+    }
+    key[0].length = 1;
+    key[0].key = &ueid;
+    key[1].length = 1;
+    key[1].key = &actx->pinfo->num;
+    key[2].length = 0;
+    key[2].key = NULL;
+    if (!PINFO_FD_VISITED(actx->pinfo)) {
+      void *value;
+
+      if (wmem_map_lookup_extended(nr_rrc_dcch_segment_ueid_count_hash, GUINT_TO_POINTER((ueid<<16)|(1<<15)), NULL, &value)) {
+        count = GPOINTER_TO_UINT(value);
+      } else {
+        count = 0;
+      }
+      if (nr_priv->dcch_segment_number == 0) {
+        /* new segmented message */
+        count++;
+        wmem_map_insert(nr_rrc_dcch_segment_ueid_count_hash, GUINT_TO_POINTER((ueid<<16)|(1<<15)), GUINT_TO_POINTER(count));
+      }
+      id = (ueid<<16)|(1<<15)|(count&0x7fff);
+      wmem_tree_insert32_array(nr_rrc_dcch_segment_id_tree, key, GUINT_TO_POINTER(id));
+    } else {
+      id = GPOINTER_TO_UINT(wmem_tree_lookup32_array(nr_rrc_dcch_segment_id_tree, key));
+    }
+    if (nr_priv->dcch_segment != NULL) {
+      frag_data = fragment_add_seq_check(&nr_rrc_dcch_segment_reassembly_table, nr_priv->dcch_segment, 0, actx->pinfo,
+                                         id, NULL, nr_priv->dcch_segment_number,
+                                         tvb_reported_length(nr_priv->dcch_segment),
+                                         !nr_priv->dcch_segment_last);
+      reassembled_tvb = process_reassembled_data(nr_priv->dcch_segment, 0, actx->pinfo, "Reassembled DL Dedicated Message",
+                                                 frag_data, &nr_rrc_dcch_segment_frag_items, NULL, tree);
+      if (reassembled_tvb) {
+        dissect_DL_DCCH_Message_PDU(reassembled_tvb, actx->pinfo, tree, NULL);
+      }
+    }
+  }
+
+#.FN_BODY DLDedicatedMessageSegment-r16-IEs/segmentNumber-r16 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment_number = value;
+
+#.FN_BODY DLDedicatedMessageSegment-r16-IEs/rrc-MessageSegmentContainer-r16 VAL_PTR=&segment
+  tvbuff_t *segment;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment = segment;
+
+#.FN_BODY DLDedicatedMessageSegment-r16-IEs/rrc-MessageSegmentType-r16 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment_last = (value > 0) ? true : false;
+
+#.FN_FTR ULDedicatedMessageSegment-r16-IEs
+  if (nr_rrc_reassemble_dcch_segments) {
+    uint16_t *p_ueid = nr_rrc_get_ueid_from_lower_layers(wmem_file_scope(), actx->pinfo);
+    uint32_t ueid, id, count;
+    fragment_head *frag_data;
+    tvbuff_t *reassembled_tvb;
+    wmem_tree_key_t key[3];
+    nr_rrc_private_data_t *nr_priv = nr_rrc_get_private_data(actx);
+
+    if (p_ueid != NULL) {
+      ueid = *p_ueid;
+    } else {
+      ueid = 0;
+    }
+    key[0].length = 1;
+    key[0].key = &ueid;
+    key[1].length = 1;
+    key[1].key = &actx->pinfo->num;
+    key[2].length = 0;
+    key[2].key = NULL;
+    if (!PINFO_FD_VISITED(actx->pinfo)) {
+      void *value;
+
+      if (wmem_map_lookup_extended(nr_rrc_dcch_segment_ueid_count_hash, GUINT_TO_POINTER(ueid<<16), NULL, &value)) {
+        count = GPOINTER_TO_UINT(value);
+      } else {
+        count = 0;
+      }
+      if (nr_priv->dcch_segment_number == 0) {
+        /* new segmented message */
+        count++;
+        wmem_map_insert(nr_rrc_dcch_segment_ueid_count_hash, GUINT_TO_POINTER(ueid<<16), GUINT_TO_POINTER(count));
+      }
+      id = (ueid<<16)|(count&0x7fff);
+      wmem_tree_insert32_array(nr_rrc_dcch_segment_id_tree, key, GUINT_TO_POINTER(id));
+    } else {
+      id = GPOINTER_TO_UINT(wmem_tree_lookup32_array(nr_rrc_dcch_segment_id_tree, key));
+    }
+    if (nr_priv->dcch_segment != NULL) {
+      frag_data = fragment_add_seq_check(&nr_rrc_dcch_segment_reassembly_table, nr_priv->dcch_segment, 0, actx->pinfo,
+                                         id, NULL, nr_priv->dcch_segment_number,
+                                         tvb_reported_length(nr_priv->dcch_segment),
+                                         !nr_priv->dcch_segment_last);
+      reassembled_tvb = process_reassembled_data(nr_priv->dcch_segment, 0, actx->pinfo, "Reassembled UL Dedicated Message",
+                                                 frag_data, &nr_rrc_dcch_segment_frag_items, NULL, tree);
+      if (reassembled_tvb) {
+        dissect_nr_rrc_UL_DCCH_Message_PDU(reassembled_tvb, actx->pinfo, tree, NULL);
+      }
+    }
+  }
+
+#.FN_BODY ULDedicatedMessageSegment-r16-IEs/segmentNumber-r16 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment_number = value;
+
+#.FN_BODY ULDedicatedMessageSegment-r16-IEs/rrc-MessageSegmentContainer-r16 VAL_PTR=&segment
+  tvbuff_t *segment;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment = segment;
+
+#.FN_BODY ULDedicatedMessageSegment-r16-IEs/rrc-MessageSegmentType-r16 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  nr_rrc_get_private_data(actx)->dcch_segment_last = (value > 0) ? true : false;
 
 #.FN_HDR SBCCH-SL-BCH-Message
   proto_item *ti;
@@ -2369,6 +2627,24 @@ TimeBetweenEvent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_millisecon
 #.FN_HDR UECapabilityInformationSidelink
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "UE Capability Information Sidelink");
 
+#.FN_HDR UuMessageTransferSidelink-r17
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "Uu Message Transfer Sidelink");
+
+#.FN_HDR RemoteUEInformationSidelink-r17
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "Remote UE Information Sidelink");
+
+#.FN_HDR NotificationMessageSidelink-r17
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "Notification Message Sidelink");
+
+#.FN_HDR UEAssistanceInformationSidelink-r17
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "UE Assistance Information Sidelink");
+
+#.FN_HDR UEInformationRequestSidelink-r18
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "UE Information Request Sidelink");
+
+#.FN_HDR UEInformationResponseSidelink-r18
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "UE Information Response Sidelink");
+
 #.FN_HDR MCCH-Message-r17
   proto_item *ti;
 
@@ -2380,3 +2656,15 @@ TimeBetweenEvent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=&units_millisecon
 
 #.FN_HDR MBSBroadcastConfiguration-r17
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "MBS Broadcast Configuration");
+
+#.FN_HDR MulticastMCCH-MessageType-r18
+  proto_item *ti;
+
+  col_set_str(actx->pinfo->cinfo, COL_PROTOCOL, "NR RRC");
+  col_clear(actx->pinfo->cinfo, COL_INFO);
+
+  ti = proto_tree_add_item(tree, proto_nr_rrc, tvb, 0, -1, ENC_NA);
+  tree = proto_item_add_subtree(ti, ett_nr_rrc);
+
+#.FN_HDR MBSMulticastConfiguration-r18
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "MBS Multicast Configuration");

@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -328,7 +329,7 @@ static int frstrans_dissect_element_InitializeFileTransferAsync_size_read_(tvbuf
 static int frstrans_dissect_element_InitializeFileTransferAsync_is_end_of_file(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int frstrans_dissect_element_InitializeFileTransferAsync_is_end_of_file_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int
-cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, guint32 param _U_, int hfindex)
+cnf_dissect_hyper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, uint32_t param _U_, int hfindex)
 {
 	offset = dissect_ndr_uint64(tvb, offset, pinfo, tree, di, drep, hfindex, NULL);
 	return offset;
@@ -1614,13 +1615,13 @@ frstrans_dissect_element_CheckConnectivity_connection_guid(tvbuff_t *tvb _U_, in
 static int
 frstrans_dissect_CheckConnectivity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CheckConnectivity";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -1712,7 +1713,7 @@ frstrans_dissect_element_EstablishConnection_upstream_flags_(tvbuff_t *tvb _U_, 
 static int
 frstrans_dissect_EstablishConnection_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EstablishConnection";
 	offset = frstrans_dissect_element_EstablishConnection_upstream_protocol_version(tvb, offset, pinfo, tree, di, drep);
@@ -1724,7 +1725,7 @@ frstrans_dissect_EstablishConnection_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -1768,13 +1769,13 @@ frstrans_dissect_element_EstablishSession_content_set_guid(tvbuff_t *tvb _U_, in
 static int
 frstrans_dissect_EstablishSession_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EstablishSession";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -1968,7 +1969,7 @@ frstrans_dissect_element_RequestUpdates_gvsn_version_(tvbuff_t *tvb _U_, int off
 static int
 frstrans_dissect_RequestUpdates_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RequestUpdates";
 	offset = frstrans_dissect_element_RequestUpdates_frs_update(tvb, offset, pinfo, tree, di, drep);
@@ -1989,7 +1990,7 @@ frstrans_dissect_RequestUpdates_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2075,13 +2076,13 @@ frstrans_dissect_element_RequestVersionVector_vv_generation(tvbuff_t *tvb _U_, i
 static int
 frstrans_dissect_RequestVersionVector_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RequestVersionVector";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2137,7 +2138,7 @@ frstrans_dissect_element_AsyncPoll_response_(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 frstrans_dissect_AsyncPoll_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="AsyncPoll";
 	offset = frstrans_dissect_element_AsyncPoll_response(tvb, offset, pinfo, tree, di, drep);
@@ -2146,7 +2147,7 @@ frstrans_dissect_AsyncPoll_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2454,7 +2455,7 @@ frstrans_dissect_element_InitializeFileTransferAsync_is_end_of_file_(tvbuff_t *t
 static int
 frstrans_dissect_InitializeFileTransferAsync_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="InitializeFileTransferAsync";
 	offset = frstrans_dissect_element_InitializeFileTransferAsync_frs_update(tvb, offset, pinfo, tree, di, drep);
@@ -2481,7 +2482,7 @@ frstrans_dissect_InitializeFileTransferAsync_response(tvbuff_t *tvb _U_, int off
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_frstrans_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2608,7 +2609,7 @@ void proto_register_dcerpc_frstrans(void)
 	{ &hf_frstrans_frstrans_AsyncResponseContext_sequence_number,
 	  { "Sequence Number", "frstrans.frstrans_AsyncResponseContext.sequence_number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_AsyncResponseContext_status,
-	  { "Status", "frstrans.frstrans_AsyncResponseContext.status", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Status", "frstrans.frstrans_AsyncResponseContext.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_AsyncVersionVectorResponse_epoque_vector,
 	  { "Epoque Vector", "frstrans.frstrans_AsyncVersionVectorResponse.epoque_vector", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_AsyncVersionVectorResponse_epoque_vector_count,
@@ -2646,13 +2647,13 @@ void proto_register_dcerpc_frstrans(void)
 	{ &hf_frstrans_frstrans_EstablishConnection_downstream_flags,
 	  { "Downstream Flags", "frstrans.frstrans_EstablishConnection.downstream_flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishConnection_downstream_protocol_version,
-	  { "Downstream Protocol Version", "frstrans.frstrans_EstablishConnection.downstream_protocol_version", FT_UINT32, BASE_DEC, VALS(frstrans_frstrans_ProtocolVersion_vals), 0, NULL, HFILL }},
+	  { "Downstream Protocol Version", "frstrans.frstrans_EstablishConnection.downstream_protocol_version", FT_UINT32, BASE_HEX, VALS(frstrans_frstrans_ProtocolVersion_vals), 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishConnection_replica_set_guid,
 	  { "Replica Set Guid", "frstrans.frstrans_EstablishConnection.replica_set_guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishConnection_upstream_flags,
 	  { "Upstream Flags", "frstrans.frstrans_EstablishConnection.upstream_flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishConnection_upstream_protocol_version,
-	  { "Upstream Protocol Version", "frstrans.frstrans_EstablishConnection.upstream_protocol_version", FT_UINT32, BASE_DEC, VALS(frstrans_frstrans_ProtocolVersion_vals), 0, NULL, HFILL }},
+	  { "Upstream Protocol Version", "frstrans.frstrans_EstablishConnection.upstream_protocol_version", FT_UINT32, BASE_HEX, VALS(frstrans_frstrans_ProtocolVersion_vals), 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishSession_connection_guid,
 	  { "Connection Guid", "frstrans.frstrans_EstablishSession.connection_guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_frstrans_EstablishSession_content_set_guid,
@@ -2794,7 +2795,7 @@ void proto_register_dcerpc_frstrans(void)
 	{ &hf_frstrans_opnum,
 	  { "Operation", "frstrans.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_frstrans_werror,
-	  { "Windows Error", "frstrans.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "frstrans.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 

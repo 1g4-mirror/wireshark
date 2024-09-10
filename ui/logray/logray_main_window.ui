@@ -559,6 +559,7 @@
    <addaction name="actionViewZoomOut"/>
    <addaction name="actionViewNormalSize"/>
    <addaction name="actionViewResizeColumns"/>
+   <addaction name="actionViewResetLayout"/>
   </widget>
   <widget class="MainStatusBar" name="statusBar"/>
   <widget class="QToolBar" name="displayFilterToolBar">
@@ -667,9 +668,6 @@
    </property>
    <property name="shortcut">
     <string notr="true">F1</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
    </property>
   </action>
   <action name="actionHelpMPWireshark">
@@ -1565,7 +1563,7 @@
     <string>Reset Layout</string>
    </property>
    <property name="toolTip">
-    <string>Reset appearance layout to default size</string>
+    <string>Reset layout to default size</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Shift+W</string>

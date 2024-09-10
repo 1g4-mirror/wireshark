@@ -177,8 +177,8 @@
  * So, I listen in on REQUEST(resolve) messages between client and
  * Nameserver, and store the respones (REPLY/Objkey, Repo_ID) here.
  *
- * Also, stringified IOR's can be read from a file "IOR.txt" and used
- * to populate  this hash also.
+ * Also, stringified IOR's can be read from a file, e.g. "IOR.txt", and used
+ * to populate this hash also.
  *
  *
  * Other Data structures
@@ -267,22 +267,19 @@
 #include "config.h"
 
 #include <errno.h>
-#include <math.h>
 
 #include <epan/packet.h>
-#include <epan/exceptions.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
-#include <epan/strutil.h>
 #include <epan/reassemble.h>
 #include <epan/tap.h>
 #include <epan/conversation.h>
+#include <epan/tfs.h>
 #include <wsutil/file_util.h>
 #include <wsutil/str_util.h>
 #include <wsutil/pint.h>
 #include <wsutil/report_message.h>
-#include <epan/ws_printf.h>
 
 #include "packet-giop.h"
 #include "packet-ziop.h"
@@ -1091,7 +1088,7 @@ typedef struct giop_conv_info_t {
 
 static bool giop_desegment = true;
 static bool giop_reassemble = true;
-static const char *giop_ior_file = "IOR.txt";
+static const char *giop_ior_file;
 
 /*
  * ------------------------------------------------------------------------------------------+
@@ -1173,7 +1170,7 @@ static void add_sub_handle_repoid_to_comp_req_list(uint32_t fn, giop_sub_handle_
 
 /* giop_complete_reply_hash  "EQUAL" Functions */
 
-static int complete_reply_equal_fn(gconstpointer v, gconstpointer w) {
+static int complete_reply_equal_fn(const void *v, const void *w) {
   const struct complete_reply_hash_key *mk1 = (const struct complete_reply_hash_key *)v;
   const struct complete_reply_hash_key *mk2 = (const struct complete_reply_hash_key *)w;
 
@@ -1186,7 +1183,7 @@ static int complete_reply_equal_fn(gconstpointer v, gconstpointer w) {
 
 /* giop_complete_reply_hash "HASH" Functions */
 
-static uint32_t complete_reply_hash_fn(gconstpointer v) {
+static uint32_t complete_reply_hash_fn(const void *v) {
   uint32_t val;          /* init hash value */
   const struct complete_reply_hash_key *key = (const struct complete_reply_hash_key *)v;
 
@@ -1289,7 +1286,7 @@ static uint32_t get_mfn_from_fn_and_reqid(uint32_t fn, uint32_t reqid, address *
 
 /* Module Hash "EQUAL" Functions */
 
-static int giop_hash_module_equal(gconstpointer v, gconstpointer w) {
+static int giop_hash_module_equal(const void *v, const void *w) {
   const struct giop_module_key *mk1 = (const struct giop_module_key *)v;
   const struct giop_module_key *mk2 = (const struct giop_module_key *)w;
 
@@ -1302,7 +1299,7 @@ static int giop_hash_module_equal(gconstpointer v, gconstpointer w) {
 
 /* Module Hash "HASH" Functions */
 
-static uint32_t giop_hash_module_hash(gconstpointer v) {
+static uint32_t giop_hash_module_hash(const void *v) {
 
   int     i, len;
   uint32_t val = 0;              /* init hash value */
@@ -1387,7 +1384,7 @@ void register_giop_user_module(giop_sub_dissector_t *sub, const char *name, cons
 
 /* Object Key Hash "EQUAL" Functions */
 
-static int giop_hash_objkey_equal(gconstpointer v, gconstpointer w) {
+static int giop_hash_objkey_equal(const void *v, const void *w) {
   const struct giop_object_key *v1 = (const struct giop_object_key *)v;
   const struct giop_object_key *v2 = (const struct giop_object_key *)w;
 
@@ -1409,7 +1406,7 @@ static int giop_hash_objkey_equal(gconstpointer v, gconstpointer w) {
 
 /* Object Key Hash "HASH" Functions */
 
-static uint32_t giop_hash_objkey_hash(gconstpointer v) {
+static uint32_t giop_hash_objkey_hash(const void *v) {
   const struct giop_object_key *key = (const struct giop_object_key *)v;
 
   uint32_t i;
@@ -3126,7 +3123,7 @@ void get_CDR_any(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item
 bool get_CDR_boolean(tvbuff_t *tvb, int *offset) {
   uint8_t val;
 
-  val = tvb_get_guint8(tvb, *offset); /* easy */
+  val = tvb_get_uint8(tvb, *offset); /* easy */
   (*offset)++;
   return val;
 }
@@ -3141,7 +3138,7 @@ bool get_CDR_boolean(tvbuff_t *tvb, int *offset) {
 uint8_t get_CDR_char(tvbuff_t *tvb, int *offset) {
   uint8_t val;
 
-  val = tvb_get_guint8(tvb, *offset); /* easy */
+  val = tvb_get_uint8(tvb, *offset); /* easy */
   (*offset)++;
   return val;
 }
@@ -3497,7 +3494,7 @@ void get_CDR_object(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *of
 uint8_t get_CDR_octet(tvbuff_t *tvb, int *offset) {
   uint8_t val;
 
-  val = tvb_get_guint8(tvb, *offset); /* easy */
+  val = tvb_get_uint8(tvb, *offset); /* easy */
   (*offset)++;
   return val;
 }
@@ -4652,7 +4649,7 @@ dissect_giop_request_1_1 (tvbuff_t * tvb, packet_info * pinfo,
   col_append_fstr(pinfo->cinfo, COL_INFO, " id=%u", request_id);
   proto_tree_add_uint (request_tree, hf_giop_req_id, tvb, offset-4, 4, request_id);
 
-  response_expected = tvb_get_guint8( tvb, offset );
+  response_expected = tvb_get_uint8( tvb, offset );
   col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
                     response_expected ? "two-way" : "one-way");
   proto_tree_add_item(request_tree, hf_giop_rsp_expected, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -5249,8 +5246,8 @@ get_giop_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _
     return 0;
 
   /* Get minimal header information to determine endianness, size */
-  header.GIOP_version.minor = tvb_get_guint8(tvb, 5 + offset);
-  header.flags = tvb_get_guint8(tvb, 6 + offset);
+  header.GIOP_version.minor = tvb_get_uint8(tvb, 5 + offset);
+  header.flags = tvb_get_uint8(tvb, 6 + offset);
 
   if (is_big_endian (&header))
     message_size = tvb_get_ntohl(tvb, 8 + offset);

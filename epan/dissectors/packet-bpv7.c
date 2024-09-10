@@ -14,11 +14,13 @@
 #include "config.h"
 #define WS_LOG_DOMAIN "packet-bpv7"
 
+#include <inttypes.h>
+
 #include "packet-bpv7.h"
 #include "epan/wscbor.h"
+#include <epan/proto.h>
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include <epan/proto.h>
 #include <epan/expert.h>
 #include <epan/to_str.h>
 #include <epan/reassemble.h>
@@ -28,10 +30,11 @@
 #include <epan/conversation_filter.h>
 #include <epan/exceptions.h>
 #include <epan/ftypes/ftypes.h>
+#include <epan/unit_strings.h>
+#include <epan/tfs.h>
 #include <wsutil/crc16.h>
+#include <wsutil/array.h>
 #include <wsutil/crc32.h>
-#include <wsutil/utf8_entities.h>
-#include <inttypes.h>
 
 void proto_register_bpv7(void);
 void proto_reg_handoff_bpv7(void);
@@ -257,7 +260,7 @@ static hf_register_info fields[] = {
     {&hf_crc_field_uint32, {"CRC field Integer", "bpv7.crc_field", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
     {&hf_crc_status, {"CRC Status", "bpv7.crc_status", FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0, NULL, HFILL}},
 
-    {&hf_time_dtntime, {"DTN Time", "bpv7.time.dtntime", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_milliseconds, 0x0, NULL, HFILL}},
+    {&hf_time_dtntime, {"DTN Time", "bpv7.time.dtntime", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0, NULL, HFILL}},
     {&hf_time_utctime, {"UTC Time", "bpv7.time.utctime", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0, NULL, HFILL}},
 
     {&hf_create_ts_time, {"Time", "bpv7.create_ts.time", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
@@ -289,11 +292,11 @@ static hf_register_info fields[] = {
     {&hf_primary_report_nodeid, {"Report-to Node ID", "bpv7.primary.report_nodeid", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
     {&hf_primary_report_uri, {"Report-to URI", "bpv7.primary.report_uri", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL}},
     {&hf_primary_create_ts, {"Creation Timestamp", "bpv7.primary.create_ts", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
-    {&hf_primary_lifetime, {"Lifetime", "bpv7.primary.lifetime", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_milliseconds, 0x0, NULL, HFILL}},
+    {&hf_primary_lifetime, {"Lifetime", "bpv7.primary.lifetime", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0, NULL, HFILL}},
     {&hf_primary_lifetime_exp, {"Lifetime Expanded", "bpv7.primary.lifetime_exp", FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0, NULL, HFILL}},
     {&hf_primary_expire_ts, {"Expire Time", "bpv7.primary.expire_time", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0, NULL, HFILL}},
-    {&hf_primary_frag_offset, {"Fragment Offset", "bpv7.primary.frag_offset", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_octet_octets, 0x0, NULL, HFILL}},
-    {&hf_primary_total_length, {"Total Application Data Unit Length", "bpv7.primary.total_len", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_octet_octets, 0x0, NULL, HFILL}},
+    {&hf_primary_frag_offset, {"Fragment Offset", "bpv7.primary.frag_offset", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0, NULL, HFILL}},
+    {&hf_primary_total_length, {"Total Application Data Unit Length", "bpv7.primary.total_len", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0, NULL, HFILL}},
 
     {&hf_bundle_ident, {"Bundle Identity", "bpv7.bundle.identity", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL}},
     {&hf_bundle_first_seen, {"First Seen", "bpv7.bundle.first_seen", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RETRANS_PREV), 0x0, NULL, HFILL}},
@@ -311,7 +314,7 @@ static hf_register_info fields[] = {
     {&hf_canonical_block_flags_status_no_process, {"Status bundle if not processed", "bpv7.canonical.block_flags.status_if_no_process", FT_BOOLEAN, 8, TFS(&tfs_set_notset), BP_BLOCK_STATUS_IF_NO_PROCESS, NULL, HFILL}},
     {&hf_canonical_block_flags_delete_no_process, {"Delete bundle if not processed", "bpv7.canonical.block_flags.delete_if_no_process", FT_BOOLEAN, 8, TFS(&tfs_set_notset), BP_BLOCK_DELETE_IF_NO_PROCESS, NULL, HFILL}},
     {&hf_canonical_block_flags_remove_no_process, {"Discard block if not processed", "bpv7.canonical.block_flags.discard_if_no_process", FT_BOOLEAN, 8, TFS(&tfs_set_notset), BP_BLOCK_REMOVE_IF_NO_PROCESS, NULL, HFILL}},
-    {&hf_canonical_data_size, {"Block Type-Specific Data Length", "bpv7.canonical.data_length", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_octet_octets, 0x0, NULL, HFILL}},
+    {&hf_canonical_data_size, {"Block Type-Specific Data Length", "bpv7.canonical.data_length", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0, NULL, HFILL}},
     {&hf_canonical_data, {"Block Type-Specific Data", "bpv7.canonical.data", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL}},
 
     {&hf_payload_fragments,
@@ -353,7 +356,7 @@ static hf_register_info fields[] = {
     {&hf_previous_node_nodeid, {"Previous Node ID", "bpv7.previous_node.nodeid", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
     {&hf_previous_node_uri, {"Previous URI", "bpv7.previous_node.uri", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL}},
 
-    {&hf_bundle_age_time, {"Bundle Age", "bpv7.bundle_age.time", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, &units_milliseconds, 0x0, NULL, HFILL}},
+    {&hf_bundle_age_time, {"Bundle Age", "bpv7.bundle_age.time", FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0, NULL, HFILL}},
 
     {&hf_hop_count_limit, {"Hop Limit", "bpv7.hop_count.limit", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL}},
     {&hf_hop_count_current, {"Hop Count", "bpv7.hop_count.current", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL}},
@@ -573,7 +576,7 @@ bp_block_canonical_t * bp_block_canonical_new(wmem_allocator_t *alloc, uint64_t 
     return obj;
 }
 
-static uint64_t * guint64_new(wmem_allocator_t *alloc, const uint64_t val) {
+static uint64_t * uint64_new(wmem_allocator_t *alloc, const uint64_t val) {
     uint64_t *obj = wmem_new(alloc, uint64_t);
     *obj = val;
     return obj;
@@ -1261,7 +1264,7 @@ static int dissect_block_canonical(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     if (block->type_code) {
         wmem_list_t *type_list = wmem_map_lookup(bundle->block_types, block->type_code);
         if (!type_list) {
-            uint64_t *key = guint64_new(wmem_file_scope(), *(block->type_code));
+            uint64_t *key = uint64_new(wmem_file_scope(), *(block->type_code));
             type_list = wmem_list_new(wmem_file_scope());
             wmem_map_insert(bundle->block_types, key, type_list);
         }
@@ -1273,7 +1276,7 @@ static int dissect_block_canonical(tvbuff_t *tvb, packet_info *pinfo, proto_tree
             expert_add_info(pinfo, item_block_num, &ei_block_num_dupe);
         }
         else {
-            uint64_t *key = guint64_new(wmem_file_scope(), *(block->block_number));
+            uint64_t *key = uint64_new(wmem_file_scope(), *(block->block_number));
             wmem_map_insert(bundle->block_nums, key, block);
         }
     }
@@ -1790,7 +1793,7 @@ static int dissect_status_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     proto_tree_add_cbor_eid(tree_status, hf_status_rep_subj_src_nodeid, hf_status_rep_subj_src_uri, pinfo, tvb, &offset, subj_eid);
     status_field_ix++;
 
-    bp_creation_ts_t subj_ts;
+    bp_creation_ts_t subj_ts = {0};
     dissect_cbor_timestamp(tree_status, hf_status_rep_subj_ts, pinfo, tvb, &offset, &subj_ts);
     status_field_ix++;
 

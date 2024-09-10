@@ -23,6 +23,9 @@
 #include <epan/prefs.h>
 #include <epan/sctpppids.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+#include <wsutil/array.h>
 
 #include "packet-x2ap.h"
 #include "packet-per.h"
@@ -188,6 +191,7 @@ static int ett_x2ap_UERadioCapability;
 static int ett_x2ap_LastVisitedPSCell_Item;
 static int ett_x2ap_NRRAReportContainer;
 static int ett_x2ap_rAT_RestrictionInformation;
+static int ett_x2ap_PSCellListContainer;
 #include "packet-x2ap-ett.c"
 
 /* Forward declarations */
@@ -533,7 +537,7 @@ void proto_register_x2ap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x08,
         NULL, HFILL }},
     { &hf_x2ap_measurementsToActivate_LoggingM1FromEventTriggered,
-      { "LoggingOfM1FromEventTriggeredMeasurementReports", "x2ap.measurementsToActivate.LoggingM1FromEventTriggered",
+      { "LoggingM1FromEventTriggeredMeasurementReports", "x2ap.measurementsToActivate.LoggingM1FromEventTriggered",
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x04,
         NULL, HFILL }},
     { &hf_x2ap_measurementsToActivate_M6,
@@ -740,6 +744,7 @@ void proto_register_x2ap(void) {
     &ett_x2ap_LastVisitedPSCell_Item,
     &ett_x2ap_NRRAReportContainer,
     &ett_x2ap_rAT_RestrictionInformation,
+    &ett_x2ap_PSCellListContainer,
 #include "packet-x2ap-ettarr.c"
   };
 

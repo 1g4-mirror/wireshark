@@ -33,13 +33,14 @@
 #include <epan/decode_as.h>
 #include <epan/tap.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
 #include <wsutil/utf8_entities.h>
 
 #include "packet-bluetooth.h"
 #include "packet-bthci_cmd.h"
 #include "packet-bthci_evt.h"
-#include "packet-btsdp.h"
 #include "packet-btatt.h"
 
 static int proto_bthci_cmd;
@@ -262,6 +263,7 @@ static int hf_bthci_cmd_flow_spec_sdu_arrival_time;
 static int hf_bthci_cmd_flow_spec_access_latency;
 static int hf_bthci_cmd_flush_to_us;
 static int hf_bthci_cmd_logical_link_handle;
+static int hf_bthci_cmd_evt_mask2;
 static int hf_bthci_cmd_evt_mask2_00;
 static int hf_bthci_cmd_evt_mask2_01;
 static int hf_bthci_cmd_evt_mask2_02;
@@ -270,12 +272,25 @@ static int hf_bthci_cmd_evt_mask2_04;
 static int hf_bthci_cmd_evt_mask2_05;
 static int hf_bthci_cmd_evt_mask2_06;
 static int hf_bthci_cmd_evt_mask2_07;
+static int hf_bthci_cmd_evt_mask2_08;
+static int hf_bthci_cmd_evt_mask2_09;
 static int hf_bthci_cmd_evt_mask2_10;
 static int hf_bthci_cmd_evt_mask2_11;
 static int hf_bthci_cmd_evt_mask2_12;
 static int hf_bthci_cmd_evt_mask2_13;
 static int hf_bthci_cmd_evt_mask2_14;
 static int hf_bthci_cmd_evt_mask2_15;
+static int hf_bthci_cmd_evt_mask2_16;
+static int hf_bthci_cmd_evt_mask2_17;
+static int hf_bthci_cmd_evt_mask2_18;
+static int hf_bthci_cmd_evt_mask2_19;
+static int hf_bthci_cmd_evt_mask2_20;
+static int hf_bthci_cmd_evt_mask2_21;
+static int hf_bthci_cmd_evt_mask2_22;
+static int hf_bthci_cmd_evt_mask2_23;
+static int hf_bthci_cmd_evt_mask2_24;
+static int hf_bthci_cmd_evt_mask2_25;
+static int hf_bthci_cmd_evt_mask2_reserved;
 static int hf_bthci_cmd_location_domain_aware;
 static int hf_bthci_cmd_location_domain;
 static int hf_bthci_cmd_location_domain_options;
@@ -585,12 +600,12 @@ static int hf_bthci_cmd_connectionless_peripheral_broadcast;
 static int hf_bthci_cmd_lt_addr;
 static int hf_bthci_cmd_interval_min;
 static int hf_bthci_cmd_interval_max;
-static int hf_bthci_cmd_csb_supervision_to;
+static int hf_bthci_cmd_cpb_supervision_to;
 static int hf_bthci_cmd_connectionless_peripheral_broadcast_receive;
 static int hf_bthci_cmd_clock_offset_32;
-static int hf_bthci_cmd_next_csb_clock;
+static int hf_bthci_cmd_next_cpb_clock;
 static int hf_bthci_cmd_remote_timing_accuracy;
-static int hf_bthci_cmd_csb_skip;
+static int hf_bthci_cmd_cpb_skip;
 static int hf_bthci_cmd_afh_channel_map;
 static int hf_bthci_cmd_synchronization_scan_to;
 static int hf_bthci_cmd_c192;
@@ -643,13 +658,43 @@ static int hf_bthci_mws_pattern_type;
 static int hf_bthci_cmd_sync_train_to;
 static int hf_bthci_cmd_service_data;
 static int hf_bthci_cmd_secure_connection_host_support;
-static int hf_bthci_cmd_csb_fragment;
-static int hf_bthci_cmd_csb_data_length;
-static int hf_bthci_cmd_csb_data;
+static int hf_bthci_cmd_cpb_fragment;
+static int hf_bthci_cmd_cpb_data_length;
+static int hf_bthci_cmd_cpb_data;
 static int hf_bthci_cmd_authenticated_payload_timeout;
 static int hf_bthci_cmd_extended_inquiry_length;
 static int hf_bthci_cmd_min_encryption_key_size;
 
+static int * const hfx_bthci_cmd_event_mask_page_2[] = {
+	&hf_bthci_cmd_evt_mask2_reserved,
+    &hf_bthci_cmd_evt_mask2_25,
+    &hf_bthci_cmd_evt_mask2_24,
+    &hf_bthci_cmd_evt_mask2_23,
+    &hf_bthci_cmd_evt_mask2_22,
+    &hf_bthci_cmd_evt_mask2_21,
+    &hf_bthci_cmd_evt_mask2_20,
+    &hf_bthci_cmd_evt_mask2_19,
+    &hf_bthci_cmd_evt_mask2_18,
+    &hf_bthci_cmd_evt_mask2_17,
+    &hf_bthci_cmd_evt_mask2_16,
+    &hf_bthci_cmd_evt_mask2_15,
+    &hf_bthci_cmd_evt_mask2_14,
+    &hf_bthci_cmd_evt_mask2_13,
+    &hf_bthci_cmd_evt_mask2_12,
+    &hf_bthci_cmd_evt_mask2_11,
+    &hf_bthci_cmd_evt_mask2_10,
+    &hf_bthci_cmd_evt_mask2_09,
+    &hf_bthci_cmd_evt_mask2_08,
+    &hf_bthci_cmd_evt_mask2_07,
+    &hf_bthci_cmd_evt_mask2_06,
+    &hf_bthci_cmd_evt_mask2_05,
+    &hf_bthci_cmd_evt_mask2_04,
+    &hf_bthci_cmd_evt_mask2_03,
+    &hf_bthci_cmd_evt_mask2_02,
+    &hf_bthci_cmd_evt_mask2_01,
+    &hf_bthci_cmd_evt_mask2_00,
+    NULL
+};
 
 static int * const hfx_bthci_cmd_le_event_mask[] = {
     &hf_bthci_cmd_le_event_mask_le_reserved,
@@ -821,6 +866,7 @@ static int ett_opcode;
 static int ett_cod_mask;
 static int ett_flow_spec_subtree;
 static int ett_le_channel_map;
+static int ett_event_mask_page_2;
 static int ett_le_event_mask;
 static int ett_adv_properties;
 static int ett_adv_sets;
@@ -2623,7 +2669,7 @@ static const value_string mws_pattern_type_vals[] = {
     {0, NULL }
 };
 
-static const value_string csb_fragment_vals[] = {
+static const value_string cpb_fragment_vals[] = {
     { 0x00, "Continuation" },
     { 0x01, "Start" },
     { 0x02, "End" },
@@ -2736,7 +2782,7 @@ dissect_antenna_switching_pattern(tvbuff_t *tvb, int offset, proto_tree *tree)
     uint8_t length_antenna_pattern;
 
     proto_tree_add_item(tree, hf_bthci_cmd_antenna_switching_pattern_length, tvb, offset, 1, ENC_NA);
-    length_antenna_pattern = tvb_get_guint8(tvb, offset);
+    length_antenna_pattern = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     if (length_antenna_pattern > 0) {
@@ -2749,7 +2795,7 @@ dissect_antenna_switching_pattern(tvbuff_t *tvb, int offset, proto_tree *tree)
 
         while (length_antenna_pattern > 0) {
             proto_tree_add_item(sub_tree, hf_bthci_cmd_antenna_id, tvb, offset, 1, ENC_NA);
-            proto_item_append_text(sub_item, "%d ", tvb_get_guint8(tvb, offset));
+            proto_item_append_text(sub_item, "%d ", tvb_get_uint8(tvb, offset));
             offset++;
             length_antenna_pattern--;
         }
@@ -2769,7 +2815,7 @@ dissect_link_control_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo,
             proto_tree_add_item(tree, hf_bthci_cmd_lap, tvb, offset, 3, ENC_LITTLE_ENDIAN);
             offset+=3;
             item = proto_tree_add_item(tree, hf_bthci_cmd_inq_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(item, " (%g sec)", 1.28*tvb_get_guint8(tvb, offset));
+            proto_item_append_text(item, " (%g sec)", 1.28*tvb_get_uint8(tvb, offset));
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_num_responses, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
@@ -2785,7 +2831,7 @@ dissect_link_control_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo,
             proto_tree_add_item(tree, hf_bthci_cmd_lap, tvb, offset, 3, ENC_LITTLE_ENDIAN);
             offset+=3;
             item = proto_tree_add_item(tree, hf_bthci_cmd_inq_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(item, " (%g sec)", 1.28*tvb_get_guint8(tvb, offset));
+            proto_item_append_text(item, " (%g sec)", 1.28*tvb_get_uint8(tvb, offset));
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_num_responses, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
@@ -3256,7 +3302,7 @@ dissect_link_control_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo,
             proto_tree_add_item(tree, hf_bthci_cmd_interval_max, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             offset += 2;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_csb_supervision_to, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(tree, hf_bthci_cmd_cpb_supervision_to, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             offset += 2;
 
             break;
@@ -3275,16 +3321,16 @@ dissect_link_control_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo,
             proto_tree_add_item(tree, hf_bthci_cmd_clock_offset_32, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_next_csb_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(tree, hf_bthci_cmd_next_cpb_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_csb_supervision_to, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(tree, hf_bthci_cmd_cpb_supervision_to, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             offset += 2;
 
             proto_tree_add_item(tree, hf_bthci_cmd_remote_timing_accuracy, tvb, offset, 1, ENC_NA);
             offset += 1;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_csb_skip, tvb, offset, 1, ENC_NA);
+            proto_tree_add_item(tree, hf_bthci_cmd_cpb_skip, tvb, offset, 1, ENC_NA);
             offset += 1;
 
             proto_tree_add_bitmask(tree, tvb, offset, hf_bthci_cmd_packet_type, ett_packet_type, hfx_bthci_cmd_packet_type, ENC_LITTLE_ENDIAN);
@@ -3556,14 +3602,14 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
 
         case 0x0005: /* Set Event Filter */
             proto_tree_add_item(tree, hf_bthci_cmd_filter_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            filter_type = tvb_get_guint8(tvb, 3);
+            filter_type = tvb_get_uint8(tvb, 3);
             offset++;
             switch (filter_type) {
 
                 case 0x01: /* Inquiry Result Filter */
                     proto_tree_add_item(tree, hf_bthci_cmd_inquiry_result_filter_condition_type,
                             tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                    filter_condition_type = tvb_get_guint8(tvb, offset);
+                    filter_condition_type = tvb_get_uint8(tvb, offset);
                     offset++;
                     switch (filter_condition_type) {
                         case 0x01:
@@ -3586,7 +3632,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
                 case 0x02: /* Connection Setup Filter */
                     proto_tree_add_item(tree, hf_bthci_cmd_connection_setup_filter_condition_type,
                             tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                    filter_condition_type = tvb_get_guint8(tvb, offset);
+                    filter_condition_type = tvb_get_uint8(tvb, offset);
                     offset++;
                     switch (filter_condition_type) {
                         case 0x00:
@@ -3637,7 +3683,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
 
         case 0x0011: /* Write Stored Link Key */
             proto_tree_add_item(tree, hf_bthci_cmd_num_link_keys, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            num8 = tvb_get_guint8(tvb, offset);
+            num8 = tvb_get_uint8(tvb, offset);
             offset += 1;
 
             for (i = 0; i < num8; i++) {
@@ -3687,7 +3733,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             proto_tree_add_item(tree, hf_bthci_cmd_scan_enable,
                     tvb, offset, 1, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.scan = tvb_get_guint8(tvb, offset);
+                bthci_cmd_data->data.scan = tvb_get_uint8(tvb, offset);
             }
             offset++;
             break;
@@ -3696,7 +3742,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             proto_tree_add_item(tree, hf_bthci_cmd_authentication_enable,
                     tvb, offset, 1, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.authentication = tvb_get_guint8(tvb, offset);
+                bthci_cmd_data->data.authentication = tvb_get_uint8(tvb, offset);
             }
             offset++;
             break;
@@ -3704,7 +3750,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
         case 0x0022: /* Write Encryption Mode */
             proto_tree_add_item(tree, hf_bthci_cmd_encrypt_mode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.encryption = tvb_get_guint8(tvb, offset);
+                bthci_cmd_data->data.encryption = tvb_get_uint8(tvb, offset);
             }
             offset++;
             break;
@@ -3712,7 +3758,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
         case 0x0024: /* Write Class of Device */
             call_dissector(btcommon_cod_handle, tvb_new_subset_length(tvb, offset, 3), pinfo, tree);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.class_of_device = tvb_get_guint24(tvb, offset, ENC_LITTLE_ENDIAN);
+                bthci_cmd_data->data.class_of_device = tvb_get_uint24(tvb, offset, ENC_LITTLE_ENDIAN);
             }
             offset += 3;
             break;
@@ -3731,7 +3777,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             proto_tree_add_item(tree, hf_bthci_cmd_air_coding_format,
                     tvb, offset, 2, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.voice_setting = tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN);
+                bthci_cmd_data->data.voice_setting = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
             }
             offset+=2;
             break;
@@ -3801,17 +3847,17 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             offset+=2;
 
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.mtus.acl_mtu     = tvb_get_guint16(tvb, offset - 7, ENC_LITTLE_ENDIAN);
-                bthci_cmd_data->data.mtus.sco_mtu     = tvb_get_guint8(tvb,  offset - 5);
-                bthci_cmd_data->data.mtus.acl_packets = tvb_get_guint16(tvb, offset - 4, ENC_LITTLE_ENDIAN);
-                bthci_cmd_data->data.mtus.sco_packets = tvb_get_guint16(tvb, offset - 2, ENC_LITTLE_ENDIAN);
+                bthci_cmd_data->data.mtus.acl_mtu     = tvb_get_uint16(tvb, offset - 7, ENC_LITTLE_ENDIAN);
+                bthci_cmd_data->data.mtus.sco_mtu     = tvb_get_uint8(tvb,  offset - 5);
+                bthci_cmd_data->data.mtus.acl_packets = tvb_get_uint16(tvb, offset - 4, ENC_LITTLE_ENDIAN);
+                bthci_cmd_data->data.mtus.sco_packets = tvb_get_uint16(tvb, offset - 2, ENC_LITTLE_ENDIAN);
             }
             break;
 
         case 0x0035: /* Host Number Of Completed Packets */
             proto_tree_add_item(tree, hf_bthci_cmd_num_handles,
                     tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            num8 = tvb_get_guint8(tvb, offset);
+            num8 = tvb_get_uint8(tvb, offset);
             offset++;
 
             for (i=0; i<num8; i++) {
@@ -3842,7 +3888,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
 
         case 0x003a: /* Write Current IAC LAP */
             proto_tree_add_item(tree, hf_bthci_cmd_num_curr_iac, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            num8 = tvb_get_guint8(tvb, offset);
+            num8 = tvb_get_uint8(tvb, offset);
             offset++;
             for (i=0; i<num8; i++) {
                 proto_tree_add_item(tree, hf_bthci_cmd_iac_lap, tvb, offset+(i*3), 3, ENC_LITTLE_ENDIAN);
@@ -3893,7 +3939,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
         case 0x0045: /* Write Inquiry Mode */
             proto_tree_add_item(tree, hf_bthci_cmd_inq_mode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.inquiry_mode = tvb_get_guint8(tvb, offset);
+                bthci_cmd_data->data.inquiry_mode = tvb_get_uint8(tvb, offset);
             }
             offset++;
             break;
@@ -3935,7 +3981,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
         case 0x0056: /* Write Simple Pairing Mode */
             proto_tree_add_item(tree, hf_bthci_cmd_simple_pairing_mode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             if (!pinfo->fd->visited && bthci_cmd_data) {
-                bthci_cmd_data->data.simple_pairing_mode = tvb_get_guint8(tvb, offset);
+                bthci_cmd_data->data.simple_pairing_mode = tvb_get_uint8(tvb, offset);
             }
             offset++;
             break;
@@ -3971,23 +4017,8 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             break;
 
         case 0x0063: /* Set Event Mask Page 2 */
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_00, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_01, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_02, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_03, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_04, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_05, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_06, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_07, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            offset++;
-
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_10, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_11, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_12, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_13, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_14, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(tree, hf_bthci_cmd_evt_mask2_15, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            offset+=7;
+            proto_tree_add_bitmask(tree, tvb, offset, hf_bthci_cmd_evt_mask2, ett_event_mask_page_2, hfx_bthci_cmd_event_mask_page_2, ENC_LITTLE_ENDIAN);
+            offset += 8;
             break;
 
         case 0x0065: /* Write Location Data */
@@ -4285,13 +4316,13 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             proto_tree_add_item(tree, hf_bthci_cmd_lt_addr, tvb, offset, 1, ENC_NA);
             offset += 1;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_csb_fragment, tvb, offset, 1, ENC_NA);
+            proto_tree_add_item(tree, hf_bthci_cmd_cpb_fragment, tvb, offset, 1, ENC_NA);
             offset += 1;
 
-            proto_tree_add_item_ret_uint(tree, hf_bthci_cmd_csb_data_length, tvb, offset, 1, ENC_NA, &data_length);
+            proto_tree_add_item_ret_uint(tree, hf_bthci_cmd_cpb_data_length, tvb, offset, 1, ENC_NA, &data_length);
             offset += 1;
 
-            proto_tree_add_item(tree, hf_bthci_cmd_csb_data, tvb, offset, data_length, ENC_NA);
+            proto_tree_add_item(tree, hf_bthci_cmd_cpb_data, tvb, offset, data_length, ENC_NA);
             offset += data_length;
 
             }
@@ -4320,7 +4351,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             offset += 2;
 
             item = proto_tree_add_item(tree, hf_bthci_cmd_authenticated_payload_timeout, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(item, " (%g sec)", tvb_get_guint16(tvb, offset, ENC_LITTLE_ENDIAN) * 0.01);
+            proto_item_append_text(item, " (%g sec)", tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN) * 0.01);
             offset += 2;
 
             break;
@@ -4354,7 +4385,7 @@ dissect_host_controller_baseband_cmd(tvbuff_t *tvb, int offset, packet_info *pin
             offset += 1;
             proto_tree_add_item(tree, hf_bthci_cmd_data_path_id, tvb, offset, 1, ENC_NA);
             offset += 1;
-            codec_length = tvb_get_guint8(tvb, offset);
+            codec_length = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_bthci_cmd_codec_config_length, tvb, offset, 1, ENC_NA);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_codec_config, tvb, offset, codec_length, ENC_NA);
@@ -4732,7 +4763,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
         case 0x0033: /* LE Receiver Test [v2] */
         case 0x004f: /* LE Receiver Test [v3] */
             item = proto_tree_add_item(tree, hf_bthci_cmd_rx_frequency, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(item, " (%d MHz)",  2402 + 2*tvb_get_guint8(tvb, offset));
+            proto_item_append_text(item, " (%d MHz)",  2402 + 2*tvb_get_uint8(tvb, offset));
             offset++;
 
             if (cmd_ocf >= 0x0033) {
@@ -4744,7 +4775,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
 
             if (cmd_ocf >= 0x004f) {
                 item = proto_tree_add_item(tree, hf_bthci_cmd_cte_length, tvb, offset, 1, ENC_NA);
-                proto_item_append_text(item, " (%d usec)", tvb_get_guint8(tvb, offset)*8);
+                proto_item_append_text(item, " (%d usec)", tvb_get_uint8(tvb, offset)*8);
                 offset++;
                 proto_tree_add_item(tree, hf_bthci_cmd_cte_type, tvb, offset, 1, ENC_NA);
                 offset++;
@@ -4759,7 +4790,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
         case 0x0050: /* LE Transmitter Test [v3] */
         case 0x007B: /* LE Transmitter Test [v4] */
             item = proto_tree_add_item(tree, hf_bthci_cmd_tx_frequency, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(item, " (%d MHz)",  2402 + 2*tvb_get_guint8(tvb, offset));
+            proto_item_append_text(item, " (%d MHz)",  2402 + 2*tvb_get_uint8(tvb, offset));
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_test_data_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
@@ -4773,7 +4804,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
 
             if (cmd_ocf >= 0x0050) {
                 item = proto_tree_add_item(tree, hf_bthci_cmd_cte_length, tvb, offset, 1, ENC_NA);
-                proto_item_append_text(item, " (%d usec)", tvb_get_guint8(tvb, offset)*8);
+                proto_item_append_text(item, " (%d usec)", tvb_get_uint8(tvb, offset)*8);
                 offset++;
                 proto_tree_add_item(tree, hf_bthci_cmd_cte_type, tvb, offset, 1, ENC_NA);
                 offset++;
@@ -4781,7 +4812,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             }
 
             if (cmd_ocf >= 0x007B) {
-                int8_t level = tvb_get_gint8(tvb, offset);
+                int8_t level = tvb_get_int8(tvb, offset);
                 item = proto_tree_add_item(tree, hf_bthci_cmd_tx_power, tvb, offset, 1, ENC_NA);
                 if (level >= 0x7e) {
                     proto_item_append_text(item, " (Set to %s)", level == 0x7e ? "Minimum" : "Maximum");
@@ -4967,7 +4998,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             ad_data->adapter_id = bluetooth_data->adapter_id;
             ad_data->bd_addr = NULL;
 
-            uint8_t data_length = tvb_get_guint8(tvb, offset);
+            uint8_t data_length = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_bthci_cmd_le_data_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
             call_dissector_with_data(btcommon_ad_handle, tvb_new_subset_length(tvb, offset, data_length), pinfo, tree, ad_data);
@@ -4981,12 +5012,12 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_le_advts_enable, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
 
-            uint8_t number_of_sets = tvb_get_guint8(tvb, offset);
+            uint8_t number_of_sets = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_bthci_cmd_le_adv_en_sets, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
 
             for (int i = 0; i< number_of_sets; i++) {
-                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_le_adv_set, tvb, offset, 4, "Set, Handle: %u", tvb_get_guint8(tvb, offset));
+                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_le_adv_set, tvb, offset, 4, "Set, Handle: %u", tvb_get_uint8(tvb, offset));
                 sub_tree = proto_item_add_subtree(sub_item, ett_adv_sets);
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_advertising_handle, tvb, offset, 1, ENC_LITTLE_ENDIAN);
                 offset+=1;
@@ -5021,13 +5052,13 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item(tree, hf_bthci_cmd_num_subevents, tvb, offset, 1, ENC_LITTLE_ENDIAN);
                 offset+=1;
                 item = proto_tree_add_item(tree, hf_bthci_cmd_subevent_interval, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                proto_item_append_text(item, " (%g msec)",  tvb_get_guint8(tvb, offset) * 1.25);
+                proto_item_append_text(item, " (%g msec)",  tvb_get_uint8(tvb, offset) * 1.25);
                 offset+=1;
                 item = proto_tree_add_item(tree, hf_bthci_cmd_response_slot_delay, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                proto_item_append_text(item, " (%g msec)",  tvb_get_guint8(tvb, offset) * 1.25);
+                proto_item_append_text(item, " (%g msec)",  tvb_get_uint8(tvb, offset) * 1.25);
                 offset+=1;
                 item = proto_tree_add_item(tree, hf_bthci_cmd_response_slot_spacing, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                proto_item_append_text(item, " (%g msec)",  tvb_get_guint8(tvb, offset) * 0.125);
+                proto_item_append_text(item, " (%g msec)",  tvb_get_uint8(tvb, offset) * 0.125);
                 offset+=1;
                 proto_tree_add_item(tree, hf_bthci_cmd_num_response_slots, tvb, offset, 1, ENC_LITTLE_ENDIAN);
                 offset+=1;
@@ -5047,7 +5078,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             ad_data->adapter_id = bluetooth_data->adapter_id;
             ad_data->bd_addr = NULL;
 
-            uint8_t data_length = tvb_get_guint8(tvb, offset);
+            uint8_t data_length = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_bthci_cmd_le_data_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
             call_dissector_with_data(btcommon_ad_handle, tvb_new_subset_length(tvb, offset, data_length), pinfo, tree, ad_data);
@@ -5070,7 +5101,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_le_scan_filter_policy, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
-            scanning_phys = tvb_get_guint8(tvb, offset);
+            scanning_phys = tvb_get_uint8(tvb, offset);
             proto_tree_add_bitmask(tree, tvb, offset, hf_bthci_cmd_le_scan_phys, ett_phy_param, hfx_btcmd_le_scan_phys, ENC_NA);
             offset += 1;
             for (int i = 1; i < 0x08; i <<=1) {
@@ -5107,12 +5138,12 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
 
         case 0x0085: /* LE Extended Create Connection [v2] */
             item = proto_tree_add_item(tree, hf_bthci_cmd_advertising_handle, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            if (tvb_get_guint8(tvb, offset) == 0xff) {
+            if (tvb_get_uint8(tvb, offset) == 0xff) {
                 proto_item_append_text(item, " (not used)");
             }
             offset+=1;
             item = proto_tree_add_item(tree, hf_bthci_cmd_subevent, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-            if (tvb_get_guint8(tvb, offset) == 0xff) {
+            if (tvb_get_uint8(tvb, offset) == 0xff) {
                 proto_item_append_text(item, " (not used)");
             }
             offset+=1;
@@ -5128,7 +5159,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_le_peer_address_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
             offset = dissect_bd_addr(hf_bthci_cmd_bd_addr, pinfo, tree, tvb, offset, false, bluetooth_data->interface_id, bluetooth_data->adapter_id, NULL);
-            initiating_phys = tvb_get_guint8(tvb, offset);
+            initiating_phys = tvb_get_uint8(tvb, offset);
             proto_tree_add_bitmask(tree, tvb, offset, hf_bthci_cmd_le_init_phys, ett_phy_param, hfx_btcmd_le_phys, ENC_NA);
             offset += 1;
             for (int i = 1; i < 0x08; i <<=1) {
@@ -5218,7 +5249,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_advertising_handle, tvb, offset, 1, ENC_NA);
             offset++;
             item = proto_tree_add_item(tree, hf_bthci_cmd_cte_length, tvb, offset, 1, ENC_NA);
-            proto_item_append_text(item, " (%d usec)", tvb_get_guint8(tvb, offset)*8);
+            proto_item_append_text(item, " (%d usec)", tvb_get_uint8(tvb, offset)*8);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_cte_type, tvb, offset, 1, ENC_NA);
             offset++;
@@ -5242,7 +5273,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_slot_durations, tvb, offset, 1, ENC_NA);
             offset++;
             item = proto_tree_add_item(tree, hf_bthci_cmd_max_sampled_ctes, tvb, offset, 1, ENC_NA);
-            if (tvb_get_guint8(tvb, offset) == 0)
+            if (tvb_get_uint8(tvb, offset) == 0)
                 proto_item_append_text(item, " (Sample and report all available CTEs)");
             offset++;
             offset = dissect_antenna_switching_pattern(tvb, offset, tree);
@@ -5278,7 +5309,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
                 proto_item_append_text(item, " (Connection Events)");
             offset+=2;
             item = proto_tree_add_item(tree, hf_bthci_cmd_cte_length, tvb, offset, 1, ENC_NA);
-            proto_item_append_text(item, " (%d usec)", tvb_get_guint8(tvb, offset)*8);
+            proto_item_append_text(item, " (%d usec)", tvb_get_uint8(tvb, offset)*8);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_cte_type, tvb, offset, 1, ENC_NA);
             offset++;
@@ -5373,11 +5404,11 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_max_transport_latency_p_to_c, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             offset+=2;
             proto_tree_add_item(tree, hf_bthci_cmd_cis_count, tvb, offset, 1, ENC_NA);
-            cis_count = tvb_get_guint8(tvb, offset);
+            cis_count = tvb_get_uint8(tvb, offset);
             offset++;
 
             for (int i = 0; i < cis_count; i++) {
-                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_cis_params, tvb, offset, 9, "CIS Parameters, CIS Id: 0x%x", tvb_get_guint8(tvb, offset));
+                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_cis_params, tvb, offset, 9, "CIS Parameters, CIS Id: 0x%x", tvb_get_uint8(tvb, offset));
                 sub_tree = proto_item_add_subtree(sub_item, ett_cis_params);
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_cis_id, tvb, offset, 1, ENC_NA);
                 offset++;
@@ -5422,11 +5453,11 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_framing, tvb, offset, 1, ENC_NA);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_cis_count, tvb, offset, 1, ENC_NA);
-            cis_count = tvb_get_guint8(tvb, offset);
+            cis_count = tvb_get_uint8(tvb, offset);
             offset++;
 
             for (int i = 0; i < cis_count; i++) {
-                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_cis_params, tvb, offset, 14, "CIS Parameters, CIS Id: 0x%x", tvb_get_guint8(tvb, offset));
+                sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_cis_params, tvb, offset, 14, "CIS Parameters, CIS Id: 0x%x", tvb_get_uint8(tvb, offset));
                 sub_tree = proto_item_add_subtree(sub_item, ett_cis_params);
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_cis_id, tvb, offset, 1, ENC_NA);
                 offset++;
@@ -5445,11 +5476,11 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_bitmask(sub_tree, tvb, offset, hf_bthci_cmd_phy_p_to_c, ett_phy_param, hfx_btcmd_le_phys, ENC_NA);
                 offset++;
                 item = proto_tree_add_item(sub_tree, hf_bthci_cmd_bn_c_to_p, tvb, offset, 1, ENC_NA);
-                if (tvb_get_guint8(tvb, offset) == 0)
+                if (tvb_get_uint8(tvb, offset) == 0)
                     proto_item_append_text(item, " (No data)");
                 offset++;
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_bn_p_to_c, tvb, offset, 1, ENC_NA);
-                if (tvb_get_guint8(tvb, offset) == 0)
+                if (tvb_get_uint8(tvb, offset) == 0)
                     proto_item_append_text(item, " (No data)");
                 offset++;
             }
@@ -5461,7 +5492,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             uint8_t cis_count;
             uint32_t k_shandle, chandle;
             proto_tree_add_item(tree, hf_bthci_cmd_cis_count, tvb, offset, 1, ENC_NA);
-            cis_count = tvb_get_guint8(tvb, offset);
+            cis_count = tvb_get_uint8(tvb, offset);
             offset++;
             for (int i = 0; i < cis_count; i++) {
                 sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_cis_params, tvb, offset, 4, "CIS Handle: 0x%03x, Connection Handle: 0x%03x",
@@ -5605,7 +5636,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_item_append_text(item, " (%g sec)",  tvb_get_letohs(tvb, offset)*0.01);
             offset+=2;
             proto_tree_add_item(tree, hf_bthci_cmd_num_bis, tvb, offset, 1, ENC_NA);
-            num_bis = tvb_get_guint8(tvb, offset);
+            num_bis = tvb_get_uint8(tvb, offset);
             offset++;
             for (int i = 0; i < num_bis; i++) {
                 proto_tree_add_item(tree, hf_bthci_cmd_bis_index, tvb, offset, 1, ENC_NA);
@@ -5629,16 +5660,16 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_data_path_direction, tvb, offset, 1, ENC_NA);
             offset++;
             item = proto_tree_add_item(tree, hf_bthci_cmd_data_path_id, tvb, offset, 1, ENC_NA);
-            if (tvb_get_guint8(tvb, offset) == 0)
+            if (tvb_get_uint8(tvb, offset) == 0)
                 str = "HCI";
-            else if (tvb_get_guint8(tvb, offset) < 0xff)
+            else if (tvb_get_uint8(tvb, offset) < 0xff)
                 str = "Logical Channel Number";
             proto_item_append_text(item, " (%s)", str);
             offset++;
             offset = dissect_coding_format(tree, hf_bthci_cmd_coding_format, tvb, offset, ett_coding_format);
             proto_tree_add_item(tree, hf_bthci_cmd_controller_delay, tvb, offset, 3, ENC_LITTLE_ENDIAN);
             offset+=3;
-            codec_length = tvb_get_guint8(tvb, offset);
+            codec_length = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_bthci_cmd_codec_config_length, tvb, offset, 1, ENC_NA);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_codec_config, tvb, offset, codec_length, ENC_NA);
@@ -5741,12 +5772,12 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_advertising_handle, tvb, offset, 1, ENC_NA);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_num_subevents, tvb, offset, 1, ENC_NA);
-            sub_events = tvb_get_guint8(tvb, offset);
+            sub_events = tvb_get_uint8(tvb, offset);
             offset++;
             for (int i = 0; i < sub_events; i++) {
-                length = 4 + tvb_get_guint8(tvb, offset+3);
+                length = 4 + tvb_get_uint8(tvb, offset+3);
                 sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_subevents, tvb, offset, length,
-                                                      "Sub-event: %u", tvb_get_guint8(tvb, offset));
+                                                      "Sub-event: %u", tvb_get_uint8(tvb, offset));
                 sub_tree = proto_item_add_subtree(sub_item, ett_adv_subevents);
 
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_subevent, tvb, offset, 1, ENC_NA);
@@ -5756,7 +5787,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_response_slot_count, tvb, offset, 1, ENC_NA);
                 offset++;
                 proto_tree_add_item(sub_tree, hf_bthci_cmd_subevent_data_length, tvb, offset, 1, ENC_NA);
-                length = tvb_get_guint8(tvb, offset);
+                length = tvb_get_uint8(tvb, offset);
                 offset++;
 
                 bluetooth_eir_ad_data_t *ad_data;
@@ -5784,7 +5815,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_item(tree, hf_bthci_cmd_response_slot, tvb, offset, 1, ENC_NA);
             offset++;
             proto_tree_add_item(tree, hf_bthci_cmd_response_data_length, tvb, offset, 1, ENC_NA);
-            length = tvb_get_guint8(tvb, offset);
+            length = tvb_get_uint8(tvb, offset);
             offset++;
 
             bluetooth_eir_ad_data_t *ad_data;
@@ -5805,7 +5836,7 @@ dissect_le_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, 
             proto_tree_add_bitmask(tree, tvb, offset, hf_bthci_cmd_advertising_properties, ett_adv_properties, hfx_bthci_cmd_adv_properties, ENC_LITTLE_ENDIAN);
             offset+=2;
             proto_tree_add_item(tree, hf_bthci_cmd_num_subevents, tvb, offset, 1, ENC_NA);
-            sub_events = tvb_get_guint8(tvb, offset);
+            sub_events = tvb_get_uint8(tvb, offset);
             offset++;
             sub_item = proto_tree_add_none_format(tree, hf_bthci_cmd_subevents, tvb, offset, sub_events, "Sub-events");
             sub_tree = proto_item_add_subtree(sub_item, ett_adv_subevents);
@@ -5984,7 +6015,7 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     offset+=2;
 
     proto_tree_add_item(bthci_cmd_tree, hf_bthci_cmd_param_length, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-    param_length = tvb_get_guint8(tvb, offset);
+    param_length = tvb_get_uint8(tvb, offset);
     offset++;
 
     if (ogf == HCI_OGF_VENDOR_SPECIFIC) {
@@ -7215,25 +7246,30 @@ proto_register_bthci_cmd(void)
             NULL, HFILL }
         },
 
+        { &hf_bthci_cmd_evt_mask2,
+          { "Event Mask Page 2", "bthci_cmd.evt_mask2",
+            FT_UINT64, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
         { &hf_bthci_cmd_evt_mask2_00,
           { "Physical Link Complete", "bthci_cmd.evt_mask2_00",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x01,
-            "Physical Link Complete Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x01),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_01,
           { "Channel Selected", "bthci_cmd.evt_mask2_01",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x02,
-            "Channel Selected Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x02),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_02,
           { "Disconnection Physical Link", "bthci_cmd.evt_mask2_02",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x04,
-            "Disconnection Physical Link Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x04),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_03,
          { "Physical Link Loss Early Warning", "bthci_cmd.evt_mask2_03",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x08,
-            "Physical Link Loss Early Warning Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x08),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_04,
           { "Physical Link Recovery", "bthci_cmd.evt_mask2_04",
@@ -7242,48 +7278,113 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_evt_mask2_05,
           { "Logical Link Complete", "bthci_cmd.evt_mask2_05",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x20,
-            "Logical Link Complete Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x20),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_06,
           { "Disconnection Logical Link Complete", "bthci_cmd.evt_mask2_06",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x40,
-            "Disconnection Logical Link Complete Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x40),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_07,
           { "Flow Spec Modify Complete", "bthci_cmd.evt_mask2_07",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x80,
-            "Flow Spec Modify Complete Bit", HFILL }
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x80),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_08,
+          { "Number Of Completed Data Blocks", "bthci_cmd.evt_mask2_8",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x100),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_09,
+          { "AMP Start Test", "bthci_cmd.evt_mask2_9",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x200),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_10,
-          { "Number Of Completed Data Blocks", "bthci_cmd.evt_mask2_10",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x01,
-            "Number Of Completed Data Blocks Bit", HFILL }
+          { "AMP Test End", "bthci_cmd.evt_mask2_10",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x400),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_11,
-          { "AMP Start Test", "bthci_cmd.evt_mask2_11",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x02,
-            "AMP Start Test Bit", HFILL }
+          { "AMP Receiver Report", "bthci_cmd.evt_mask2_11",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x800),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_12,
-          { "AMP Test End", "bthci_cmd.evt_mask2_12",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x04,
-            "AMP Test End Bit", HFILL }
+          { "Short Range Mode Change Complete", "bthci_cmd.evt_mask2_12",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x1000),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_13,
-          { "AMP Receiver Report", "bthci_cmd.evt_mask2_13",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x08,
-            "AMP Receiver Report Bit", HFILL }
+          { "AMP Status Change", "bthci_cmd.evt_mask2_13",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x2000),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_14,
-          { "Short Range Mode Change Complete", "bthci_cmd.evt_mask2_14",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x10,
-            "Short Range Mode Change Complete Bit", HFILL }
+          { "Triggered Clock Capture", "bthci_cmd.evt_mask2_14",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x4000),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_evt_mask2_15,
-          { "AMP Status Change", "bthci_cmd.evt_mask2_15",
-            FT_UINT8, BASE_HEX, VALS(cmd_boolean), 0x20,
-            "AMP Status Change Bit", HFILL }
+          { "Synchronization Train Complete", "bthci_cmd.evt_mask2_15",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x8000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_16,
+          { "Synchronization Train Received", "bthci_cmd.evt_mask2_16",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x10000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_17,
+          { "Connectionless Peripheral Broadcast Receive", "bthci_cmd.evt_mask2_17",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x20000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_18,
+          { "Connectionless Peripheral Broadcast Timeout", "bthci_cmd.evt_mask2_18",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x40000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_19,
+          { "Truncated Page Complete", "bthci_cmd.evt_mask2_19",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x80000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_20,
+          { "Peripheral Page Response Timeout", "bthci_cmd.evt_mask2_20",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x100000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_21,
+          { "Connectionless Peripheral Broadcast Channel Map Change", "bthci_cmd.evt_mask2_21",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x200000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_22,
+          { "Inquiry Response Notification", "bthci_cmd.evt_mask2_22",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x400000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_23,
+          { "Authenticated Payload Timeout Expired", "bthci_cmd.evt_mask2_23",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x800000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_24,
+          { "SAM Status Change", "bthci_cmd.evt_mask2_24",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x1000000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_25,
+          { "Encryption Change [v2]", "bthci_cmd.evt_mask2_25",
+            FT_BOOLEAN, 64, NULL, UINT64_C(0x2000000),
+            NULL, HFILL }
+        },
+        { &hf_bthci_cmd_evt_mask2_reserved,
+          { "Reserved", "bthci_cmd.evt_mask2_25_reserved",
+            FT_UINT64, BASE_HEX, NULL, UINT64_C(0xFFFFFFFFFC000000),
+            NULL, HFILL }
         },
         { &hf_bthci_cmd_location_domain_aware,
           { "Location Domain Aware", "bthci_cmd.location_domain_aware",
@@ -7772,7 +7873,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_command_response_time_delta,
             { "Command-Response Delta",          "bthci_cmd.command_response_delta",
-            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, &units_milliseconds, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_pending_in_frame,
@@ -7782,7 +7883,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_command_pending_time_delta,
             { "Command-Pending Delta",          "bthci_cmd.command_pending_delta",
-            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, &units_milliseconds, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_le_tx_octets,
@@ -7792,7 +7893,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_le_tx_time,
           { "TxTime", "bthci_cmd.le_tx_time",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_le_suggested_max_tx_octets,
@@ -7802,7 +7903,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_le_suggested_max_tx_time,
           { "SuggestedMaxTxTime", "bthci_cmd.le_suggested_max_tx_time",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_le_remote_p_256_public_key,
@@ -7827,7 +7928,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_le_rpa_timeout,
           { "RPA Timeout", "bthci_cmd.le_rpa_timeout",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_second_seconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_advertising_handle,
@@ -8267,17 +8368,17 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_sdu_interval_c_to_p,
           { "SDU Interval Central to Peripheral",   "bthci_cmd.sdu_interval_c_to_p",
-            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_sdu_interval_p_to_c,
           { "SDU Interval Peripheral to Central",   "bthci_cmd.sdu_interval_p_to_c",
-            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_sdu_interval,
           { "SDU Interval",   "bthci_cmd.sdu_interval",
-            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_peripherals_clock_accuracy,
@@ -8332,32 +8433,32 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_max_sdu_c_to_p,
           { "Max SDU Central to Peripheral", "bthci_cmd.max_sdu_c_to_p",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_sdu_p_to_c,
           { "Max SDU Peripheral to Central", "bthci_cmd.max_sdu_p_to_c",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_sdu,
           { "Max SDU", "bthci_cmd.max_sdu",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_pdu_c_to_p,
           { "Max PDU Central to Peripheral", "bthci_cmd.max_pdu_c_to_p",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_pdu_p_to_c,
           { "Max PDU Peripheral to Central", "bthci_cmd.max_pdu_p_to_c",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_pdu,
           { "Max PDU", "bthci_cmd.max_pdu",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_phy_c_to_p,
@@ -8387,17 +8488,17 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_max_transport_latency_c_to_p,
           { "Max Transport Latency Central to Peripheral", "bthci_cmd.max_transport_latency_c_to_p",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_transport_latency_p_to_c,
           { "Max Transport Latency Peripheral to Central", "bthci_cmd.max_transport_latency_p_to_c",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_max_transport_latency,
           { "Max Transport Latency", "bthci_cmd.max_transport_latency",
-            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0x0,
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_rtn_c_to_p,
@@ -8487,7 +8588,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_controller_delay,
           { "Controller Delay", "bthci_cmd.controller_delay",
-            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0x0,
+            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_codec_config_length,
@@ -8522,22 +8623,22 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_high_threshold,
           { "High Threshold", "bthci_cmd.high_threshold",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_decibels, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_high_hysteresis,
           { "High Hysteresis", "bthci_cmd.high_hysteresis",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_decibels, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_low_threshold,
           { "Low Threshold", "bthci_cmd.low_threshold",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_decibels, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_low_hysteresis,
           { "Low Hysteresis", "bthci_cmd.low_hysteresis",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_decibels, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_decibels), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_cmd_min_time_spent,
@@ -8831,8 +8932,8 @@ proto_register_bthci_cmd(void)
             FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
-        { &hf_bthci_cmd_csb_supervision_to,
-          { "Supervision To", "bthci_cmd.csb_supervision_to",
+        { &hf_bthci_cmd_cpb_supervision_to,
+          { "Supervision To", "bthci_cmd.cpb_supervision_to",
             FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
@@ -8846,8 +8947,8 @@ proto_register_bthci_cmd(void)
             FT_UINT32, BASE_HEX, NULL, 0x0FFFFFFF,
             "Bits 0-27 of the Clock Offset between CLKNreceiver-CLKNtransmitter", HFILL }
         },
-        { &hf_bthci_cmd_next_csb_clock,
-          { "Next CSB Clock", "bthci_cmd.next_csb_clock",
+        { &hf_bthci_cmd_next_cpb_clock,
+          { "Next CPB Clock", "bthci_cmd.next_cpb_clock",
             FT_UINT32, BASE_HEX, NULL, 0x0FFFFFFF,
             "Bits 0-27 of the Clock Offset between CLKperipheral-CLK", HFILL }
         },
@@ -8856,8 +8957,8 @@ proto_register_bthci_cmd(void)
             FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
-        { &hf_bthci_cmd_csb_skip,
-          { "CSB Skip", "bthci_cmd.csb_skip",
+        { &hf_bthci_cmd_cpb_skip,
+          { "CPB Skip", "bthci_cmd.cpb_skip",
             FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
@@ -9124,18 +9225,18 @@ proto_register_bthci_cmd(void)
             FT_UINT8, BASE_HEX, VALS(disable_enable_vals), 0x0,
             NULL, HFILL }
         },
-        { &hf_bthci_cmd_csb_fragment,
-          { "CSB Fragment", "bthci_cmd.csb.fragment",
-            FT_UINT8, BASE_HEX, VALS(csb_fragment_vals), 0x0,
+        { &hf_bthci_cmd_cpb_fragment,
+          { "CPB Fragment", "bthci_cmd.cpb.fragment",
+            FT_UINT8, BASE_HEX, VALS(cpb_fragment_vals), 0x0,
             NULL, HFILL }
         },
-        { &hf_bthci_cmd_csb_data_length,
-          { "CSB Data Length", "bthci_cmd.csb.data_length",
+        { &hf_bthci_cmd_cpb_data_length,
+          { "CPB Data Length", "bthci_cmd.cpb.data_length",
             FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
-        { &hf_bthci_cmd_csb_data,
-          { "CSB Data", "bthci_cmd.csb.data",
+        { &hf_bthci_cmd_cpb_data,
+          { "CPB Data", "bthci_cmd.cpb.data",
             FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
@@ -9151,7 +9252,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_min_encryption_key_size,
           { "Minimum Encryption Key Size", "bthci_cmd.min_encryption_key_size",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0x0,
             NULL, HFILL }
         }
     };
@@ -9169,6 +9270,7 @@ proto_register_bthci_cmd(void)
         &ett_cod_mask,
         &ett_flow_spec_subtree,
         &ett_le_channel_map,
+        &ett_event_mask_page_2,
         &ett_le_event_mask,
         &ett_adv_properties,
         &ett_adv_sets,
@@ -9299,10 +9401,10 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
     data_size = tvb_reported_length(tvb);
 
     while (offset < data_size) {
-        length = tvb_get_guint8(tvb, offset);
+        length = tvb_get_uint8(tvb, offset);
         if (length <= 0) break;
 
-        type = tvb_get_guint8(tvb, offset + 1);
+        type = tvb_get_uint8(tvb, offset + 1);
 
         entry_item = proto_tree_add_none_format(tree, hf_btcommon_eir_ad_entry, tvb, offset, length + 1, "%s",
                 val_to_str_const(type, bthci_cmd_eir_data_type_vals, "Unknown"));
@@ -9592,7 +9694,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
                 break;
 
             sub_item = proto_tree_add_bitmask(entry_tree, tvb, offset, hf_btcommon_eir_ad_ips_flags, ett_eir_ad_entry, hfx_btcommon_eir_ad_ips_flags, ENC_LITTLE_ENDIAN);
-            flags = tvb_get_guint8(tvb, offset);
+            flags = tvb_get_uint8(tvb, offset);
             offset += 1;
 
             if (flags & 0x01) {
@@ -9640,7 +9742,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
                 uint8_t organization_id;
 
                 proto_tree_add_item(entry_tree, hf_btcommon_eir_ad_tds_organization_id, tvb, offset, 1, ENC_NA);
-                organization_id = tvb_get_guint8(tvb, offset);
+                organization_id = tvb_get_uint8(tvb, offset);
                 offset += 1;
 
                 if (p_get_proto_data(pinfo->pool, pinfo, proto_btcommon, PROTO_DATA_BLUETOOTH_EIR_AD_TDS_ORGANIZATION_ID) == NULL) {
@@ -9656,7 +9758,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
                 offset += 1;
 
                 sub_item = proto_tree_add_item(entry_tree, hf_btcommon_eir_ad_tds_data_length, tvb, offset, 1, ENC_NA);
-                sub_length = tvb_get_guint8(tvb, offset);
+                sub_length = tvb_get_uint8(tvb, offset);
                 offset += 1;
 
                 if (length > 3 && sub_length > length - 3) {
@@ -9747,7 +9849,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
         case 0x2c: /* BIGInfo */
             sub_item = proto_tree_add_item_ret_uint(entry_tree, hf_btcommon_eir_ad_biginfo_big_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN, &interval);
             proto_tree_add_item(entry_tree, hf_btcommon_eir_ad_biginfo_big_offset_units, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-            proto_item_append_text(sub_item, " (%u usec)", interval * ((tvb_get_guint32(tvb, offset, ENC_LITTLE_ENDIAN) & 0x00004000) != 0 ? 300 : 30));
+            proto_item_append_text(sub_item, " (%u usec)", interval * ((tvb_get_uint32(tvb, offset, ENC_LITTLE_ENDIAN) & 0x00004000) != 0 ? 300 : 30));
             sub_item = proto_tree_add_item_ret_uint(entry_tree, hf_btcommon_eir_ad_biginfo_iso_interval, tvb, offset, 4, ENC_LITTLE_ENDIAN, &interval);
             proto_item_append_text(sub_item, " (%g msec)", interval * 1.25);
             proto_tree_add_item_ret_uint(entry_tree, hf_btcommon_eir_ad_biginfo_num_bis, tvb, offset, 4, ENC_LITTLE_ENDIAN, &num_bis);
@@ -9767,7 +9869,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
             sub_item = proto_tree_add_item(entry_tree, hf_btcommon_eir_ad_biginfo_seed_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             sub_tree = proto_item_add_subtree(sub_item, ett_eir_ad_biginfo_seedaa);
             for (uint32_t bis = 0; bis <= num_bis; ++bis) {
-                uint32_t aa = tvb_get_guint32(tvb, offset, ENC_LITTLE_ENDIAN);
+                uint32_t aa = tvb_get_uint32(tvb, offset, ENC_LITTLE_ENDIAN);
                 uint8_t d = (35 * bis + 42) & 0x7f;
                 uint32_t dw = (0xfc000000 * (d & 1)) | ((d & 0x02) << 24) | ((d & 0x40) << 18) | ((d & 0x02) << 22) | ((d & 0x30) << 16) | ((d & 0x0c) << 15);
                 aa ^= dw;
@@ -9828,7 +9930,7 @@ dissect_eir_ad_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bluetoo
                 p_add_proto_data(pinfo->pool, pinfo, proto_btcommon, PROTO_DATA_BLUETOOTH_EIR_AD_MANUFACTURER_COMPANY_ID, value_data);
             }
 
-            if (company_id == 0x000F && tvb_get_guint8(tvb, offset) == 0) { /* 3DS profile Legacy Devices */
+            if (company_id == 0x000F && tvb_get_uint8(tvb, offset) == 0) { /* 3DS profile Legacy Devices */
                 proto_tree_add_item(entry_tree, hf_btcommon_eir_ad_3ds_legacy_fixed, tvb, offset, 1, ENC_NA);
                 offset += 1;
 
@@ -9924,8 +10026,8 @@ dissect_btcommon_cod(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, vo
     cod_item = proto_tree_add_item(tree, hf_btcommon_cod_class_of_device, tvb, offset, 3, ENC_LITTLE_ENDIAN);
     cod_tree = proto_item_add_subtree(cod_item, ett_cod);
 
-    major_device_class = tvb_get_guint8(tvb, offset + 1) & 0x1F;
-    minor_device_class = tvb_get_guint8(tvb, offset) >> 2;
+    major_device_class = tvb_get_uint8(tvb, offset + 1) & 0x1F;
+    minor_device_class = tvb_get_uint8(tvb, offset) >> 2;
 
     switch(major_device_class) {
     case 0x01: /* Computer */
@@ -10703,7 +10805,7 @@ proto_register_btcommon(void)
         },
         { &hf_btcommon_eir_ad_biginfo_sub_interval,
           { "Sub_Interval", "btcommon.eir_ad.entry.biginfo.sub_interval",
-            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microsecond_microseconds, 0x0fffff00,
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microsecond_microseconds), 0x0fffff00,
             NULL, HFILL}
         },
         { &hf_btcommon_eir_ad_biginfo_pto,
@@ -10713,7 +10815,7 @@ proto_register_btcommon(void)
         },
         { &hf_btcommon_eir_ad_biginfo_bis_spacing,
           { "BIS_Spacing", "btcommon.eir_ad.entry.biginfo.bis_spacing",
-            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, &units_microsecond_microseconds, 0x0fffff,
+            FT_UINT24, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microsecond_microseconds), 0x0fffff,
             NULL, HFILL}
         },
         { &hf_btcommon_eir_ad_biginfo_irc,

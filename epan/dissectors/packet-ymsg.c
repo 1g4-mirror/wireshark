@@ -34,9 +34,9 @@ static int hf_ymsg_content_line;
 static int hf_ymsg_content_line_key;
 static int hf_ymsg_content_line_value;
 
-static gint ett_ymsg;
-static gint ett_ymsg_content;
-static gint ett_ymsg_content_line;
+static int ett_ymsg;
+static int ett_ymsg_content;
+static int ett_ymsg_content_line;
 
 #define TCP_PORT_YMSG     23    /* XXX - this is Telnet! */
 #define TCP_PORT_YMSG_2   25    /* And this is SMTP! */
@@ -228,7 +228,7 @@ enum yahoo_command {
     YAHOO_CMD_WIDGET_BUDDY_LIST          = 0xfc,
     YAHOO_CMD_WIDGET_BUDDY_INFO          = 0xfd,
     YAHOO_CMD_WIDGET_ACTION              = 0xfe,
-    YAHOO_CMD_NEWS_ALERTS                = 0xff,
+    YAHOO_CMD_NEWS_ALERTS                = 0x12c,
     YAHOO_CMD_CORP_USER_LOGIN            = 0x1c2,
     YAHOO_CMD_MSG_RE_LOGIN               = 0x1c3,
     YAHOO_CMD_CORP_ID_COPR_P2P_INIT      = 0x1c4,
@@ -239,12 +239,12 @@ enum yahoo_command {
     YAHOO_CMD_SECURE_CHAT_SAY_MSG        = 0x1cf,
     YAHOO_CMD_SECURE_GAMES_USER_HAS_MSG  = 0x1d0,
     YAHOO_CMD_SYMANTEC_MSGS              = 0x1f4,
-    YAHOO_CMD_MOBILE_SEND_SMS_MESSAGE    = 0x1f5,
+    YAHOO_CMD_MOBILE_SEND_SMS_MESSAGE    = 0x2ea,
     YAHOO_CMD_MOBILE_SMS_LOGIN           = 0x2ec,
     YAHOO_CMD_MOBILE_SMS_NUMBER          = 0x2ed,
     YAHOO_CMD_ANON_LOGOFF                = 0x322,
     YAHOO_CMD_ANON_HAS_MSG               = 0x326,
-    YAHOO_CMD_CLIENT_NETSTAT             = 0x327,
+    YAHOO_CMD_CLIENT_NETSTAT             = 0x3e8,
     YAHOO_CMD_P2P_USER                   = 0x3e9,
     YAHOO_CMD_P2P_STATE                  = 0x3ea,
     YAHOO_CMD_LWM_LOGIN                  = 0x44c,
@@ -290,7 +290,7 @@ enum yahoo_status {
     YAHOO_STATUS_PRE_LOGIN_SUCCEEDED    = 0x64,
     YAHOO_STATUS_SERVER_CONNECTED       = 0x65,
     YAHOO_STATUS_FD_CONNECT_SUCCESS     = 0x66,
-    YAHOO_STATUS_CMD_SENT_ACK           = 0x67,
+    YAHOO_STATUS_CMD_SENT_ACK           = 0x3e8,
     YAHOO_STATUS_UNKNOWN_USER           = 0x5a55aa55,
     YAHOO_STATUS_KNOWN_USER             = 0x5a55aa56,
 };
@@ -827,25 +827,18 @@ static const value_string ymsg_field_vals[] = {
     {YAHOO_FLD_CUSTOM_DND_STATUS,             "CustomDndStatus"},
     {YAHOO_FLD_CONTAINS_TAGS,                 "ContainsTags"},
     {YAHOO_FLD_APP_NAME,                      "AppName"},
-    {YAHOO_FLD_INVITOR_NAME,                  "InvitorName"},
-    {YAHOO_FLD_NET2PHONE_CALL_LEN,            "Net2PhoneCallLen"},
-    {YAHOO_FLD_INVITEE_NAME,                  "InviteeName"},
-    {YAHOO_FLD_AD_SPACE_ID,                   "AdSpaceId"},
-    {YAHOO_FLD_INVITED_USER,                  "InvitedUser"},
-    {YAHOO_FLD_USES_IMIP_CLIENT,              "UsesIMIPClient"},
-    {YAHOO_FLD_JOINED_USER,                   "JoinedUser"},
-    {YAHOO_FLD_SHORTCUT,                      "Shortcut"},
-    {YAHOO_FLD_DECLINED_USER,                 "DeclinedUser"},
-    {YAHOO_FLD_FEED_VER,                      "FeedVer"},
+    {YAHOO_FLD_INVITOR_NAME,                  "InvitorName|Net2PhoneCallLen"},
+    {YAHOO_FLD_INVITEE_NAME,                  "InviteeName|AdSpaceId"},
+    {YAHOO_FLD_INVITED_USER,                  "InvitedUser|UsesIMIPClient"},
+    {YAHOO_FLD_JOINED_USER,                   "JoinedUser|Shortcut"},
+    {YAHOO_FLD_DECLINED_USER,                 "DeclinedUser|FeedVer"},
     {YAHOO_FLD_UNAVAILABLE_USER,              "UnavailableUser"},
     {YAHOO_FLD_LEFT_USER,                     "LeftUser"},
     {YAHOO_FLD_ROOM_NAME,                     "RoomName"},
     {YAHOO_FLD_CONF_TOPIC,                    "ConfTopic"},
     {YAHOO_FLD_COOKIE,                        "Cookie"},
-    {YAHOO_FLD_DEVICE_TYPE,                   "DeviceType"},
-    {YAHOO_FLD_USER_TYPE,                     "UserType"},
-    {YAHOO_FLD_WEBCAM_TOKEN,                  "WebcamToken"},
-    {YAHOO_FLD_TIMED_P2P_CONN_FLG,            "TimedP2PConnFlg"},
+    {YAHOO_FLD_USER_TYPE,                     "UserType|DeviceType"},
+    {YAHOO_FLD_WEBCAM_TOKEN,                  "WebcamToken|TimedP2PConnFlg"},
     {YAHOO_FLD_WEBCAM_STATUS,                 "WebcamStatus"},
     {YAHOO_FLD_IMV_ID,                        "IMVId"},
     {YAHOO_FLD_IMV_FLAG,                      "IMVFlag"},
@@ -854,8 +847,7 @@ static const value_string ymsg_field_vals[] = {
     {YAHOO_FLD_NEW_BUDDY_GRP_NAME,            "NewBuddyGrpName"},
     {YAHOO_FLD_PHONE_CARRIER_CODE,            "PhoneCarrierCode"},
     {YAHOO_FLD_SCREEN_NAME,                   "ScreenName"},
-    {YAHOO_FLD_CONVERSE_COMMAND,              "ConverseCommand"},
-    {YAHOO_FLD_SMS_PHONE,                     "SmsPhone"},
+    {YAHOO_FLD_SMS_PHONE,                     "SmsPhone|ConverseCommand"},
     {YAHOO_FLD_CONVERSE_IDENTITY,             "ConverseIdentity"},
     {YAHOO_FLD_CONVERSE_OTHER_GUY,            "ConverseOtherGuy"},
     {YAHOO_FLD_CONVERSE_TOPIC,                "ConverseTopic"},
@@ -875,8 +867,7 @@ static const value_string ymsg_field_vals[] = {
     {YAHOO_FLD_BUDDY_LIST,                    "BuddyList"},
     {YAHOO_FLD_IGNORE_LIST,                   "IgnoreList"},
     {YAHOO_FLD_IDENTITY_LIST,                 "IdentityList"},
-    {YAHOO_FLD_HAS_MAIL,                      "HasMail"},
-    {YAHOO_FLD_CONVERSE_CMD_DEC_TEXT,         "ConverseCmdDecText"},
+    {YAHOO_FLD_HAS_MAIL,                      "HasMail|ConverseCmdDecText"},
     {YAHOO_FLD_ANON_NAME,                     "AnonName"},
     {YAHOO_FLD_ANON_ID,                       "AnonId"},
     {YAHOO_FLD_T_COOKIE_EXPIRE,               "TCookieExpire"},
@@ -1091,10 +1082,10 @@ static int get_content_item_length(tvbuff_t *tvb, int offset)
     return offset - origoffset;
 }
 
-static guint
+static unsigned
 get_ymsg_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-    guint plen;
+    unsigned plen;
 
     /*
      * Get the length of the YMSG packet.
@@ -1109,7 +1100,7 @@ get_ymsg_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _
 
 static bool is_field_with_field_value(int key)
 {
-    for (guint i = 0; i < G_N_ELEMENTS(yahoo_fields_with_field_values); i++) {
+    for (unsigned i = 0; i < G_N_ELEMENTS(yahoo_fields_with_field_values); i++) {
         if (key == yahoo_fields_with_field_values[i]) {
             return true;
         }
@@ -1124,7 +1115,7 @@ dissect_ymsg_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     proto_tree *ymsg_tree, *ti;
     proto_item *content_item;
     proto_tree *content_tree;
-    const gchar *val_buf;
+    const char *val_buf;
     int         val_len;
     int         val_key;
     int         key_len;
@@ -1252,7 +1243,7 @@ dissect_ymsg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     if (tvb_captured_length(tvb) < 4) {
         return false;
     }
-    if (tvb_memeql(tvb, 0, (const guint8*)"YMSG", 4) == -1) {
+    if (tvb_memeql(tvb, 0, (const uint8_t*)"YMSG", 4) == -1) {
         /* Not a Yahoo Messenger packet. */
         return false;
     }
@@ -1298,7 +1289,7 @@ proto_register_ymsg(void)
                 "Value", "ymsg.content-line.value", FT_STRING, BASE_NONE,
                 NULL, 0, "Content line value", HFILL }}
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ymsg,
         &ett_ymsg_content,
         &ett_ymsg_content_line

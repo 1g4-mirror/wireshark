@@ -24,8 +24,8 @@
 #include "wsutil/file_util.h"
 #include "wsutil/inet_addr.h"
 #include "wsutil/time_util.h"
-#include "wsutil/tempfile.h"
 #include "wsutil/filesystem.h"
+#include <wsutil/array.h>
 
 #include <ui_import_text_dialog.h>
 #include "main_application.h"
@@ -618,7 +618,7 @@ bool ImportTextDialog::checkDateTimeFormat(const QString &time_format)
     /* nonstandard is f for fractions of seconds */
     const QString valid_code = "aAbBcdDFfHIjmMpsSTUwWxXyYzZ%";
     int idx = 0;
-    int ret = false;
+    bool ret = false;
 
     /* XXX: Temporary(?) hack to allow ISO format time, a checkbox is
      * probably better */

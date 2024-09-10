@@ -32,6 +32,8 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
 #include "packet-bfd.h"
 #include "packet-mpls.h"
@@ -320,8 +322,8 @@ dissect_bfd_authentication(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_tree   *auth_tree = NULL;
     const uint8_t *password;
 
-    auth_type = tvb_get_guint8(tvb, offset);
-    auth_len  = tvb_get_guint8(tvb, offset + 1);
+    auth_type = tvb_get_uint8(tvb, offset);
+    auth_len  = tvb_get_uint8(tvb, offset + 1);
 
     if (tree) {
         auth_tree = proto_tree_add_subtree_format(tree, tvb, offset, auth_len,
@@ -411,9 +413,9 @@ dissect_bfd_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "BFD Control");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    bfd_version = (tvb_get_guint8(tvb, 0) & 0xe0) >> 5;
-    bfd_diag    = (tvb_get_guint8(tvb, 0) & 0x1f);
-    flags       = tvb_get_guint8(tvb, 1);
+    bfd_version = (tvb_get_uint8(tvb, 0) & 0xe0) >> 5;
+    bfd_diag    = (tvb_get_uint8(tvb, 0) & 0x1f);
+    flags       = tvb_get_uint8(tvb, 1);
     switch (bfd_version) {
         case 0:
             bfd_flags      = flags;
@@ -426,8 +428,8 @@ dissect_bfd_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             break;
     }
 
-    bfd_detect_time_multiplier     = tvb_get_guint8(tvb, 2);
-    bfd_length                     = tvb_get_guint8(tvb, 3);
+    bfd_detect_time_multiplier     = tvb_get_uint8(tvb, 2);
+    bfd_length                     = tvb_get_uint8(tvb, 3);
     bfd_my_discriminator           = tvb_get_ntohl(tvb, 4);
     bfd_your_discriminator         = tvb_get_ntohl(tvb, 8);
     bfd_desired_min_tx_interval    = tvb_get_ntohl(tvb, 12);
@@ -577,7 +579,7 @@ dissect_bfd_mep (tvbuff_t *tvb, proto_tree *tree, const int hfindex)
        under a particular protocol-tree. */
     if (!hfindex)
       {
-        offset   = tvb_get_guint8(tvb, 3);
+        offset   = tvb_get_uint8(tvb, 3);
         mep_type = tvb_get_ntohs (tvb, offset);
         mep_len  = tvb_get_ntohs (tvb, (offset + 2));
         ti       = proto_tree_add_protocol_format (tree, proto_bfd, tvb, offset, (mep_len + 4),
@@ -628,7 +630,7 @@ dissect_bfd_mep (tvbuff_t *tvb, proto_tree *tree, const int hfindex)
 
         case TLV_TYPE_MPLSTP_PW_MEP:
 
-            mep_agi_len   = tvb_get_guint8 (tvb, (offset + 17));
+            mep_agi_len   = tvb_get_uint8 (tvb, (offset + 17));
             bfd_tree = proto_item_add_subtree (ti, ett_bfd);
             proto_tree_add_uint (bfd_tree, hf_mep_type, tvb, offset,
                                  2, (mep_type));
@@ -741,7 +743,7 @@ proto_register_bfd(void)
         },
         { &hf_bfd_message_length,
           { "Message Length", "bfd.message_length",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
             "Length of the BFD Control packet, in bytes", HFILL }
         },
         { &hf_bfd_my_discriminator,
@@ -781,7 +783,7 @@ proto_register_bfd(void)
         },
         { &hf_bfd_auth_len,
           { "Authentication Length", "bfd.auth.len",
-            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
             "The length, in bytes, of the authentication section", HFILL }
         },
         { &hf_bfd_auth_key,

@@ -29,9 +29,17 @@
  *
  * a Tvb represents a tvbuff_t in Lua.
  * a TvbRange represents a range in a tvb (tvb,offset,length) its main purpose is to do bounds checking,
- *            It helps, too, simplifying argument passing to Tree. In wireshark terms this is worthless nothing
- *            not already done by the TVB itself. In lua's terms it's necessary to avoid abusing TRY{}CATCH(){}
- *            via preemptive bounds checking.
+ * It helps, too, simplifying argument passing to Tree.
+ *
+ * Normally in Wireshark explicit bounds checking is unnecessary as the tvbuff
+ * functions throw appropriate exceptions depending on why data wasn't present.
+ * In Lua, the interaction between the exception handling in epan and Lua's error
+ * handling, both of which use setjmp/longjmp, requires careful programming to
+ * avoid longjmp'ing down to the stack to a location that has already exited,
+ * particularly when Lua dissector calls are nested. TvbRange reduces the amount
+ * of possible exceptions (and TRY/CATCH to deal with them) by doing preemptive
+ * bounds checking - at a cost of making it impossible to support truncated
+ * captures where captured length < reported length (#15655).
  *
  * These lua objects refer to structures in wireshark that are freed independently from Lua's garbage collector.
  * To avoid using pointers from Lua to Wireshark structures that are already freed, we maintain a list of the
@@ -435,7 +443,7 @@ WSLUA_METHOD TvbRange_uint(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            lua_pushinteger(L,tvb_get_guint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            lua_pushinteger(L,tvb_get_uint8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             lua_pushinteger(L,tvb_get_ntohs(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -468,7 +476,7 @@ WSLUA_METHOD TvbRange_le_uint(lua_State* L) {
     switch (tvbr->len) {
         case 1:
             /* XXX unsigned anyway */
-            lua_pushinteger(L,(lua_Integer)(unsigned)tvb_get_guint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            lua_pushinteger(L,(lua_Integer)(unsigned)tvb_get_uint8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             lua_pushinteger(L,tvb_get_letohs(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -500,7 +508,7 @@ WSLUA_METHOD TvbRange_uint64(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            pushUInt64(L,tvb_get_guint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            pushUInt64(L,tvb_get_uint8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             pushUInt64(L,tvb_get_ntohs(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -544,7 +552,7 @@ WSLUA_METHOD TvbRange_le_uint64(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            pushUInt64(L,tvb_get_guint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            pushUInt64(L,tvb_get_uint8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             pushUInt64(L,tvb_get_letohs(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -588,7 +596,7 @@ WSLUA_METHOD TvbRange_int(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            lua_pushinteger(L,tvb_get_gint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            lua_pushinteger(L,tvb_get_int8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             lua_pushinteger(L,tvb_get_ntohis(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -627,7 +635,7 @@ WSLUA_METHOD TvbRange_le_int(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            lua_pushinteger(L,tvb_get_gint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            lua_pushinteger(L,tvb_get_int8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             lua_pushinteger(L,tvb_get_letohis(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -659,7 +667,7 @@ WSLUA_METHOD TvbRange_int64(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            pushInt64(L,tvb_get_gint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            pushInt64(L,tvb_get_int8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             pushInt64(L,tvb_get_ntohis(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -703,7 +711,7 @@ WSLUA_METHOD TvbRange_le_int64(lua_State* L) {
 
     switch (tvbr->len) {
         case 1:
-            pushInt64(L,tvb_get_gint8(tvbr->tvb->ws_tvb,tvbr->offset));
+            pushInt64(L,tvb_get_int8(tvbr->tvb->ws_tvb,tvbr->offset));
             return 1;
         case 2:
             pushInt64(L,tvb_get_letohis(tvbr->tvb->ws_tvb,tvbr->offset));
@@ -1038,7 +1046,7 @@ WSLUA_METHOD TvbRange_stringz(lua_State* L) {
         break;
 
     default:
-        if (tvb_find_guint8 (tvbr->tvb->ws_tvb, tvbr->offset, -1, 0) == -1) {
+        if (tvb_find_uint8 (tvbr->tvb->ws_tvb, tvbr->offset, -1, 0) == -1) {
             luaL_error(L,"out of bounds");
             return 0;
         }
@@ -1086,7 +1094,7 @@ WSLUA_METHOD TvbRange_strsize(lua_State* L) {
         break;
 
     default:
-        if (tvb_find_guint8 (tvbr->tvb->ws_tvb, tvbr->offset, -1, 0) == -1) {
+        if (tvb_find_uint8 (tvbr->tvb->ws_tvb, tvbr->offset, -1, 0) == -1) {
             luaL_error(L,"out of bounds");
             return 0;
         }
@@ -1227,22 +1235,24 @@ WSLUA_METHOD TvbRange_bitfield(lua_State* L) {
         return 0;
     }
 
-    if (len <= 8) {
-        lua_pushinteger(L,(lua_Integer)(unsigned)tvb_get_bits8(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len));
-        return 1;
-    } else if (len <= 16) {
-        lua_pushinteger(L,tvb_get_bits16(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));
-        return 1;
-    } else if (len <= 32) {
-        lua_pushinteger(L,tvb_get_bits32(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));
-        return 1;
+    if (len <= 32) {
+        /* XXX - If LUA_INTEGER_SIZE is 4 (on Lua 5.3/5.4 it's usually 8), then
+         * for len == 32 an unsigned won't necessarily fit in a lua_Integer.
+         * Should we use a UInt64 then?
+         */
+        WRAP_NON_LUA_EXCEPTIONS(
+            lua_pushinteger(L,tvb_get_bits32(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));
+        )
     } else if (len <= 64) {
-        pushUInt64(L,tvb_get_bits64(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));
-        WSLUA_RETURN(1); /* The bitfield value */
+        WRAP_NON_LUA_EXCEPTIONS(
+            pushUInt64(L,tvb_get_bits64(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));
+        )
     } else {
         luaL_error(L,"TvbRange:bitfield() does not handle %d bits",len);
         return 0;
     }
+
+    WSLUA_RETURN(1); /* The bitfield value */
 }
 
 WSLUA_METHOD TvbRange_range(lua_State* L) {

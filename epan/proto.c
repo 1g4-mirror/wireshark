@@ -18,6 +18,9 @@
 #include <inttypes.h>
 #include <errno.h>
 
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
 #include <wsutil/array.h>
 #include <wsutil/bits_ctz.h>
 #include <wsutil/bits_count_ones.h>
@@ -648,6 +651,10 @@ proto_init(GSList *register_all_plugin_protocols_list,
 
 	/* sort the protocols by protocol name */
 	protocols = g_list_sort(protocols, proto_compare_name);
+
+	/* sort the dissector handles in dissector tables (for -G reports
+	 * and -d error messages. The GUI sorts the handles itself.) */
+	packet_all_tables_sort_handles();
 
 	/* We've assigned all the subtree type values; allocate the array
 	   for them, and zero it out. */
@@ -1612,7 +1619,7 @@ get_uint_value(proto_tree *tree, tvbuff_t *tvb, int offset, int length, const un
 	switch (length) {
 
 	case 1:
-		value = tvb_get_guint8(tvb, offset);
+		value = tvb_get_uint8(tvb, offset);
 		if (encoding & ENC_ZIGBEE) {
 			if (value == 0xFF) { /* Invalid Zigbee length, set to 0 */
 				value = 0;
@@ -1664,7 +1671,7 @@ get_uint64_value(proto_tree *tree, tvbuff_t *tvb, int offset, unsigned length, c
 	switch (length) {
 
 	case 1:
-		value = tvb_get_guint8(tvb, offset);
+		value = tvb_get_uint8(tvb, offset);
 		break;
 
 	case 2:
@@ -1726,7 +1733,7 @@ get_int_value(proto_tree *tree, tvbuff_t *tvb, int offset, int length, const uns
 	switch (length) {
 
 	case 1:
-		value = tvb_get_gint8(tvb, offset);
+		value = tvb_get_int8(tvb, offset);
 		break;
 
 	case 2:
@@ -2075,6 +2082,19 @@ get_time_value(proto_tree *tree, tvbuff_t *tvb, const int start,
 			/*
 			 * NTP time stamp, little-endian.
 			 * Only supported for absolute times.
+			 *
+			 * NTP doesn't use this, because it's an Internet format
+			 * and hence big-endian. Any implementation must decide
+			 * whether the NTP timestamp is a 64-bit unsigned fixed
+			 * point number (RFC 1305, RFC 4330) or a 64-bit struct
+			 * with a 32-bit unsigned seconds field followed by a
+			 * 32-bit fraction field (cf. RFC 5905, which obsoletes
+			 * the previous two).
+			 *
+			 * XXX: We do the latter, but no dissector uses this format.
+			 * OTOH, ERF timestamps do the former, so perhaps we
+			 * should switch the interpretation so that packet-erf.c
+			 * could use this directly?
 			 */
 			DISSECTOR_ASSERT(!is_relative);
 
@@ -2197,6 +2217,15 @@ get_time_value(proto_tree *tree, tvbuff_t *tvb, const int start,
 			 * endian.
 			 *
 			 * Only supported for absolute times.
+			 *
+			 * The RTPS specification explicitly supports Little
+			 * Endian encoding. In one place, it states that its
+			 * Time_t representation "is the one defined by ...
+			 * RFC 1305", but in another explicitly defines it as
+			 * a struct consisting of an 32 bit unsigned seconds
+			 * field and a 32 bit unsigned fraction field, not a 64
+			 * bit fixed point, so we do that here.
+			 * https://www.omg.org/spec/DDSI-RTPS/2.5/PDF
 			 */
 			DISSECTOR_ASSERT(!is_relative);
 
@@ -3189,7 +3218,7 @@ proto_tree_new_item(field_info *new_fi, proto_tree *tree,
 				report_type_length_mismatch(tree, "a IEEE 11073 SFLOAT", length, length_error);
 			}
 
-			fvalue_set_uinteger(new_fi->value, tvb_get_guint16(tvb, start, encoding));
+			fvalue_set_uinteger(new_fi->value, tvb_get_uint16(tvb, start, encoding));
 
 			break;
 		case FT_IEEE_11073_FLOAT:
@@ -6518,7 +6547,7 @@ get_hfi_length(header_field_info *hfinfo, tvbuff_t *tvb, const int start, int *l
 				*item_length = *length;
 				return;
 			} else if (encoding & ENC_VARINT_QUIC) {
-				switch (tvb_get_guint8(tvb, start) >> 6)
+				switch (tvb_get_uint8(tvb, start) >> 6)
 				{
 				case 0: /* 0b00 => 1 byte length (6 bits Usable) */
 					*item_length = 1;
@@ -9966,9 +9995,8 @@ proto_item_fill_label(const field_info *fi, char *label_str)
 			break;
 
 		case FT_RELATIVE_TIME:
-			tmp = rel_time_to_secs_str(NULL, fvalue_get_time(fi->value));
-			snprintf(label_str, ITEM_LABEL_LENGTH,
-				   "%s: %s seconds", hfinfo->name, tmp);
+			tmp = rel_time_to_str(NULL, fvalue_get_time(fi->value));
+			label_fill(label_str, 0, hfinfo, tmp);
 			wmem_free(NULL, tmp);
 			break;
 
@@ -11300,7 +11328,10 @@ every_finfo(proto_node *node, void * data)
 	return false;
 }
 
-/* Return GPtrArray* of field_info pointers containing all hfindexes that appear in a tree. */
+/* Return GPtrArray* of field_info pointers containing all hfindexes that appear in a tree.
+ * The caller does need to free the returned GPtrArray with
+ * g_ptr_array_free(<array>, true).
+ */
 GPtrArray *
 proto_all_finfos(proto_tree *tree)
 {
@@ -12285,7 +12316,7 @@ construct_match_selected_string(const field_info *finfo, epan_dissect_t *edt,
 				ptr += snprintf(ptr, buf_len-(ptr-*filter),
 					"frame[%d:%d] == ", finfo->start, length);
 				for (i=0; i<length; i++) {
-					c = tvb_get_guint8(finfo->ds_tvb, start);
+					c = tvb_get_uint8(finfo->ds_tvb, start);
 					start++;
 					if (i == 0 ) {
 						ptr += snprintf(ptr, buf_len-(ptr-*filter), "%02x", c);
@@ -13138,7 +13169,6 @@ _proto_tree_add_bits_ret_val(proto_tree *tree, const int hfindex, tvbuff_t *tvb,
 		proto_item_fill_label(PITEM_FINFO(pi), lbl_str);
 		proto_item_set_text(pi, "%s", lbl_str);
 		return pi;
-		break;
 
 	/* TODO: should handle FT_UINT_BYTES ? */
 
@@ -13148,7 +13178,6 @@ _proto_tree_add_bits_ret_val(proto_tree *tree, const int hfindex, tvbuff_t *tvb,
 				     hf_field->type,
 				     ftype_name(hf_field->type));
 		return NULL;
-		break;
 	}
 
 	proto_item_set_text(pi, "%s = %s", bf_str, lbl_str);
@@ -13328,7 +13357,6 @@ proto_tree_add_split_bits_item_ret_val(proto_tree *tree, const int hfindex, tvbu
 				     hf_field->type,
 				     ftype_name(hf_field->type));
 		return NULL;
-		break;
 	}
 	proto_item_set_text(pi, "%s = %s", bf_str, lbl_str);
 	return pi;
@@ -13492,7 +13520,6 @@ _proto_tree_add_bits_format_value(proto_tree *tree, const int hfindex,
 				     hf_field->type,
 				     ftype_name(hf_field->type));
 		return NULL;
-		break;
 	}
 }
 
@@ -13544,7 +13571,6 @@ proto_tree_add_uint_bits_format_value(proto_tree *tree, const int hfindex,
 			REPORT_DISSECTOR_BUG("field %s is not of type FT_UINT8, FT_UINT16, FT_UINT24, or FT_UINT32",
 			    hf_field->abbrev);
 			return NULL;
-			break;
 	}
 
 	CREATE_VALUE_STRING(tree, dst, format, ap);
@@ -13578,7 +13604,6 @@ proto_tree_add_uint64_bits_format_value(proto_tree *tree, const int hfindex,
 			REPORT_DISSECTOR_BUG("field %s is not of type FT_UINT40, FT_UINT48, FT_UINT56, or FT_UINT64",
 			    hf_field->abbrev);
 			return NULL;
-			break;
 	}
 
 	CREATE_VALUE_STRING(tree, dst, format, ap);
@@ -13634,7 +13659,6 @@ proto_tree_add_int_bits_format_value(proto_tree *tree, const int hfindex,
 			REPORT_DISSECTOR_BUG("field %s is not of type FT_INT8, FT_INT16, FT_INT24, or FT_INT32",
 			    hf_field->abbrev);
 			return NULL;
-			break;
 	}
 
 	CREATE_VALUE_STRING(tree, dst, format, ap);
@@ -13668,7 +13692,6 @@ proto_tree_add_int64_bits_format_value(proto_tree *tree, const int hfindex,
 			REPORT_DISSECTOR_BUG("field %s is not of type FT_INT40, FT_INT48, FT_INT56, or FT_INT64",
 			    hf_field->abbrev);
 			return NULL;
-			break;
 	}
 
 	CREATE_VALUE_STRING(tree, dst, format, ap);

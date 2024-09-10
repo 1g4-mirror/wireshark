@@ -44,8 +44,8 @@
         <translation>フォルダ</translation>
     </message>
     <message>
-        <source>Filter by path</source>
-        <translation>パスでフィルタ</translation>
+        <source>Search Folders</source>
+        <translation>フォルダを検索</translation>
     </message>
     <message>
         <source>Plugins</source>
@@ -887,10 +887,6 @@
     <message>
         <source>Read filter:</source>
         <translation>読込フィルタ:</translation>
-    </message>
-    <message>
-        <source>Compress with g&amp;zip</source>
-        <translation>gzip形式で圧縮(&amp;z)</translation>
     </message>
     <message>
         <source>Open Capture File</source>
@@ -1938,29 +1934,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>ColumnTypeDelegate</name>
-    <message>
-        <source>Default</source>
-        <translation>デフォルト</translation>
-    </message>
-    <message>
-        <source>Left</source>
-        <translation>左</translation>
-    </message>
-    <message>
-        <source>Center</source>
-        <translation>中央</translation>
-    </message>
-    <message>
-        <source>Right</source>
-        <translation>右</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>不明</translation>
-    </message>
-</context>
-<context>
     <name>CompiledFilterOutput</name>
     <message>
         <source>Compiled Filter Output</source>
@@ -1973,6 +1946,25 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Copy filter text to the clipboard.</source>
         <translation>フィルタテキストをクリップボードにコピーします</translation>
+    </message>
+</context>
+<context>
+    <name>CompressionGroupBox</name>
+    <message>
+        <source>Compression options</source>
+        <translation>圧縮オプション</translation>
+    </message>
+    <message>
+        <source>&amp;Uncompressed</source>
+        <translation>非圧縮(&amp;U)</translation>
+    </message>
+    <message>
+        <source>Compress with g&amp;zip</source>
+        <translation>gzip形式で圧縮(&amp;z)</translation>
+    </message>
+    <message>
+        <source>Compress with &amp;LZ4</source>
+        <translation>LZ4形式で圧縮(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -2716,6 +2708,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>端末の地図を保存します</translation>
     </message>
     <message>
+        <source>Hide aggregated</source>
+        <translation>集約されたものを非表示</translation>
+    </message>
+    <message>
+        <source>Hide IPv4 aggregated endpoints (see subnets file &amp; IPv4 preferences)</source>
+        <translation>IPv4 集約された終端を非表示 (サブネットファイルとIPv4設定を参照)</translation>
+    </message>
+    <message>
         <source>Failed to save map file %1.</source>
         <translation>地図ファイル %1 を保存できませんでした</translation>
     </message>
@@ -3002,6 +3002,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Display filter:</source>
         <translation>表示フィルタ:</translation>
+    </message>
+    <message>
+        <source>Export PDUs</source>
+        <translation>PDUをエクスポート</translation>
     </message>
 </context>
 <context>
@@ -4501,6 +4505,30 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>%1 Intervals </source>
         <translation>%1 インターバル</translation>
+    </message>
+    <message>
+        <source>Move to top left</source>
+        <translation>左上に移動</translation>
+    </message>
+    <message>
+        <source>Move to top center</source>
+        <translation>中央上に移動</translation>
+    </message>
+    <message>
+        <source>Move to top right</source>
+        <translation>右上に移動</translation>
+    </message>
+    <message>
+        <source>Move to bottom left</source>
+        <translation>左下に移動</translation>
+    </message>
+    <message>
+        <source>Move to bottom center</source>
+        <translation>中央下に移動</translation>
+    </message>
+    <message>
+        <source>Move to bottom right</source>
+        <translation>右下に移動</translation>
     </message>
     <message>
         <source>Portable Document Format (*.pdf)</source>
@@ -6884,6 +6912,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>一番最近に使ったフォルダ</translation>
     </message>
     <message>
+        <source>The current working directory</source>
+        <translation>現在の稼働ディレクトリ</translation>
+    </message>
+    <message>
         <source>Show up to</source>
         <translation>ここまで表示</translation>
     </message>
@@ -7314,6 +7346,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>フィールド値を表示</translation>
     </message>
     <message>
+        <source>Refresh</source>
+        <translation>更新</translation>
+    </message>
+    <message>
         <source>Save Diagram As…</source>
         <translation>…としてダイアグラムを保存</translation>
     </message>
@@ -7466,10 +7502,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>PacketList</name>
-    <message>
-        <source>Protocol Preferences</source>
-        <translation>プロトコル設定</translation>
-    </message>
     <message>
         <source>Summary as Text</source>
         <translation>テキストとしての概要</translation>
@@ -8745,6 +8777,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>DRB-%1</translation>
     </message>
     <message>
+        <source>Left</source>
+        <translation>左</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中央</translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation>右</translation>
+    </message>
+    <message>
         <source>Unknown</source>
         <translation>不明</translation>
     </message>
@@ -8866,7 +8910,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>THROUGHPUT</source>
-        <translation type="unfinished"></translation>
+        <translation>スループット</translation>
     </message>
     <message>
         <source>LOAD</source>
@@ -11334,6 +11378,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>ShortcutListModel</name>
     <message>
+        <source>Display Filter Input</source>
+        <translation>表示フィルタ入力</translation>
+    </message>
+    <message>
+        <source>Jump to display filter input box</source>
+        <translation>表示フィルタ入力ボックスへジャンプ</translation>
+    </message>
+    <message>
         <source>Shortcut</source>
         <translation>ショートカット</translation>
     </message>
@@ -11358,7 +11410,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Decode as</source>
-        <translation>としてでコード</translation>
+        <translation>としてデコード</translation>
     </message>
     <message>
         <source>Show as</source>
@@ -11476,7 +11528,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Decoded as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 としてデコードされました</translation>
     </message>
     <message>
         <source>Save Selected Packet Bytes As…</source>
@@ -11484,12 +11536,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>compressed %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 を圧縮しました</translation>
     </message>
     <message numerus="yes">
         <source>Using %Ln byte(s).</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%Ln バイトを利用</numerusform>
         </translation>
     </message>
     <message>
@@ -11588,6 +11640,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Display filter:</source>
         <translation>表示フィルタ:</translation>
+    </message>
+    <message>
+        <source>Strip Headers</source>
+        <translation>ヘッダーを除去</translation>
     </message>
 </context>
 <context>
@@ -14125,10 +14181,6 @@ a:hover {
         <translation>レイアウトをリセット</translation>
     </message>
     <message>
-        <source>Reset appearance layout to default size</source>
-        <translation>外観のレイアウトをデフォルトのサイズにリセットします</translation>
-    </message>
-    <message>
         <source>Seconds Since First Captured Packet</source>
         <translation>最初にキャプチャしたパケットからの経過時間</translation>
     </message>
@@ -14302,11 +14354,11 @@ a:hover {
     </message>
     <message>
         <source>&amp;User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ユーザーズガイド</translation>
     </message>
     <message>
         <source>Wireshark User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>ワイヤーシャークユーザーズガイド</translation>
     </message>
     <message>
         <source>Display Filters</source>
@@ -14495,6 +14547,10 @@ a:hover {
     <message>
         <source>Normal Size</source>
         <translation>標準サイズ</translation>
+    </message>
+    <message>
+        <source>Reset layout to default size</source>
+        <translation>デフォルトサイズにレイアウトをリセット</translation>
     </message>
     <message>
         <source>Resize Columns</source>

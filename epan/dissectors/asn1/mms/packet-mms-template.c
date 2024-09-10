@@ -17,6 +17,7 @@
 #include <epan/expert.h>
 #include <epan/proto_data.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -722,7 +723,7 @@ dissect_mms_heur(tvbuff_t* tvb, packet_info* pinfo, proto_tree* parent_tree, voi
     }
 
     /* check MMS length  */
-    oct = tvb_get_guint8(tvb, offset) & 0x7F;
+    oct = tvb_get_uint8(tvb, offset) & 0x7F;
     if (oct == 0)
         /* MMS requires length after tag so not MMS if indefinite length*/
         return false;

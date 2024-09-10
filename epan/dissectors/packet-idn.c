@@ -99,6 +99,7 @@
 typedef struct {
 	bool has_config_header;
 	bool is_dmx;
+	bool is_audio;
 	uint16_t total_size;
 	uint8_t channel_id;
 	uint8_t chunk_type;
@@ -112,10 +113,10 @@ typedef struct {
 	int sample_size;
 	int *count;
 	int *base;
-	guint8 audio_category;
-	guint8 audio_format;
-	guint8 audio_channels;
-	guint8 audio_layout;
+	uint8_t audio_category;
+	uint8_t audio_format;
+	uint8_t audio_channels;
+	uint8_t audio_layout;
 } configuration_info;
 
 void proto_register_idn(void);
@@ -141,6 +142,9 @@ static int ett_dic_tree;
 static int ett_data;
 static int ett_subdata;
 static int ett_dmx_subtree;
+static int ett_audio_header;
+static int ett_audio_samples;
+static int ett_unit_id;
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -1072,9 +1076,9 @@ static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_8bit_channels,
 		NULL
 	};
-	guint8 channels = tvb_get_guint8(tvb, offset+1);
+	uint8_t channels = tvb_get_uint8(tvb, offset+1);
 	cinfo->audio_channels = channels;
-	guint8 audio_format = tvb_get_guint8(tvb, offset);
+	uint8_t audio_format = tvb_get_uint8(tvb, offset);
 	audio_format = audio_format & 0x0F;
 	cinfo->audio_format = audio_format;
 
@@ -1094,9 +1098,9 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 		&hf_idn_4bit_channels,
 		NULL
 	};
-	guint8 channels = tvb_get_gint8(tvb, offset+1);
-	guint8 layout = channels;
-	guint8 audio_format = tvb_get_gint8(tvb, offset);
+	uint8_t channels = tvb_get_uint8(tvb, offset+1);
+	uint8_t layout = channels;
+	uint8_t audio_format = tvb_get_uint8(tvb, offset);
 	audio_format = audio_format & 0x0F;
 	cinfo->audio_format = audio_format;
 	channels &= 0x0F;
@@ -1110,14 +1114,14 @@ static int dissect_idn_audio_category_6(tvbuff_t *tvb, int offset, proto_tree *i
 }
 
 static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *idn_tree, configuration_info *config){
-	guint8 det_category;
+	uint8_t det_category;
 	gint16 current_tag;
 	int tag_count = config->word_count;
 	tag_count *= 2;
 	proto_item *dictionary_tree = proto_tree_add_subtree(idn_tree, tvb, offset, tag_count*2, ett_dic_tree, NULL, "Dictionary");
 
 	for(int i = 0; i < tag_count; i++){
-		current_tag = tvb_get_guint16(tvb, offset, 2);
+		current_tag = tvb_get_uint16(tvb, offset, 2);
 		switch (current_tag) {
 			case 0x0000:
 				//add void tag
@@ -1126,7 +1130,7 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 				break;
 			default:
 				//determine category
-				det_category = tvb_get_guint8(tvb, offset);
+				det_category = tvb_get_uint8(tvb, offset);
 				det_category = det_category >> 4;
 				config->audio_category = det_category;
 				//dissect depending on category
@@ -1165,7 +1169,7 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 }
 
 static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
-	guint8 channels = config->audio_channels;
+	uint8_t channels = config->audio_channels;
 	int max_samples = tvb_reported_length_remaining(tvb, offset);
 	max_samples -= (max_samples % channels);
 	for(int i = 0; i < max_samples; i++){
@@ -1177,14 +1181,14 @@ static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_t
 
 static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_tree *idn_tree _U_, configuration_info *config) {
   //  int max_samples = tvb_reported_length_remaining(tvb, offset);
-    guint8 channels = config->audio_channels;
+    uint8_t channels = config->audio_channels;
     char values[MAX_BUFFER];
 
   //  max_samples /= 2;
   //  max_samples -= (max_samples % channels);
 		int l = 0;
 		for(int i=0; i<(int)channels; i++){
-			l += snprintf(values+l, MAX_BUFFER-l, "%u    ", tvb_get_guint16(tvb, offset, 2));
+			l += snprintf(values+l, MAX_BUFFER-l, "%u    ", tvb_get_uint16(tvb, offset, 2));
 			offset += 2;
 		}
 		proto_tree_add_uint_format(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample:     %s", values);
@@ -1193,7 +1197,7 @@ static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_t
 }
 
 static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
-	guint8 channels = config->audio_channels;
+	uint8_t channels = config->audio_channels;
 	int max_samples = tvb_reported_length_remaining(tvb, offset);
 	max_samples /= 3;
 	max_samples -= (max_samples % channels);
@@ -1205,9 +1209,9 @@ static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_t
 }
 
 static void add_audio_sample_description(proto_item *audio_samples_tree, configuration_info * config){
-	guint8 audio_category = config->audio_category;
-	guint8 channels = config->audio_channels;
-	guint8 layout;
+	uint8_t audio_category = config->audio_category;
+	uint8_t channels = config->audio_channels;
+	uint8_t layout;
 	switch (audio_category) {
 		case 0x06:
 			layout = config->audio_layout;
@@ -1255,7 +1259,7 @@ static void add_audio_sample_description(proto_item *audio_samples_tree, configu
 			break;
 		case 0x08:
 			proto_item_append_text(audio_samples_tree, "  Channel: ");
-			for(guint8 i = 1; i<= channels; i++){
+			for(uint8_t i = 1; i<= channels; i++){
 				proto_item_append_text(audio_samples_tree, "  %u", i);
 			}
 			break;
@@ -1268,7 +1272,7 @@ static void add_audio_sample_description(proto_item *audio_samples_tree, configu
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
 	add_audio_sample_description(audio_samples_tree, config);
-	guint8 audio_format = config->audio_format;
+	uint8_t audio_format = config->audio_format;
 	switch (audio_format) {
 		case 0x00:
 			dissect_idn_audio_samples_format_0(tvb, offset, audio_samples_tree, config);

@@ -7,17 +7,18 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+/*
+ * More info https://github.com/real-logic/aeron/wiki/Transport-Protocol-Specification
+ */
+
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
-#include <epan/uat.h>
-#include <epan/tap.h>
 #include <epan/conversation.h>
-#include <epan/exceptions.h>
 #include <epan/to_str.h>
-#include <wsutil/pint.h>
+#include <epan/tfs.h>
 #include <wsutil/ws_roundup.h>
 
 /*
@@ -371,13 +372,13 @@ struct aeron_fragment_t_stct
 /*----------------------------------------------------------------------------*/
 /* Aeron transport management.                                                */
 /*----------------------------------------------------------------------------*/
-static unsigned aeron_guint32_hash_func(const void *key)
+static unsigned aeron_uint32_hash_func(const void *key)
 {
     uint32_t value = *((const uint32_t *) key);
     return ((unsigned) value);
 }
 
-static gboolean aeron_guint32_compare_func(const void *lhs, const void *rhs)
+static gboolean aeron_uint32_compare_func(const void *lhs, const void *rhs)
 {
     uint32_t key1 = *((const uint32_t *) lhs);
     uint32_t key2 = *((const uint32_t *) rhs);
@@ -402,7 +403,7 @@ static aeron_transport_t * aeron_transport_add(const aeron_conversation_info_t *
     session_map = (wmem_map_t *) conversation_get_proto_data(conv, proto_aeron);
     if (session_map == NULL)
     {
-        session_map = wmem_map_new(wmem_file_scope(), aeron_guint32_hash_func, aeron_guint32_compare_func);
+        session_map = wmem_map_new(wmem_file_scope(), aeron_uint32_hash_func, aeron_uint32_compare_func);
         conversation_add_proto_data(conv, proto_aeron, (void *) session_map);
     }
     transport = (aeron_transport_t *) wmem_map_lookup(session_map, (const void *) &session_id);
@@ -412,7 +413,7 @@ static aeron_transport_t * aeron_transport_add(const aeron_conversation_info_t *
     }
     transport = wmem_new0(wmem_file_scope(), aeron_transport_t);
     transport->channel_id = aeron_channel_id_assign();
-    transport->stream = wmem_map_new(wmem_file_scope(), aeron_guint32_hash_func, aeron_guint32_compare_func);
+    transport->stream = wmem_map_new(wmem_file_scope(), aeron_uint32_hash_func, aeron_uint32_compare_func);
     transport->last_frame = NULL;
     copy_address_wmem(wmem_file_scope(), &(transport->addr1), cinfo->addr1);
     copy_address_wmem(wmem_file_scope(), &(transport->addr2), cinfo->addr2);
@@ -440,7 +441,7 @@ static aeron_stream_t * aeron_transport_stream_add(aeron_transport_t * transport
     {
         stream = wmem_new0(wmem_file_scope(), aeron_stream_t);
         stream->transport = transport;
-        stream->term = wmem_map_new(wmem_file_scope(), aeron_guint32_hash_func, aeron_guint32_compare_func);
+        stream->term = wmem_map_new(wmem_file_scope(), aeron_uint32_hash_func, aeron_uint32_compare_func);
         stream->rcv = wmem_list_new(wmem_file_scope());
         stream->rcv_count = 0;
         stream->last_frame = NULL;
@@ -491,7 +492,7 @@ static aeron_term_t * aeron_stream_term_add(aeron_stream_t * stream, uint32_t te
     {
         term = wmem_new0(wmem_file_scope(), aeron_term_t);
         term->stream = stream;
-        term->fragment = wmem_map_new(wmem_file_scope(), aeron_guint32_hash_func, aeron_guint32_compare_func);
+        term->fragment = wmem_map_new(wmem_file_scope(), aeron_uint32_hash_func, aeron_uint32_compare_func);
         term->message = wmem_tree_new(wmem_file_scope());
         term->orphan_fragment = wmem_list_new(wmem_file_scope());
         term->nak = wmem_list_new(wmem_file_scope());
@@ -820,6 +821,7 @@ static char * aeron_format_transport_uri(const aeron_conversation_info_t * cinfo
 #define HDR_TYPE_ERR 0x0004
 #define HDR_TYPE_SETUP 0x0005
 #define HDR_TYPE_RTT 0x0006
+#define HDR_TYPE_RES 0x0007
 #define HDR_TYPE_EXT 0xFFFF
 
 #define DATA_FLAGS_BEGIN 0x80
@@ -841,9 +843,10 @@ static const value_string aeron_frame_type[] =
     { HDR_TYPE_DATA,  "Data" },
     { HDR_TYPE_NAK,   "NAK" },
     { HDR_TYPE_SM,    "Status" },
-    { HDR_TYPE_RTT,   "RTT" },
     { HDR_TYPE_ERR,   "Error" },
     { HDR_TYPE_SETUP, "Setup" },
+    { HDR_TYPE_RTT,   "RTT" },
+    { HDR_TYPE_RES,   "Resolution" },
     { HDR_TYPE_EXT,   "Extension" },
     { 0x0, NULL }
 };
@@ -2248,7 +2251,7 @@ static int dissect_aeron_pad(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
     pktinfo.length = frame_length;
     pktinfo.data_length = pad_length;
     pktinfo.type = HDR_TYPE_PAD;
-    pktinfo.flags = tvb_get_guint8(tvb, offset + O_AERON_PAD_FLAGS);
+    pktinfo.flags = tvb_get_uint8(tvb, offset + O_AERON_PAD_FLAGS);
     if (aeron_frame_info_setup(pinfo, transport, &pktinfo, finfo) < 0)
         return 0;
 
@@ -2392,7 +2395,7 @@ static int dissect_aeron_data(tvbuff_t * tvb, int offset, packet_info * pinfo, p
     pktinfo.length = frame_length;
     pktinfo.data_length = data_length;
     pktinfo.type = HDR_TYPE_DATA;
-    pktinfo.flags = tvb_get_guint8(tvb, offset + O_AERON_DATA_FLAGS);
+    pktinfo.flags = tvb_get_uint8(tvb, offset + O_AERON_DATA_FLAGS);
     if (aeron_frame_info_setup(pinfo, transport, &pktinfo, finfo) < 0)
         return 0;
 
@@ -2498,7 +2501,7 @@ static int dissect_aeron_nak(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
     pktinfo.nak_term_offset = nak_term_offset;
     pktinfo.nak_length = nak_length;
     pktinfo.type = HDR_TYPE_NAK;
-    pktinfo.flags = tvb_get_guint8(tvb, offset + O_AERON_NAK_FLAGS);
+    pktinfo.flags = tvb_get_uint8(tvb, offset + O_AERON_NAK_FLAGS);
     if (aeron_frame_info_setup(pinfo, transport, &pktinfo, finfo) < 0)
         return 0;
 
@@ -2581,7 +2584,7 @@ static int dissect_aeron_sm(tvbuff_t * tvb, int offset, packet_info * pinfo, pro
     memset((void *) &pktinfo, 0, sizeof(aeron_packet_info_t));
     pktinfo.stream_id = stream_id;
     pktinfo.info_flags = AERON_PACKET_INFO_FLAGS_STREAM_ID_VALID;
-    pktinfo.flags = tvb_get_guint8(tvb, offset + O_AERON_SM_FLAGS);
+    pktinfo.flags = tvb_get_uint8(tvb, offset + O_AERON_SM_FLAGS);
     if ((pktinfo.flags & STATUS_FLAGS_SETUP) == 0)
     {
         pktinfo.term_id = term_id;
@@ -2718,7 +2721,7 @@ static int dissect_aeron_heartbeat(tvbuff_t * tvb, int offset, packet_info * pin
     pktinfo.length = frame_length;
     pktinfo.data_length = 0;
     pktinfo.type = HDR_TYPE_DATA;
-    pktinfo.flags = tvb_get_guint8(tvb, offset + O_AERON_HEAERTBEAT_FLAGS);
+    pktinfo.flags = tvb_get_uint8(tvb, offset + O_AERON_HEAERTBEAT_FLAGS);
     if (aeron_frame_info_setup(pinfo, transport, &pktinfo, finfo) < 0)
         return 0;
 
@@ -2921,7 +2924,7 @@ static int dissect_aeron(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
     if (!cinfo)
         return 0;
 
-    col_add_str(pinfo->cinfo, COL_PROTOCOL, "Aeron");
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "Aeron");
     col_clear(pinfo->cinfo, COL_INFO);
     col_add_str(pinfo->cinfo, COL_INFO, aeron_format_transport_uri(cinfo));
     col_set_fence(pinfo->cinfo, COL_INFO);
@@ -2934,7 +2937,7 @@ static int dissect_aeron(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
         aeron_frame_info_t * finfo = NULL;
 
         /* Make sure superfluous padding is not identified as aeron frame */
-        if (tvb_skip_guint8(tvb, offset, tvb_captured_length_remaining(tvb, offset), 0) == (int)tvb_captured_length(tvb))
+        if (tvb_skip_uint8(tvb, offset, tvb_captured_length_remaining(tvb, offset), 0) == (int)tvb_captured_length(tvb))
         {
             break;
         }
@@ -2944,7 +2947,7 @@ static int dissect_aeron(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
             finfo = aeron_frame_info_add(pinfo->num, (uint32_t) offset);
         }
         frame_length = tvb_get_letohl(tvb, offset + O_AERON_BASIC_FRAME_LENGTH);
-        frame_flags = tvb_get_guint8(tvb, offset + O_AERON_BASIC_FLAGS);
+        frame_flags = tvb_get_uint8(tvb, offset + O_AERON_BASIC_FLAGS);
         frame_type = tvb_get_letohs(tvb, offset + O_AERON_BASIC_TYPE);
         cinfo = aeron_setup_conversation_info(pinfo, frame_type);
         switch (frame_type)
@@ -2977,6 +2980,7 @@ static int dissect_aeron(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
             case HDR_TYPE_SETUP:
                 dissected_length = dissect_aeron_setup(tvb, offset, pinfo, aeron_tree, cinfo, finfo);
                 break;
+            case HDR_TYPE_RES:
             case HDR_TYPE_EXT:
             default:
                 return (total_dissected_length);
@@ -3009,7 +3013,7 @@ static bool test_aeron_packet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         return false;
     }
     /* We know we have at least HDR_LENGTH_MIN (12) bytes captured */
-    ver = tvb_get_guint8(tvb, O_AERON_BASIC_VERSION);
+    ver = tvb_get_uint8(tvb, O_AERON_BASIC_VERSION);
     if (ver != 0)
     {
         return false;
@@ -3024,6 +3028,7 @@ static bool test_aeron_packet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         case HDR_TYPE_RTT:
         case HDR_TYPE_ERR:
         case HDR_TYPE_SETUP:
+        case HDR_TYPE_RES:
         case HDR_TYPE_EXT:
             break;
         default:

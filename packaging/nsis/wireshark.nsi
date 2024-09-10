@@ -74,8 +74,8 @@ BrandingText "Wireshark${U+00ae} Installer"
 ; is usually not associated with an appropriate text editor. We should use extension "txt"
 ; for a text file or "html" for an html README file.
 !define MUI_FINISHPAGE_TITLE_3LINES
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\NEWS.txt"
-!define MUI_FINISHPAGE_SHOWREADME_TEXT "Show News"
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\Release Notes.html"
+!define MUI_FINISHPAGE_SHOWREADME_TEXT "Open the release notes"
 !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 ; NSIS runs as Administrator and will run Wireshark as Administrator
 ; if these are enabled.
@@ -537,7 +537,6 @@ File "${STAGING_DIR}\libwsutil.dll"
 !include wireshark-manifest.nsh
 
 File "${STAGING_DIR}\COPYING.txt"
-File "${STAGING_DIR}\NEWS.txt"
 File "${STAGING_DIR}\README.txt"
 File "${STAGING_DIR}\wka"
 File "${STAGING_DIR}\pdml2html.xsl"
@@ -548,7 +547,7 @@ File "${STAGING_DIR}\dumpcap.exe"
 File "${STAGING_DIR}\dumpcap.html"
 File "${STAGING_DIR}\extcap.html"
 File "${STAGING_DIR}\ipmap.html"
-File "${STAGING_DIR}\release-notes.html"
+File "/oname=Release Notes.html" "${DOC_DIR}\release-notes.html"
 
 !ifdef USE_VCREDIST
 ; C-runtime redistributable
@@ -755,6 +754,7 @@ File "${STAGING_DIR}\radius\dictionary.iea"
 File "${STAGING_DIR}\radius\dictionary.infinera"
 File "${STAGING_DIR}\radius\dictionary.infoblox"
 File "${STAGING_DIR}\radius\dictionary.infonet"
+File "${STAGING_DIR}\radius\dictionary.ingate"
 File "${STAGING_DIR}\radius\dictionary.ipunplugged"
 File "${STAGING_DIR}\radius\dictionary.issanni"
 File "${STAGING_DIR}\radius\dictionary.itk"
@@ -1017,8 +1017,7 @@ ${If} $0 == "0"
   ${EndIf}
   ${StrRep} $0 '$USBPCAP_UNINSTALL' 'Uninstall.exe' 'USBPcapCMD.exe'
   ${StrRep} $1 '$0' '"' ''
-  SetOutPath $INSTDIR\extcap\wireshark
-  CopyFiles  /SILENT $1 $INSTDIR\extcap
+  CopyFiles  /SILENT $1 $INSTDIR\extcap\wireshark
   SetRebootFlag true
 ${EndIf}
 SecRequired_skip_USBPcap:
@@ -1112,6 +1111,7 @@ File "${STAGING_DIR}\profiles\No Reassembly\preferences"
 SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
 File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\ethercat.dll"
 File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\gryphon.dll"
+File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\ipaddr.dll"
 File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\irda.dll"
 File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\opcua.dll"
 File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\profinet.dll"
@@ -1229,17 +1229,15 @@ Section "-Clear Partial Selected"
 !insertmacro ClearSectionFlag ${SecExtcapGroup} ${SF_PSELECTED}
 SectionEnd
 
-!ifdef DOCBOOK_DIR
 !ifdef DOC_DIR
 Section "-Documentation"
 
 SetOutPath "$INSTDIR\Wireshark User's Guide"
-File /r "${DOCBOOK_DIR}\wsug_html_chunked\*.*"
+File /r "${DOC_DIR}\wsug_html_chunked\*.*"
 
 SetOutPath $INSTDIR
 File "${DOC_DIR}\faq.html"
 SectionEnd
-!endif
 !endif
 
 Section "-Finally"
@@ -1436,6 +1434,7 @@ Delete "$INSTDIR\console.lua"
 Delete "$INSTDIR\dtd_gen.lua"
 Delete "$INSTDIR\init.lua"
 Delete "$INSTDIR\release-notes.html"
+Delete "$INSTDIR\Release Notes.html"
 
 RMDir "$INSTDIR\accessible"
 RMDir "$INSTDIR\audio"

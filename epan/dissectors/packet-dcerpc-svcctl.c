@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -1103,15 +1104,15 @@ static int svcctl_dissect_element_OpenSCManager2_handle_(tvbuff_t *tvb _U_, int 
 	https://github.com/fortra/impacket/blob/4888172ce638910104da4bda2c3301c24e17564c/impacket/dcerpc/v5/scmr.py#L1274
 */
 static int
-svcctl_dissect_struct_ENUM_SERVICE_STATUSW_ptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, guint8 *drep, int hf_index, gint starting_offset);
+svcctl_dissect_struct_ENUM_SERVICE_STATUSW_ptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, uint8_t *drep, int hf_index, int starting_offset);
 static int
-svcctl_dissect_struct_ENUM_SERVICE_STATUSW_ptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, guint8 *drep, int hf_index, gint starting_offset)
+svcctl_dissect_struct_ENUM_SERVICE_STATUSW_ptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, uint8_t *drep, int hf_index, int starting_offset)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	proto_tree *tr = NULL;
 	int old_offset;
-	guint32 _referent_id = 0;
+	uint32_t _referent_id = 0;
 	ALIGN_TO_5_BYTES;
 	old_offset = offset;
 	if (parent_tree) {
@@ -1138,15 +1139,15 @@ svcctl_dissect_struct_ENUM_SERVICE_STATUSW_ptr(tvbuff_t *tvb, int offset, packet
 	https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-scmr/22b4ff3d-29c6-481f-b598-8ce66a46944a
 */
 static int
-svcctl_dissect_EnumServicesStatusW_response(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+svcctl_dissect_EnumServicesStatusW_response(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint32 status;
-	guint32 services_returned= 0;
+	uint32_t status;
+	uint32_t services_returned= 0;
 	proto_item *item;
 	proto_tree  *tr           = NULL;
-	gint        services_buffer_offset;
-	gint        payload_starting_offset = offset;
-	guint64 buffer_size = 0;
+	int         services_buffer_offset;
+	int         payload_starting_offset = offset;
+	uint64_t buffer_size = 0;
 	ALIGN_TO_5_BYTES
 	di->dcerpc_procedure_name="EnumServicesStatusW";
 	tr = proto_tree_add_subtree(tree, tvb, offset, 0, ett_svcctl_service, &item, "Pointer to Services Status");
@@ -1179,7 +1180,7 @@ svcctl_dissect_EnumServicesStatusW_response(tvbuff_t *tvb, int offset, packet_in
 	// Return status
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 	return offset;
 }
 
@@ -2340,7 +2341,7 @@ svcctl_dissect_element_CloseServiceHandle_object_handle_(tvbuff_t *tvb _U_, int 
 static int
 svcctl_dissect_CloseServiceHandle_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseServiceHandle";
 	offset = svcctl_dissect_element_CloseServiceHandle_object_handle(tvb, offset, pinfo, tree, di, drep);
@@ -2349,7 +2350,7 @@ svcctl_dissect_CloseServiceHandle_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2412,7 +2413,7 @@ svcctl_dissect_element_ControlService_service_status_(tvbuff_t *tvb _U_, int off
 static int
 svcctl_dissect_ControlService_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ControlService";
 	offset = svcctl_dissect_element_ControlService_service_status(tvb, offset, pinfo, tree, di, drep);
@@ -2421,7 +2422,7 @@ svcctl_dissect_ControlService_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2460,13 +2461,13 @@ svcctl_dissect_element_DeleteService_service_handle_(tvbuff_t *tvb _U_, int offs
 static int
 svcctl_dissect_DeleteService_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeleteService";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2520,7 +2521,7 @@ svcctl_dissect_element_LockServiceDatabase_lock_handle_(tvbuff_t *tvb _U_, int o
 static int
 svcctl_dissect_LockServiceDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="LockServiceDatabase";
 	offset = svcctl_dissect_element_LockServiceDatabase_lock_handle(tvb, offset, pinfo, tree, di, drep);
@@ -2529,7 +2530,7 @@ svcctl_dissect_LockServiceDatabase_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2626,7 +2627,7 @@ svcctl_dissect_element_QueryServiceObjectSecurity_bytes_needed_(tvbuff_t *tvb _U
 static int
 svcctl_dissect_QueryServiceObjectSecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceObjectSecurity";
 	offset = svcctl_dissect_element_QueryServiceObjectSecurity_security_descriptor(tvb, offset, pinfo, tree, di, drep);
@@ -2638,7 +2639,7 @@ svcctl_dissect_QueryServiceObjectSecurity_response(tvbuff_t *tvb _U_, int offset
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2722,13 +2723,13 @@ svcctl_dissect_element_SetServiceObjectSecurity_offered(tvbuff_t *tvb _U_, int o
 static int
 svcctl_dissect_SetServiceObjectSecurity_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetServiceObjectSecurity";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2788,7 +2789,7 @@ svcctl_dissect_element_QueryServiceStatus_service_status_(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_QueryServiceStatus_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceStatus";
 	offset = svcctl_dissect_element_QueryServiceStatus_service_status(tvb, offset, pinfo, tree, di, drep);
@@ -2797,7 +2798,7 @@ svcctl_dissect_QueryServiceStatus_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2851,13 +2852,13 @@ svcctl_dissect_element_SetServiceStatus_service_status_(tvbuff_t *tvb _U_, int o
 static int
 svcctl_dissect_SetServiceStatus_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SetServiceStatus";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2896,7 +2897,7 @@ svcctl_dissect_element_UnlockServiceDatabase_lock_handle_(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_UnlockServiceDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="UnlockServiceDatabase";
 	offset = svcctl_dissect_element_UnlockServiceDatabase_lock_handle(tvb, offset, pinfo, tree, di, drep);
@@ -2905,7 +2906,7 @@ svcctl_dissect_UnlockServiceDatabase_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -2954,13 +2955,13 @@ svcctl_dissect_element_NotifyBootConfigStatus_boot_acceptable(tvbuff_t *tvb _U_,
 static int
 svcctl_dissect_NotifyBootConfigStatus_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NotifyBootConfigStatus";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -3046,13 +3047,13 @@ svcctl_dissect_element_SCSetServiceBitsW_lpString_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_SCSetServiceBitsW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SCSetServiceBitsW";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -3279,7 +3280,7 @@ svcctl_dissect_element_ChangeServiceConfigW_display_name_(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_ChangeServiceConfigW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeServiceConfigW";
 	offset = svcctl_dissect_element_ChangeServiceConfigW_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -3288,7 +3289,7 @@ svcctl_dissect_ChangeServiceConfigW_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -3571,7 +3572,7 @@ svcctl_dissect_element_CreateServiceW_service_handle_(tvbuff_t *tvb _U_, int off
 static int
 svcctl_dissect_CreateServiceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateServiceW";
 	offset = svcctl_dissect_element_CreateServiceW_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -3583,7 +3584,7 @@ svcctl_dissect_CreateServiceW_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -3725,7 +3726,7 @@ svcctl_dissect_element_EnumDependentServicesW_services_returned_(tvbuff_t *tvb _
 static int
 svcctl_dissect_EnumDependentServicesW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDependentServicesW";
 	offset = svcctl_dissect_element_EnumDependentServicesW_service_status(tvb, offset, pinfo, tree, di, drep);
@@ -3740,7 +3741,7 @@ svcctl_dissect_EnumDependentServicesW_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -3914,7 +3915,7 @@ svcctl_dissect_element_OpenSCManagerW_scm_handle_(tvbuff_t *tvb _U_, int offset 
 static int
 svcctl_dissect_OpenSCManagerW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenSCManagerW";
 	offset = svcctl_dissect_element_OpenSCManagerW_scm_handle(tvb, offset, pinfo, tree, di, drep);
@@ -3923,7 +3924,7 @@ svcctl_dissect_OpenSCManagerW_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4002,7 +4003,7 @@ svcctl_dissect_element_OpenServiceW_service_handle_(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_OpenServiceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenServiceW";
 	offset = svcctl_dissect_element_OpenServiceW_service_handle(tvb, offset, pinfo, tree, di, drep);
@@ -4011,7 +4012,7 @@ svcctl_dissect_OpenServiceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4095,7 +4096,7 @@ svcctl_dissect_element_QueryServiceConfigW_needed_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_QueryServiceConfigW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceConfigW";
 	offset = svcctl_dissect_element_QueryServiceConfigW_service_config(tvb, offset, pinfo, tree, di, drep);
@@ -4107,7 +4108,7 @@ svcctl_dissect_QueryServiceConfigW_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4189,7 +4190,7 @@ svcctl_dissect_element_QueryServiceLockStatusW_needed_(tvbuff_t *tvb _U_, int of
 static int
 svcctl_dissect_QueryServiceLockStatusW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceLockStatusW";
 	offset = svcctl_dissect_element_QueryServiceLockStatusW_lock_status(tvb, offset, pinfo, tree, di, drep);
@@ -4201,7 +4202,7 @@ svcctl_dissect_QueryServiceLockStatusW_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4274,13 +4275,13 @@ svcctl_dissect_element_StartServiceW_Arguments__(tvbuff_t *tvb _U_, int offset _
 static int
 svcctl_dissect_StartServiceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="StartServiceW";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4386,7 +4387,7 @@ svcctl_dissect_element_GetServiceDisplayNameW_display_name_length_(tvbuff_t *tvb
 static int
 svcctl_dissect_GetServiceDisplayNameW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceDisplayNameW";
 	offset = svcctl_dissect_element_GetServiceDisplayNameW_display_name(tvb, offset, pinfo, tree, di, drep);
@@ -4398,7 +4399,7 @@ svcctl_dissect_GetServiceDisplayNameW_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4504,7 +4505,7 @@ svcctl_dissect_element_GetServiceKeyNameW_service_name_length_(tvbuff_t *tvb _U_
 static int
 svcctl_dissect_GetServiceKeyNameW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceKeyNameW";
 	offset = svcctl_dissect_element_GetServiceKeyNameW_service_name(tvb, offset, pinfo, tree, di, drep);
@@ -4516,7 +4517,7 @@ svcctl_dissect_GetServiceKeyNameW_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4604,13 +4605,13 @@ svcctl_dissect_element_SCSetServiceBitsA_lpString_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_SCSetServiceBitsA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="SCSetServiceBitsA";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -4801,7 +4802,7 @@ svcctl_dissect_element_ChangeServiceConfigA_display_name_(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_ChangeServiceConfigA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeServiceConfigA";
 	offset = svcctl_dissect_element_ChangeServiceConfigA_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -4810,7 +4811,7 @@ svcctl_dissect_ChangeServiceConfigA_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5089,7 +5090,7 @@ svcctl_dissect_element_CreateServiceA_service_handle_(tvbuff_t *tvb _U_, int off
 static int
 svcctl_dissect_CreateServiceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateServiceA";
 	offset = svcctl_dissect_element_CreateServiceA_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -5101,7 +5102,7 @@ svcctl_dissect_CreateServiceA_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5235,7 +5236,7 @@ svcctl_dissect_element_EnumDependentServicesA_services_returned_(tvbuff_t *tvb _
 static int
 svcctl_dissect_EnumDependentServicesA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumDependentServicesA";
 	offset = svcctl_dissect_element_EnumDependentServicesA_service_status(tvb, offset, pinfo, tree, di, drep);
@@ -5250,7 +5251,7 @@ svcctl_dissect_EnumDependentServicesA_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5386,7 +5387,7 @@ svcctl_dissect_element_EnumServicesStatusA_resume_handle_(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_EnumServicesStatusA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumServicesStatusA";
 	offset = svcctl_dissect_element_EnumServicesStatusA_service(tvb, offset, pinfo, tree, di, drep);
@@ -5404,7 +5405,7 @@ svcctl_dissect_EnumServicesStatusA_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5498,7 +5499,7 @@ svcctl_dissect_element_OpenSCManagerA_scm_handle_(tvbuff_t *tvb _U_, int offset 
 static int
 svcctl_dissect_OpenSCManagerA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenSCManagerA";
 	offset = svcctl_dissect_element_OpenSCManagerA_scm_handle(tvb, offset, pinfo, tree, di, drep);
@@ -5507,7 +5508,7 @@ svcctl_dissect_OpenSCManagerA_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5586,7 +5587,7 @@ svcctl_dissect_element_OpenServiceA_service_handle_(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_OpenServiceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenServiceA";
 	offset = svcctl_dissect_element_OpenServiceA_service_handle(tvb, offset, pinfo, tree, di, drep);
@@ -5595,7 +5596,7 @@ svcctl_dissect_OpenServiceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5679,7 +5680,7 @@ svcctl_dissect_element_QueryServiceConfigA_needed_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_QueryServiceConfigA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceConfigA";
 	offset = svcctl_dissect_element_QueryServiceConfigA_query(tvb, offset, pinfo, tree, di, drep);
@@ -5691,7 +5692,7 @@ svcctl_dissect_QueryServiceConfigA_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5773,7 +5774,7 @@ svcctl_dissect_element_QueryServiceLockStatusA_needed_(tvbuff_t *tvb _U_, int of
 static int
 svcctl_dissect_QueryServiceLockStatusA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceLockStatusA";
 	offset = svcctl_dissect_element_QueryServiceLockStatusA_lock_status(tvb, offset, pinfo, tree, di, drep);
@@ -5785,7 +5786,7 @@ svcctl_dissect_QueryServiceLockStatusA_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5858,13 +5859,13 @@ svcctl_dissect_element_StartServiceA_Arguments__(tvbuff_t *tvb _U_, int offset _
 static int
 svcctl_dissect_StartServiceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="StartServiceA";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -5967,7 +5968,7 @@ svcctl_dissect_element_GetServiceDisplayNameA_display_name_length_(tvbuff_t *tvb
 static int
 svcctl_dissect_GetServiceDisplayNameA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceDisplayNameA";
 	offset = svcctl_dissect_element_GetServiceDisplayNameA_display_name(tvb, offset, pinfo, tree, di, drep);
@@ -5979,7 +5980,7 @@ svcctl_dissect_GetServiceDisplayNameA_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6082,7 +6083,7 @@ svcctl_dissect_element_GetServiceKeyNameA_display_name_length_(tvbuff_t *tvb _U_
 static int
 svcctl_dissect_GetServiceKeyNameA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceKeyNameA";
 	offset = svcctl_dissect_element_GetServiceKeyNameA_key_name(tvb, offset, pinfo, tree, di, drep);
@@ -6094,7 +6095,7 @@ svcctl_dissect_GetServiceKeyNameA_response(tvbuff_t *tvb _U_, int offset _U_, pa
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6172,7 +6173,7 @@ svcctl_dissect_element_GetCurrentGroupeStateW_state_(tvbuff_t *tvb _U_, int offs
 static int
 svcctl_dissect_GetCurrentGroupeStateW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetCurrentGroupeStateW";
 	offset = svcctl_dissect_element_GetCurrentGroupeStateW_state(tvb, offset, pinfo, tree, di, drep);
@@ -6181,7 +6182,7 @@ svcctl_dissect_GetCurrentGroupeStateW_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6335,7 +6336,7 @@ svcctl_dissect_element_EnumServiceGroupW_pszGroupName_(tvbuff_t *tvb _U_, int of
 static int
 svcctl_dissect_EnumServiceGroupW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumServiceGroupW";
 	offset = svcctl_dissect_element_EnumServiceGroupW_lpBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -6353,7 +6354,7 @@ svcctl_dissect_EnumServiceGroupW_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6426,13 +6427,13 @@ svcctl_dissect_element_ChangeServiceConfig2A_info_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_ChangeServiceConfig2A_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeServiceConfig2A";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6499,13 +6500,13 @@ svcctl_dissect_element_ChangeServiceConfig2W_info_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_ChangeServiceConfig2W_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeServiceConfig2W";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6598,7 +6599,7 @@ svcctl_dissect_element_QueryServiceConfig2A_needed_(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_QueryServiceConfig2A_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceConfig2A";
 	offset = svcctl_dissect_element_QueryServiceConfig2A_buffer(tvb, offset, pinfo, tree, di, drep);
@@ -6610,7 +6611,7 @@ svcctl_dissect_QueryServiceConfig2A_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6711,7 +6712,7 @@ svcctl_dissect_element_QueryServiceConfig2W_needed_(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_QueryServiceConfig2W_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceConfig2W";
 	offset = svcctl_dissect_element_QueryServiceConfig2W_buffer(tvb, offset, pinfo, tree, di, drep);
@@ -6723,7 +6724,7 @@ svcctl_dissect_QueryServiceConfig2W_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -6824,7 +6825,7 @@ svcctl_dissect_element_QueryServiceStatusEx_needed_(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_QueryServiceStatusEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceStatusEx";
 	offset = svcctl_dissect_element_QueryServiceStatusEx_buffer(tvb, offset, pinfo, tree, di, drep);
@@ -6836,7 +6837,7 @@ svcctl_dissect_QueryServiceStatusEx_response(tvbuff_t *tvb _U_, int offset _U_, 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7009,7 +7010,7 @@ svcctl_dissect_element_EnumServicesStatusExA_group_name__(tvbuff_t *tvb _U_, int
 static int
 svcctl_dissect_EnumServicesStatusExA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumServicesStatusExA";
 	offset = svcctl_dissect_element_EnumServicesStatusExA_services(tvb, offset, pinfo, tree, di, drep);
@@ -7030,7 +7031,7 @@ svcctl_dissect_EnumServicesStatusExA_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7209,7 +7210,7 @@ svcctl_dissect_element_EnumServicesStatusExW_group_name_(tvbuff_t *tvb _U_, int 
 static int
 svcctl_dissect_EnumServicesStatusExW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="EnumServicesStatusExW";
 	offset = svcctl_dissect_element_EnumServicesStatusExW_services(tvb, offset, pinfo, tree, di, drep);
@@ -7227,7 +7228,7 @@ svcctl_dissect_EnumServicesStatusExW_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7260,13 +7261,13 @@ svcctl_dissect_EnumServicesStatusExW_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 svcctl_dissect_ScBroadcastServiceControlMessage_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScBroadcastServiceControlMessage";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7523,7 +7524,7 @@ svcctl_dissect_element_CreateServiceWOW64A_handle_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_CreateServiceWOW64A_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateServiceWOW64A";
 	offset = svcctl_dissect_element_CreateServiceWOW64A_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -7535,7 +7536,7 @@ svcctl_dissect_CreateServiceWOW64A_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7822,7 +7823,7 @@ svcctl_dissect_element_CreateServiceWOW64W_handle_(tvbuff_t *tvb _U_, int offset
 static int
 svcctl_dissect_CreateServiceWOW64W_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateServiceWOW64W";
 	offset = svcctl_dissect_element_CreateServiceWOW64W_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -7834,7 +7835,7 @@ svcctl_dissect_CreateServiceWOW64W_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7883,13 +7884,13 @@ svcctl_dissect_CreateServiceWOW64W_request(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 svcctl_dissect_ScQueryServiceTagInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScQueryServiceTagInfo";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7908,13 +7909,13 @@ svcctl_dissect_ScQueryServiceTagInfo_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 svcctl_dissect_NotifyServiceStatusChange_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NotifyServiceStatusChange";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7933,13 +7934,13 @@ svcctl_dissect_NotifyServiceStatusChange_request(tvbuff_t *tvb _U_, int offset _
 static int
 svcctl_dissect_GetNotifyResults_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNotifyResults";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7958,13 +7959,13 @@ svcctl_dissect_GetNotifyResults_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 svcctl_dissect_CloseNotifyHandle_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseNotifyHandle";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -7983,13 +7984,13 @@ svcctl_dissect_CloseNotifyHandle_request(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 svcctl_dissect_ControlServiceExA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ControlServiceExA";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8008,13 +8009,13 @@ svcctl_dissect_ControlServiceExA_request(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 svcctl_dissect_ControlServiceExW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ControlServiceExW";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8033,13 +8034,13 @@ svcctl_dissect_ControlServiceExW_request(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 svcctl_dissect_ScSendPnPMessage_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScSendPnPMessage";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8058,13 +8059,13 @@ svcctl_dissect_ScSendPnPMessage_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 svcctl_dissect_ScValidatePnPService_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScValidatePnPService";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8083,13 +8084,13 @@ svcctl_dissect_ScValidatePnPService_request(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 svcctl_dissect_ScOpenServiceStatusHandle_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScOpenServiceStatusHandle";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8108,13 +8109,13 @@ svcctl_dissect_ScOpenServiceStatusHandle_request(tvbuff_t *tvb _U_, int offset _
 static int
 svcctl_dissect_ScQueryServiceConfig_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScQueryServiceConfig";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8158,13 +8159,13 @@ svcctl_dissect_element_QueryServiceConfigEx_info_level(tvbuff_t *tvb _U_, int of
 static int
 svcctl_dissect_QueryServiceConfigEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryServiceConfigEx";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8187,13 +8188,13 @@ svcctl_dissect_QueryServiceConfigEx_request(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 svcctl_dissect_ScRegisterPreshutdownRestart_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScRegisterPreshutdownRestart";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8212,13 +8213,13 @@ svcctl_dissect_ScRegisterPreshutdownRestart_request(tvbuff_t *tvb _U_, int offse
 static int
 svcctl_dissect_ScReparseServiceDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ScReparseServiceDatabase";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8237,13 +8238,13 @@ svcctl_dissect_ScReparseServiceDatabase_request(tvbuff_t *tvb _U_, int offset _U
 static int
 svcctl_dissect_QueryUserServiceName_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="QueryUserServiceName";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8509,7 +8510,7 @@ svcctl_dissect_element_CreateWowService_handle_(tvbuff_t *tvb _U_, int offset _U
 static int
 svcctl_dissect_CreateWowService_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CreateWowService";
 	offset = svcctl_dissect_element_CreateWowService_tag_id(tvb, offset, pinfo, tree, di, drep);
@@ -8521,7 +8522,7 @@ svcctl_dissect_CreateWowService_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8572,13 +8573,13 @@ svcctl_dissect_CreateWowService_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 svcctl_dissect_GetServiceRegistryStateKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceRegistryStateKey";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8597,13 +8598,13 @@ svcctl_dissect_GetServiceRegistryStateKey_request(tvbuff_t *tvb _U_, int offset 
 static int
 svcctl_dissect_GetServiceDirectory_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceDirectory";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8622,13 +8623,13 @@ svcctl_dissect_GetServiceDirectory_request(tvbuff_t *tvb _U_, int offset _U_, pa
 static int
 svcctl_dissect_GetServiceProcessToken_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetServiceProcessToken";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8692,7 +8693,7 @@ svcctl_dissect_element_OpenSCManager2_handle_(tvbuff_t *tvb _U_, int offset _U_,
 static int
 svcctl_dissect_OpenSCManager2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenSCManager2";
 	offset = svcctl_dissect_element_OpenSCManager2_handle(tvb, offset, pinfo, tree, di, drep);
@@ -8701,7 +8702,7 @@ svcctl_dissect_OpenSCManager2_response(tvbuff_t *tvb _U_, int offset _U_, packet
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8724,13 +8725,13 @@ svcctl_dissect_OpenSCManager2_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 svcctl_dissect_GetSharedServiceRegistryStateKey_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetSharedServiceRegistryStateKey";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -8749,13 +8750,13 @@ svcctl_dissect_GetSharedServiceRegistryStateKey_request(tvbuff_t *tvb _U_, int o
 static int
 svcctl_dissect_GetSharedServiceDirectory_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetSharedServiceDirectory";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_svcctl_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
@@ -9002,7 +9003,7 @@ void proto_register_dcerpc_svcctl(void)
 	{ &hf_svcctl_SERVICE_STATUS_PROCESS_wait_hint,
 	  { "Wait Hint", "svcctl.SERVICE_STATUS_PROCESS.wait_hint", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_svcctl_SERVICE_STATUS_PROCESS_win32_exit_code,
-	  { "Win32 Exit Code", "svcctl.SERVICE_STATUS_PROCESS.win32_exit_code", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Win32 Exit Code", "svcctl.SERVICE_STATUS_PROCESS.win32_exit_code", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_svcctl_SERVICE_STATUS_check_point,
 	  { "Check Point", "svcctl.SERVICE_STATUS.check_point", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_svcctl_SERVICE_STATUS_controls_accepted,
@@ -9016,7 +9017,7 @@ void proto_register_dcerpc_svcctl(void)
 	{ &hf_svcctl_SERVICE_STATUS_wait_hint,
 	  { "Wait Hint", "svcctl.SERVICE_STATUS.wait_hint", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_svcctl_SERVICE_STATUS_win32_exit_code,
-	  { "Win32 Exit Code", "svcctl.SERVICE_STATUS.win32_exit_code", FT_UINT32, BASE_DEC, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Win32 Exit Code", "svcctl.SERVICE_STATUS.win32_exit_code", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	{ &hf_svcctl_opnum,
 	  { "Operation", "svcctl.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_svcctl_service_buffer_size,
@@ -9600,7 +9601,7 @@ void proto_register_dcerpc_svcctl(void)
 	{ &hf_svcctl_svcctl_UnlockServiceDatabase_lock_handle,
 	  { "Lock Handle", "svcctl.svcctl_UnlockServiceDatabase.lock_handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_svcctl_werror,
-	  { "Windows Error", "svcctl.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "svcctl.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 

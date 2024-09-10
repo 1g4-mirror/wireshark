@@ -27,6 +27,7 @@
 #include <epan/prefs.h>
 #include <epan/sctpppids.h>
 #include <epan/expert.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-per.h"
@@ -491,7 +492,7 @@ dissect_lcsap_ProcedureCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
   {
-    uint8_t tmp = tvb_get_guint8(tvb, 0);
+    uint8_t tmp = tvb_get_uint8(tvb, 0);
 
     if (tmp == 0)
       col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%sReq",
@@ -500,7 +501,7 @@ dissect_lcsap_ProcedureCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
       col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%sResp",
                    val_to_str_const(ProcedureCode, lcsap_ProcedureCode_vals, "unknown message"));
     else
-      col_add_str(actx->pinfo->cinfo, COL_INFO,
+      col_set_str(actx->pinfo->cinfo, COL_INFO,
                    val_to_str_const(ProcedureCode, lcsap_ProcedureCode_vals, "unknown message"));
   }
 

@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -272,9 +273,9 @@ static int eventlog_dissect_element_GetLogInformation_cbBytesNeeded_(tvbuff_t *t
 static int eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int
-eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 len;
+	uint32_t len;
 	tvbuff_t *record_tvb;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -287,75 +288,75 @@ eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_i
 	 * NDR encoded at all and there are byte offsets into this buffer
 	 * encoded therein.
 	 */
-	record_tvb=tvb_new_subset_length_caplen(tvb, offset, MIN((gint)len, tvb_captured_length_remaining(tvb, offset)), len);
+	record_tvb=tvb_new_subset_length_caplen(tvb, offset, MIN((int)len, tvb_captured_length_remaining(tvb, offset)), len);
 	eventlog_dissect_struct_Record(record_tvb, 0, pinfo, tree, di, drep, hf_eventlog_Record, 0);
 	offset+=len;
 	return offset;
 }
 /* sid_length and sid_offset handled by manual code since this is not NDR
    and we want to dissect the sid from the data blob */
-static guint32 sid_length;
+static uint32_t sid_length;
 static int
-eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	sid_length=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_sid_length,&sid_length);
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 sid_offset=0;
+	uint32_t sid_offset=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_sid_offset,&sid_offset);
 	if(sid_offset && sid_length){
 		tvbuff_t *sid_tvb;
 		/* this blob contains an NT SID.
 		 * tvb starts at the beginning of the record.
 		 */
-		sid_tvb=tvb_new_subset_length_caplen(tvb, sid_offset, MIN((gint)sid_length, tvb_captured_length_remaining(tvb, offset)), sid_length);
+		sid_tvb=tvb_new_subset_length_caplen(tvb, sid_offset, MIN((int)sid_length, tvb_captured_length_remaining(tvb, offset)), sid_length);
 		dissect_nt_sid(sid_tvb, 0, tree, "SID", NULL, -1);
 	}
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_source_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_source_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-	guint len;
+	unsigned len;
 	len=tvb_unicode_strsize(tvb, offset);
 	proto_tree_add_item(tree, hf_eventlog_Record_source_name, tvb, offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	offset+=len;
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-	guint len;
+	unsigned len;
 	len=tvb_unicode_strsize(tvb, offset);
 	proto_tree_add_item(tree, hf_eventlog_Record_computer_name, tvb, offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	offset+=len;
 	return offset;
 }
-static guint16 num_of_strings;
+static uint16_t num_of_strings;
 static int
-eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	num_of_strings=0;
 	offset = dissect_ndr_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_num_of_strings,&num_of_strings);
 	return offset;
 }
-static guint32 string_offset;
+static uint32_t string_offset;
 static int
-eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	string_offset=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_stringoffset,&string_offset);
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_strings(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_strings(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
 	while(string_offset && num_of_strings){
-		guint len;
+		unsigned len;
 		len=tvb_unicode_strsize(tvb, string_offset);
 		proto_tree_add_item(tree, hf_eventlog_Record_string, tvb, string_offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 		string_offset+=len;
@@ -784,13 +785,13 @@ eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int o
 static int
 eventlog_dissect_ClearEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClearEventLogW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -846,13 +847,13 @@ eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int 
 static int
 eventlog_dissect_BackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="BackupEventLogW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -891,7 +892,7 @@ eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 eventlog_dissect_CloseEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseEventLog";
 	offset = eventlog_dissect_element_CloseEventLog_handle(tvb, offset, pinfo, tree, di, drep);
@@ -900,7 +901,7 @@ eventlog_dissect_CloseEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -937,7 +938,7 @@ eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int of
 static int
 eventlog_dissect_DeregisterEventSource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeregisterEventSource";
 	offset = eventlog_dissect_element_DeregisterEventSource_handle(tvb, offset, pinfo, tree, di, drep);
@@ -946,7 +947,7 @@ eventlog_dissect_DeregisterEventSource_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1000,7 +1001,7 @@ eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_
 static int
 eventlog_dissect_GetNumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNumRecords";
 	offset = eventlog_dissect_element_GetNumRecords_number(tvb, offset, pinfo, tree, di, drep);
@@ -1009,7 +1010,7 @@ eventlog_dissect_GetNumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1063,7 +1064,7 @@ eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _
 static int
 eventlog_dissect_GetOldestRecord_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetOldestRecord";
 	offset = eventlog_dissect_element_GetOldestRecord_oldest(tvb, offset, pinfo, tree, di, drep);
@@ -1072,7 +1073,7 @@ eventlog_dissect_GetOldestRecord_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1135,13 +1136,13 @@ eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_
 static int
 eventlog_dissect_ChangeNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeNotify";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1235,7 +1236,7 @@ eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 eventlog_dissect_OpenEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenEventLogW";
 	offset = eventlog_dissect_element_OpenEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1244,7 +1245,7 @@ eventlog_dissect_OpenEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1342,7 +1343,7 @@ eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int off
 static int
 eventlog_dissect_RegisterEventSourceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterEventSourceW";
 	offset = eventlog_dissect_element_RegisterEventSourceW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1351,7 +1352,7 @@ eventlog_dissect_RegisterEventSourceW_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1440,7 +1441,7 @@ eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offs
 static int
 eventlog_dissect_OpenBackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenBackupEventLogW";
 	offset = eventlog_dissect_element_OpenBackupEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1449,7 +1450,7 @@ eventlog_dissect_OpenBackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1562,7 +1563,7 @@ eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset 
 static int
 eventlog_dissect_ReadEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReadEventLogW";
 	offset = eventlog_dissect_element_ReadEventLogW_data(tvb, offset, pinfo, tree, di, drep);
@@ -1577,7 +1578,7 @@ eventlog_dissect_ReadEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1683,13 +1684,13 @@ eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offse
 static int
 eventlog_dissect_ReportEventW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReportEventW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1724,13 +1725,13 @@ eventlog_dissect_ReportEventW_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 eventlog_dissect_ClearEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClearEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1749,13 +1750,13 @@ eventlog_dissect_ClearEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packe
 static int
 eventlog_dissect_BackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="BackupEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1774,13 +1775,13 @@ eventlog_dissect_BackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, pack
 static int
 eventlog_dissect_OpenEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1799,13 +1800,13 @@ eventlog_dissect_OpenEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 eventlog_dissect_RegisterEventSourceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterEventSourceA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1824,13 +1825,13 @@ eventlog_dissect_RegisterEventSourceA_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 eventlog_dissect_OpenBackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenBackupEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1849,13 +1850,13 @@ eventlog_dissect_OpenBackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 eventlog_dissect_ReadEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReadEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1874,13 +1875,13 @@ eventlog_dissect_ReadEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet
 static int
 eventlog_dissect_ReportEventA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReportEventA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1899,13 +1900,13 @@ eventlog_dissect_ReportEventA_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 static int
 eventlog_dissect_RegisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterClusterSvc";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1924,13 +1925,13 @@ eventlog_dissect_RegisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, p
 static int
 eventlog_dissect_DeregisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeregisterClusterSvc";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -1949,13 +1950,13 @@ eventlog_dissect_DeregisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_,
 static int
 eventlog_dissect_WriteClusterEvents_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="WriteClusterEvents";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2042,7 +2043,7 @@ eventlog_dissect_element_GetLogInformation_cbBytesNeeded_(tvbuff_t *tvb _U_, int
 static int
 eventlog_dissect_GetLogInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetLogInformation";
 	offset = eventlog_dissect_element_GetLogInformation_lpBuffer(tvb, offset, pinfo, tree, di, drep);
@@ -2054,7 +2055,7 @@ eventlog_dissect_GetLogInformation_response(tvbuff_t *tvb _U_, int offset _U_, p
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2095,13 +2096,13 @@ eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_
 static int
 eventlog_dissect_FlushEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="FlushEventLog";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
@@ -2352,7 +2353,7 @@ void proto_register_dcerpc_eventlog(void)
 	{ &hf_eventlog_opnum,
 	  { "Operation", "eventlog.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_status,
-	  { "NT Error", "eventlog.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "eventlog.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	};
 
 

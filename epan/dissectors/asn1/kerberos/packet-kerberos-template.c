@@ -62,10 +62,12 @@
 #include <epan/expert.h>
 #include <epan/prefs.h>
 #include <epan/srt_table.h>
+#include <epan/tfs.h>
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/file_util.h>
 #include <wsutil/str_util.h>
 #include <wsutil/pint.h>
+#include <wsutil/array.h>
 #include "packet-kerberos.h"
 #include "packet-netbios.h"
 #include "packet-tcp.h"
@@ -469,11 +471,6 @@ static void krb5_conf_add_request(asn1_ctx_t *actx)
 	wf = wmem_list_find_custom(private_data->krb5_conv->frames,
 				   krqf, krb5_frame_compare);
 	if (wf != NULL) {
-		/*
-		 * replace the pointer with the one allocated on
-		 * wmem_file_scope()
-		 */
-		krqf = (kerberos_frame_t *)wmem_list_frame_data(wf);
 		/* The next one should be the response */
 		wf = wmem_list_frame_next(wf);
 	}
@@ -1979,7 +1976,7 @@ decrypt_krb5_krb_cfx_dce_cb(const krb5_keyblock *key,
 
 	if (state->gssapi_header_ptr != NULL) {
 		iov[1].flags = KRB5_CRYPTO_TYPE_SIGN_ONLY;
-		iov[1].data.data = (uint8_t *)(guintptr)state->gssapi_header_ptr;
+		iov[1].data.data = (uint8_t *)(uintptr_t)state->gssapi_header_ptr;
 		iov[1].data.length = state->gssapi_header_len;
 	} else {
 		iov[1].flags = KRB5_CRYPTO_TYPE_EMPTY;
@@ -1991,7 +1988,7 @@ decrypt_krb5_krb_cfx_dce_cb(const krb5_keyblock *key,
 
 	if (state->gssapi_trailer_ptr != NULL) {
 		iov[3].flags = KRB5_CRYPTO_TYPE_SIGN_ONLY;
-		iov[3].data.data = (uint8_t *)(guintptr)state->gssapi_trailer_ptr;
+		iov[3].data.data = (uint8_t *)(uintptr_t)state->gssapi_trailer_ptr;
 		iov[3].data.length = state->gssapi_trailer_len;
 	} else {
 		iov[3].flags = KRB5_CRYPTO_TYPE_EMPTY;
@@ -2625,7 +2622,7 @@ verify_krb5_pac_full_checksum(proto_tree *tree,
 
 	cur_offset = 0;
 	__PAC_CHECK_OFFSET_SIZE(cur_offset, 8, "PACTYPE Header");
-	num_buffers = tvb_get_guint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
+	num_buffers = tvb_get_uint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
 	cur_offset += 4;
 	/* ignore 4 byte version */
 	cur_offset += 4;
@@ -2636,11 +2633,11 @@ verify_krb5_pac_full_checksum(proto_tree *tree,
 		uint64_t b_offset;
 
 		__PAC_CHECK_OFFSET_SIZE(cur_offset, 16, "PAC_INFO_BUFFER Header");
-		b_type = tvb_get_guint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
+		b_type = tvb_get_uint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
 		cur_offset += 4;
-		b_length = tvb_get_guint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
+		b_length = tvb_get_uint32(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
 		cur_offset += 4;
-		b_offset = tvb_get_guint64(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
+		b_offset = tvb_get_uint64(copy_pactvb, cur_offset, ENC_LITTLE_ENDIAN);
 		cur_offset += 8;
 
 		__PAC_CHECK_OFFSET_SIZE(b_offset, b_length, "PAC_INFO_BUFFER Payload");
@@ -4306,7 +4303,7 @@ dissect_krb5_PW_SALT(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, a
 			ENC_LITTLE_ENDIAN);
 	col_append_fstr(actx->pinfo->cinfo, COL_INFO,
 			" NT Status: %s",
-			val_to_str(nt_status, NT_errors,
+			val_to_str_ext(nt_status, &NT_errors_ext,
 			"Unknown error code %#x"));
 	offset += 4;
 
@@ -4335,7 +4332,7 @@ dissect_krb5_PAC_DREP(proto_tree *parent_tree, tvbuff_t *tvb, int offset, uint8_
 
 	tree = proto_tree_add_subtree(parent_tree, tvb, offset, 16, ett_krb_pac_drep, NULL, "DREP");
 
-	val = tvb_get_guint8(tvb, offset);
+	val = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(tree, hf_dcerpc_drep_byteorder, tvb, offset, 1, val>>4);
 
 	offset++;
@@ -4749,7 +4746,8 @@ dissect_krb5_PAC_CLIENT_INFO_TYPE(proto_tree *parent_tree, tvbuff_t *tvb, int of
 	tree = proto_item_add_subtree(item, ett_krb_pac_client_info_type);
 
 	/* clientid */
-	offset = dissect_nt_64bit_time(tvb, tree, offset, hf_krb_pac_clientid);
+	dissect_nttime(tvb, tree, offset, hf_krb_pac_clientid, ENC_LITTLE_ENDIAN);
+	offset+=8;
 
 	/* name length */
 	namelen=tvb_get_letohs(tvb, offset);
@@ -5501,7 +5499,7 @@ dissect_kerberos_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 	   All krb5 commands start with an APPL tag and thus is >=0x60
 	   so if first byte is <=16  just blindly assume it is krb4 then
 	*/
-	if(tvb_captured_length(tvb) >= 1 && tvb_get_guint8(tvb, 0)<=0x10){
+	if(tvb_captured_length(tvb) >= 1 && tvb_get_uint8(tvb, 0)<=0x10){
 		if(krb4_handle){
 			bool res;
 
@@ -5594,8 +5592,8 @@ void proto_register_kerberos(void) {
 		{ "pw-salt", "kerberos.pw_salt", FT_BYTES, BASE_NONE,
 		NULL, 0, NULL, HFILL }},
 	{ &hf_krb_ext_error_nt_status, /* we keep kerberos.smb.nt_status for compat reasons */
-		{ "NT Status", "kerberos.smb.nt_status", FT_UINT32, BASE_HEX,
-		VALS(NT_errors), 0, "NT Status code", HFILL }},
+		{ "NT Status", "kerberos.smb.nt_status", FT_UINT32, BASE_HEX|BASE_EXT_STRING,
+		&NT_errors_ext, 0, "NT Status code", HFILL }},
 	{ &hf_krb_ext_error_reserved,
 		{ "Reserved", "kerberos.ext_error.reserved", FT_UINT32, BASE_HEX,
 		NULL, 0, NULL, HFILL }},

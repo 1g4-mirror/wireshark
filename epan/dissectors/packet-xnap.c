@@ -26,7 +26,10 @@
 #include <epan/sctpppids.h>
 #include <epan/proto_data.h>
 #include <epan/conversation.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
+#include <wsutil/array.h>
 #include "packet-xnap.h"
 #include "packet-per.h"
 #include "packet-lte-rrc.h"
@@ -2801,6 +2804,8 @@ static int ett_xnap_cellmeasurementFailedReportCharacteristics;
 static int ett_xnap_nodemeasurementFailedReportCharacteristics;
 static int ett_xnap_ReportCharacteristicsForDataCollection;
 static int ett_xnap_SRSConfiguration;
+static int ett_xnap_PSCellListContainer;
+static int ett_xnap_SuccessfulPSCellChangeReportContainer;
 static int ett_xnap_PrivateIE_ID;
 static int ett_xnap_ProtocolIE_Container;
 static int ett_xnap_ProtocolIE_Field;
@@ -21121,8 +21126,16 @@ dissect_xnap_PSCellHistoryInformationRetrieve(tvbuff_t *tvb _U_, int offset _U_,
 
 static int
 dissect_xnap_PSCellListContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb = NULL;
+  proto_tree *subtree;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, false, NULL);
+                                       NO_BOUND, NO_BOUND, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    subtree = proto_item_add_subtree(actx->created_item, ett_xnap_PSCellListContainer);
+    dissect_lte_rrc_CellIdListNR_r18_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
+  }
+
 
   return offset;
 }
@@ -24092,8 +24105,15 @@ dissect_xnap_SuccessfulHOReportInformation(tvbuff_t *tvb _U_, int offset _U_, as
 
 static int
 dissect_xnap_SuccessfulPSCellChangeReportContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb = NULL;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, false, NULL);
+                                       NO_BOUND, NO_BOUND, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_xnap_SuccessfulPSCellChangeReportContainer);
+    dissect_nr_rrc_SuccessPSCell_Report_r18_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
+  }
+
 
   return offset;
 }
@@ -33115,7 +33135,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x04,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_nR_OTHERSAT,
-      { "nR-unlicensed", "xnap.primaryRATRestriction.nR_OTHERSAT",
+      { "nR-OTHERSAT", "xnap.primaryRATRestriction.nR_OTHERSAT",
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x02,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_e_UTRA_LEO,
@@ -33131,7 +33151,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x40,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_e_UTRA_OTHERSAT,
-      { "e-UTRA-unlicensed", "xnap.primaryRATRestriction.e_UTRA_OTHERSAT",
+      { "e-UTRA-OTHERSAT", "xnap.primaryRATRestriction.e_UTRA_OTHERSAT",
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x20,
         NULL, HFILL }},
     { &hf_xnap_primaryRATRestriction_reserved,
@@ -33187,7 +33207,7 @@ void proto_register_xnap(void) {
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x08,
         NULL, HFILL }},
     { &hf_xnap_MeasurementsToActivate_LoggingM1FromEventTriggered,
-      { "LoggingOfM1FromEventTriggeredMeasurementReports", "xnap.MeasurementsToActivate.LoggingM1FromEventTriggered",
+      { "LoggingM1FromEventTriggeredMeasurementReports", "xnap.MeasurementsToActivate.LoggingM1FromEventTriggered",
         FT_BOOLEAN, 8, TFS(&tfs_activate_do_not_activate), 0x04,
         NULL, HFILL }},
     { &hf_xnap_MeasurementsToActivate_M6,
@@ -33260,7 +33280,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_ReportCharacteristicsForDataCollection_MeasuredUETrajectory,
       { "MeasuredUETrajectory", "xnap.ReportCharacteristicsForDataCollection.MeasuredUETrajectory",
-        FT_BOOLEAN, 32, TFS(&tfs_requested_not_requested), 0x008000000,
+        FT_BOOLEAN, 32, TFS(&tfs_requested_not_requested), 0x00800000,
         NULL, HFILL }},
     { &hf_xnap_ReportCharacteristicsForDataCollection_Reserved,
       { "Reserved", "xnap.ReportCharacteristicsForDataCollection.Reserved",
@@ -33384,7 +33404,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_BitRate_PDU,
       { "BitRate", "xnap.BitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         NULL, HFILL }},
     { &hf_xnap_CandidateRelayUEInfoList_PDU,
       { "CandidateRelayUEInfoList", "xnap.CandidateRelayUEInfoList",
@@ -33844,7 +33864,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_MaximumDataBurstVolume_PDU,
       { "MaximumDataBurstVolume", "xnap.MaximumDataBurstVolume",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         NULL, HFILL }},
     { &hf_xnap_MaxIPrate_PDU,
       { "MaxIPrate", "xnap.MaxIPrate",
@@ -34232,7 +34252,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_QosMonitoringReportingFrequency_PDU,
       { "QosMonitoringReportingFrequency", "xnap.QosMonitoringReportingFrequency",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_xnap_RAReport_PDU,
       { "RAReport", "xnap.RAReport",
@@ -34280,7 +34300,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_RequestedPredictionTime_PDU,
       { "RequestedPredictionTime", "xnap.RequestedPredictionTime",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_xnap_RegistrationRequest_PDU,
       { "RegistrationRequest", "xnap.RegistrationRequest",
@@ -34488,7 +34508,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_SurvivalTime_PDU,
       { "SurvivalTime", "xnap.SurvivalTime",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         NULL, HFILL }},
     { &hf_xnap_SNPN_CellBasedMDT_PDU,
       { "SNPN-CellBasedMDT", "xnap.SNPN_CellBasedMDT_element",
@@ -34532,7 +34552,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_TimeSinceFailure_PDU,
       { "TimeSinceFailure", "xnap.TimeSinceFailure",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_xnap_TimeSynchronizationAssistanceInformation_PDU,
       { "TimeSynchronizationAssistanceInformation", "xnap.TimeSynchronizationAssistanceInformation_element",
@@ -35332,7 +35352,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_aA2XPC5LinkAggregateBitRates,
       { "aA2XPC5LinkAggregateBitRates", "xnap.aA2XPC5LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_iE_Extensions,
       { "iE-Extensions", "xnap.iE_Extensions",
@@ -35356,11 +35376,11 @@ void proto_register_xnap(void) {
         "Range", HFILL }},
     { &hf_xnap_a2XguaranteedFlowBitRate,
       { "a2XguaranteedFlowBitRate", "xnap.a2XguaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_a2XmaximumFlowBitRate,
       { "a2XmaximumFlowBitRate", "xnap.a2XmaximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_AdditionalListofPDUSessionResourceChangeConfirmInfo_SNterminated_item,
       { "AdditionalListofPDUSessionResourceChangeConfirmInfo-SNterminated-Item", "xnap.AdditionalListofPDUSessionResourceChangeConfirmInfo_SNterminated_Item_element",
@@ -35468,11 +35488,11 @@ void proto_register_xnap(void) {
         "QoSParaSetIndex", HFILL }},
     { &hf_xnap_guaranteedFlowBitRateDL,
       { "guaranteedFlowBitRateDL", "xnap.guaranteedFlowBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_guaranteedFlowBitRateUL,
       { "guaranteedFlowBitRateUL", "xnap.guaranteedFlowBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_packetDelayBudget,
       { "packetDelayBudget", "xnap.packetDelayBudget",
@@ -36588,11 +36608,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_averagingWindow,
       { "averagingWindow", "xnap.averagingWindow",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0,
         NULL, HFILL }},
     { &hf_xnap_maximumDataBurstVolume,
       { "maximumDataBurstVolume", "xnap.maximumDataBurstVolume",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         NULL, HFILL }},
     { &hf_xnap_eCNMarkingAtRANRequest,
       { "eCNMarkingAtRANRequest", "xnap.eCNMarkingAtRANRequest",
@@ -36696,11 +36716,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_expectedActivityPeriod,
       { "expectedActivityPeriod", "xnap.expectedActivityPeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_xnap_expectedIdlePeriod,
       { "expectedIdlePeriod", "xnap.expectedIdlePeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_xnap_sourceOfUEActivityBehaviourInformation,
       { "sourceOfUEActivityBehaviourInformation", "xnap.sourceOfUEActivityBehaviourInformation",
@@ -36732,7 +36752,7 @@ void proto_register_xnap(void) {
         "GlobalNG_RANCell_ID", HFILL }},
     { &hf_xnap_timeStayedInCell,
       { "timeStayedInCell", "xnap.timeStayedInCell",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_0_4095", HFILL }},
     { &hf_xnap_permutation,
       { "permutation", "xnap.permutation",
@@ -36824,7 +36844,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_fiveGproSepc5LinkAggregateBitRates,
       { "fiveGproSepc5LinkAggregateBitRates", "xnap.fiveGproSepc5LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_FiveGProSePC5QoSFlowList_item,
       { "FiveGProSePC5QoSFlowItem", "xnap.FiveGProSePC5QoSFlowItem_element",
@@ -36844,11 +36864,11 @@ void proto_register_xnap(void) {
         "Range", HFILL }},
     { &hf_xnap_fiveGproSeguaranteedFlowBitRate,
       { "fiveGproSeguaranteedFlowBitRate", "xnap.fiveGproSeguaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_fiveGproSemaximumFlowBitRate,
       { "fiveGproSemaximumFlowBitRate", "xnap.fiveGproSemaximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_Flows_Mapped_To_DRB_List_item,
       { "Flows-Mapped-To-DRB-Item", "xnap.Flows_Mapped_To_DRB_Item_element",
@@ -36900,11 +36920,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_maxFlowBitRateDL,
       { "maxFlowBitRateDL", "xnap.maxFlowBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_maxFlowBitRateUL,
       { "maxFlowBitRateUL", "xnap.maxFlowBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_notificationControl,
       { "notificationControl", "xnap.notificationControl",
@@ -37460,7 +37480,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_uESidelinkAggregateMaximumBitRate,
       { "uESidelinkAggregateMaximumBitRate", "xnap.uESidelinkAggregateMaximumBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_s_BasedMDT,
       { "s-BasedMDT", "xnap.s_BasedMDT_element",
@@ -37516,7 +37536,7 @@ void proto_register_xnap(void) {
         "Links_to_log", HFILL }},
     { &hf_xnap_m7period,
       { "m7period", "xnap.m7period",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_minutes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_minutes), 0,
         NULL, HFILL }},
     { &hf_xnap_m7_links_to_log,
       { "m7-links-to-log", "xnap.m7_links_to_log",
@@ -37868,7 +37888,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_mT_SDT_DataSize,
       { "mT-SDT-DataSize", "xnap.mT_SDT_DataSize",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         NULL, HFILL }},
     { &hf_xnap_iAB_MT_Cell_List,
       { "iAB-MT-Cell-List", "xnap.iAB_MT_Cell_List",
@@ -37892,7 +37912,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_timeUEStaysInCell,
       { "timeUEStaysInCell", "xnap.timeUEStaysInCell",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_0_4095", HFILL }},
     { &hf_xnap_n6JitterLowerBound,
       { "n6JitterLowerBound", "xnap.n6JitterLowerBound",
@@ -38072,7 +38092,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_dLTNLOfferedCapacity,
       { "dLTNLOfferedCapacity", "xnap.dLTNLOfferedCapacity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_kbps, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kbps), 0,
         "OfferedCapacity", HFILL }},
     { &hf_xnap_dLTNLAvailableCapacity,
       { "dLTNLAvailableCapacity", "xnap.dLTNLAvailableCapacity",
@@ -38080,7 +38100,7 @@ void proto_register_xnap(void) {
         "AvailableCapacity", HFILL }},
     { &hf_xnap_uLTNLOfferedCapacity,
       { "uLTNLOfferedCapacity", "xnap.uLTNLOfferedCapacity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_kbps, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_kbps), 0,
         "OfferedCapacity", HFILL }},
     { &hf_xnap_uLTNLAvailableCapacity,
       { "uLTNLAvailableCapacity", "xnap.uLTNLAvailableCapacity",
@@ -38364,7 +38384,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_pc5LinkAggregateBitRates,
       { "pc5LinkAggregateBitRates", "xnap.pc5LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_PC5QoSFlowList_item,
       { "PC5QoSFlowItem", "xnap.PC5QoSFlowItem_element",
@@ -38384,11 +38404,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_guaranteedFlowBitRate,
       { "guaranteedFlowBitRate", "xnap.guaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_maximumFlowBitRate,
       { "maximumFlowBitRate", "xnap.maximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_from_S_NG_RAN_node,
       { "from-S-NG-RAN-node", "xnap.from_S_NG_RAN_node",
@@ -38428,11 +38448,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_downlink_session_AMBR,
       { "downlink-session-AMBR", "xnap.downlink_session_AMBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_uplink_session_AMBR,
       { "uplink-session-AMBR", "xnap.uplink_session_AMBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_PDUSession_List_item,
       { "PDUSession-ID", "xnap.PDUSession_ID",
@@ -39788,7 +39808,7 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_rSPPLinkAggregateBitRates,
       { "rSPPLinkAggregateBitRates", "xnap.rSPPLinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_RSPPQoSFlowList_item,
       { "RSPPQoSFlowItem", "xnap.RSPPQoSFlowItem_element",
@@ -40244,7 +40264,7 @@ void proto_register_xnap(void) {
         "TSCAssistanceInformation", HFILL }},
     { &hf_xnap_periodicity,
       { "periodicity", "xnap.periodicity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "INTEGER_0_640000_", HFILL }},
     { &hf_xnap_burstArrivalTime,
       { "burstArrivalTime", "xnap.burstArrivalTime",
@@ -40252,11 +40272,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_dl_UE_AMBR,
       { "dl-UE-AMBR", "xnap.dl_UE_AMBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_ul_UE_AMBR,
       { "ul-UE-AMBR", "xnap.ul_UE_AMBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_serviceType,
       { "serviceType", "xnap.serviceType",
@@ -40404,11 +40424,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_dl_UE_Slice_MBR,
       { "dl-UE-Slice-MBR", "xnap.dl_UE_Slice_MBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_ul_UE_Slice_MBR,
       { "ul-UE-Slice-MBR", "xnap.ul_UE_Slice_MBR",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_nr_EncyptionAlgorithms,
       { "nr-EncyptionAlgorithms", "xnap.nr_EncyptionAlgorithms",
@@ -40468,11 +40488,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_dL_UE_AverageThroughput,
       { "dL-UE-AverageThroughput", "xnap.dL_UE_AverageThroughput",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_uL_UE_AverageThroughput,
       { "uL-UE-AverageThroughput", "xnap.uL_UE_AverageThroughput",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_xnap_uE_AveragePacketDelay,
       { "uE-AveragePacketDelay", "xnap.uE_AveragePacketDelay_element",
@@ -40508,11 +40528,11 @@ void proto_register_xnap(void) {
         NULL, HFILL }},
     { &hf_xnap_usageCountUL,
       { "usageCountUL", "xnap.usageCountUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_xnap_usageCountDL,
       { "usageCountDL", "xnap.usageCountDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_xnap_wlanMeasConfig,
       { "wlanMeasConfig", "xnap.wlanMeasConfig",
@@ -41232,6 +41252,8 @@ void proto_register_xnap(void) {
     &ett_xnap_nodemeasurementFailedReportCharacteristics,
     &ett_xnap_ReportCharacteristicsForDataCollection,
     &ett_xnap_SRSConfiguration,
+    &ett_xnap_PSCellListContainer,
+    &ett_xnap_SuccessfulPSCellChangeReportContainer,
     &ett_xnap_PrivateIE_ID,
     &ett_xnap_ProtocolIE_Container,
     &ett_xnap_ProtocolIE_Field,

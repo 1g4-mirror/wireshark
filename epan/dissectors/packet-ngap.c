@@ -32,7 +32,10 @@
 #include <epan/show_exception.h>
 #include <epan/tap.h>
 #include <epan/stats_tree.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <wsutil/wsjson.h>
+#include <wsutil/array.h>
 
 #include "packet-ngap.h"
 #include "packet-per.h"
@@ -2239,7 +2242,7 @@ static int hf_ngap_SNPNListforMDT_item;           /* SNPNListforMDTItem */
 static int hf_ngap_SuccessfulHandoverReportList_item;  /* SuccessfulHandoverReport_Item */
 static int hf_ngap_successfulHOReportContainer;   /* T_successfulHOReportContainer */
 static int hf_ngap_SuccessfulPSCellChangeReportList_item;  /* SuccessfulPSCellChangeReport_Item */
-static int hf_ngap_successfulPSCellChangeReportContainer;  /* OCTET_STRING */
+static int hf_ngap_successfulPSCellChangeReportContainer;  /* T_successfulPSCellChangeReportContainer */
 static int hf_ngap_rRCContainer;                  /* RRCContainer */
 static int hf_ngap_pDUSessionResourceInformationList;  /* PDUSessionResourceInformationList */
 static int hf_ngap_e_RABInformationList;          /* E_RABInformationList */
@@ -2450,6 +2453,7 @@ static int ett_ngap_UERadioCapabilityForPagingOfNB_IoT;
 static int ett_ngap_GlobalCable_ID;
 static int ett_ngap_UpdateFeedback;
 static int ett_ngap_successfulHOReportContainer;
+static int ett_ngap_successfulPSCellChangeReportContainer;
 static int ett_ngap_PrivateIE_ID;
 static int ett_ngap_ProtocolIE_Container;
 static int ett_ngap_ProtocolIE_Field;
@@ -3792,7 +3796,7 @@ dissect_ngap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree,
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
 
-  nb_of_pages = tvb_get_guint8(warning_msg_tvb, 0);
+  nb_of_pages = tvb_get_uint8(warning_msg_tvb, 0);
   ti = proto_tree_add_uint(tree, hf_nb_pages, warning_msg_tvb, 0, 1, nb_of_pages);
   if (nb_of_pages > 15) {
     expert_add_info_format(pinfo, ti, &ei_ngap_number_pages_le15,
@@ -3800,7 +3804,7 @@ dissect_ngap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree,
     nb_of_pages = 15;
   }
   for (i = 0, offset = 1; i < nb_of_pages; i++) {
-    length = tvb_get_guint8(warning_msg_tvb, offset+82);
+    length = tvb_get_uint8(warning_msg_tvb, offset+82);
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dcs, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
@@ -9153,7 +9157,7 @@ dissect_ngap_PeriodicRegistrationUpdateTimer(tvbuff_t *tvb _U_, int offset _U_, 
                                      8, 8, false, NULL, 0, &val_tvb, NULL);
 
   if (val_tvb) {
-    uint32_t val = tvb_get_guint8(val_tvb, 0);
+    uint32_t val = tvb_get_uint8(val_tvb, 0);
     actx->created_item = proto_tree_add_uint(tree, hf_index, val_tvb, 0, 1, val);
   }
 
@@ -21883,16 +21887,23 @@ dissect_ngap_SuccessfulHandoverReportList(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 static int
-dissect_ngap_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_ngap_T_successfulPSCellChangeReportContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb = NULL;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, false, NULL);
+                                       NO_BOUND, NO_BOUND, false, &parameter_tvb);
+
+  if (parameter_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_ngap_successfulPSCellChangeReportContainer);
+    dissect_nr_rrc_SuccessPSCell_Report_r18_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
+  }
+
 
   return offset;
 }
 
 
 static const per_sequence_t SuccessfulPSCellChangeReport_Item_sequence[] = {
-  { &hf_ngap_successfulPSCellChangeReportContainer, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ngap_OCTET_STRING },
+  { &hf_ngap_successfulPSCellChangeReportContainer, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_ngap_T_successfulPSCellChangeReportContainer },
   { &hf_ngap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_ngap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
 };
@@ -32334,7 +32345,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_Extended_ConnectedTime_PDU,
       { "Extended-ConnectedTime", "ngap.Extended_ConnectedTime",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_EN_DCSONConfigurationTransfer_PDU,
       { "EN-DCSONConfigurationTransfer", "ngap.EN_DCSONConfigurationTransfer",
@@ -32586,7 +32597,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_MaximumDataBurstVolume_PDU,
       { "MaximumDataBurstVolume", "ngap.MaximumDataBurstVolume",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         NULL, HFILL }},
     { &hf_ngap_MessageIdentifier_PDU,
       { "MessageIdentifier", "ngap.MessageIdentifier",
@@ -33222,7 +33233,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_QosMonitoringReportingFrequency_PDU,
       { "QosMonitoringReportingFrequency", "ngap.QosMonitoringReportingFrequency",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_QosFlowListWithCause_PDU,
       { "QosFlowListWithCause", "ngap.QosFlowListWithCause",
@@ -33306,7 +33317,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_RepetitionPeriod_PDU,
       { "RepetitionPeriod", "ngap.RepetitionPeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_ExtendedReportIntervalMDT_PDU,
       { "ExtendedReportIntervalMDT", "ngap.ExtendedReportIntervalMDT",
@@ -33450,7 +33461,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_SurvivalTime_PDU,
       { "SurvivalTime", "ngap.SurvivalTime",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         NULL, HFILL }},
     { &hf_ngap_SLPositioningRangingServiceInfo_PDU,
       { "SLPositioningRangingServiceInfo", "ngap.SLPositioningRangingServiceInfo_element",
@@ -33510,7 +33521,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_TimeSinceFailure_PDU,
       { "TimeSinceFailure", "ngap.TimeSinceFailure",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_TimeSyncAssistanceInfo_PDU,
       { "TimeSyncAssistanceInfo", "ngap.TimeSyncAssistanceInfo_element",
@@ -33530,7 +33541,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_TrafficLoadReductionIndication_PDU,
       { "TrafficLoadReductionIndication", "ngap.TrafficLoadReductionIndication",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_percent, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_percent), 0,
         NULL, HFILL }},
     { &hf_ngap_TransportLayerAddress_PDU,
       { "TransportLayerAddress", "ngap.TransportLayerAddress",
@@ -34422,11 +34433,11 @@ void proto_register_ngap(void) {
         "ProtocolExtensionContainer", HFILL }},
     { &hf_ngap_a2X_GuaranteedFlowBitRate,
       { "a2X-GuaranteedFlowBitRate", "ngap.a2X_GuaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_a2X_MaximumFlowBitRate,
       { "a2X-MaximumFlowBitRate", "ngap.a2X_MaximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_A2X_PC5_QoS_Flow_List_item,
       { "A2X-PC5-QoS-Flow-Item", "ngap.A2X_PC5_QoS_Flow_Item_element",
@@ -34450,7 +34461,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_a2X_PC5_LinkAggregateBitRates,
       { "a2X-PC5-LinkAggregateBitRates", "ngap.a2X_PC5_LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_AdditionalCancelledlocationReportingReferenceIDList_item,
       { "AdditionalCancelledlocationReportingReferenceIDItem", "ngap.AdditionalCancelledlocationReportingReferenceIDItem_element",
@@ -34514,11 +34525,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_guaranteedFlowBitRateDL,
       { "guaranteedFlowBitRateDL", "ngap.guaranteedFlowBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_guaranteedFlowBitRateUL,
       { "guaranteedFlowBitRateUL", "ngap.guaranteedFlowBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_packetDelayBudget,
       { "packetDelayBudget", "ngap.packetDelayBudget",
@@ -34818,11 +34829,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_burstArrivalTimeWindowStart,
       { "burstArrivalTimeWindowStart", "ngap.burstArrivalTimeWindowStart",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "INTEGER_0_640000_", HFILL }},
     { &hf_ngap_burstArrivalTimeWindowEnd,
       { "burstArrivalTimeWindowEnd", "ngap.burstArrivalTimeWindowEnd",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "INTEGER_0_640000_", HFILL }},
     { &hf_ngap_iE_Extension,
       { "iE-Extension", "ngap.iE_Extension",
@@ -35258,11 +35269,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_averagingWindow,
       { "averagingWindow", "ngap.averagingWindow",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_milliseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0,
         NULL, HFILL }},
     { &hf_ngap_maximumDataBurstVolume,
       { "maximumDataBurstVolume", "ngap.maximumDataBurstVolume",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         NULL, HFILL }},
     { &hf_ngap_procedureStage,
       { "procedureStage", "ngap.procedureStage",
@@ -35454,11 +35465,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_expectedActivityPeriod,
       { "expectedActivityPeriod", "ngap.expectedActivityPeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_expectedIdlePeriod,
       { "expectedIdlePeriod", "ngap.expectedIdlePeriod",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_sourceOfUEActivityBehaviourInformation,
       { "sourceOfUEActivityBehaviourInformation", "ngap.sourceOfUEActivityBehaviourInformation",
@@ -35486,7 +35497,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_timeStayedInCell,
       { "timeStayedInCell", "ngap.timeStayedInCell",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         "INTEGER_0_4095", HFILL }},
     { &hf_ngap_aMFNameVisibleString,
       { "aMFNameVisibleString", "ngap.aMFNameVisibleString",
@@ -35590,7 +35601,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_fiveGProSepc5LinkAggregateBitRates,
       { "fiveGProSepc5LinkAggregateBitRates", "ngap.fiveGProSepc5LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_FiveGProSePC5QoSFlowList_item,
       { "FiveGProSePC5QoSFlowItem", "ngap.FiveGProSePC5QoSFlowItem_element",
@@ -35610,11 +35621,11 @@ void proto_register_ngap(void) {
         "Range", HFILL }},
     { &hf_ngap_fiveGproSeguaranteedFlowBitRate,
       { "fiveGproSeguaranteedFlowBitRate", "ngap.fiveGproSeguaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_fiveGproSemaximumFlowBitRate,
       { "fiveGproSemaximumFlowBitRate", "ngap.fiveGproSemaximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_aMFSetID,
       { "aMFSetID", "ngap.aMFSetID",
@@ -35658,11 +35669,11 @@ void proto_register_ngap(void) {
         "IntersystemSONeNBID", HFILL }},
     { &hf_ngap_maximumFlowBitRateDL,
       { "maximumFlowBitRateDL", "ngap.maximumFlowBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_maximumFlowBitRateUL,
       { "maximumFlowBitRateUL", "ngap.maximumFlowBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_notificationControl,
       { "notificationControl", "ngap.notificationControl",
@@ -36230,7 +36241,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_timeUEStayedInCell,
       { "timeUEStayedInCell", "ngap.timeUEStayedInCell",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_seconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0,
         NULL, HFILL }},
     { &hf_ngap_timeUEStayedInCellEnhancedGranularity,
       { "timeUEStayedInCellEnhancedGranularity", "ngap.timeUEStayedInCellEnhancedGranularity",
@@ -36298,7 +36309,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_uESidelinkAggregateMaximumBitRate,
       { "uESidelinkAggregateMaximumBitRate", "ngap.uESidelinkAggregateMaximumBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_aerialUE,
       { "aerialUE", "ngap.aerialUE",
@@ -36846,7 +36857,7 @@ void proto_register_ngap(void) {
         "OverloadResponse", HFILL }},
     { &hf_ngap_sliceTrafficLoadReductionIndication,
       { "sliceTrafficLoadReductionIndication", "ngap.sliceTrafficLoadReductionIndication",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_percent, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_percent), 0,
         "TrafficLoadReductionIndication", HFILL }},
     { &hf_ngap_pERScalar,
       { "pERScalar", "ngap.pERScalar",
@@ -36902,7 +36913,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_dl_DataSize,
       { "dl-DataSize", "ngap.dl_DataSize",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_byte_bytes, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
         "INTEGER_0_96000_", HFILL }},
     { &hf_ngap_Partially_Allowed_NSSAI_item,
       { "PartiallyAllowedNSSAI-Item", "ngap.PartiallyAllowedNSSAI_Item_element",
@@ -36934,7 +36945,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_pc5LinkAggregateBitRates,
       { "pc5LinkAggregateBitRates", "ngap.pc5LinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_PC5QoSFlowList_item,
       { "PC5QoSFlowItem", "ngap.PC5QoSFlowItem_element",
@@ -36954,11 +36965,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_guaranteedFlowBitRate,
       { "guaranteedFlowBitRate", "ngap.guaranteedFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_maximumFlowBitRate,
       { "maximumFlowBitRate", "ngap.maximumFlowBitRate",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_PCIListForMDT_item,
       { "NR-PCI", "ngap.NR_PCI",
@@ -36966,11 +36977,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_pDUSessionAggregateMaximumBitRateDL,
       { "pDUSessionAggregateMaximumBitRateDL", "ngap.pDUSessionAggregateMaximumBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_pDUSessionAggregateMaximumBitRateUL,
       { "pDUSessionAggregateMaximumBitRateUL", "ngap.pDUSessionAggregateMaximumBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_PDUSessionResourceAdmittedList_item,
       { "PDUSessionResourceAdmittedItem", "ngap.PDUSessionResourceAdmittedItem_element",
@@ -37342,15 +37353,15 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_periodicityLowerBound,
       { "periodicityLowerBound", "ngap.periodicityLowerBound",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "Periodicity", HFILL }},
     { &hf_ngap_periodicityUpperBound,
       { "periodicityUpperBound", "ngap.periodicityUpperBound",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "Periodicity", HFILL }},
     { &hf_ngap_AllowedPeriodicityList_item,
       { "Periodicity", "ngap.Periodicity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         NULL, HFILL }},
     { &hf_ngap_periodicityBound,
       { "periodicityBound", "ngap.periodicityBound_element",
@@ -37895,7 +37906,7 @@ void proto_register_ngap(void) {
     { &hf_ngap_successfulPSCellChangeReportContainer,
       { "successfulPSCellChangeReportContainer", "ngap.successfulPSCellChangeReportContainer",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "OCTET_STRING", HFILL }},
+        NULL, HFILL }},
     { &hf_ngap_rRCContainer,
       { "rRCContainer", "ngap.rRCContainer",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -37962,7 +37973,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_rSPPLinkAggregateBitRates,
       { "rSPPLinkAggregateBitRates", "ngap.rSPPLinkAggregateBitRates",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_TACListInNRNTN_item,
       { "TAC", "ngap.TAC",
@@ -38082,7 +38093,7 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_uUTimeSyncErrorBudget,
       { "uUTimeSyncErrorBudget", "ngap.uUTimeSyncErrorBudget",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_nanoseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanoseconds), 0,
         "INTEGER_1_1000000_", HFILL }},
     { &hf_ngap_tNGF_ID,
       { "tNGF-ID", "ngap.tNGF_ID",
@@ -38158,7 +38169,7 @@ void proto_register_ngap(void) {
         "BIT_STRING_SIZE_32_", HFILL }},
     { &hf_ngap_periodicity,
       { "periodicity", "ngap.periodicity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         NULL, HFILL }},
     { &hf_ngap_burstArrivalTime,
       { "burstArrivalTime", "ngap.burstArrivalTime",
@@ -38186,15 +38197,15 @@ void proto_register_ngap(void) {
         "INTEGER_M640000_640000_", HFILL }},
     { &hf_ngap_adjustedPeriodicity,
       { "adjustedPeriodicity", "ngap.adjustedPeriodicity",
-        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &units_microseconds, 0,
+        FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_microseconds), 0,
         "Periodicity", HFILL }},
     { &hf_ngap_uEAggregateMaximumBitRateDL,
       { "uEAggregateMaximumBitRateDL", "ngap.uEAggregateMaximumBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_uEAggregateMaximumBitRateUL,
       { "uEAggregateMaximumBitRateUL", "ngap.uEAggregateMaximumBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_UEAppLayerMeasInfoList_item,
       { "UEAppLayerMeasInfoItem", "ngap.UEAppLayerMeasInfoItem_element",
@@ -38354,11 +38365,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_uESliceMaximumBitRateDL,
       { "uESliceMaximumBitRateDL", "ngap.uESliceMaximumBitRateDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_uESliceMaximumBitRateUL,
       { "uESliceMaximumBitRateUL", "ngap.uESliceMaximumBitRateUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_bit_sec, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_sec), 0,
         "BitRate", HFILL }},
     { &hf_ngap_ul_NAS_MAC,
       { "ul-NAS-MAC", "ngap.ul_NAS_MAC",
@@ -38446,11 +38457,11 @@ void proto_register_ngap(void) {
         NULL, HFILL }},
     { &hf_ngap_usageCountUL,
       { "usageCountUL", "ngap.usageCountUL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_ngap_usageCountDL,
       { "usageCountDL", "ngap.usageCountDL",
-        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, &units_octet_octets, 0,
+        FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_octet_octets), 0,
         "INTEGER_0_18446744073709551615", HFILL }},
     { &hf_ngap_w_AGF_ID,
       { "w-AGF-ID", "ngap.w_AGF_ID",
@@ -38603,6 +38614,7 @@ void proto_register_ngap(void) {
     &ett_ngap_GlobalCable_ID,
     &ett_ngap_UpdateFeedback,
     &ett_ngap_successfulHOReportContainer,
+    &ett_ngap_successfulPSCellChangeReportContainer,
     &ett_ngap_PrivateIE_ID,
     &ett_ngap_ProtocolIE_Container,
     &ett_ngap_ProtocolIE_Field,

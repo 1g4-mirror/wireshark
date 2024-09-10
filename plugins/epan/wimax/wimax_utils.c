@@ -20,7 +20,10 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include "wimax-int.h"
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 #include "wimax_tlv.h"
 #include "wimax_mac.h"
 #include "wimax_prefs.h"
@@ -738,15 +741,15 @@ void wimax_proto_register_wimax_utility_decoders(void)
 		},
 		{	/* 7 Maximum Sustained Traffic Rate */
 			&hf_sfe_max_str,
-			{"Maximum Sustained Traffic Rate", "wmx.sfe.msr", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_bit_sec, 0x0, NULL, HFILL}
+			{"Maximum Sustained Traffic Rate", "wmx.sfe.msr", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_bit_sec), 0x0, NULL, HFILL}
 		},
 		{	/* 8 Maximum Traffic Burst */
 			&hf_sfe_max_traffic_burst,
-			{"Maximum Traffic Burst", "wmx.sfe.max_traffic_burst", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_byte_bytes, 0x0, NULL, HFILL}
+			{"Maximum Traffic Burst", "wmx.sfe.max_traffic_burst", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_byte_bytes), 0x0, NULL, HFILL}
 		},
 		{	/* 9 Minimum Reserved Traffic Rate */
 			&hf_sfe_min_rtr,
-			{"Minimum Reserved Traffic Rate", "wmx.sfe.mrr", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_bit_sec, 0x0, NULL, HFILL}
+			{"Minimum Reserved Traffic Rate", "wmx.sfe.mrr", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_bit_sec), 0x0, NULL, HFILL}
 		},
 		{
 			/* 10 Reserved */
@@ -801,11 +804,11 @@ void wimax_proto_register_wimax_utility_decoders(void)
 		},
 		{	/* 13 Tolerated Jitter */
 			&hf_sfe_jitter,
-			{"Tolerated Jitter", "wmx.sfe.jitter", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL}
+			{"Tolerated Jitter", "wmx.sfe.jitter", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL}
 		},
 		{	/* 14 Maximum Latency */
 			&hf_sfe_max_latency,
-			{"Maximum Latency", "wmx.sfe.max_latency", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL}
+			{"Maximum Latency", "wmx.sfe.max_latency", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL}
 		},
 		{	/* 15 Fixed/Variable Length SDU */
 			&hf_sfe_fixed_len_sdu,
@@ -813,7 +816,7 @@ void wimax_proto_register_wimax_utility_decoders(void)
 		},
 		{	/* 16 SDU Size */
 			&hf_sfe_sdu_size,
-			{"SDU Size", "wmx.sfe.sdu_size", FT_UINT8, BASE_DEC|BASE_UNIT_STRING, &wimax_units_byte_bytes, 0x0, NULL, HFILL}
+			{"SDU Size", "wmx.sfe.sdu_size", FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_byte_bytes), 0x0, NULL, HFILL}
 		},
 		{	/* 17 SAID Onto Which SF Is Mapped */
 			&hf_sfe_target_said,
@@ -898,7 +901,7 @@ void wimax_proto_register_wimax_utility_decoders(void)
 		},
 			{	/* 31 Time Base */
 			&hf_sfe_time_base,
-			{"Time Base", "wmx.sfe.time_base", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL}
+			{"Time Base", "wmx.sfe.time_base", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL}
 		},
 			{	/* 32 Paging Preference */
 			&hf_sfe_paging_preference,
@@ -942,11 +945,11 @@ void wimax_proto_register_wimax_utility_decoders(void)
 		},
 			{	/* 40 Unsolicited Grant Interval */
 			&hf_sfe_unsolicited_grant_interval,
-			{"Unsolicited Grant Interval", "wmx.sfe.unsolicited_grant_interval", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL}
+			{"Unsolicited Grant Interval", "wmx.sfe.unsolicited_grant_interval", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL}
 		},
 			{	/* 41 Unsolicited Polling Interval */
 			&hf_sfe_unsolicited_polling_interval,
-			{"Unsolicited Polling Interval", "wmx.sfe.unsolicited_polling_interval", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, &wimax_units_ms, 0x0, NULL, HFILL}
+			{"Unsolicited Polling Interval", "wmx.sfe.unsolicited_polling_interval", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&wimax_units_ms), 0x0, NULL, HFILL}
 		},
 		{	/* 42 PDU SN extended subheader for HARQ reordering */
 			&hf_sfe_pdu_sn_ext_subheader_reorder,
@@ -2216,7 +2219,7 @@ void wimax_service_flow_encodings_decoder(tvbuff_t *tvb, packet_info *pinfo, pro
 			break;
 			case SFE_UL_SCHEDULING:
 				/* TODO: Find a way to get the correct service type from the TLV */
-				tlv_value = tvb_get_guint8(tvb, offset);
+				tlv_value = tvb_get_uint8(tvb, offset);
 				set_service_type( tlv_value );
 				add_tlv_subtree(&tlv_info, tree, hf_sfe_ul_grant_scheduling, tvb, offset-tlv_value_offset, ENC_BIG_ENDIAN);
 			break;
@@ -2244,7 +2247,7 @@ void wimax_service_flow_encodings_decoder(tvbuff_t *tvb, packet_info *pinfo, pro
 			break;
 			case SFE_SDU_SIZE:
 				/* save the SDU size */
-				mac_sdu_length = tvb_get_guint8(tvb, offset);
+				mac_sdu_length = tvb_get_uint8(tvb, offset);
 				add_tlv_subtree(&tlv_info, tree, hf_sfe_sdu_size, tvb, offset-tlv_value_offset, ENC_BIG_ENDIAN);
 			break;
 			case SFE_TARGET_SAID:
@@ -2308,7 +2311,7 @@ void wimax_service_flow_encodings_decoder(tvbuff_t *tvb, packet_info *pinfo, pro
 					tlv_item = add_tlv_subtree(&tlv_info, tree, hf_sfe_arq_block_size_cor2, tvb, offset-tlv_value_offset, ENC_BIG_ENDIAN);
 					/* add TLV subtree */
 					tlv_tree = proto_item_add_subtree(tlv_item, ett_wimax_service_flow_encodings);
-					value = tvb_get_guint8(tvb, offset);
+					value = tvb_get_uint8(tvb, offset);
 					tlv_item = proto_tree_add_item(tlv_tree, hf_sfe_arq_min_block_size, tvb, offset, 1, ENC_BIG_ENDIAN);
 					/* Size is 2^((value & 0x0F) + 4)) */
 					proto_item_append_text(tlv_item, " ( %d bytes )", 0x10 << (value & 0x0F));
@@ -3344,7 +3347,7 @@ unsigned wimax_common_tlv_encoding_decoder(tvbuff_t *tvb, packet_info *pinfo, pr
 			break;
 			case CURRENT_TX_POWER:
 				tlv_tree = add_tlv_subtree_no_item(&tlv_info, tree, hf_common_current_transmitted_power, tvb, offset-tlv_value_offset);
-				value = tvb_get_guint8(tvb, offset);
+				value = tvb_get_uint8(tvb, offset);
 				current_power = (float)((value - 128) / 2.0);
 				proto_tree_add_float_format_value(tlv_tree, hf_common_current_transmitted_power, tvb, offset, tvb_len, current_power, "%.2f dBm (Value: 0x%x)", current_power, value);
 			break;

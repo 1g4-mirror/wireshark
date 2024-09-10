@@ -483,7 +483,7 @@ int main(int argc, char *qt_argv[])
     char                *rf_path;
     int                  rf_open_errno;
 #ifdef HAVE_LIBPCAP
-    char                *err_str, *err_str_secondary;;
+    char                *err_str, *err_str_secondary;
 #else
 #ifdef _WIN32
 #ifdef HAVE_AIRPCAP
@@ -880,6 +880,11 @@ int main(int argc, char *qt_argv[])
 #endif
     splash_update(RA_EXTCAP, NULL, NULL);
     extcap_register_preferences();
+
+    /* Apply the extcap command line options now that the extcap preferences
+     * are loaded.
+     */
+    commandline_options_apply_extcap();
 
     /* Some of the preferences affect the capture options. Apply those
      * before getting the other command line arguments, which can also
