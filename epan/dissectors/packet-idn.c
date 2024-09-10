@@ -21,6 +21,8 @@
 #include <epan/packet.h>
 #include <epan/conversation.h>
 
+#include <wsutil/array.h>
+
 #define IDN_PORT 7255
 
 #define MAX_CHANNELS	512
@@ -95,17 +97,16 @@
 #define IDNO_VOID_AREA	0xF
 
 typedef struct {
-	gboolean has_config_header;
-	gboolean is_dmx;
-	guint16 total_size;
-	guint8 channel_id;
-	guint8 chunk_type;
-	gboolean is_audio;
+	bool has_config_header;
+	bool is_dmx;
+	uint16_t total_size;
+	uint8_t channel_id;
+	uint8_t chunk_type;
 } message_info;
 
 typedef struct {
-	guint8 word_count;
-	guint8 sdm;
+	uint8_t word_count;
+	uint8_t sdm;
 	char *dic_precision;
 	char *sample_column_string;
 	int sample_size;
@@ -124,25 +125,22 @@ static dissector_handle_t idn_handle;
 
 static int proto_idn;
 
-static gint ett_idn;
-static gint ett_idn_header_tree;
-static gint ett_idn_scanreply_header_tree;
-static gint ett_idn_channel_message_header_tree;
-static gint ett_protocol_version;
-static gint ett_unit_id;
-static gint ett_status;
-static gint ett_idn_cnl;
-static gint ett_configuration_header;
-static gint ett_chunk_header_tree;
-static gint ett_chunk_header_flags;
-static gint ett_cfl;
-static gint ett_dic;
-static gint ett_dic_tree;
-static gint ett_data;
-static gint ett_subdata;
-static gint ett_dmx_subtree;
-static gint ett_audio_header;
-static gint ett_audio_samples;
+static int ett_idn;
+static int ett_idn_header_tree;
+static int ett_idn_scanreply_header_tree;
+static int ett_idn_channel_message_header_tree;
+static int ett_protocol_version;
+static int ett_status;
+static int ett_idn_cnl;
+static int ett_configuration_header;
+static int ett_chunk_header_tree;
+static int ett_chunk_header_flags;
+static int ett_cfl;
+static int ett_dic;
+static int ett_dic_tree;
+static int ett_data;
+static int ett_subdata;
+static int ett_dmx_subtree;
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -379,7 +377,7 @@ static const value_string format[] _U_={
 	{ 0x2, "24 Bit signed integer (three octets)" }
 };
 
-static int get_service_match(guint8 flags) {
+static int get_service_match(uint8_t flags) {
 	return flags >> 4;
 }
 
@@ -427,7 +425,7 @@ static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 	}
 }
 
-static void determine_color(guint16 catsub, configuration_info *config) {
+static void determine_color(uint16_t catsub, configuration_info *config) {
 	char *column_str = config->sample_column_string;
 	const int l = (const int)strlen(column_str);
 	switch(catsub) {
@@ -494,7 +492,7 @@ static configuration_info *get_configuration_info(packet_info *pinfo, int channe
 	return config;
 }
 
-static int dissect_idn_dmx_sample_values(tvbuff_t *tvb, int offset, proto_tree *idn_dmx_subtree, guint16 data_size, int base) {
+static int dissect_idn_dmx_sample_values(tvbuff_t *tvb, int offset, proto_tree *idn_dmx_subtree, uint16_t data_size, int base) {
 	int i, j, l;
 	short int rest;
 	char values[MAX_BUFFER];
@@ -502,7 +500,7 @@ static int dissect_idn_dmx_sample_values(tvbuff_t *tvb, int offset, proto_tree *
 	for(i=0; i+16<=data_size; i+=16) {
 		l = 0;
 		for(j=1; j<16; j++){
-			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_guint8(tvb, offset+j));
+			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_uint8(tvb, offset+j));
 		}
 		proto_tree_add_int_format(idn_dmx_subtree, hf_idn_gts_sample, tvb, offset, 16, 16, "%3d: %s", base+i, values);
 		offset += 16;
@@ -511,7 +509,7 @@ static int dissect_idn_dmx_sample_values(tvbuff_t *tvb, int offset, proto_tree *
 	if(rest > 0) {
 		l = 0;
 		for(j=0; j<rest; j++){
-			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_guint8(tvb, offset+j));
+			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_uint8(tvb, offset+j));
 		}
 		proto_tree_add_int_format(idn_dmx_subtree, hf_idn_gts_sample, tvb, offset, rest, rest, "%3d: %s", base+i, values);
 		offset += rest;
@@ -524,18 +522,18 @@ static void set_laser_sample_values_string(tvbuff_t *tvb, int offset, configurat
 	int l = 0;
 
 	if((config->dic_precision)[2] == 1)
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_guint16(tvb, offset, 2));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint16(tvb, offset, 2));
 	else
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_guint8(tvb, offset));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint8(tvb, offset));
 
 	for(i=1; i<config->sample_size && (l < MAX_BUFFER-100); i++){
 		if((config->dic_precision)[i+1] == 1) {
 			//do nothing
 		}else if((config->dic_precision)[i+2] == 1) {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_guint16(tvb, offset+i, 2));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint16(tvb, offset+i, 2));
 			i++;
 		}else {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_guint8(tvb, offset+i));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint8(tvb, offset+i));
 		}
 	}
 }
@@ -551,7 +549,7 @@ static int dissect_idn_octet_segment(tvbuff_t *tvb, int offset, proto_tree *idn_
 	for(i=0; i+16<=data_size; i+=16) {
 		l = 0;
 		for(j=0; j<16 && (l < MAX_BUFFER-100); j++){
-			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_gint8(tvb, offset+j));
+			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_int8(tvb, offset+j));
 		}
 		proto_tree_add_int_format(idn_samples_tree, hf_idn_gts_sample, tvb, offset, 16, 16, "%s", values);
 		offset += 16;
@@ -560,7 +558,7 @@ static int dissect_idn_octet_segment(tvbuff_t *tvb, int offset, proto_tree *idn_
 	if(rest > 0) {
 		l = 0;
 		for(j=0; j<rest && (l < MAX_BUFFER-100); j++){
-			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_gint8(tvb, offset+j));
+			l += snprintf(values+l, MAX_BUFFER-l, " %3d", tvb_get_int8(tvb, offset+j));
 		}
 		proto_tree_add_int_format(idn_samples_tree, hf_idn_gts_sample, tvb, offset, rest, rest, "%s", values);
 		offset += rest;
@@ -573,7 +571,7 @@ static int dissect_idn_dmx_data(tvbuff_t *tvb, packet_info *pinfo, int offset, p
 	int *count = config->count;
 	int *base = config->base;
 	int base_value;
-	guint16 data_size = tvb_reported_length_remaining(tvb, offset);
+	int data_size = tvb_reported_length_remaining(tvb, offset);
 	proto_tree *idn_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, data_size, ett_data, NULL, "Channels");
 	proto_tree *idn_dmx_subtree;
 
@@ -760,17 +758,17 @@ static int dissect_idn_dmx_gts(tvbuff_t *tvb, int offset, proto_tree *gts_tree, 
 }
 
 static int dissect_idn_dimmer_level_subset(tvbuff_t *tvb, int offset, proto_tree *gts_tree, configuration_info *config, int i, int *dictionary_size) {
-	guint8 dls = tvb_get_guint8(tvb, offset);
+	uint8_t dls = tvb_get_uint8(tvb, offset);
 	offset = dissect_idn_dmx_gts(tvb, offset, gts_tree, hf_idn_dmx_dls, dictionary_size);
 
 	if(dls & 2) {
 		proto_tree_add_item(gts_tree, hf_idn_dmx_base, tvb, offset, 2, ENC_BIG_ENDIAN);
-		config->base[i-1] = tvb_get_guint16(tvb, offset, 2);
+		config->base[i-1] = tvb_get_uint16(tvb, offset, 2);
 		offset += 2;
 		(*dictionary_size) += 2;
 		if(dls & 1) {
 			proto_tree_add_item(gts_tree, hf_idn_dmx_count, tvb, offset, 1, ENC_BIG_ENDIAN);
-			config->count[i-1] = tvb_get_guint8(tvb, offset);
+			config->count[i-1] = tvb_get_uint8(tvb, offset);
 			offset++;
 			(*dictionary_size)++;
 		}else {
@@ -783,13 +781,13 @@ static int dissect_idn_dimmer_level_subset(tvbuff_t *tvb, int offset, proto_tree
 
 static int dissect_idn_dmx_dictionary(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config) {
 	int i, j, curr_size;
-	gboolean words_found = 0;
+	bool words_found = 0;
 	int dictionary_size = 0;
-	guint8 idepar; /* idetifier + parameter */
+	uint8_t idepar; /* idetifier + parameter */
 	proto_tree *gts_tree = proto_tree_add_subtree(idn_tree, tvb, offset, -1, ett_dic_tree, NULL, "Dictionary");
 
 	for(i=1; i<=config->word_count; i++) {
-		idepar = tvb_get_guint8(tvb, offset);
+		idepar = tvb_get_uint8(tvb, offset);
 
 		if(idepar <= IDNO_VOID_AREA) {
 			if(idepar == 0) {
@@ -830,7 +828,7 @@ static int dissect_idn_dmx_dictionary(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
-static int dissect_idn_laser_gts(tvbuff_t *tvb, int offset, proto_tree *gts_tree, const int hf_hdr, int *dictionary_size, configuration_info *config, gboolean is_sample) {
+static int dissect_idn_laser_gts(tvbuff_t *tvb, int offset, proto_tree *gts_tree, const int hf_hdr, int *dictionary_size, configuration_info *config, bool is_sample) {
 	static int * const gts[] = {
 		&hf_idn_gts_category,
 		&hf_idn_gts_subcategory,
@@ -849,7 +847,7 @@ static int dissect_idn_laser_gts(tvbuff_t *tvb, int offset, proto_tree *gts_tree
 	return offset + 2;
 }
 
-static int dissect_idn_x_area(tvbuff_t *tvb, int offset, proto_tree *gts_tree, guint16 catsub, int *dictionary_size, configuration_info *config) {
+static int dissect_idn_x_area(tvbuff_t *tvb, int offset, proto_tree *gts_tree, uint16_t catsub, int *dictionary_size, configuration_info *config) {
 	char *column_str = config->sample_column_string;
 	const int l = (const int)strlen(column_str);
 
@@ -868,12 +866,12 @@ static int dissect_idn_laser_dictionary(tvbuff_t *tvb, int offset, proto_tree *i
 	int i, j;
 	int dictionary_size = 0;
 	char *column_str = config->sample_column_string;
-	guint16 catsub; /* category + subcategory */
+	uint16_t catsub; /* category + subcategory */
 	proto_tree *gts_tree = proto_tree_add_subtree(idn_tree, tvb, offset, -1, ett_dic_tree, NULL, "Dictionary");
 
 	snprintf(column_str, MAX_BUFFER, "(");
 	for(i=1; i<=config->word_count*2; i++) {
-		catsub = tvb_get_guint16(tvb, offset, 2);
+		catsub = tvb_get_uint16(tvb, offset, 2);
 		const int l = (const int)strlen(column_str);
 
 		if(catsub <= IDNO_VOID_AREA) {
@@ -930,8 +928,8 @@ static int dissect_idn_laser_dictionary(tvbuff_t *tvb, int offset, proto_tree *i
 
 static int dissect_idn_channel_configuration_header(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *idn_tree, int channel_id, configuration_info **config_p) {
 	conversation_t *conv;
-	guint8 word_count;
-	guint8 sdm;
+	uint8_t word_count;
+	uint8_t sdm;
 	static int * const channel_and_service_configuration_flags[] = {
 		&hf_idn_two_bits_reserved_1,
 		&hf_idn_sdm,
@@ -944,10 +942,10 @@ static int dissect_idn_channel_configuration_header(tvbuff_t *tvb, packet_info *
 	col_append_str(pinfo->cinfo, COL_INFO, " (Configuration Header)");
 	proto_tree *configuration_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_configuration_header, NULL, "Channel Configuration Header");
 	proto_tree_add_item(configuration_header_tree, hf_idn_scwc, tvb, offset, 1, ENC_BIG_ENDIAN);
-	word_count = tvb_get_guint8(tvb, offset);
+	word_count = tvb_get_uint8(tvb, offset);
 	offset += 1;
 	proto_tree_add_bitmask(configuration_header_tree, tvb, offset, hf_idn_cfl, ett_cfl, channel_and_service_configuration_flags, ENC_BIG_ENDIAN);
-	sdm = get_service_match(tvb_get_guint8(tvb, offset));
+	sdm = get_service_match(tvb_get_uint8(tvb, offset));
 	offset += 1;
 	proto_tree_add_item(configuration_header_tree, hf_idn_service_id, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
@@ -1026,7 +1024,7 @@ static int dissect_idn_channel_configuration(tvbuff_t *tvb, packet_info *pinfo, 
 }
 
 static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, message_info *minfo) {
-	guint8 cnl;
+	uint8_t cnl;
 	static int * const cnl_data[] = {
 			&hf_idn_most_significant_bit_cnl,
 			&hf_idn_cclf,
@@ -1036,17 +1034,17 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 
 	proto_tree *idn_channel_message_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 8, ett_idn_channel_message_header_tree, NULL, "Channel Message Header");
 	proto_tree_add_item(idn_channel_message_header_tree, hf_idn_total_size, tvb, offset, 2, ENC_BIG_ENDIAN);
-	minfo->total_size = tvb_get_guint16(tvb, offset, 2);
+	minfo->total_size = tvb_get_uint16(tvb, offset, 2);
 	offset += 2;
 	proto_tree_add_bitmask(idn_channel_message_header_tree, tvb, offset, hf_idn_cnl, ett_idn_cnl, cnl_data, ENC_BIG_ENDIAN);
 
-	cnl = tvb_get_guint8(tvb, offset);
+	cnl = tvb_get_uint8(tvb, offset);
 	minfo->has_config_header = cnl & 0x40;
 	minfo->channel_id = cnl & 0x3f;
 
 	offset += 1;
 	proto_tree_add_item(idn_channel_message_header_tree, hf_idn_chunk_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-	minfo->chunk_type = tvb_get_guint8(tvb, offset);
+	minfo->chunk_type = tvb_get_uint8(tvb, offset);
 	offset += 1;
 	proto_tree_add_item(idn_channel_message_header_tree, hf_idn_timestamp, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
@@ -1316,7 +1314,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 		}
 
 		if(minfo->chunk_type != IDNCT_VOID && minfo->chunk_type != IDNCT_LP_FRAME_SF && minfo->chunk_type != IDNCT_AUDIO_WAVE_SAMPLE) {
-			scm = get_service_match(tvb_get_guint8(tvb, offset));
+			scm = get_service_match(tvb_get_uint8(tvb, offset));
 
 			offset = dissect_idn_chunk_header(tvb, offset, idn_tree, minfo);
 
@@ -1342,9 +1340,9 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 }
 
 static int dissect_idn_servicemap_entry(tvbuff_t *tvb, int offset, proto_tree *idn_tree) {
-	guint8 service_id = tvb_get_guint8(tvb, offset);
+	uint8_t service_id = tvb_get_uint8(tvb, offset);
 	proto_tree *idn_servicemap_entry_tree = NULL;
-	gchar *name = (gchar *)tvb_get_string_enc(wmem_file_scope(), tvb, offset+4, 20, ENC_ASCII);
+	char *name = (char *)tvb_get_string_enc(wmem_file_scope(), tvb, offset+4, 20, ENC_ASCII);
 
 	char tree_title[MAX_BUFFER];
 	if(service_id == 0) {
@@ -1368,24 +1366,24 @@ static int dissect_idn_servicemap_entry(tvbuff_t *tvb, int offset, proto_tree *i
 	return offset;
 }
 
-static int dissect_idn_servicemap_response_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, guint8 *relay_count, guint8 *service_count) {
+static int dissect_idn_servicemap_response_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, uint8_t *relay_count, uint8_t *service_count) {
 	proto_tree *idn_servicemap_response_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_idn_header_tree, NULL, "Service Map Response Header");
 	proto_tree_add_item(idn_servicemap_response_header_tree, hf_idn_struct_size, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 	proto_tree_add_item(idn_servicemap_response_header_tree, hf_idn_entry_size, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	*relay_count = tvb_get_guint8(tvb, offset);
+	*relay_count = tvb_get_uint8(tvb, offset);
 	proto_tree_add_item(idn_servicemap_response_header_tree, hf_idn_relay_count, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	*service_count = tvb_get_guint8(tvb, offset);
+	*service_count = tvb_get_uint8(tvb, offset);
 	proto_tree_add_item(idn_servicemap_response_header_tree, hf_idn_service_count, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 	return offset;
 }
 
 static int dissect_idn_servicemap_response(tvbuff_t *tvb, int offset, proto_tree *idn_tree) {
-	guint8 relay_count, service_count;
-	guint16 map_entries_size;
+	uint8_t relay_count, service_count;
+	uint16_t map_entries_size;
 
 	offset = dissect_idn_servicemap_response_header(tvb, offset, idn_tree, &relay_count, &service_count);
 	map_entries_size = relay_count + service_count;
@@ -1435,7 +1433,7 @@ static int dissect_idn_scan_response(tvbuff_t *tvb, int offset, proto_tree *idn_
 	return offset;
 }
 
-static int dissect_idn_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, guint8 packet_type) {
+static int dissect_idn_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, uint8_t packet_type) {
 	proto_tree *idn_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, -1, ett_idn_header_tree, NULL, "IDN Header");
 	proto_tree_add_item(idn_header_tree, hf_idn_command, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
@@ -1452,8 +1450,8 @@ static int dissect_idn_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, g
 }
 
 static int dissect_idn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-	gint offset = 0;
-	guint8 packet_type = tvb_get_guint8(tvb, 0);
+	int offset = 0;
+	uint8_t packet_type = tvb_get_uint8(tvb, 0);
 	proto_item *ti = proto_tree_add_item(tree, proto_idn, tvb, 0, -1, ENC_NA);
 	proto_tree *idn_tree = proto_item_add_subtree(ti, ett_idn);
 
@@ -2152,7 +2150,7 @@ void proto_register_idn(void) {
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_idn,
 		&ett_idn_header_tree,
 		&ett_idn_scanreply_header_tree,
