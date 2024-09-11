@@ -429,15 +429,9 @@ add_v1_string(proto_tree *tree, int hf, tvbuff_t *tvb, int offset, int length,
  * XXX - this is also used with CHARSET_UTF_8.  Is that a cut-and-pasteo?
  */
 static const uint8_t*
-<<<<<<< HEAD
-unicode_to_bytes(tvbuff_t *tvb, int offset, int length, bool endianness)
-{
-    const uint8_t *ascii_text = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, length, ENC_ASCII);
-=======
 unicode_to_bytes(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length, bool endianness)
 {
     const uint8_t *ascii_text = tvb_get_string_enc(scope, tvb, offset, length, ENC_ASCII);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     int           i, j       = 0;
     uint8_t       c_char, c_char1;
     uint8_t      *byte_array;
@@ -447,11 +441,7 @@ unicode_to_bytes(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length,
         return "";
 
     if (endianness) {
-<<<<<<< HEAD
-        byte_array = (uint8_t *)wmem_alloc(wmem_packet_scope(), length*2 + 1);
-=======
         byte_array = (uint8_t *)wmem_alloc(scope, length*2 + 1);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         for (i = length; i > 0; i--) {
             c_char = ascii_text[i];
             if (c_char != 0) {
@@ -474,11 +464,7 @@ unicode_to_bytes(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length,
     }
     else
     {
-<<<<<<< HEAD
-        byte_array = (uint8_t *)wmem_alloc(wmem_packet_scope(), length + 1);
-=======
         byte_array = (uint8_t *)wmem_alloc(scope, length + 1);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         for (i = 0; i < length; i++) {
             c_char = ascii_text[i];
             if (c_char != 0) {
@@ -576,11 +562,7 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
                         }
                         else
                         {
-<<<<<<< HEAD
-                            byte_value = unicode_to_bytes(tvb, foffset, 4, false); /* UDP */
-=======
                             byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 4, false); /* UDP */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                             prot = (uint32_t)strtoul(byte_value, NULL, 10);
                             proto_tree_add_uint(srvloc_tree, hf_srvloc_protocol, tvb, foffset, 4, prot);
                             foffset += 4;
@@ -588,45 +570,23 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
                     }
                     else
                     {
-<<<<<<< HEAD
-                        byte_value = unicode_to_bytes(tvb, foffset, 8, false); /* IPX */
-=======
                         byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 8, false); /* IPX */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                         prot = (uint32_t)strtoul(byte_value, NULL, 10);
                         ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_protocol, tvb, foffset, 4, prot);
                         proto_item_set_len(ti, 8);
                         foffset += 8;
                     }
                     if (svc == 50) {
-<<<<<<< HEAD
-                        byte_value = unicode_to_bytes(tvb, foffset, 16, true); /* IP Address */
-                        prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                        proto_tree_add_ipv4(srvloc_tree, hf_srvloc_add_ref_ip, tvb, foffset+2, 16, prot);
-                        byte_value = unicode_to_bytes(tvb, foffset+18, 8, false); /* Port */
-=======
                         byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 16, true); /* IP Address */
                         prot = (uint32_t)strtoul(byte_value, NULL, 16);
                         proto_tree_add_ipv4(srvloc_tree, hf_srvloc_add_ref_ip, tvb, foffset+2, 16, prot);
                         byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+18, 8, false); /* Port */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                         prot = (uint32_t)strtoul(byte_value, NULL, 16);
                         ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_port, tvb, foffset+18, 4, prot);
                         proto_item_set_len(ti, 8);
                     }
                     else
                     {
-<<<<<<< HEAD
-                        byte_value = unicode_to_bytes(tvb, foffset+2, 16, false); /* IPX Network Address */
-                        prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                        ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_network, tvb, foffset+2, 4, prot);
-                        proto_item_set_len(ti, 16);
-                        byte_value = unicode_to_bytes(tvb, foffset+18, 24, false); /* IPX Node Address */
-                        prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                        ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_node, tvb, foffset+18, 4, prot);
-                        proto_item_set_len(ti, 24);
-                        byte_value = unicode_to_bytes(tvb, foffset+42, 8, false);  /* Socket */
-=======
                         byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+2, 16, false); /* IPX Network Address */
                         prot = (uint32_t)strtoul(byte_value, NULL, 16);
                         ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_network, tvb, foffset+2, 4, prot);
@@ -636,7 +596,6 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
                         ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_node, tvb, foffset+18, 4, prot);
                         proto_item_set_len(ti, 24);
                         byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+42, 8, false);  /* Socket */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                         prot = (uint32_t)strtoul(byte_value, NULL, 16);
                         ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_socket, tvb, foffset+42, 4, prot);
                         proto_item_set_len(ti, 8);
@@ -655,13 +614,8 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
         break;
 
     case CHARSET_UTF_8:
-<<<<<<< HEAD
-        type_len = (int)strcspn(tvb_get_string_enc(wmem_packet_scope(), tvb, offset, length, ENC_ASCII), "=");
-        attr_type = unicode_to_bytes(tvb, offset+1, type_len-1, false);
-=======
         type_len = (int)strcspn(tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII), "=");
         attr_type = unicode_to_bytes(pinfo->pool, tvb, offset+1, type_len-1, false);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         proto_tree_add_string(tree, hf, tvb, offset+1, type_len-1, attr_type);
         i=1;
         for (foffset = offset + (type_len); foffset<length; foffset++) {
@@ -680,11 +634,7 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
                 else
                 {
                     /* UDP */
-<<<<<<< HEAD
-                    byte_value = unicode_to_bytes(tvb, foffset, 2, false); /* UDP */
-=======
                     byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 2, false); /* UDP */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                     prot = (uint32_t)strtoul(byte_value, NULL, 10);
                     proto_tree_add_uint(srvloc_tree, hf_srvloc_protocol, tvb, foffset, 2, prot);
                     foffset += 2;
@@ -692,43 +642,21 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
             }
             else
             {
-<<<<<<< HEAD
-                byte_value = unicode_to_bytes(tvb, foffset, 4, false); /* IPX */
-=======
                 byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 4, false); /* IPX */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                 prot = (uint32_t)strtoul(byte_value, NULL, 10);
                 proto_tree_add_uint(srvloc_tree, hf_srvloc_protocol, tvb, foffset, 4, prot);
                 foffset += 4;
             }
             if (svc == 50) {
-<<<<<<< HEAD
-                byte_value = unicode_to_bytes(tvb, foffset, 8, true); /* IP Address */
-                prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                proto_tree_add_ipv4(srvloc_tree, hf_srvloc_add_ref_ip, tvb, foffset+1, 8, prot);
-                byte_value = unicode_to_bytes(tvb, foffset+9, 4, false); /* Port */
-=======
                 byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset, 8, true); /* IP Address */
                 prot = (uint32_t)strtoul(byte_value, NULL, 16);
                 proto_tree_add_ipv4(srvloc_tree, hf_srvloc_add_ref_ip, tvb, foffset+1, 8, prot);
                 byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+9, 4, false); /* Port */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                 prot = (uint32_t)strtoul(byte_value, NULL, 16);
                 proto_tree_add_uint(srvloc_tree, hf_srvloc_port, tvb, foffset+9, 4, prot);
             }
             else
             {
-<<<<<<< HEAD
-                byte_value = unicode_to_bytes(tvb, foffset+1, 8, false); /* IPX Network Address */
-                prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_network, tvb, foffset+1, 4, prot);
-                proto_item_set_len(ti, 8);
-                byte_value = unicode_to_bytes(tvb, foffset+9, 12, false); /* IPX Node Address */
-                prot = (uint32_t)strtoul(byte_value, NULL, 16);
-                ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_node, tvb, foffset+9, 4, prot);
-                proto_item_set_len(ti, 12);
-                byte_value = unicode_to_bytes(tvb, foffset+21, 4, false);  /* Socket */
-=======
                 byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+1, 8, false); /* IPX Network Address */
                 prot = (uint32_t)strtoul(byte_value, NULL, 16);
                 ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_network, tvb, foffset+1, 4, prot);
@@ -738,7 +666,6 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
                 ti = proto_tree_add_uint(srvloc_tree, hf_srvloc_node, tvb, foffset+9, 4, prot);
                 proto_item_set_len(ti, 12);
                 byte_value = unicode_to_bytes(pinfo->pool, tvb, foffset+21, 4, false);  /* Socket */
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                 prot = (uint32_t)strtoul(byte_value, NULL, 16);
                 proto_tree_add_uint(srvloc_tree, hf_srvloc_socket, tvb, foffset+21, 4, prot);
             }
@@ -756,11 +683,7 @@ attr_list(proto_tree *tree, packet_info* pinfo, int hf, tvbuff_t *tvb, int offse
 }
 
 static void
-<<<<<<< HEAD
-attr_list2(proto_tree *tree, int hf, tvbuff_t *tvb, int offset, int length, uint16_t encoding _U_)
-=======
 attr_list2(packet_info *pinfo, proto_tree *tree, int hf, tvbuff_t *tvb, int offset, int length, uint16_t encoding _U_)
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 {
     uint8_t     *start;
     uint8_t      c;

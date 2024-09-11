@@ -1744,11 +1744,7 @@ ssh_dissect_protocol(tvbuff_t *tvb, packet_info *pinfo,
     // V_C / V_S (client and server identification strings) RFC4253 4.2
     // format: SSH-protoversion-softwareversion SP comments [CR LF not incl.]
     if (!PINFO_FD_VISITED(pinfo)) {
-<<<<<<< HEAD
-        char *data = (char *)tvb_memdup(wmem_packet_scope(), tvb, offset, protolen);
-=======
         char *data = (char *)tvb_memdup(pinfo->pool, tvb, offset, protolen);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         if(!is_response){
             ssh_hash_buffer_put_string(global_data->kex_client_version, data, protolen);
         }else{
@@ -1986,11 +1982,7 @@ ssh_dissect_key_init(tvbuff_t *tvb, packet_info *pinfo, int offset,
 
     // I_C / I_S (client and server SSH_MSG_KEXINIT payload) RFC4253 4.2
     if (!PINFO_FD_VISITED(pinfo)) {
-<<<<<<< HEAD
-        char *data = (char *)wmem_alloc(wmem_packet_scope(), payload_length + 1);
-=======
         char *data = (char *)wmem_alloc(pinfo->pool, payload_length + 1);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         tvb_memcpy(tvb, data + 1, start_offset, payload_length);
         data[0] = SSH_MSG_KEXINIT;
         if(is_response){
@@ -3530,11 +3522,7 @@ ssh_tree_add_mac(proto_tree *tree, tvbuff_t *tvb, const unsigned offset, const u
                     if (bad_checksum_expert != NULL)
                         expert_add_info_format(pinfo, ti, bad_checksum_expert, "%s", expert_get_summary(bad_checksum_expert));
                 } else {
-<<<<<<< HEAD
-                    char *data = (char *)wmem_alloc(wmem_packet_scope(), mac_len*2 + 1);
-=======
                     char *data = (char *)wmem_alloc(pinfo->pool, mac_len*2 + 1);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                     *bytes_to_hexstr(data, calc_mac, mac_len) = 0;
                     proto_item_append_text(ti, " incorrect, computed %s", data);
                     if (bad_checksum_expert != NULL)
@@ -3821,11 +3809,7 @@ ssh_dissect_rfc8308_extension(tvbuff_t *packet_tvb, packet_info *pinfo,
 {
     (void)pinfo;
     unsigned ext_name_slen = tvb_get_ntohl(packet_tvb, offset);
-<<<<<<< HEAD
-    uint8_t *ext_name = tvb_get_string_enc(wmem_packet_scope(), packet_tvb, offset + 4, ext_name_slen, ENC_ASCII);
-=======
     uint8_t *ext_name = tvb_get_string_enc(pinfo->pool, packet_tvb, offset + 4, ext_name_slen, ENC_ASCII);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     unsigned ext_value_slen = tvb_get_ntohl(packet_tvb, offset + 4 + ext_name_slen);
     unsigned ext_len = 8 + ext_name_slen + ext_value_slen;
     proto_item *ext_tree = proto_tree_add_subtree_format(msg_type_tree, packet_tvb, offset, ext_len, ett_extension, NULL, "Extension: %s", ext_name);
@@ -3906,11 +3890,7 @@ ssh_dissect_userauth_generic(tvbuff_t *packet_tvb, packet_info *pinfo,
                 proto_tree_add_item(msg_type_tree, hf_ssh_userauth_method_name, packet_tvb, offset, slen, ENC_ASCII);
 
                 uint8_t* key_type;
-<<<<<<< HEAD
-                key_type = tvb_get_string_enc(wmem_packet_scope(), packet_tvb, offset, slen, ENC_ASCII|ENC_NA);
-=======
                 key_type = tvb_get_string_enc(pinfo->pool, packet_tvb, offset, slen, ENC_ASCII|ENC_NA);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                 offset += slen;
                 if (0 == strcmp(key_type, "none")) {
                 }else if (0 == strcmp(key_type, "publickey")) {

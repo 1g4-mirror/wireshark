@@ -2245,11 +2245,7 @@ dissect_sip_reason_header(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, i
         return;
 
     length = semi_colon_offset - current_offset;
-<<<<<<< HEAD
-    proto_tree_add_item_ret_string(tree, hf_sip_reason_protocols, tvb, start_offset, length, ENC_UTF_8|ENC_NA, wmem_packet_scope(), &param_name);
-=======
     proto_tree_add_item_ret_string(tree, hf_sip_reason_protocols, tvb, start_offset, length, ENC_UTF_8|ENC_NA, pinfo->pool, &param_name);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     current_offset = tvb_find_uint8(tvb, semi_colon_offset, line_end_offset - semi_colon_offset, '=') + 1;
     /* Do we have a text parameter too? */
     semi_colon_offset = tvb_find_uint8(tvb, current_offset, line_end_offset - current_offset, ';');

@@ -16,10 +16,7 @@
 
 #include <ws_symbol_export.h>
 #include <epan/tvbuff.h>
-<<<<<<< HEAD
-=======
 #include "packet-bpv7.h"
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
 #ifdef __cplusplus
 extern "C" {

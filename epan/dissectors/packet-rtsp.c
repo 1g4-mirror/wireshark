@@ -1163,11 +1163,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                 }
 
                 media_type_str_lower_case = ascii_strdown_inplace(
-<<<<<<< HEAD
-                    (char *)tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_len, ENC_ASCII));
-=======
                     (char *)tvb_get_string_enc(pinfo->pool, tvb, offset, value_len, ENC_ASCII));
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
             } else if (HDR_MATCHES(rtsp_content_length))
             {
@@ -1383,11 +1379,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
 static void
 process_rtsp_request(tvbuff_t *tvb, int offset, const unsigned char *data,
-<<<<<<< HEAD
-                     size_t linelen, size_t next_line_offset, proto_tree *tree)
-=======
                      size_t linelen, size_t next_line_offset, packet_info *pinfo, proto_tree *tree)
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 {
     proto_tree   *sub_tree;
     proto_item   *ti;
@@ -1417,11 +1409,7 @@ process_rtsp_request(tvbuff_t *tvb, int offset, const unsigned char *data,
     /* Add a tree for this request */
     ti = proto_tree_add_string(tree, hf_rtsp_request, tvb, offset,
                               (int) (next_line_offset - offset),
-<<<<<<< HEAD
-                              tvb_format_text(wmem_packet_scope(), tvb, offset, (int) (next_line_offset - offset)));
-=======
                               tvb_format_text(pinfo->pool, tvb, offset, (int) (next_line_offset - offset)));
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     sub_tree = proto_item_add_subtree(ti, ett_rtsp_method);
 
 
@@ -1453,11 +1441,7 @@ process_rtsp_request(tvbuff_t *tvb, int offset, const unsigned char *data,
 /* Read first line of a reply message */
 static void
 process_rtsp_reply(tvbuff_t *tvb, int offset, const unsigned char *data,
-<<<<<<< HEAD
-    size_t linelen, size_t next_line_offset, proto_tree *tree)
-=======
     size_t linelen, size_t next_line_offset, packet_info *pinfo, proto_tree *tree)
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 {
     proto_tree   *sub_tree;
     proto_item   *ti;
@@ -1469,11 +1453,7 @@ process_rtsp_reply(tvbuff_t *tvb, int offset, const unsigned char *data,
     /* Add a tree for this request */
     ti = proto_tree_add_string(tree, hf_rtsp_response, tvb, offset,
                                (int) (next_line_offset - offset),
-<<<<<<< HEAD
-                               tvb_format_text(wmem_packet_scope(), tvb, offset, (int) (next_line_offset - offset)));
-=======
                                tvb_format_text(pinfo->pool, tvb, offset, (int) (next_line_offset - offset)));
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     sub_tree = proto_item_add_subtree(ti, ett_rtsp_method);
 
 

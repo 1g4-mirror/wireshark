@@ -64,11 +64,7 @@ static dissector_handle_t  sita_handle;
 #define REMOTE              "Remote"
 
 static const char *
-<<<<<<< HEAD
-format_flags_string(unsigned char value, const char *array[])
-=======
 format_flags_string(wmem_allocator_t *scope, unsigned char value, const char *array[])
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 {
     int         i;
     unsigned    bpos;

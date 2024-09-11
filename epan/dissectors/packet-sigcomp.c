@@ -941,11 +941,7 @@ sigcomp_cleanup_udvm(void) {
 }
 
 
-<<<<<<< HEAD
-static int udvm_state_access(tvbuff_t *tvb, proto_tree *tree,uint8_t *buff,uint16_t p_id_start, uint16_t p_id_length, uint16_t state_begin, uint16_t *state_length,
-=======
 static int udvm_state_access(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,uint8_t *buff,uint16_t p_id_start, uint16_t p_id_length, uint16_t state_begin, uint16_t *state_length,
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                              uint16_t *state_address, uint16_t *state_instruction,
                              int hf_id)
 {
@@ -1740,11 +1736,7 @@ decompress_sigcomp_message(tvbuff_t *bytecode_tvb, tvbuff_t *message_tvb, packet
 {
     tvbuff_t      *decomp_tvb;
     /* UDVM memory must be initialised to zero */
-<<<<<<< HEAD
-    uint8_t       *buff                       = (uint8_t *)wmem_alloc0(wmem_packet_scope(), UDVM_MEMORY_SIZE);
-=======
     uint8_t       *buff                       = (uint8_t *)wmem_alloc0(pinfo->pool, UDVM_MEMORY_SIZE);
->>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     char           string[2];
     uint8_t       *out_buff;    /* Largest allowed size for a message is UDVM_MEMORY_SIZE = 65536 */
     uint32_t       i                          = 0;
