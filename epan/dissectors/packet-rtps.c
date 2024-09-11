@@ -4110,7 +4110,7 @@ static int dissect_user_defined(proto_tree *tree, tvbuff_t * tvb, packet_info *p
             offset += 4;
             //proto_item_append_text(tree, "(String length: %u)", string_size);
             if (show) {
-                string_value = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, string_size, ENC_ASCII);
+                string_value = tvb_get_string_enc(pinfo->pool, tvb, offset, string_size, ENC_ASCII);
                 proto_tree_add_string_format(tree, hf_rtps_dissection_string, tvb, offset, string_size,
                   string_value, "%s: %s", name, string_value);
             }
@@ -4362,7 +4362,7 @@ static void generate_status_info(packet_info *pinfo,
   char * disposeFlag = NULL;
   char * unregisterFlag = NULL;
 
-  wmem_strbuf_t *buffer = wmem_strbuf_create(wmem_packet_scope());
+  wmem_strbuf_t *buffer = wmem_strbuf_create(pinfo->pool);
   submessage_col_info* current_submessage_col_info = NULL;
 
   current_submessage_col_info = (submessage_col_info*)p_get_proto_data(pinfo->pool, pinfo, proto_rtps, RTPS_CURRENT_SUBMESSAGE_COL_DATA_KEY);
@@ -5526,7 +5526,11 @@ static void rtps_util_add_liveliness_qos(proto_tree *tree, tvbuff_t *tvb, int of
 /* Insert in the protocol tree the next bytes interpreted as Liveliness
  * QoS Policy structure.
  */
+<<<<<<< HEAD
 static void rtps_util_add_product_version(proto_tree *tree, tvbuff_t *tvb, int offset, int vendor_id) {
+=======
+static void rtps_util_add_product_version(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset, int vendor_id) {
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
   proto_tree *subtree;
   uint8_t major, minor, release, revision;
@@ -5543,10 +5547,10 @@ static void rtps_util_add_product_version(proto_tree *tree, tvbuff_t *tvb, int o
   if (vendor_id == RTPS_VENDOR_RTI_DDS) {
     if (major < 5 && revision == 0) {
       subtree = proto_tree_add_subtree_format(tree, tvb, offset, 4, ett_rtps_product_version, NULL,
-              "Product version: %d.%d%s", major, minor, format_char(wmem_packet_scope(), release));
+              "Product version: %d.%d%s", major, minor, format_char(pinfo->pool, release));
     } else if (major < 5 && revision > 0) {
           subtree = proto_tree_add_subtree_format(tree, tvb, offset, 4, ett_rtps_product_version, NULL,
-              "Product version: %d.%d%s rev%d", major, minor, format_char(wmem_packet_scope(), release), revision);
+              "Product version: %d.%d%s rev%d", major, minor, format_char(pinfo->pool, release), revision);
     } else {
           subtree = proto_tree_add_subtree_format(tree, tvb, offset, 4, ett_rtps_product_version, NULL,
               "Product version: %d.%d.%d.%d", major, minor, release, revision);
@@ -5595,7 +5599,11 @@ static void rtps_util_add_product_version(proto_tree *tree, tvbuff_t *tvb, int o
  * The formatted buffer is: "string1", "string2", "string3", ...
  * Returns the new updated offset
  */
+<<<<<<< HEAD
 static int rtps_util_add_seq_string(proto_tree *tree, tvbuff_t *tvb, int offset,
+=======
+static int rtps_util_add_seq_string(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset,
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
                               const unsigned encoding, int hf_numstring,
                               int hf_string, const char *label) {
   uint32_t size;
@@ -5618,7 +5626,7 @@ static int rtps_util_add_seq_string(proto_tree *tree, tvbuff_t *tvb, int offset,
   for (i = 0; i < num_strings; ++i) {
     size = tvb_get_uint32(tvb, offset, encoding);
 
-    retVal = (const char* )tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, size, ENC_ASCII);
+    retVal = (const char* )tvb_get_string_enc(pinfo->pool, tvb, offset+4, size, ENC_ASCII);
 
     proto_tree_add_string_format(string_tree, hf_string, tvb, offset, size+4, retVal,
         "%s[%d]: %s", label, i, retVal);
@@ -5811,7 +5819,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
         /* Get structure name length */
         struct_name_len = tvb_get_uint32(tvb, offset, encoding);
         offset += 4;
-        struct_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, struct_name_len, ENC_ASCII);
+        struct_name = tvb_get_string_enc(pinfo->pool, tvb, offset, struct_name_len, ENC_ASCII);
         offset = check_offset_addition(offset, struct_name_len, tree, NULL, tvb);
 
         /* - - - - - - -      Default index      - - - - - - - */
@@ -5833,7 +5841,11 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
           /* Enums has also a name that we should print */
           LONG_ALIGN(offset);
           discriminator_enum_name_length = tvb_get_uint32(tvb, offset, encoding);
+<<<<<<< HEAD
           discriminator_enum_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, discriminator_enum_name_length, ENC_ASCII);
+=======
+          discriminator_enum_name = tvb_get_string_enc(pinfo->pool, tvb, offset+4, discriminator_enum_name_length, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
         }
         offset = disc_offset_begin + disc_size;
 #if 0
@@ -5895,7 +5907,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
           offset += 4;
 
           /* Name */
-          member_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, member_name_len, ENC_ASCII);
+          member_name = tvb_get_string_enc(pinfo->pool, tvb, offset, member_name_len, ENC_ASCII);
           offset = check_offset_addition(offset, member_name_len, tree, NULL, tvb);
 
           /* is Pointer ? */
@@ -5994,7 +6006,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
         offset += 4;
 
         /* struct name */
-        struct_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, struct_name_len, ENC_ASCII);
+        struct_name = tvb_get_string_enc(pinfo->pool, tvb, offset, struct_name_len, ENC_ASCII);
         offset = check_offset_addition(offset, struct_name_len, tree, NULL, tvb);
 
 
@@ -6061,7 +6073,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
           offset += 4;
 
           /* Name */
-          member_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, member_name_len, ENC_ASCII);
+          member_name = tvb_get_string_enc(pinfo->pool, tvb, offset, member_name_len, ENC_ASCII);
           offset += member_name_len;
 
           if (tk_id == RTI_CDR_TK_ENUM) {
@@ -6192,7 +6204,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
         LONG_ALIGN(offset);
         alias_name_length = tvb_get_uint32(tvb, offset, encoding);
         offset += 4;
-        alias_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, alias_name_length, ENC_ASCII);
+        alias_name = tvb_get_string_enc(pinfo->pool, tvb, offset, alias_name_length, ENC_ASCII);
         offset = check_offset_addition(offset, alias_name_length, tree, NULL, tvb);
         (void) g_strlcpy(type_name, alias_name, sizeof(type_name));
         break;
@@ -6223,7 +6235,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
         offset += 4;
 
         /* value name */
-        value_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_name_len, ENC_ASCII);
+        value_name = tvb_get_string_enc(pinfo->pool, tvb, offset, value_name_len, ENC_ASCII);
         offset = check_offset_addition(offset, value_name_len, tree, NULL, tvb);
 
         if (tk_id == RTI_CDR_TK_VALUE_PARAM) {
@@ -6247,7 +6259,7 @@ static int rtps_util_add_typecode(proto_tree *tree, tvbuff_t *tvb, packet_info *
   /* Array print */
   if (arr_dimension != NULL) {
     /* Printing an array */
-    wmem_strbuf_t *dim_str = wmem_strbuf_create(wmem_packet_scope());
+    wmem_strbuf_t *dim_str = wmem_strbuf_create(pinfo->pool);
     for (i = 0; i < MAX_ARRAY_DIMENSION; ++i) {
       if (arr_dimension[i] != 0) {
         wmem_strbuf_append_printf(dim_str, "[%d]", arr_dimension[i]);
@@ -6770,7 +6782,11 @@ static void rtps_util_add_type_element_module(proto_tree *tree, packet_info * pi
   uint32_t long_number;
   char * name = NULL;
   long_number = tvb_get_uint32(tvb, offset, encoding);
+<<<<<<< HEAD
   name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, long_number, ENC_ASCII);
+=======
+  name = tvb_get_string_enc(pinfo->pool, tvb, offset+4, long_number, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
   proto_item_set_text(tree, "module %s", name);
   offset = rtps_util_add_string(tree, tvb, offset, hf_rtps_type_object_element_module_name, encoding);
   rtps_util_add_type_library(tree, pinfo, tvb, offset, encoding, -1);
@@ -7045,6 +7061,7 @@ static int rtps_util_add_data_holder_seq(proto_tree *tree, tvbuff_t * tvb,
  * Returns the new offset after reading the bitmap.
  */
 static int rtps_util_add_bitmap(proto_tree *tree,
+                        packet_info *pinfo,
                         tvbuff_t *tvb,
                         int        offset,
                         const unsigned encoding,
@@ -7052,8 +7069,13 @@ static int rtps_util_add_bitmap(proto_tree *tree,
                         bool show_analysis) {
   int32_t num_bits;
   uint32_t data;
+<<<<<<< HEAD
   wmem_strbuf_t *temp_buff = wmem_strbuf_create(wmem_packet_scope());
   wmem_strbuf_t *analysis_buff = wmem_strbuf_create(wmem_packet_scope());
+=======
+  wmem_strbuf_t *temp_buff = wmem_strbuf_create(pinfo->pool);
+  wmem_strbuf_t *analysis_buff = wmem_strbuf_create(pinfo->pool);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
   int i, j, idx;
   char *last_one;
   proto_item *ti = NULL, *ti_tree = NULL;
@@ -7151,7 +7173,11 @@ static int rtps_util_add_fragment_number_set(proto_tree *tree, packet_info *pinf
   uint64_t base;
   int32_t num_bits;
   uint32_t data;
+<<<<<<< HEAD
   wmem_strbuf_t *temp_buff = wmem_strbuf_create(wmem_packet_scope());
+=======
+  wmem_strbuf_t *temp_buff = wmem_strbuf_create(pinfo->pool);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
   char *last_one;
   int i, j, idx;
   proto_item *ti;
@@ -7336,14 +7362,18 @@ static type_mapping * rtps_util_get_topic_info(endpoint_guid * guid) {
   return result;
 }
 
+<<<<<<< HEAD
 static void rtps_util_format_typename(char * type_name, char ** output) {
+=======
+static void rtps_util_format_typename(wmem_allocator_t *scope, char * type_name, char ** output) {
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
    char ** tokens;
    char * result_caps;
    /* The standard specifies that the max size of a type name
       can be 255 bytes */
-   tokens = wmem_strsplit(wmem_packet_scope(), type_name, "::", 255);
-   result_caps = wmem_strjoinv(wmem_packet_scope(), "_", tokens);
-   *output = wmem_ascii_strdown(wmem_packet_scope(), result_caps, -1);
+   tokens = wmem_strsplit(scope, type_name, "::", 255);
+   result_caps = wmem_strjoinv(scope, "_", tokens);
+   *output = wmem_ascii_strdown(scope, result_caps, -1);
 
 }
 
@@ -7549,7 +7579,7 @@ static bool rtps_util_try_dissector(proto_tree *tree,
       /* This part tries to dissect the content using a dissector */
       next_tvb = tvb_new_subset_remaining(tvb, offset);
 
-      rtps_util_format_typename(type_mapping_object->type_name, &dissector_name);
+      rtps_util_format_typename(pinfo->pool, type_mapping_object->type_name, &dissector_name);
       return dissector_try_string(rtps_type_name_table, dissector_name,
               next_tvb, pinfo, tree, data);
       }
@@ -7638,7 +7668,11 @@ static int rtps_util_add_rti_topic_query_service_request(proto_tree * tree, pack
       char * retVal;
       LONG_ALIGN_ZERO(tmp_offset, alignment_zero);
       string_size = tvb_get_uint32(tvb, tmp_offset, encoding);
+<<<<<<< HEAD
       retVal = tvb_get_string_enc(wmem_packet_scope(), tvb, tmp_offset+4, string_size, ENC_ASCII);
+=======
+      retVal = tvb_get_string_enc(pinfo->pool, tvb, tmp_offset+4, string_size, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
       proto_tree_add_string_format(topic_query_filter_params_tree,
             hf_rtps_topic_query_selection_filter_parameter, tvb,
@@ -7663,7 +7697,11 @@ static int rtps_util_add_rti_topic_query_service_request(proto_tree * tree, pack
 
   LONG_ALIGN_ZERO(offset, alignment_zero);
   topic_name_len = tvb_get_uint32(tvb, offset, encoding);
+<<<<<<< HEAD
   topic_name = tvb_get_string_enc(wmem_packet_scope(), tvb, offset + 4, topic_name_len, ENC_ASCII);
+=======
+  topic_name = tvb_get_string_enc(pinfo->pool, tvb, offset + 4, topic_name_len, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
   proto_tree_add_string(topic_query_tree, hf_rtps_topic_query_topic_name, tvb, offset, topic_name_len + 4, topic_name);
   if (topic_name != NULL) {
     submessage_col_info* current_submessage_col_info = NULL;
@@ -8143,7 +8181,7 @@ static bool dissect_parameter_sequence_rti_dds(proto_tree *rtps_parameter_tree, 
     */
     case PID_PRODUCT_VERSION: {
       ENSURE_LENGTH(4);
-      rtps_util_add_product_version(rtps_parameter_tree, tvb, offset, vendor_id);
+      rtps_util_add_product_version(rtps_parameter_tree, pinfo, tvb, offset, vendor_id);
       break;
     }
 
@@ -8722,7 +8760,11 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
       const char * retVal = NULL;
       uint32_t str_size = tvb_get_uint32(tvb, offset, encoding);
 
+<<<<<<< HEAD
       retVal = (char*)tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, str_size, ENC_ASCII);
+=======
+      retVal = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset+4, str_size, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
       rtps_util_add_string(rtps_parameter_tree, tvb, offset, hf_rtps_param_topic_name, encoding);
       /* If topic information is enabled we have to store the topic name for showing after the DATA(r|w)
        * in the infor column. This information is used in append_status_info function.
@@ -8767,7 +8809,11 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
       const char * retVal = NULL;
       uint32_t str_size = tvb_get_uint32(tvb, offset, encoding);
 
+<<<<<<< HEAD
       retVal = (char*) tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, str_size, ENC_ASCII);
+=======
+      retVal = (char*) tvb_get_string_enc(pinfo->pool, tvb, offset+4, str_size, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
       rtps_util_store_type_mapping(pinfo, tvb, offset, type_mapping_object,
           retVal, TOPIC_INFO_ADD_TYPE_NAME);
@@ -9008,7 +9054,7 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
     case PID_PARTITION_OFFERED:  /* Deprecated */
     case PID_PARTITION:
       ENSURE_LENGTH(4);
-      rtps_util_add_seq_string(rtps_parameter_tree, tvb, offset, encoding,
+      rtps_util_add_seq_string(rtps_parameter_tree, pinfo, tvb, offset, encoding,
                                hf_rtps_param_partition_num, hf_rtps_param_partition, "name");
       break;
 
@@ -9296,7 +9342,7 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
                     hf_rtps_param_filter_class_name, encoding);
       temp_offset = rtps_util_add_string(rtps_parameter_tree, tvb, temp_offset,
                     hf_rtps_param_filter_expression, encoding);
-      /*temp_offset = */rtps_util_add_seq_string(rtps_parameter_tree, tvb, temp_offset,
+      /*temp_offset = */rtps_util_add_seq_string(rtps_parameter_tree, pinfo, tvb, temp_offset,
                     encoding, hf_rtps_param_expression_parameters_num,
                     hf_rtps_param_expression_parameters, "expressionParameters");
       break;
@@ -9350,7 +9396,11 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
           temp_offset = offset+4;
           while(seq_size-- > 0) {
             prop_size = tvb_get_uint32(tvb, temp_offset, encoding);
+<<<<<<< HEAD
             propName = tvb_get_string_enc(wmem_packet_scope(), tvb, temp_offset+4, prop_size, ENC_ASCII);
+=======
+            propName = tvb_get_string_enc(pinfo->pool, tvb, temp_offset+4, prop_size, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
             /* NDDS align strings at 4-bytes word. */
             str_length = (4 + ((prop_size + 3) & 0xfffffffc));
@@ -9359,7 +9409,11 @@ static bool dissect_parameter_sequence_v1(proto_tree *rtps_parameter_tree, packe
             temp_offset += str_length;
 
             prop_size = tvb_get_uint32(tvb, temp_offset, encoding);
+<<<<<<< HEAD
             propValue = tvb_get_string_enc(wmem_packet_scope(), tvb, temp_offset+4, prop_size, ENC_ASCII);
+=======
+            propValue = tvb_get_string_enc(pinfo->pool, tvb, temp_offset+4, prop_size, ENC_ASCII);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
             /* NDDS align strings at 4-bytes word. */
             str_length = (4 + ((prop_size + 3) & 0xfffffffc));
@@ -10739,7 +10793,11 @@ static void dissect_serialized_data(proto_tree *tree, packet_info *pinfo, tvbuff
   uint16_t encapsulation_id;
   bool try_dissection_from_type_object = false;
   unsigned encapsulation_encoding = ENC_BIG_ENDIAN;
+<<<<<<< HEAD
   rtps_dissector_data * data = wmem_new(wmem_packet_scope(), rtps_dissector_data);
+=======
+  rtps_dissector_data * data = wmem_new(pinfo->pool, rtps_dissector_data);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
   tvbuff_t *data_holder_tvb = tvb;
   tvbuff_t *compressed_tvb = NULL;
   proto_tree *dissected_data_holder_tree = NULL;
@@ -11512,7 +11570,7 @@ static void dissect_HEADER_EXTENSION(tvbuff_t* tvb, packet_info* pinfo, int offs
          * checksum field set to 0. To calculate the checksum of the RTPS message
          * we need to set those bytes to 0 in a separate buffer.
          */
-        tvb_zero_checksum = wmem_alloc0_array(wmem_packet_scope(), char, rtps_root->tvb_len);
+        tvb_zero_checksum = wmem_alloc0_array(pinfo->pool, char, rtps_root->tvb_len);
         tvb_memcpy(
             rtps_root->tvb,
             tvb_zero_checksum,
@@ -12053,7 +12111,11 @@ static void dissect_ACKNACK(tvbuff_t *tvb, packet_info *pinfo, int offset, uint8
   rtps_util_add_topic_info(tree, pinfo, tvb, offset, guid);
 
   /* Bitmap */
+<<<<<<< HEAD
   offset = rtps_util_add_bitmap(tree, tvb, offset, encoding, "readerSNState", true);
+=======
+  offset = rtps_util_add_bitmap(tree, pinfo, tvb, offset, encoding, "readerSNState", true);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
   /* RTPS 1.0 didn't have count: make sure we don't decode it wrong
    * in this case
@@ -13374,7 +13436,7 @@ static void dissect_RTPS_DATA_BATCH(tvbuff_t *tvb, packet_info *pinfo, int offse
   proto_tree *dissected_data_holder_tree = tree;
 
 
-  data = wmem_new(wmem_packet_scope(), rtps_dissector_data);
+  data = wmem_new(pinfo->pool, rtps_dissector_data);
   data->encapsulation_id = 0;
 
   proto_tree_add_bitmask_value(tree, tvb, offset + 1, hf_rtps_sm_flags, ett_rtps_flags, RTPS_DATA_BATCH_FLAGS, flags);
@@ -13461,8 +13523,13 @@ static void dissect_RTPS_DATA_BATCH(tvbuff_t *tvb, packet_info *pinfo, int offse
     if (rtps_max_batch_samples_dissected == 0) {
       sample_info_max = 1024;   /* Max size of sampleInfo shown */
     }
+<<<<<<< HEAD
     sample_info_flags = (uint16_t *)wmem_alloc(wmem_packet_scope(), sizeof(uint16_t) *sample_info_max);
     sample_info_length = (uint32_t *)wmem_alloc(wmem_packet_scope(), sizeof(uint32_t) *sample_info_max);
+=======
+    sample_info_flags = (uint16_t *)wmem_alloc(pinfo->pool, sizeof(uint16_t) *sample_info_max);
+    sample_info_length = (uint32_t *)wmem_alloc(pinfo->pool, sizeof(uint32_t) *sample_info_max);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
     /* Sample Info List: start decoding the sample info list until the offset
      * is greater or equal than 'sampleListOffset' */
@@ -13694,7 +13761,11 @@ static void dissect_GAP(tvbuff_t *tvb, packet_info *pinfo, int offset,
   offset += 8;
 
   /* Bitmap */
+<<<<<<< HEAD
   rtps_util_add_bitmap(tree, tvb, offset, encoding, "gapList", false);
+=======
+  rtps_util_add_bitmap(tree, pinfo, tvb, offset, encoding, "gapList", false);
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 }
 
 
@@ -14094,7 +14165,11 @@ static int rtps_util_look_for_secure_tag(
 // NOLINTNEXTLINE(misc-no-recursion)
 static void dissect_SECURE(
     tvbuff_t *tvb,
+<<<<<<< HEAD
     packet_info *pinfo _U_,
+=======
+    packet_info *pinfo,
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
     int offset,
     uint8_t flags,
     const unsigned encoding _U_,
@@ -14245,7 +14320,7 @@ static void dissect_SECURE(
         initial_offset + octets_to_next_header + 4);
     if (tag_offset > 0) {
       tag = tvb_memdup(
-          wmem_packet_scope(),
+          pinfo->pool,
           tvb,
           tag_offset,
           SECURE_TAG_COMMON_AND_SPECIFIC_MAC_LENGTH);
@@ -14265,7 +14340,7 @@ static void dissect_SECURE(
         tag,
         session_key,
         &error,
-        wmem_packet_scope());
+        pinfo->pool);
     error = gpg_err_code(error);
     if (error == GPG_ERR_NO_ERROR) {
       tvbuff_t *decrypted_tvb = NULL;
@@ -14978,7 +15053,7 @@ static bool dissect_rtps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in
      */
     if (enable_rtps_psk_decryption) {
       rtps_current_packet_decryption_info_t *decryption_info = wmem_alloc(
-          wmem_packet_scope(),
+          pinfo->pool,
           sizeof(rtps_current_packet_decryption_info_t));
       if (decryption_info == NULL) {
         return false;

@@ -16,6 +16,10 @@
 
 #include <ws_symbol_export.h>
 #include <epan/tvbuff.h>
+<<<<<<< HEAD
+=======
+#include "packet-bpv7.h"
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +47,13 @@ typedef struct {
     /// Parameter/Result ID
     int64_t type_id;
 } bpsec_id_t;
+
+typedef struct {
+    /// Specific type being dissected
+    bpsec_id_t id;
+    /// Pointer to containing block/bundle context
+    const bp_dissector_data_t *bp;
+} bpsec_dissector_data_t;
 
 /** Construct a new ID.
  */

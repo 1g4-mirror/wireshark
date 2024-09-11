@@ -99,7 +99,10 @@
 typedef struct {
 	bool has_config_header;
 	bool is_dmx;
+<<<<<<< HEAD
 	bool is_audio;
+=======
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 	uint16_t total_size;
 	uint8_t channel_id;
 	uint8_t chunk_type;
@@ -142,9 +145,12 @@ static int ett_dic_tree;
 static int ett_data;
 static int ett_subdata;
 static int ett_dmx_subtree;
+<<<<<<< HEAD
 static int ett_audio_header;
 static int ett_audio_samples;
 static int ett_unit_id;
+=======
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 
 /* IDN-Header */
 static int hf_idn_command;
@@ -367,6 +373,7 @@ static const value_string result_code[] = {
 	{ 0, NULL}
 };
 
+<<<<<<< HEAD
 static const value_string category[] _U_= {
 	{ 0x0, "Decoder modifiers with suffix" },
 	{ 0x1, "Decoder modifiers with parameter" },
@@ -381,6 +388,8 @@ static const value_string format[] _U_={
 	{ 0x2, "24 Bit signed integer (three octets)" }
 };
 
+=======
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 static int get_service_match(uint8_t flags) {
 	return flags >> 4;
 }
@@ -1317,7 +1326,11 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 			return offset;
 		}
 
+<<<<<<< HEAD
 		if(minfo->chunk_type != IDNCT_VOID && minfo->chunk_type != IDNCT_LP_FRAME_SF && minfo->chunk_type != IDNCT_AUDIO_WAVE_SAMPLE) {
+=======
+		if(minfo->chunk_type != IDNCT_VOID && minfo->chunk_type != IDNCT_LP_FRAME_SF) {
+>>>>>>> 81c14583b6ba4d47a8d2065cffc34dd6ff588783
 			scm = get_service_match(tvb_get_uint8(tvb, offset));
 
 			offset = dissect_idn_chunk_header(tvb, offset, idn_tree, minfo);
