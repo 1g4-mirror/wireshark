@@ -99,7 +99,6 @@
 typedef struct {
 	bool has_config_header;
 	bool is_dmx;
-	bool is_audio;
 	uint16_t total_size;
 	uint8_t channel_id;
 	uint8_t chunk_type;
@@ -387,7 +386,6 @@ static int get_service_match(uint8_t flags) {
 
 static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 	minfo->is_dmx = 0;
-	minfo->is_audio = 0;
 	switch(minfo->chunk_type) {
 		case IDNCT_VOID:
 			col_append_str(pinfo->cinfo, COL_INFO, "-VOID");
@@ -422,7 +420,6 @@ static void determine_message_type(packet_info *pinfo, message_info *minfo) {
 			break;
 		case IDNCT_AUDIO_WAVE_SAMPLE:
 			col_append_str(pinfo->cinfo, COL_INFO, "-AUDIO");
-			minfo->is_audio = 1;
 			break;
 		default:
 			col_append_str(pinfo->cinfo, COL_INFO, "-UNKNOWN");
@@ -1150,6 +1147,8 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 
 static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
 
+	uint32_t duration;
+
 	static int * const audio_flags[] = {
 		&hf_idn_audio_flags_two_bits_reserved,
 		&hf_idn_audio_flags_scm,
@@ -1161,6 +1160,9 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 
 	proto_tree_add_bitmask(audio_header_tree, tvb, offset, hf_idn_audio_flags, ett_audio_header, audio_flags, ENC_BIG_ENDIAN);
 	offset +=1;
+
+	duration = tvb_get_uint24(tvb, offset, ENC_BIG_ENDIAN);
+	proto_item_append_text(audio_header_tree, "%u kHZ", duration);
 
 	proto_tree_add_item(audio_header_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
 	offset+= 3;
@@ -1188,7 +1190,7 @@ static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_t
   //  max_samples -= (max_samples % channels);
 		int l = 0;
 		for(int i=0; i<(int)channels; i++){
-			l += snprintf(values+l, MAX_BUFFER-l, "%u    ", tvb_get_uint16(tvb, offset, 2));
+			l += snprintf(values+l, MAX_BUFFER-l, "%d    ", tvb_get_ntohis(tvb, offset));
 			offset += 2;
 		}
 		proto_tree_add_uint_format(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample:     %s", values);
@@ -1334,7 +1336,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 			offset = dissect_idn_octet_segment(tvb, offset, idn_tree);
 		}else if(minfo->is_dmx) {
 			offset = dissect_idn_dmx_data(tvb, pinfo, offset, idn_tree, config);
-		}else if(minfo->is_audio){
+		}else if(minfo->chunk_type == IDNCT_AUDIO_WAVE_SAMPLE){
 			offset = dissect_idn_audio(tvb, pinfo, offset, idn_tree, config);
 		}else {
 			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config);
@@ -1593,7 +1595,7 @@ void proto_register_idn(void) {
 			NULL, HFILL }
 		},
 		{ &hf_idn_uid_category,
-			{ "Caregory", "idn.unit_id_category",
+			{ "Category", "idn.unit_id_category",
 			FT_UINT8, BASE_HEX,
 			NULL, 0x0,
 			NULL, HFILL }
