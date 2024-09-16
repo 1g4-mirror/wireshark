@@ -116,6 +116,7 @@ typedef struct {
 	uint8_t audio_format;
 	uint8_t audio_channels;
 	uint8_t audio_layout;
+	uint16_t max_samples;
 } configuration_info;
 
 void proto_register_idn(void);
@@ -1145,10 +1146,11 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 	return offset;
 }
 
-static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree){
+static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config){
 
 	uint32_t duration;
-
+	int max_samples;
+	float freq;
 	static int * const audio_flags[] = {
 		&hf_idn_audio_flags_two_bits_reserved,
 		&hf_idn_audio_flags_scm,
@@ -1162,11 +1164,22 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	offset +=1;
 
 	duration = tvb_get_uint24(tvb, offset, ENC_BIG_ENDIAN);
-	proto_item_append_text(audio_header_tree, "%u kHZ", duration);
+
 
 	proto_tree_add_item(audio_header_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
 	offset+= 3;
 
+	max_samples = tvb_reported_length_remaining(tvb, offset);
+	switch (config->audio_format) {
+		case 0x01:
+			break;
+	}
+	config->max_samples = max_samples;
+	printf("%u %u\n",max_samples, duration );
+	freq = (float)max_samples / (float)duration;
+	freq *= 1000;
+
+	proto_item_append_text(audio_header_tree, "  %f kHZ", freq);
 	return offset;
 }
 
@@ -1289,10 +1302,12 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 	return offset;
 }
 
-static int dissect_idn_audio(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *idn_tree, configuration_info  * config){
+static int dissect_idn_audio(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *idn_tree, configuration_info  * config, message_info *minfo){
 
-	offset = dissect_idn_audio_dictionary(tvb, pinfo, offset, idn_tree, config);
-	offset = dissect_idn_audio_header(tvb, offset, idn_tree);
+	if(minfo->has_config_header > 0){
+		offset = dissect_idn_audio_dictionary(tvb, pinfo, offset, idn_tree, config);
+	}
+	offset = dissect_idn_audio_header(tvb, offset, idn_tree, config);
 	offset = dissect_idn_audio_samples(tvb, offset, idn_tree, config);
 	return offset;
 }
@@ -1337,7 +1352,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 		}else if(minfo->is_dmx) {
 			offset = dissect_idn_dmx_data(tvb, pinfo, offset, idn_tree, config);
 		}else if(minfo->chunk_type == IDNCT_AUDIO_WAVE_SAMPLE){
-			offset = dissect_idn_audio(tvb, pinfo, offset, idn_tree, config);
+			offset = dissect_idn_audio(tvb, pinfo, offset, idn_tree, config, minfo);
 		}else {
 			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config);
 		}
