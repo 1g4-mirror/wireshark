@@ -63,6 +63,10 @@
 #define IDNSM_DMX512_DISC		0x06
 #define IDNSM_AUDIO_WAVE_SEGMENTS	0x0C
 
+/* Service Types */
+#define IDNST_LAPRO		0x80
+#define IDNST_AUDIO		0x84
+
 /* Dictionary Tags */
 #define IDNTAG_PRECISION			0x4010
 #define IDNTAG_WAVELENGTH_PREFIX	0x5C00
@@ -311,6 +315,8 @@ static const value_string cfl_string[] = {
 };
 static const value_string service_mode_string[] = {
 	{ IDNSM_VOID, "VOID" },
+	{ IDNST_LAPRO, "Standard Laser Projector"},
+	{ IDNST_AUDIO, "Standard Audio Processing"},
 	{ IDNSM_LP_GRAPHIC_CONT, "Laser Projector Graphic (Continuous)" },
 	{ IDNSM_LP_GRAPHIC_DISC, "Laser Projector Graphic (Discrete)" },
 	{ IDNSM_LP_EFFECTS_CONT, "Laser Projector Effects (Continuous)" },
