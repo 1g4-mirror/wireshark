@@ -148,6 +148,7 @@ static int ett_subdata;
 static int ett_dmx_subtree;
 static int ett_audio_header;
 static int ett_audio_samples;
+static int ett_audio_samples_subtree;
 static int ett_unit_id;
 
 /* IDN-Header */
@@ -1060,17 +1061,17 @@ static int dissect_idn_message_header(tvbuff_t *tvb, int offset, proto_tree *idn
 	return offset;
 }
 
-// static int dissect_idn_audio_category_0(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *idn_tree _U_){
-// 	static int * const audio_cat_0[] = {
-// 		&hf_idn_category,
-// 		&hf_idn_subcategory,
-// 		&hf_idn_parameter,
-// 		&hf_idn_suffix_length,
-// 		NULL
-// 	};
-// 	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
-// 	return offset;
-// }
+static int dissect_idn_audio_category_0(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config _U_){
+	static int * const audio_cat_0[] = {
+		&hf_idn_category,
+		&hf_idn_subcategory,
+		&hf_idn_parameter,
+		&hf_idn_suffix_length,
+		NULL
+	};
+	proto_tree_add_bitmask(idn_tree, tvb, offset, hf_idn_audio_dictionary_tag, ett_audio_header, audio_cat_0, ENC_BIG_ENDIAN);
+	return offset;
+}
 
 static int dissect_idn_audio_category_8(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *cinfo){
 
@@ -1139,6 +1140,9 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 				config->audio_category = det_category;
 				//dissect depending on category
 				switch (det_category) {
+					case 0x0:
+						offset = dissect_idn_audio_category_0(tvb, offset, dictionary_tree, config);
+						break;
 					case 0x6:
 						offset = dissect_idn_audio_category_6(tvb, offset, dictionary_tree, config);
 						break;
@@ -1148,92 +1152,6 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 				}
 				break;
 		}
-	}
-	return offset;
-}
-
-static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config, message_info *minfo){
-
-	uint32_t duration;
-	int max_samples;
-	float freq;
-	static int * const audio_flags[] = {
-		&hf_idn_audio_flags_two_bits_reserved,
-		&hf_idn_audio_flags_scm,
-		&hf_idn_audio_flags_four_bits_reserved,
-		NULL
-	};
-
-	proto_item *audio_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_header, NULL, "Audio Header");
-
-	proto_tree_add_bitmask(audio_header_tree, tvb, offset, hf_idn_audio_flags, ett_audio_header, audio_flags, ENC_BIG_ENDIAN);
-	offset +=1;
-
-	duration = tvb_get_uint24(tvb, offset, ENC_BIG_ENDIAN);
-
-
-	proto_tree_add_item(audio_header_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
-	offset+= 3;
-
-	max_samples = minfo->total_size;
-	max_samples -= 8; //idn message Header
-	max_samples -= 4; //audio Header
-	if (minfo->has_config_header) {
-		max_samples -=4;
-		max_samples -= (config->word_count *4);
-	}
-	switch (config->audio_format) {
-		case 0x01:
-			max_samples /= 2;
-			break;
-		case 0x02:
-			max_samples /= 3;
-			break;
-	}
-	config->max_samples = max_samples;
-	freq = (float)max_samples / (float)duration;
-	freq *= 1000;
-
-	proto_item_append_text(audio_header_tree, "  %f kHZ", freq);
-	return offset;
-}
-
-static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
-	uint8_t channels = config->audio_channels;
-	int max_samples = tvb_reported_length_remaining(tvb, offset);
-	max_samples -= (max_samples % channels);
-	for(int i = 0; i < max_samples; i++){
-		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
-		offset++;
-	}
-	return offset;
-}
-
-static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_tree *idn_tree _U_, configuration_info *config) {
-  //  int max_samples = tvb_reported_length_remaining(tvb, offset);
-    uint8_t channels = config->audio_channels;
-    char values[MAX_BUFFER];
-
-  //  max_samples /= 2;
-  //  max_samples -= (max_samples % channels);
-		int l = 0;
-		for(int i=0; i<(int)channels; i++){
-			l += snprintf(values+l, MAX_BUFFER-l, "%d    ", tvb_get_ntohis(tvb, offset));
-			offset += 2;
-		}
-		proto_tree_add_uint_format(idn_tree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample:     %s", values);
-
-			return offset;
-}
-
-static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
-	uint8_t channels = config->audio_channels;
-	int max_samples = tvb_reported_length_remaining(tvb, offset);
-	max_samples /= 3;
-	max_samples -= (max_samples % channels);
-	for(int i = 0; i < max_samples; i++){
-		proto_tree_add_item( idn_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
-		offset += 3;
 	}
 	return offset;
 }
@@ -1298,6 +1216,104 @@ static void add_audio_sample_description(proto_item *audio_samples_tree, configu
 	}
 	return;
 }
+
+static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config, message_info *minfo){
+
+	uint32_t duration;
+	int max_samples;
+	float freq;
+	static int * const audio_flags[] = {
+		&hf_idn_audio_flags_two_bits_reserved,
+		&hf_idn_audio_flags_scm,
+		&hf_idn_audio_flags_four_bits_reserved,
+		NULL
+	};
+
+	proto_item *audio_header_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_header, NULL, "Audio Header");
+
+	proto_tree_add_bitmask(audio_header_tree, tvb, offset, hf_idn_audio_flags, ett_audio_header, audio_flags, ENC_BIG_ENDIAN);
+	offset +=1;
+
+	duration = tvb_get_uint24(tvb, offset, ENC_BIG_ENDIAN);
+
+
+	proto_tree_add_item(audio_header_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
+	offset+= 3;
+
+	max_samples = minfo->total_size;
+	max_samples -= 8; //idn message Header
+	max_samples -= 4; //audio Header
+	if (minfo->has_config_header) {
+		max_samples -=4;
+		max_samples -= (config->word_count *4);
+	}
+	switch (config->audio_format) {
+		case 0x01:
+			max_samples /= 2;
+			break;
+		case 0x02:
+			max_samples /= 3;
+			break;
+	}
+	config->max_samples = max_samples;
+	freq = (float)max_samples / (float)duration;
+	freq *= 1000;
+
+	proto_item_append_text(audio_header_tree, "  %f kHZ", freq);
+	return offset;
+}
+
+static int dissect_idn_audio_samples_format_0(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
+	uint8_t channels = config->audio_channels;
+	int max_samples = tvb_reported_length_remaining(tvb, offset);
+	max_samples -= (max_samples % channels);
+	for(int i = 0; i < max_samples; i++){
+		proto_tree_add_item(idn_tree, hf_idn_audio_sample_format_zero, tvb, offset, 1, ENC_BIG_ENDIAN);
+		offset++;
+	}
+	return offset;
+}
+
+static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config) {
+	  uint16_t max_samples = config->max_samples;
+    uint8_t channels = config->audio_channels;
+		int count_sample_groups = 1;
+    char values[MAX_BUFFER];
+		if(max_samples *2 < tvb_reported_length_remaining(tvb, offset)){
+			proto_item_append_text(idn_tree, " ERROR: not enough captured length for Audio Samples");
+			return offset;
+		}
+
+  while (tvb_reported_length_remaining(tvb, offset) >= 10*channels*2) {
+  	proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*2, ett_audio_samples_subtree, NULL, "Samples  - ");
+		count_sample_groups += 10;
+		add_audio_sample_description(subtree, config);
+		for(int j=0; j<10; j++){
+			int l = 0;
+			for(int i=0; i<(int)channels; i++){
+				l += snprintf(values+l, MAX_BUFFER-l, "%d    ", tvb_get_ntohis(tvb, offset));
+				offset += 2;
+			}
+			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %d:     %s",count_sample_groups+j-10, values);
+		}
+  }
+
+
+			return offset;
+}
+
+static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info * config){
+	uint8_t channels = config->audio_channels;
+	int max_samples = tvb_reported_length_remaining(tvb, offset);
+	max_samples /= 3;
+	max_samples -= (max_samples % channels);
+	for(int i = 0; i < max_samples; i++){
+		proto_tree_add_item( idn_tree, hf_idn_audio_sample_format_two, tvb, offset, 3, ENC_BIG_ENDIAN);
+		offset += 3;
+	}
+	return offset;
+}
+
 
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
