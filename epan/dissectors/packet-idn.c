@@ -1152,7 +1152,7 @@ static int dissect_idn_audio_dictionary(tvbuff_t *tvb, packet_info *pinfo _U_, i
 	return offset;
 }
 
-static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config){
+static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config, message_info *minfo){
 
 	uint32_t duration;
 	int max_samples;
@@ -1175,13 +1175,22 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	proto_tree_add_item(audio_header_tree, hf_idn_audio_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
 	offset+= 3;
 
-	max_samples = tvb_reported_length_remaining(tvb, offset);
+	max_samples = minfo->total_size;
+	max_samples -= 8; //idn message Header
+	max_samples -= 4; //audio Header
+	if (minfo->has_config_header) {
+		max_samples -=4;
+		max_samples -= (config->word_count *4);
+	}
 	switch (config->audio_format) {
 		case 0x01:
+			max_samples /= 2;
+			break;
+		case 0x02:
+			max_samples /= 3;
 			break;
 	}
 	config->max_samples = max_samples;
-	printf("%u %u\n",max_samples, duration );
 	freq = (float)max_samples / (float)duration;
 	freq *= 1000;
 
@@ -1313,7 +1322,7 @@ static int dissect_idn_audio(tvbuff_t *tvb, packet_info *pinfo, int offset, prot
 	if(minfo->has_config_header > 0){
 		offset = dissect_idn_audio_dictionary(tvb, pinfo, offset, idn_tree, config);
 	}
-	offset = dissect_idn_audio_header(tvb, offset, idn_tree, config);
+	offset = dissect_idn_audio_header(tvb, offset, idn_tree, config, minfo);
 	offset = dissect_idn_audio_samples(tvb, offset, idn_tree, config);
 	return offset;
 }
