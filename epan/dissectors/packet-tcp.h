@@ -157,6 +157,7 @@ typedef struct _tcp_unacked_t {
 	uint32_t frame;
 	uint32_t	seq;
 	uint32_t	nextseq;
+	bool		delayed; /* indicates if it was processed as an OOO/Retrans */
 	nstime_t ts;
 } tcp_unacked_t;
 
@@ -351,6 +352,7 @@ typedef struct _tcp_flow_t {
 	uint32_t fin;		/* frame number of the final FIN */
 	uint32_t window;		/* last seen window */
 	int16_t	win_scale;	/* -1 is we don't know, -2 is window scaling is not used */
+	int16_t mss;  		/* maximum segment size, -1 unknown */
 	int16_t scps_capable;   /* flow advertised scps capabilities */
 	uint16_t maxsizeacked;   /* 0 if not yet known */
 	bool valid_bif;     /* if lost pkts, disable BiF until ACK is recvd */
