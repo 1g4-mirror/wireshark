@@ -180,6 +180,7 @@ static int hf_idn_entry_size;
 static int hf_idn_relay_count;
 static int hf_idn_service_count;
 static int hf_idn_relay_number;
+static int hf_idn_service_type;
 
 /* Channel Message Header */
 static int hf_idn_cnl;
@@ -316,8 +317,6 @@ static const value_string cfl_string[] = {
 };
 static const value_string service_mode_string[] = {
 	{ IDNSM_VOID, "VOID" },
-	{ IDNST_LAPRO, "Standard Laser Projector"},
-	{ IDNST_AUDIO, "Standard Audio Processing"},
 	{ IDNSM_LP_GRAPHIC_CONT, "Laser Projector Graphic (Continuous)" },
 	{ IDNSM_LP_GRAPHIC_DISC, "Laser Projector Graphic (Discrete)" },
 	{ IDNSM_LP_EFFECTS_CONT, "Laser Projector Effects (Continuous)" },
@@ -325,6 +324,12 @@ static const value_string service_mode_string[] = {
 	{ IDNSM_DMX512_CONT, "DMX512 (Continuous)" },
 	{ IDNSM_DMX512_DISC, "DMX512 (Discrete)" },
 	{ IDNSM_AUDIO_WAVE_SEGMENTS, "Audio: Stream of waveform segments"},
+	{ 0, NULL}
+};
+
+static const value_string service_type_string[] = {
+	{ IDNST_LAPRO, "Standard Laser Projector"},
+	{ IDNST_AUDIO, "Standard Audio Processing"},
 	{ 0, NULL}
 };
 static const value_string gts_glin[] = {
@@ -1222,6 +1227,7 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	uint32_t duration;
 	int max_samples;
 	float freq;
+	uint16_t channels = config->audio_channels;
 	static int * const audio_flags[] = {
 		&hf_idn_audio_flags_two_bits_reserved,
 		&hf_idn_audio_flags_scm,
@@ -1258,6 +1264,7 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	config->max_samples = max_samples;
 	freq = (float)max_samples / (float)duration;
 	freq *= 1000;
+	freq /= (float)channels;
 
 	proto_item_append_text(audio_header_tree, "  %f kHZ", freq);
 	return offset;
@@ -1407,7 +1414,7 @@ static int dissect_idn_servicemap_entry(tvbuff_t *tvb, int offset, proto_tree *i
 
 	proto_tree_add_item(idn_servicemap_entry_tree, hf_idn_service_id, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	proto_tree_add_item(idn_servicemap_entry_tree, hf_idn_service_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
+	proto_tree_add_item(idn_servicemap_entry_tree, hf_idn_service_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 	proto_tree_add_item(idn_servicemap_entry_tree, hf_idn_flags, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
@@ -1759,6 +1766,13 @@ void proto_register_idn(void) {
 			FT_UINT8, BASE_HEX,
 			VALS(service_mode_string), 0x0,
 			NULL, HFILL }
+		},
+		{
+			&hf_idn_service_type,
+			{ "Service Type", "idn.service_type",
+				FT_UINT8, BASE_HEX,
+				VALS(service_type_string), 0x0,
+				NULL, HFILL}
 		},
 		{ &hf_idn_chunk_header_flags,
 			{ "Chunk Header Flags", "idn.chunk_header_flags",
