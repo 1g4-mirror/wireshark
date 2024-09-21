@@ -121,6 +121,7 @@ typedef struct {
 	uint8_t audio_channels;
 	uint8_t audio_layout;
 	uint16_t max_samples;
+	float audio_freq;
 } configuration_info;
 
 void proto_register_idn(void);
@@ -1266,6 +1267,8 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	freq *= 1000;
 	freq /= (float)channels;
 
+	config->audio_freq = freq;
+
 	proto_item_append_text(audio_header_tree, "  %f kHZ", freq);
 	return offset;
 }
@@ -1324,14 +1327,17 @@ static int dissect_idn_audio_samples_format_2(tvbuff_t *tvb, int offset, proto_t
 
 static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info  * config){
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
-	add_audio_sample_description(audio_samples_tree, config);
 	uint8_t audio_format = config->audio_format;
+	uint16_t sample_count = config->max_samples;
+	float freq = config->audio_freq;
+	proto_item_append_text(audio_samples_tree, "  %u Samples, %f kHZ", sample_count ,freq);
 	switch (audio_format) {
 		case 0x00:
 			dissect_idn_audio_samples_format_0(tvb, offset, audio_samples_tree, config);
 			break;
 		case 0x01:
 		dissect_idn_audio_samples_format_1(tvb, offset, audio_samples_tree, config);
+		proto_item_append_text(audio_samples_tree, " ,format 0x1(16 Bit Words)");
 			break;
 		case 0x02:
 		dissect_idn_audio_samples_format_2(tvb, offset, audio_samples_tree, config);
