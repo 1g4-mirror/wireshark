@@ -1298,10 +1298,10 @@ static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_t
 		for(int j=0; j<10; j++){
 			int l = 0;
 			for(int i=0; i<(int)channels; i++){
-				l += snprintf(values+l, MAX_BUFFER-l, "%d    ", tvb_get_ntohis(tvb, offset));
+				l += snprintf(values+l, MAX_BUFFER-l, "%5d    ", tvb_get_ntohis(tvb, offset));
 				offset += 2;
 			}
-			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %d:     %s",count_sample_groups+j-10, values);
+			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+j-10, values);
 		}
   }
 
