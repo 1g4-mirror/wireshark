@@ -1289,13 +1289,15 @@ static int dissect_idn_audio_samples_format_1(tvbuff_t *tvb, int offset, proto_t
     uint8_t channels = config->audio_channels;
 		int count_sample_groups = 1;
     char values[MAX_BUFFER];
+		char group_numbers[MAX_BUFFER];
 		if(max_samples *2 < tvb_reported_length_remaining(tvb, offset)){
 			proto_item_append_text(idn_tree, " ERROR: not enough captured length for Audio Samples");
 			return offset;
 		}
 
   while (tvb_reported_length_remaining(tvb, offset) >= 10*channels*2) {
-  	proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*2, ett_audio_samples_subtree, NULL, "Samples  - ");
+		sprintf(group_numbers, "Sample %4d-%4d", count_sample_groups, count_sample_groups+9);
+  	proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*2, ett_audio_samples_subtree, NULL, group_numbers);
 		count_sample_groups += 10;
 		add_audio_sample_description(subtree, config);
 		for(int j=0; j<10; j++){
