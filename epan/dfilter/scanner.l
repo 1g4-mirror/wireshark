@@ -251,8 +251,9 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
-[rR]{0,1}\042			{
-	/* start quote of a quoted string */
+[rR]{0,1}\042|(\342\200\234)		{
+	/* start quote of a quoted string, either straight or left
+	 * double quotation mark. */
 	/*
 	 * The example of how to scan for strings was taken from
 	 * the flex manual, from the section "Start Conditions".
@@ -290,8 +291,8 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
-<DQUOTE>\042			{
-	/* end quote */
+<DQUOTE>\042|(\342\200\235)		{
+	/* end quote, either straight or right double quotation mark */
 	BEGIN(INITIAL);
 	update_string_loc(yyextra, yytext);
 	int token = set_lval_quoted_string(yyextra, yyextra->quoted_string);
@@ -376,12 +377,29 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-<DQUOTE>[^\\\042]+			{
+<DQUOTE>[^\\\042\342]+			{
 	/* non-escaped string */
 	update_string_loc(yyextra, yytext);
 	g_string_append(yyextra->quoted_string, yytext);
 }
 
+<DQUOTE>\\(\342\200\235)		{
+	/* escaped right double quotation mark */
+	update_string_loc(yyextra, yytext);
+	if (yyextra->raw_string) {
+		g_string_append(yyextra->quoted_string, yytext);
+	}
+	else {
+		g_string_append(yyextra->quoted_string, yytext + 1);
+	}
+}
+
+<DQUOTE>(\342[^\200])|(\342\200[^\235])	{
+	/* not a right double quotation mark, but the first or first two
+	 * bytes match. */
+	update_string_loc(yyextra, yytext);
+	g_string_append(yyextra->quoted_string, yytext);
+}
 
 \047				{
 	/* start quote of a quoted character value */
