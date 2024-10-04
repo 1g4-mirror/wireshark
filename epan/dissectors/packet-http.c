@@ -267,11 +267,9 @@ static bool http_desegment_body = true;
 static bool http_dechunk_body = true;
 
 /*
- * Decompression of zlib or brotli encoded entities.
+ * Decompression of compressed content-encoded entities.
  */
-#if defined(HAVE_ZLIB)|| defined(HAVE_ZLIBNG) || defined(HAVE_BROTLI)
 static bool http_decompress_body = true;
-#endif
 
 /*
  * Extra checks for valid ASCII data in HTTP headers.
@@ -952,13 +950,16 @@ determine_http_location_target(wmem_allocator_t *scope, const char *base_url, co
 			char *netloc_end;
 			int netloc_length;
 
-			scheme_end = strstr(base_url_no_query, "://") + 3;
-			/* The following code was the only way to stop VS dereferencing errors. */
+			scheme_end = strstr(base_url_no_query, "://");
+			if (!(scheme_end)) {
+				return NULL;
+			}
+			scheme_end += strlen("://");
 			if (!(*scheme_end)) {
 				return NULL;
 			}
 			netloc_end = strstr(scheme_end, "/");
-			if (!(*netloc_end)) {
+			if (!(netloc_end)) {
 				return NULL;
 			}
 			netloc_length = (int) (netloc_end - base_url_no_query);
@@ -2179,6 +2180,58 @@ dissecting_body:
 			}
 #endif
 
+			if (http_decompress_body &&
+			    g_ascii_strcasecmp(headers->content_encoding, "xpress") == 0)
+			{
+				/*
+				 * [MS-WUSP] 2.1.1 Xpress Compression
+				 * Segmented into a series of blocks and compressed with the
+				 * Plain LZ77 variant of [MS-XCA] Xpress Compression Algorithm.
+				 *
+				 * XXX - Does Microsoft use any other variants of [MS-XCA]
+				 * for Content-Encoding: xpress in any other situations
+				 * besides Windows Update Services?
+				 */
+				int comp_offset = 0;
+				int compressed_len;
+				tvbuff_t *block_tvb;
+				while (tvb_captured_length_remaining(next_tvb, comp_offset) >= 8) {
+					comp_offset += 4; // original length
+					compressed_len = tvb_get_int32(next_tvb, comp_offset, ENC_LITTLE_ENDIAN);
+					/*
+					 * "The compressed size of each block MUST NOT be greater
+					 * than 65535 bytes."
+					 */
+					if (compressed_len <= 0 || compressed_len > 65535) {
+						break;
+					}
+					if (!tvb_bytes_exist(next_tvb, comp_offset, compressed_len)) {
+						break;
+					}
+					comp_offset += 4;
+					block_tvb = tvb_child_uncompress_lz77(tvb,
+					    tvb_new_subset_length(next_tvb, comp_offset, compressed_len),
+					    0, compressed_len);
+					if (block_tvb) {
+						if (uncomp_tvb == NULL) {
+							uncomp_tvb = tvb_new_composite();
+						}
+						tvb_composite_append(uncomp_tvb, block_tvb);
+					} else {
+						break;
+					}
+					comp_offset += compressed_len;
+				}
+				if (uncomp_tvb != NULL) {
+					/*
+					 * XXX - Should we add an expert info for partial
+					 * decompression if we didn't finish? I.e., if
+					 * tvb_captured_length_remaining(next_tvb, comp_offset) > 0
+					 */
+					tvb_composite_finalize(uncomp_tvb);
+				}
+			}
+
 			/*
 			 * Add the encoded entity to the protocol tree
 			 */
@@ -2205,14 +2258,17 @@ dissecting_body:
 				add_new_data_source(pinfo, next_tvb,
 				    "Uncompressed entity body");
 			} else {
-#if defined(HAVE_ZLIB) || defined(HAVE_ZLIBNG) || defined(HAVE_BROTLI)
 				if (http_decompress_body) {
+					/* XXX - We should distinguish between "failed", "unsupported
+					 * only because support wasn't compiled in", and "unsupported
+					 * by Wireshark", to indicate whether the problem is with
+					 * the capture file, the build, or Wireshark.
+					 */
 					expert_add_info(pinfo, e_ti, &ei_http_decompression_failed);
 				}
 				else {
 					expert_add_info(pinfo, e_ti, &ei_http_decompression_disabled);
 				}
-#endif
 				/* XXX: Should this be sent to the follow tap? */
 				call_data_dissector(next_tvb, pinfo, e_tree);
 
@@ -4349,7 +4405,7 @@ dissect_http_heur_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 }
 
 static int
-dissect_http_tls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_http_tls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
 	conversation_t *conversation;
 	http_conv_t *conv_data;
@@ -4813,13 +4869,11 @@ proto_register_http(void)
 	    "Whether to reassemble bodies of entities that are transferred "
 	    "using the \"Transfer-Encoding: chunked\" method",
 	    &http_dechunk_body);
-#if defined(HAVE_ZLIB) || defined(HAVE_ZLIBNG) || defined(HAVE_BROTLI)
 	prefs_register_bool_preference(http_module, "decompress_body",
 	    "Uncompress entity bodies",
 	    "Whether to uncompress entity bodies that are compressed "
 	    "using \"Content-Encoding: \"",
 	    &http_decompress_body);
-#endif
 	prefs_register_bool_preference(http_module, "check_ascii_headers",
 	    "Reject non-ASCII headers as invalid HTTP",
 	    "Whether to treat non-ASCII in headers as non-HTTP data "

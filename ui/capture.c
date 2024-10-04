@@ -28,6 +28,7 @@
 #include "ui/capture.h"
 #include "capture/capture_ifinfo.h"
 #include <capture/capture_sync.h>
+#include "capture/iface_monitor.h"
 #include "ui/capture_info.h"
 #include "ui/capture_ui_utils.h"
 #include "ui/iface_lists.h"
@@ -133,9 +134,11 @@ capture_start(capture_options *capture_opts, GPtrArray *capture_comments,
     source = get_iface_list_string(capture_opts, IFLIST_SHOW_FILTER);
     cf_set_tempfile_source((capture_file *)cap_session->cf, source->str);
     g_string_free(source, TRUE);
+    iface_mon_enable(false);
     /* try to start the capture child process */
     if (!sync_pipe_start(capture_opts, capture_comments, cap_session,
                          cap_data, update_cb)) {
+        iface_mon_enable(true);
         /* We failed to start the capture child. */
         if(capture_opts->save_file != NULL) {
             g_free(capture_opts->save_file);
@@ -273,9 +276,10 @@ capture_input_read_all(capture_session *cap_session, bool is_tempfile,
             break;
 
         case CF_READ_ABORTED:
-            /* User wants to quit program. Exit by leaving the main loop,
-               so that any quit functions we registered get called. */
-            exit_application(0);
+            /* The user asked to abort the read, but that might be to
+               restart the capture, so let the caller decide whether
+               to exit. */
+            //exit_application(0);
             return false;
     }
 
@@ -809,9 +813,10 @@ capture_input_closed(capture_session *cap_session, char *msg)
                     break;
 
                 case CF_READ_ABORTED:
-                    /* Exit by leaving the main loop, so that any quit functions
-                       we registered get called. */
-                    exit_application(0);
+                    /* The user asked to abort the read, but that might be to
+                       restart the capture, so let the caller decide whether
+                       to exit. */
+                    //exit_application(0);
                     break;
             }
         } else if (((capture_file*)cap_session->cf)->state == FILE_READ_PENDING) {
@@ -823,6 +828,19 @@ capture_input_closed(capture_session *cap_session, char *msg)
                 capture_input_read_all(cap_session, cf_is_tempfile((capture_file *)cap_session->cf),
                         cf_get_drops_known((capture_file *)cap_session->cf), cf_get_drops((capture_file *)cap_session->cf));
             }
+        } else {
+            /* First, tell the GUI we are not capturing nor stopping a capture
+               anymore. We need to do this if we're aborting the capture but
+               not quitting the program (e.g., restarting the capture.) */
+            capture_callback_invoke(capture_cb_capture_update_finished, cap_session);
+
+            if (cap_session->frame_cksum != NULL) {
+                fifo_string_cache_free(&cap_session->frame_dup_cache);
+                g_checksum_free(cap_session->frame_cksum);
+                cap_session->frame_cksum = NULL;
+            }
+
+            cf_close((capture_file *)cap_session->cf);
         }
     }
 
@@ -967,7 +985,9 @@ capture_interface_stat_start(capture_options *capture_opts _U_, GList **if_list)
      * counts might not always be a good idea.
      */
     int status;
+    iface_mon_enable(false);
     status = sync_interface_stats_open(&stat_fd, &fork_child, &data, &msg, NULL);
+    iface_mon_enable(true);
     /* In order to initialize the stat cache (below), we need to have
      * filled in capture_opts->all_ifaces
      *

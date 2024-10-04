@@ -2794,6 +2794,23 @@ finished_fwd:
         if(!seq_not_advanced)
             goto finished_checking_retransmission_type;
 
+        /* Some OOO vs Retrans interpretations can be wrong when the capture needs a reorder.
+         * Avoid such cases by enforcing the delta to 0 when the order seems bad, instead of
+         * calculating an absurd value.
+         */
+        if(pinfo->abs_ts.secs > tcpd->rev->tcp_analyze_seq_info->lastacktime.secs) {
+            /* regular case */
+            t = (pinfo->abs_ts.secs - tcpd->rev->tcp_analyze_seq_info->lastacktime.secs)*1000000000;
+            t += pinfo->abs_ts.nsecs - tcpd->rev->tcp_analyze_seq_info->lastacktime.nsecs;
+        }
+        else if( (pinfo->abs_ts.secs == tcpd->rev->tcp_analyze_seq_info->lastacktime.secs) &&
+                 (pinfo->abs_ts.nsecs > tcpd->rev->tcp_analyze_seq_info->lastacktime.nsecs) ) {
+            t = pinfo->abs_ts.nsecs - tcpd->rev->tcp_analyze_seq_info->lastacktime.nsecs;
+        }
+        else {
+            t = 0;
+        }
+
         bool precedence_count = tcp_fastrt_precedence;
         do {
             if (precedence_count) {
@@ -2804,8 +2821,6 @@ finished_fwd:
                      * duplicate ack
                      * then this is a fast retransmission
                      */
-                    t=(pinfo->abs_ts.secs-tcpd->rev->tcp_analyze_seq_info->lastacktime.secs)*1000000000;
-                    t=t+(pinfo->abs_ts.nsecs)-tcpd->rev->tcp_analyze_seq_info->lastacktime.nsecs;
                     if( t<20000000
                     &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
                     &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
@@ -2846,8 +2861,6 @@ finished_fwd:
                      * seen sequence number and it doesn't look like a retransmission
                      * then it is an OUT-OF-ORDER segment.
                      */
-                    t=(pinfo->abs_ts.secs-tcpd->fwd->tcp_analyze_seq_info->nextseqtime.secs)*1000000000;
-                    t=t+(pinfo->abs_ts.nsecs)-tcpd->fwd->tcp_analyze_seq_info->nextseqtime.nsecs;
                     if (tcpd->ts_first_rtt.nsecs == 0 && tcpd->ts_first_rtt.secs == 0) {
                         ooo_thres = 3000000;
                     } else {
@@ -10189,7 +10202,7 @@ proto_register_tcp(void)
         { &ei_tcp_analysis_partial_ack, { "tcp.analysis.partial_ack", PI_SEQUENCE, PI_NOTE, "Partial Acknowledgement of a segment", EXPFILL }},
         { &ei_tcp_connection_fin_active, { "tcp.connection.fin_active", PI_SEQUENCE, PI_NOTE, "This frame initiates the connection closing", EXPFILL }},
         { &ei_tcp_connection_fin_passive, { "tcp.connection.fin_passive", PI_SEQUENCE, PI_NOTE, "This frame undergoes the connection closing", EXPFILL }},
-        { &ei_tcp_scps_capable, { "tcp.analysis.zero_window_probe_ack", PI_SEQUENCE, PI_NOTE, "Connection establish request (SYN-ACK): SCPS Capabilities Negotiated", EXPFILL }},
+        { &ei_tcp_scps_capable, { "tcp.analysis.scps_capable", PI_SEQUENCE, PI_NOTE, "Connection establish request (SYN-ACK): SCPS Capabilities Negotiated", EXPFILL }},
         { &ei_tcp_option_sack_dsack, { "tcp.options.sack.dsack", PI_SEQUENCE, PI_WARN, "D-SACK Sequence", EXPFILL }},
         { &ei_tcp_option_snack_sequence, { "tcp.options.snack.sequence", PI_SEQUENCE, PI_NOTE, "SNACK Sequence", EXPFILL }},
         { &ei_tcp_option_wscale_shift_invalid, { "tcp.options.wscale.shift.invalid", PI_PROTOCOL, PI_WARN, "Window scale shift exceeds 14", EXPFILL }},

@@ -128,8 +128,8 @@ static int stun_network_version = NET_VER_5389;
 static const enum_val_t stun_network_version_vals[] = {
         { "Auto", "Auto",     NET_VER_AUTO},
         { "MS-TURN",  "MS-TURN", NET_VER_MS_TURN },
-        { "RFC3489 and earlier", "RFC3489 and earlier",     NET_VER_3489},
-        { "RFC5389 and later",  "RFC5389 and later", NET_VER_5389 },
+        { "RFC3489", "RFC3489 and earlier",     NET_VER_3489},
+        { "RFC5389",  "RFC5389 and later", NET_VER_5389 },
         { NULL, NULL, 0 }
 };
 
@@ -1186,8 +1186,8 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool h
             } else {
                 att_tree = proto_tree_add_expert_format(att_all_tree, pinfo, &ei_stun_unknown_attribute, tvb,
                                                         offset, ATTR_HDR_LEN + att_length_pad, "Unknown attribute 0x%04x", att_type_display);
-                ti = proto_tree_add_uint_format_value(att_tree, hf_stun_att_type, tvb,
-                                                      offset, 2, att_type, "0x%04x", att_type_display);
+                proto_tree_add_uint_format_value(att_tree, hf_stun_att_type, tvb,
+                                                 offset, 2, att_type, "0x%04x", att_type_display);
             }
             offset += 2;
 

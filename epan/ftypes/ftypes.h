@@ -75,6 +75,7 @@ enum ftenum {
 	FT_NUM_TYPES, /* last item number plus one */
 	FT_SCALAR,		/* Pseudo-type used only internally for certain
 				 * arithmetic operations. */
+	FT_ENUM_SIZE = FT_SCALAR	/* Must be equal to last enumeration */
 };
 
 #define FT_IS_INT32(ft) \
@@ -174,6 +175,7 @@ enum ftrepr {
 	FTREPR_DISPLAY,
 	FTREPR_DFILTER,
 	FTREPR_JSON,
+	FTREPR_RAW,
 };
 
 typedef enum ftrepr ftrepr_t;

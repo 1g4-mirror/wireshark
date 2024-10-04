@@ -33,11 +33,26 @@
 #include "packet-tls.h"
 #include "packet-thrift.h"
 
-/* Line  30: Constants and early declarations. */
-/* Line 180: Protocol data structure and helper functions. */
-/* Line 300: Helper functions to use within custom sub-dissectors. */
-/* Line 630: Generic functions to dissect TBinaryProtocol message content. */
-/* Line 900: Generic functions to dissect Thrift message header. */
+/* Line   40: Constants and macros declarations. */
+/* Line  200: Protocol data structure and early declarations. */
+/* Line  340: Generic helper functions for various purposes. */
+/* Line  900: Helper functions to use within custom sub-dissectors (with some mutualization function). */
+/* Line 2100: Generic functions to dissect TBinaryProtocol message content. */
+/* Line 2420: Generic functions to dissect TCompactProtocol message content. */
+/* Line 2900: Generic functions to dissect Thrift message header. */
+
+/* ==== Note about the use of THRIFT_REQUEST_REASSEMBLY and THRIFT_SUBDISSECTOR_ERROR. ==== */
+/* From the sub-dissection code, only the return value gives an information about the type of error.
+ * In this case, THRIFT_REQUEST_REASSEMBLY is used for reassembly and THRIFT_SUBDISSECTOR_ERROR for everything else.
+ *
+ * From the generic dissection code (dissect_thrift_binary_* and dissect_thrift_compact_*) the functions also update
+ * the offset passed as a reference. In this case, THRIFT_REQUEST_REASSEMBLY is the only error code used in order to
+ * simplify propagation and the reference offset indicates the type of issue:
+ * - THRIFT_REQUEST_REASSEMBLY indicates reassembly is required.
+ * - Any positive value indicates where the non-reassembly error happened
+ *   and the Thrift dissector consumes all the data available until now.
+ */
+
 
 void proto_register_thrift(void);
 void proto_reg_handoff_thrift(void);
@@ -1577,7 +1592,7 @@ dissect_thrift_b_linear(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int
     /* Create the sub-tree. */
     if (nested_count >= thrift_opt->nested_type_depth) {
         expert_add_info(pinfo, proto_tree_get_parent(tree), &ei_thrift_too_many_subtypes);
-        return THRIFT_REQUEST_REASSEMBLY;
+        return THRIFT_SUBDISSECTOR_ERROR;
     }
     p_set_proto_depth(pinfo, proto_thrift, nested_count + 1);
     container_pi = proto_tree_add_item(tree, hf_id, tvb, offset, -1, ENC_BIG_ENDIAN);
@@ -1703,7 +1718,7 @@ dissect_thrift_c_list_set(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
     /* Create the sub-tree. */
     if (nested_count >= thrift_opt->nested_type_depth) {
         expert_add_info(pinfo, proto_tree_get_parent(tree), &ei_thrift_too_many_subtypes);
-        return THRIFT_REQUEST_REASSEMBLY;
+        return THRIFT_SUBDISSECTOR_ERROR;
     }
     p_set_proto_depth(pinfo, proto_thrift, nested_count + 1);
     container_pi = proto_tree_add_item(tree, hf_id, tvb, offset, -1, ENC_BIG_ENDIAN);
@@ -1859,7 +1874,7 @@ dissect_thrift_t_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of
         /* Create the sub-tree. */
         if (nested_count >= thrift_opt->nested_type_depth) {
             expert_add_info(pinfo, proto_tree_get_parent(tree), &ei_thrift_too_many_subtypes);
-            return THRIFT_REQUEST_REASSEMBLY;
+            return THRIFT_SUBDISSECTOR_ERROR;
         }
         p_set_proto_depth(pinfo, proto_thrift, nested_count + 1);
         container_pi = proto_tree_add_item(tree, hf_id, tvb, len_offset, -1, ENC_BIG_ENDIAN);
@@ -1962,7 +1977,7 @@ dissect_thrift_t_struct_expert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         /* Add the struct to the tree. */
         if (nested_count >= thrift_opt->nested_type_depth) {
             expert_add_info(pinfo, proto_tree_get_parent(tree), &ei_thrift_too_many_subtypes);
-            return THRIFT_REQUEST_REASSEMBLY;
+            return THRIFT_SUBDISSECTOR_ERROR;
         }
         p_set_proto_depth(pinfo, proto_thrift, nested_count + 1);
         type_pi = proto_tree_add_item(tree, hf_id, tvb, offset, -1, ENC_BIG_ENDIAN);
@@ -3196,6 +3211,8 @@ dissect_thrift_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o
             return 0;
         }
         /* else { Fallback to dissect using the generic dissector. } */
+        /* Reset proto depth as the sub-dissector might have failed within a sub-structure and changed its value. */
+        p_set_proto_depth(pinfo, proto_thrift, 0);
     } /* else len = 0, no specific sub-dissector. */
 
     /***********************/
