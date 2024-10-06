@@ -360,6 +360,8 @@ QVariant EndpointDataModel::headerData(int section, Qt::Orientation orientation,
         switch (section) {
             case ENDP_COLUMN_ADDR:
                 return tr("Address"); break;
+            case ENDP_COLUMN_RESOLVED_ADDR:
+                return tr("Resolved Address"); break;
             case ENDP_COLUMN_PORT:
                 return tr("Port"); break;
             case ENDP_COLUMN_PACKETS:
@@ -394,6 +396,7 @@ QVariant EndpointDataModel::headerData(int section, Qt::Orientation orientation,
     } else if (role == Qt::TextAlignmentRole) {
         switch (section) {
         case ENDP_COLUMN_ADDR:
+        case ENDP_COLUMN_RESOLVED_ADDR:
         case ENDP_COLUMN_GEO_COUNTRY:
         case ENDP_COLUMN_GEO_CITY:
         case ENDP_COLUMN_GEO_AS_ORG:
@@ -439,6 +442,22 @@ QVariant EndpointDataModel::data(const QModelIndex &idx, int role) const
             wmem_free(NULL, addr_str);
             return q_addr_str;
         }
+        case ENDP_COLUMN_RESOLVED_ADDR:
+            if (gbl_resolv_flags.network_name) {
+                switch (item->myaddress.type) {
+                    case AT_IPv4:
+                        if (item->myaddress.len == sizeof(uint32_t)) {
+                            return QString(get_hostname(*(uint32_t *)item->myaddress.data));
+                        }
+                        break;
+                    case AT_IPv6:
+                        if (item->myaddress.len == sizeof(ws_in6_addr)) {
+                            return QString(get_hostname6(reinterpret_cast<const ws_in6_addr *>(item->myaddress.data)));
+                        }
+                        break;
+                }
+            }
+            return QString();
         case ENDP_COLUMN_PORT:
             if (_resolveNames) {
                 char* port_str = get_endpoint_port(NULL, item, _resolveNames);
@@ -523,6 +542,7 @@ QVariant EndpointDataModel::data(const QModelIndex &idx, int role) const
     } else if (role == Qt::TextAlignmentRole) {
         switch (idx.column()) {
         case ENDP_COLUMN_ADDR:
+        case ENDP_COLUMN_RESOLVED_ADDR:
         case ENDP_COLUMN_GEO_COUNTRY:
         case ENDP_COLUMN_GEO_CITY:
         case ENDP_COLUMN_GEO_AS_ORG:

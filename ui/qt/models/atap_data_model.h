@@ -258,6 +258,7 @@ public:
     typedef enum
     {
         ENDP_COLUMN_ADDR,
+        ENDP_COLUMN_RESOLVED_ADDR,
         ENDP_COLUMN_PORT,
         ENDP_COLUMN_PACKETS,
         ENDP_COLUMN_BYTES,
