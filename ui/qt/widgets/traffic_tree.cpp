@@ -135,10 +135,12 @@ void TrafficTreeHeaderView::headerContextMenu(const QPoint &pos)
 
     bool is_address = false;
     QModelIndex sourceIdx = proxy->mapToSource(proxy->index(0, column));
-    if (qobject_cast<EndpointDataModel *>(proxy->sourceModel()) && sourceIdx.column() == EndpointDataModel::ENDP_COLUMN_ADDR) {
+    if (qobject_cast<EndpointDataModel *>(proxy->sourceModel()) &&
+        (sourceIdx.column() == EndpointDataModel::ENDP_COLUMN_ADDR || sourceIdx.column() == EndpointDataModel::ENDP_COLUMN_RESOLVED_ADDR)) {
         is_address = true;
-    } else if (qobject_cast<ConversationDataModel *>(proxy->sourceModel()) && (sourceIdx.column() == ConversationDataModel::CONV_COLUMN_SRC_ADDR ||
-        sourceIdx.column() == ConversationDataModel::CONV_COLUMN_DST_ADDR)) {
+    } else if (qobject_cast<ConversationDataModel *>(proxy->sourceModel()) &&
+        (sourceIdx.column() == ConversationDataModel::CONV_COLUMN_SRC_ADDR || sourceIdx.column() == ConversationDataModel::CONV_COLUMN_RESOLVED_SRC_ADDR ||
+        sourceIdx.column() == ConversationDataModel::CONV_COLUMN_DST_ADDR || sourceIdx.column() == ConversationDataModel::CONV_COLUMN_RESOLVED_DST_ADDR)) {
         is_address = true;
     }
 
@@ -566,10 +568,21 @@ bool TrafficDataFilterProxy::filterAcceptsColumn(int source_column, const QModel
     ATapDataModel * model = qobject_cast<ATapDataModel *>(sourceModel());
     if (model) {
         if (model->portsAreHidden()) {
-            if (qobject_cast<EndpointDataModel *>(model) && source_column == EndpointDataModel::ENDP_COLUMN_PORT)
+            if (qobject_cast<EndpointDataModel *>(model) &&
+                (source_column == EndpointDataModel::ENDP_COLUMN_PORT || source_column == EndpointDataModel::ENDP_COLUMN_RESOLVED_PORT))
                 return false;
             if (qobject_cast<ConversationDataModel *>(model) &&
-                (source_column == ConversationDataModel::CONV_COLUMN_SRC_PORT || source_column == ConversationDataModel::CONV_COLUMN_DST_PORT))
+                (source_column == ConversationDataModel::CONV_COLUMN_SRC_PORT || source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_SRC_PORT ||
+                source_column == ConversationDataModel::CONV_COLUMN_DST_PORT || source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_DST_PORT))
+                return false;
+        }
+        if (!model->resolveNames()) {
+            if (qobject_cast<EndpointDataModel *>(model) &&
+                (source_column == EndpointDataModel::ENDP_COLUMN_RESOLVED_ADDR || source_column == EndpointDataModel::ENDP_COLUMN_RESOLVED_PORT))
+                return false;
+            if (qobject_cast<ConversationDataModel *>(model) &&
+                (source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_SRC_ADDR || source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_SRC_PORT ||
+                source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_DST_ADDR || source_column == ConversationDataModel::CONV_COLUMN_RESOLVED_DST_PORT))
                 return false;
         }
         if (! model->showTotalColumn()) {
