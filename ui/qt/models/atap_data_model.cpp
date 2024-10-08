@@ -650,7 +650,7 @@ QVariant ConversationDataModel::headerData(int section, Qt::Orientation orientat
         case CONV_COLUMN_DST_PORT:
             return tr("Port B"); break;
         case CONV_COLUMN_RESOLVED_DST_PORT:
-            return tr("Port B"); break;
+            return tr("Resolved Port B"); break;
         case CONV_COLUMN_PACKETS:
             return tr("Packets"); break;
         case CONV_COLUMN_BYTES:
