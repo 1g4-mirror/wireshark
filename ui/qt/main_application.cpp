@@ -655,7 +655,8 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     initialized_(false),
     is_reloading_lua_(false),
     if_notifier_(NULL),
-    active_captures_(0)
+    active_captures_(0),
+    refresh_interfaces_pending_(false)
 #ifdef HAVE_LIBPCAP
     , cached_if_list_(NULL)
 #endif
@@ -1079,6 +1080,12 @@ void MainApplication::emitLocalInterfaceEvent(const char *ifname, int added, int
 
 void MainApplication::refreshLocalInterfaces()
 {
+    if (active_captures_ > 0) {
+        refresh_interfaces_pending_ = true;
+        return;
+    }
+
+    refresh_interfaces_pending_ = false;
     extcap_clear_interfaces();
 
 #ifdef HAVE_LIBPCAP
@@ -1307,6 +1314,9 @@ void MainApplication::captureEventHandler(CaptureEvent ev)
     case CaptureEvent::Fixed:
         switch (ev.eventType())
         {
+        case CaptureEvent::Prepared:
+            iface_mon_enable(true);
+            break;
         case CaptureEvent::Started:
             active_captures_++;
             emit captureActive(active_captures_);
@@ -1314,6 +1324,9 @@ void MainApplication::captureEventHandler(CaptureEvent ev)
         case CaptureEvent::Finished:
             active_captures_--;
             emit captureActive(active_captures_);
+            if (refresh_interfaces_pending_ && !global_capture_opts.restart) {
+                refreshLocalInterfaces();
+            }
             break;
         default:
             break;

@@ -136,6 +136,19 @@ typedef enum {
     ELIDE_NONE
 } elide_mode_e;
 
+typedef enum {
+    COPY_FORMAT_TEXT,
+    COPY_FORMAT_CSV,
+    COPY_FORMAT_YAML,
+    COPY_FORMAT_HTML
+} copy_format_e;
+
+typedef enum {
+    ABS_TIME_ASCII_NEVER,
+    ABS_TIME_ASCII_TREE,
+    ABS_TIME_ASCII_COLUMN,
+    ABS_TIME_ASCII_ALWAYS,
+} abs_time_format_e;
 
 /*
  * Update channel.
@@ -217,6 +230,7 @@ typedef struct _e_prefs {
   unsigned     tap_update_interval;
   bool         display_hidden_proto_items;
   bool         display_byte_fields_with_spaces;
+  abs_time_format_e display_abs_time_ascii;
   bool         enable_incomplete_dissectors_check;
   bool         incomplete_dissectors_check_debug;
   bool         strict_conversation_tracking_heuristics;
@@ -237,6 +251,8 @@ typedef struct _e_prefs {
   bool         gui_show_selected_packet;
   bool         gui_show_file_load_time;
   elide_mode_e gui_packet_list_elide_mode;
+  copy_format_e gui_packet_list_copy_format_options_for_keyboard_shortcut;
+  bool         gui_packet_list_copy_text_with_aligned_columns;
   bool         gui_packet_list_show_related;
   bool         gui_packet_list_show_minimap;
   bool         gui_packet_list_sortable;

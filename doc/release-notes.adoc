@@ -40,11 +40,34 @@ The following features are either new or have been significantly updated since v
 //* The Windows installers now ship with Qt 6.5.2.
 //  They previously shipped with Qt 6.2.3.
 
-* Mergecap, Editcap, TShark and Text2pcap have an `--compress` option to
-  compress output to different formats. For now, it supports the gzip
-  and LZ4 compression formats. When the option is not given, the desired
-  compression format can also be deduced from the output filename
-  extension, e.g. gzip for .gz.
+* The default format for absolute times when output with -T fields, -T json,
+  and the "show" field of -T pdml, or when in custom columns (including CSV
+  output of columns) has been changed to ISO 8601. (This was already the case
+  for -T ek.) For backwards compatibility, a preference has been added,
+  protocols.display_abs_time_ascii. This can be set to continue to format
+  times in a manner similar to asctime. (E.g., Dec 18, 2017 05:28:39.071704055 EST.)
+  This preference can also be set to never use ascii time and to use ISO 8601 time
+  in the protocol tree (Packet Details) as well.
+
+* The TShark `-G` option for generating glossary reports does not need to be the
+  first option given on the command line anymore. In addition, the reports now
+  are affected by other command line options such as `-o`, `-d`, and
+  `--disable-protocol`, in addition to the `-C` option, which was already supported.
+  (The `defaultprefs` report remains unaffected by any other options.)
+  As a part of this change, `-G` with no argument, which was previously deprecated,
+  is no longer supported. Use `tshark -G fields` to produce the same report.
+  Also, the syntax for only listing fields with a certain prefix has changed to
+  `tshark -G fields,prefix`.
+
+* Wireshark can now decrypt NTP packets using NTS (Network Time Security). To decrypt packets,
+  the NTS-KE (Network Time Security Key Establishment Protocol) packets need to be present,
+  alongside the TLS client and exporter secrets. Additionally, the parts of a NTP packet which
+  can be cryptographically authenticated (from NTP packet header until the end  of the last
+  extension field that precedes the NTS Authenticator and Encrypted Extension Fields
+  extension field) are checked for validity.
+
+* Custom columns have an option to show the values using the same format as
+  in Packet Details.
 
 // === Removed Features and Support
 

@@ -609,7 +609,15 @@ static int hf_gsm_a_gm_sm_pco_ecs_addr_ipv4;
 static int hf_gsm_a_gm_sm_pco_ecs_addr_ipv6;
 static int hf_gsm_a_gm_sm_pco_ecs_addr_fqdn_len;
 static int hf_gsm_a_gm_sm_pco_ecs_addr_fqdn;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont_len;
 static int hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_espili;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_eami;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_tlsgi;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_tlsai;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_tlscsci;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont_len;
+static int hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont;
 static int hf_gsm_a_gm_sm_pco_ecsp_id;
 static int hf_gsm_a_gm_sm_pco_pvs_ipv4;
 static int hf_gsm_a_gm_sm_pco_pvs_ipv6;
@@ -4221,19 +4229,23 @@ de_gc_timer(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t of
 	switch (oct>>5)
 	{
 		case 0:
-			str = "sec"; val*=2;
+			str = "sec";
+			val *= 2;
 			break;
 		case 1:
 			str = "min";
 			break;
 		case 2:
-			str = "min"; val*=6;
+			str = "min";
+			val *= 6;
 			break;
 		case 7:
 			str = "";
 			item = proto_tree_add_uint_format_value(tree, hf_gsm_a_gm_gprs_timer, tvb, offset, 1, val, "timer is deactivated");
 			break;
-		default:  str = "min";
+		default:
+			str = "min";
+			break;
 	}
 
 	if (item == NULL) {
@@ -4270,18 +4282,22 @@ de_gc_timer2(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t o
 	switch (oct>>5)
 	{
 		case 0:
-			str = "sec"; val*=2;
+			str = "sec";
+			val *= 2;
 			break;
 		case 1:
 			str = "min";
 			break;
 		case 2:
-			str = "min"; val*=6;
+			str = "min";
+			val *= 6;
 			break;
 		case 7:
 			item = proto_tree_add_uint_format_value(tree, hf_gsm_a_gm_gprs_timer2, tvb, curr_offset, 1, val, "timer is deactivated");
 			break;
-		default:  str = "min";
+		default:
+			str = "min";
+			break;
 	}
 
 	if (item == NULL) {
@@ -4329,13 +4345,36 @@ de_gc_timer3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t o
 
 	switch (oct>>5)
 	{
-		case 0:  str = "min"; val*=10; break;
-		case 1:  str = "hours"; break;
-		case 2:  str = "hours"; val*=10; break;
-		case 3:  str = "sec"; val*=2; break;
-		case 4:  str = "sec"; val*=30; break;
-		case 5:  str = "min"; break;
-		case 6:  str = "hours"; val *= 320; break;
+		case 0:
+			str = "min";
+			val *= 10;
+			break;
+		case 1:
+			if (val == 1) {
+				str = "hour";
+			} else {
+				str = "hours";
+			}
+			break;
+		case 2:
+			str = "hours";
+			val *= 10;
+			break;
+		case 3:
+			str = "sec";
+			val *= 2;
+			break;
+		case 4:
+			str = "sec";
+			val *= 30;
+			break;
+		case 5:
+			str = "min";
+			break;
+		case 6:
+			str = "hours";
+			val *= 320;
+			break;
 		case 7:
 			item = proto_tree_add_uint_format_value(tree, hf_gsm_a_gm_gprs_timer3, tvb, curr_offset, 1, val, "timer is deactivated");
 			break;
@@ -5017,8 +5056,40 @@ de_sm_pco(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, 
 						default:
 							goto skip_ecs_addr;
 					}
-					if ((ie_offset - curr_offset) < e_len)
-						proto_tree_add_item(pco_tree, hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont, tvb, ie_offset, e_len - (ie_offset - curr_offset), ENC_NA);
+					if ((ie_offset - curr_offset) < e_len) {
+						uint32_t cont_len;
+
+						proto_tree_add_item_ret_uint(pco_tree, hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont_len, tvb, ie_offset, 1, ENC_BIG_ENDIAN, &cont_len);
+						ie_offset++;
+						proto_tree_add_item(pco_tree, hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont, tvb, ie_offset, cont_len, ENC_NA);
+						ie_offset += cont_len;
+						if ((ie_offset - curr_offset) < e_len) {
+							uint64_t flags;
+							static int* const ecs_flags[] = {
+								&hf_gsm_a_gm_sm_pco_ecs_addr_espili,
+								&hf_gsm_a_gm_sm_pco_ecs_addr_eami,
+								NULL
+							};
+
+							proto_tree_add_bitmask_list_ret_uint64(pco_tree, tvb, ie_offset, 1, ecs_flags, ENC_BIG_ENDIAN, &flags);
+							ie_offset++;
+							if (flags & 0x01) {
+								static int* const ecs_auth_meth[] = {
+									&hf_gsm_a_gm_sm_pco_ecs_addr_tlsgi,
+									&hf_gsm_a_gm_sm_pco_ecs_addr_tlsai,
+									&hf_gsm_a_gm_sm_pco_ecs_addr_tlscsci,
+									NULL
+								};
+								proto_tree_add_bitmask_list(pco_tree, tvb, ie_offset, 1, ecs_auth_meth, ENC_BIG_ENDIAN);
+								ie_offset++;
+							}
+							if (flags & 0x02) {
+								proto_tree_add_item_ret_uint(pco_tree, hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont_len, tvb, ie_offset, 1, ENC_BIG_ENDIAN, &cont_len);
+								ie_offset++;
+								proto_tree_add_item(pco_tree, hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont, tvb, ie_offset, cont_len, ENC_NA);
+							}
+						}
+					}
 					skip_ecs_addr:;
 				}
 				break;
@@ -9873,8 +9944,48 @@ proto_register_gsm_a_gm(void)
 		    FT_STRING, BASE_NONE, NULL, 0x0,
 		    NULL, HFILL }
 		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont_len,
+		  { "Spatial validity condition contents length", "gsm_a.gm.sm.pco.ecs_addr.spatial_valid_cond_cont_len",
+		    FT_UINT8, BASE_DEC, NULL, 0x0,
+		    NULL, HFILL }
+		},
 		{ &hf_gsm_a_gm_sm_pco_ecs_addr_spatial_valid_cond_cont,
 		  { "Spatial validity condition contents", "gsm_a.gm.sm.pco.ecs_addr.spatial_valid_cond_cont",
+		    FT_BYTES, BASE_NONE, NULL, 0x0,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_espili,
+		  { "ESPILI", "gsm_a.gm.sm.pco.ecs_addr.espili",
+		    FT_BOOLEAN, 8, TFS(&tfs_included_not_included), 0x02,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_eami,
+		  { "EAMI", "gsm_a.gm.sm.pco.ecs_addr.eami",
+		    FT_BOOLEAN, 8, TFS(&tfs_included_not_included), 0x01,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_tlsgi,
+		  { "TLSGI", "gsm_a.gm.sm.pco.ecs_addr.tlsgi",
+		    FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x04,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_tlsai,
+		  { "TLSAI", "gsm_a.gm.sm.pco.ecs_addr.tlsai",
+		    FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x02,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_tlscsci,
+		  { "TLSCSCI", "gsm_a.gm.sm.pco.ecs_addr.tlscsci",
+		    FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont_len,
+		  { "ECS supported PLMNs information list length", "gsm_a.gm.sm.pco.ecs_addr.supported_plmns_info_list_cont_len",
+		    FT_UINT8, BASE_DEC, NULL, 0x0,
+		    NULL, HFILL }
+		},
+		{ &hf_gsm_a_gm_sm_pco_ecs_addr_supported_plmns_info_list_cont,
+		  { "ECS supported PLMNs information list", "gsm_a.gm.sm.pco.ecs_addr.supported_plmns_info_list_cont",
 		    FT_BYTES, BASE_NONE, NULL, 0x0,
 		    NULL, HFILL }
 		},

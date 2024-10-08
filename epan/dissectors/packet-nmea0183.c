@@ -63,8 +63,31 @@ static int hf_nmea0183_gll_time_second;
 static int hf_nmea0183_gll_status;
 static int hf_nmea0183_gll_mode;
 
+static int hf_nmea0183_gst_time;
+static int hf_nmea0183_gst_time_hour;
+static int hf_nmea0183_gst_time_minute;
+static int hf_nmea0183_gst_time_second;
+static int hf_nmea0183_gst_rms_total_sd;
+static int hf_nmea0183_gst_ellipse_major_sd;
+static int hf_nmea0183_gst_ellipse_minor_sd;
+static int hf_nmea0183_gst_ellipse_orientation;
+static int hf_nmea0183_gst_latitude_sd;
+static int hf_nmea0183_gst_longitude_sd;
+static int hf_nmea0183_gst_altitude_sd;
+
 static int hf_nmea0183_rot_rate_of_turn;
 static int hf_nmea0183_rot_valid;
+
+static int hf_nmea0183_vbw_water_speed_longitudinal;
+static int hf_nmea0183_vbw_water_speed_transverse;
+static int hf_nmea0183_vbw_water_speed_valid;
+static int hf_nmea0183_vbw_ground_speed_longitudinal;
+static int hf_nmea0183_vbw_ground_speed_transverse;
+static int hf_nmea0183_vbw_ground_speed_valid;
+static int hf_nmea0183_vbw_stern_water_speed;
+static int hf_nmea0183_vbw_stern_water_speed_valid;
+static int hf_nmea0183_vbw_stern_ground_speed;
+static int hf_nmea0183_vbw_stern_ground_speed_valid;
 
 static int hf_nmea0183_vhw_true_heading;
 static int hf_nmea0183_vhw_true_heading_unit;
@@ -74,6 +97,15 @@ static int hf_nmea0183_vhw_water_speed_knot;
 static int hf_nmea0183_vhw_water_speed_knot_unit;
 static int hf_nmea0183_vhw_water_speed_kilometer;
 static int hf_nmea0183_vhw_water_speed_kilometer_unit;
+
+static int hf_nmea0183_vlw_cumulative_water;
+static int hf_nmea0183_vlw_cumulative_water_unit;
+static int hf_nmea0183_vlw_trip_water;
+static int hf_nmea0183_vlw_trip_water_unit;
+static int hf_nmea0183_vlw_cumulative_ground;
+static int hf_nmea0183_vlw_cumulative_ground_unit;
+static int hf_nmea0183_vlw_trip_ground;
+static int hf_nmea0183_vlw_trip_ground_unit;
 
 static int hf_nmea0183_vtg_true_course;
 static int hf_nmea0183_vtg_true_course_unit;
@@ -105,6 +137,7 @@ static int ett_nmea0183_gga_longitude;
 static int ett_nmea0183_gll_time;
 static int ett_nmea0183_gll_latitude;
 static int ett_nmea0183_gll_longitude;
+static int ett_nmea0183_gst_time;
 
 static expert_field ei_nmea0183_invalid_first_character;
 static expert_field ei_nmea0183_missing_checksum_character;
@@ -122,6 +155,10 @@ static expert_field ei_nmea0183_vhw_true_heading_unit_incorrect;
 static expert_field ei_nmea0183_vhw_magnetic_heading_unit_incorrect;
 static expert_field ei_nmea0183_vhw_water_speed_knot_unit_incorrect;
 static expert_field ei_nmea0183_vhw_water_speed_kilometer_unit_incorrect;
+static expert_field ei_nmea0183_vlw_cumulative_water_unit_incorrect;
+static expert_field ei_nmea0183_vlw_trip_water_unit_incorrect;
+static expert_field ei_nmea0183_vlw_cumulative_ground_unit_incorrect;
+static expert_field ei_nmea0183_vlw_trip_ground_unit_incorrect;
 static expert_field ei_nmea0183_vtg_true_course_unit_incorrect;
 static expert_field ei_nmea0183_vtg_magnetic_course_unit_incorrect;
 static expert_field ei_nmea0183_vtg_ground_speed_knot_unit_incorrect;
@@ -892,6 +929,33 @@ dissect_nmea0183_sentence_gll(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     return tvb_captured_length(tvb);
 }
 
+/* Dissect a GST sentence. The time field is split into individual parts. */
+static int
+dissect_nmea0183_sentence_gst(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+{
+    int offset = 0;
+
+    proto_tree *subtree = proto_tree_add_subtree(tree, tvb, offset,
+                                                 tvb_captured_length(tvb), ett_nmea0183_sentence,
+                                                 NULL, "GST sentence - GPS Pseudorange Noise Statistics");
+
+    offset += dissect_nmea0183_field_time(tvb, pinfo, subtree, offset, hf_nmea0183_gst_time,
+                                          hf_nmea0183_gst_time_hour, hf_nmea0183_gst_time_minute,
+                                          hf_nmea0183_gst_time_second, ett_nmea0183_gst_time);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_rms_total_sd, "");
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_ellipse_major_sd, "meter");
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_ellipse_minor_sd, "meter");
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_ellipse_orientation, "degree (true north)");
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_latitude_sd, "meter");
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_longitude_sd, "meter");
+    dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_gst_altitude_sd, "meter");
+
+    return tvb_captured_length(tvb);
+}
+
 /* Dissect a HDT sentence. */
 static int
 dissect_nmea0183_sentence_hdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
@@ -905,7 +969,7 @@ dissect_nmea0183_sentence_hdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_hdt_heading, "degree");
 
     dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_hdt_unit,
-                                                "T", &ei_nmea0183_hdt_unit_incorrect);
+                                      "T", &ei_nmea0183_hdt_unit_incorrect);
 
     return tvb_captured_length(tvb);
 }
@@ -956,6 +1020,66 @@ dissect_nmea0183_sentence_vhw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 
     dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_vhw_water_speed_kilometer_unit,
                                       "K", &ei_nmea0183_vhw_water_speed_kilometer_unit_incorrect);
+
+    return tvb_captured_length(tvb);
+}
+
+/* Dissect a VBW sentence. */
+static int
+dissect_nmea0183_sentence_vbw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+{
+    int offset = 0;
+
+    proto_tree *subtree = proto_tree_add_subtree(tree, tvb, offset,
+                                                 tvb_captured_length(tvb), ett_nmea0183_sentence,
+                                                 NULL, "VBW sentence - Dual Ground/Water Speed");
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_water_speed_longitudinal, "knot");
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_water_speed_transverse, "knot");
+    offset += dissect_nmea0183_field_status(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_water_speed_valid);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_ground_speed_longitudinal, "knot");
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_ground_speed_transverse, "knot");
+    offset += dissect_nmea0183_field_status(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_ground_speed_valid);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_stern_water_speed, "knot");
+    offset += dissect_nmea0183_field_status(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_stern_water_speed_valid);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_stern_ground_speed, "knot");
+    dissect_nmea0183_field_status(tvb, pinfo, subtree, offset, hf_nmea0183_vbw_stern_ground_speed_valid);
+
+    return tvb_captured_length(tvb);
+}
+
+/* Dissect a VLW sentence. */
+static int
+dissect_nmea0183_sentence_vlw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+{
+    int offset = 0;
+
+    proto_tree *subtree = proto_tree_add_subtree(tree, tvb, offset,
+                                                 tvb_captured_length(tvb), ett_nmea0183_sentence,
+                                                 NULL, "VLW sentence - Distance Traveled through Water");
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_cumulative_water, "nautical miles");
+
+    offset += dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_cumulative_water_unit,
+                                                "N", &ei_nmea0183_vlw_cumulative_water_unit_incorrect);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_trip_water, "nautical miles");
+
+    offset += dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_trip_water_unit,
+                                                "N", &ei_nmea0183_vlw_trip_water_unit_incorrect);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_cumulative_ground, "nautical miles");
+
+    offset += dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_cumulative_ground_unit,
+                                                "N", &ei_nmea0183_vlw_cumulative_ground_unit_incorrect);
+
+    offset += dissect_nmea0183_field(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_trip_ground, "nautical miles");
+
+    dissect_nmea0183_field_fixed_text(tvb, pinfo, subtree, offset, hf_nmea0183_vlw_trip_ground_unit,
+                                      "N", &ei_nmea0183_vlw_trip_ground_unit_incorrect);
 
     return tvb_captured_length(tvb);
 }
@@ -1114,6 +1238,10 @@ dissect_nmea0183(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     {
         offset += dissect_nmea0183_sentence_gll(data_tvb, pinfo, nmea0183_tree);
     }
+    else if (g_ascii_strcasecmp(sentence_id, "GST") == 0)
+    {
+        offset += dissect_nmea0183_sentence_gst(data_tvb, pinfo, nmea0183_tree);
+    }
     else if (g_ascii_strcasecmp(sentence_id, "HDT") == 0)
     {
         offset += dissect_nmea0183_sentence_hdt(data_tvb, pinfo, nmea0183_tree);
@@ -1122,9 +1250,17 @@ dissect_nmea0183(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     {
         offset += dissect_nmea0183_sentence_rot(data_tvb, pinfo, nmea0183_tree);
     }
+    else if (g_ascii_strcasecmp(sentence_id, "VBW") == 0)
+    {
+        offset += dissect_nmea0183_sentence_vbw(data_tvb, pinfo, nmea0183_tree);
+    }
     else if (g_ascii_strcasecmp(sentence_id, "VHW") == 0)
     {
         offset += dissect_nmea0183_sentence_vhw(data_tvb, pinfo, nmea0183_tree);
+    }
+    else if (g_ascii_strcasecmp(sentence_id, "VLW") == 0)
+    {
+        offset += dissect_nmea0183_sentence_vlw(data_tvb, pinfo, nmea0183_tree);
     }
     else if (g_ascii_strcasecmp(sentence_id, "VTG") == 0)
     {
@@ -1403,6 +1539,61 @@ void proto_register_nmea0183(void)
           FT_STRING, BASE_NONE,
           NULL, 0x0,
           "NMEA 0183 GLL FAA mode indicator (NMEA 2.3 and later)", HFILL}},
+        {&hf_nmea0183_gst_time,
+         {"UTC Time of position", "nmea0183.gst_time",
+          FT_NONE, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_time_hour,
+         {"Hour", "nmea0183.gst_time_hour",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_time_minute,
+         {"Minute", "nmea0183.gst_time_minute",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_time_second,
+         {"Second", "nmea0183.gst_time_second",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_rms_total_sd,
+         {"Total RMS standard deviation", "nmea0183.gst_sd_rms_total",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 GST Total RMS standard deviation of ranges inputs to the navigation solution", HFILL}},
+        {&hf_nmea0183_gst_ellipse_major_sd,
+         {"Standard deviation of semi-major axis of error", "nmea0183.gst_ellipse_major_sd",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_ellipse_minor_sd,
+         {"Standard deviation of semi-minor axis of error ellipse", "nmea0183.gst_ellipse_minor_sd",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_ellipse_orientation,
+         {"Orientation of semi-major axis of error ellipse", "nmea0183.gst_ellipse_orientation",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 GST Orientation of semi-major axis of error ellipse (true north degrees)", HFILL}},
+        {&hf_nmea0183_gst_latitude_sd,
+         {"Standard deviation of latitude error", "nmea0183.gst_sd_latitude",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_longitude_sd,
+         {"Standard deviation of longitude error", "nmea0183.gst_sd_longitude",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
+        {&hf_nmea0183_gst_altitude_sd,
+         {"Standard deviation of altitude error", "nmea0183.gst_sd_altitude",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL}},
         {&hf_nmea0183_hdt_heading,
          {"True heading", "nmea0183.hdt_heading",
           FT_STRING, BASE_NONE,
@@ -1423,6 +1614,56 @@ void proto_register_nmea0183(void)
           FT_STRING, BASE_NONE,
           NULL, 0x0,
           "NMEA 0183 ROT Status, A means data is valid", HFILL}},
+        {&hf_nmea0183_vbw_water_speed_longitudinal,
+         {"Longitudinal water speed", "nmea0183.vbw_water_speed_longitudinal",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Longitudinal water speed, negative value means astern, knots", HFILL}},
+        {&hf_nmea0183_vbw_water_speed_transverse,
+         {"Transverse water speed", "nmea0183.vbw_water_speed_transverse",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Transverse water speed, negative value means port, knots", HFILL}},
+        {&hf_nmea0183_vbw_water_speed_valid,
+         {"Water speed validity", "nmea0183.vbw_water_speed_valid",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Water speed status, A means data is valid", HFILL}},
+        {&hf_nmea0183_vbw_ground_speed_longitudinal,
+         {"Longitudinal ground speed", "nmea0183.vbw_ground_speed_longitudinal",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Longitudinal ground speed, negative value means astern, knots", HFILL}},
+        {&hf_nmea0183_vbw_ground_speed_transverse,
+         {"Transverse ground speed", "nmea0183.vbw_ground_speed_transverse",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Transverse ground speed, negative value means port, knots", HFILL}},
+        {&hf_nmea0183_vbw_ground_speed_valid,
+         {"Ground speed validity", "nmea0183.vbw_ground_speed_valid",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Ground speed status, A means data is valid", HFILL}},
+        {&hf_nmea0183_vbw_stern_water_speed,
+         {"Stern water speed", "nmea0183.vbw_stern_water_speed",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Stern traverse water ground speed, negative value means port, knots", HFILL}},
+        {&hf_nmea0183_vbw_stern_water_speed_valid,
+         {"Stern water speed validity", "nmea0183.vbw_stern_water_speed_valid",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Stern traverse water speed status, A means data is valid", HFILL}},
+        {&hf_nmea0183_vbw_stern_ground_speed,
+         {"Stern ground speed", "nmea0183.vbw_stern_ground_speed",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Stern traverse ground ground speed, negative value means port, knots", HFILL}},
+        {&hf_nmea0183_vbw_stern_ground_speed_valid,
+         {"Stern ground speed validity", "nmea0183.vbw_stern_ground_speed_valid",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VBW Stern traverse ground speed status, A means data is valid", HFILL}},
         {&hf_nmea0183_vhw_true_heading,
          {"True heading", "nmea0183.vhw_true_heading",
           FT_STRING, BASE_NONE,
@@ -1463,6 +1704,46 @@ void proto_register_nmea0183(void)
           FT_STRING, BASE_NONE,
           NULL, 0x0,
           "NMEA 0183 VHW Water speed unit, must be K", HFILL}},
+        {&hf_nmea0183_vlw_cumulative_water,
+         {"Cumulative water distance", "nmea0183.vlw_hf_nmea0183_vlw_cumulative_water",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Total cumulative water distance, nautical miles", HFILL}},
+        {&hf_nmea0183_vlw_cumulative_water_unit,
+         {"Distance unit", "nmea0183.vlw_cumulative_water_unit",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Distance unit, must be N", HFILL}},
+        {&hf_nmea0183_vlw_trip_water,
+         {"Trip water distance", "nmea0183.vlw_hf_nmea0183_vlw_trip_water",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Water distance since Reset, nautical miles", HFILL}},
+        {&hf_nmea0183_vlw_trip_water_unit,
+         {"Distance unit", "nmea0183.vlw_trip_water_unit",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Distance unit, must be N", HFILL}},
+        {&hf_nmea0183_vlw_cumulative_ground,
+         {"Cumulative ground distance", "nmea0183.vlw_hf_nmea0183_vlw_cumulative_ground",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Total cumulative ground distance, nautical miles (NMEA 3 and above)", HFILL}},
+        {&hf_nmea0183_vlw_cumulative_ground_unit,
+         {"Distance unit", "nmea0183.vlw_cumulative_ground_unit",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Distance unit, must be N", HFILL}},
+        {&hf_nmea0183_vlw_trip_ground,
+         {"Trip ground distance", "nmea0183.vlw_hf_nmea0183_vlw_trip_ground",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Ground distance since Reset, nautical miles (NMEA 3 and above)", HFILL}},
+        {&hf_nmea0183_vlw_trip_ground_unit,
+         {"Distance unit", "nmea0183.vlw_trip_ground_unit",
+          FT_STRING, BASE_NONE,
+          NULL, 0x0,
+          "NMEA 0183 VLW Distance unit, must be N", HFILL}},
         {&hf_nmea0183_vtg_true_course,
          {"True course over ground", "nmea0183.vtg_true_course",
           FT_STRING, BASE_NONE,
@@ -1616,6 +1897,18 @@ void proto_register_nmea0183(void)
         {&ei_nmea0183_vhw_water_speed_kilometer_unit_incorrect,
          {"nmea0183.vhw_water_speed_kilometer_unit_incorrect", PI_PROTOCOL, PI_WARN,
           "Incorrect speed unit (should be 'K')", EXPFILL}},
+        {&ei_nmea0183_vlw_cumulative_water_unit_incorrect,
+         {"nmea0183.vlw_cumulative_water_unit_incorrect", PI_PROTOCOL, PI_WARN,
+          "Incorrect distance unit (should be 'N')", EXPFILL}},
+        {&ei_nmea0183_vlw_trip_water_unit_incorrect,
+         {"nmea0183.vlw_trip_water_unit_incorrect", PI_PROTOCOL, PI_WARN,
+          "Incorrect distance unit (should be 'N')", EXPFILL}},
+        {&ei_nmea0183_vlw_cumulative_ground_unit_incorrect,
+         {"nmea0183.vlw_cumulative_ground_unit_incorrect", PI_PROTOCOL, PI_WARN,
+          "Incorrect distance unit (should be 'N')", EXPFILL}},
+        {&ei_nmea0183_vlw_trip_ground_unit_incorrect,
+         {"nmea0183.vlw_trip_ground_unit_incorrect", PI_PROTOCOL, PI_WARN,
+          "Incorrect distance unit (should be 'N')", EXPFILL}},
         {&ei_nmea0183_vtg_true_course_unit_incorrect,
          {"nmea0183.vtg_true_course_unit_incorrect", PI_PROTOCOL, PI_WARN,
           "Incorrect course unit (should be 'T')", EXPFILL}},

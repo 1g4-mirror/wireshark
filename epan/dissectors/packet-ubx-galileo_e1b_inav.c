@@ -73,12 +73,35 @@ static int hf_ubx_gal_inav_word2_omega;
 static int hf_ubx_gal_inav_word2_incl_angle_rate;
 static int hf_ubx_gal_inav_word2_reserved;
 
+static int hf_ubx_gal_inav_word3;
+static int hf_ubx_gal_inav_word3_iodnav;
+static int hf_ubx_gal_inav_word3_omega_rate;
+static int hf_ubx_gal_inav_word3_delta_n;
+static int hf_ubx_gal_inav_word3_c_uc;
+static int hf_ubx_gal_inav_word3_c_us;
+static int hf_ubx_gal_inav_word3_c_rc;
+static int hf_ubx_gal_inav_word3_c_rs;
+static int hf_ubx_gal_inav_word3_sisa_e1_e5b;
+
+static int hf_ubx_gal_inav_word4;
+static int hf_ubx_gal_inav_word4_iodnav;
+static int hf_ubx_gal_inav_word4_svid;
+static int hf_ubx_gal_inav_word4_c_ic;
+static int hf_ubx_gal_inav_word4_c_is;
+static int hf_ubx_gal_inav_word4_t_0c;
+static int hf_ubx_gal_inav_word4_a_f0;
+static int hf_ubx_gal_inav_word4_a_f1;
+static int hf_ubx_gal_inav_word4_a_f2;
+static int hf_ubx_gal_inav_word4_spare;
+
 static dissector_table_t ubx_gal_inav_word_dissector_table;
 
 static int ett_ubx_gal_inav;
 static int ett_ubx_gal_inav_word0;
 static int ett_ubx_gal_inav_word1;
 static int ett_ubx_gal_inav_word2;
+static int ett_ubx_gal_inav_word3;
+static int ett_ubx_gal_inav_word4;
 static int ett_ubx_gal_inav_sar;
 
 static const value_string GAL_PAGE_TYPE[] = {
@@ -94,6 +117,27 @@ static const value_string GAL_SSP[] = {
     {0, NULL},
 };
 
+/* Format clock correction (with scale factor 60) for
+ * t_0c
+ */
+static void fmt_clk_correction(char *label, uint32_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%u s", 60 * c);
+}
+
+/* Format radians (with 2^-29 scale factor) for
+ * amplitude of harmonic correction terms
+ */
+static void fmt_lat_correction(char *label, int16_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-29 radians", c);
+}
+
+/* Format meters (with 2^-5 scale factor) for
+ * amplitude of orbit correction terms
+ */
+static void fmt_orbit_correction(char *label, int16_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-5 m", c);
+}
+
 /* Format semi-circles (with 2^-31 scale factor) for
  * - mean anomaly at reference time
  * - longitude of ascending node of orbital plane at weekly epoch
@@ -106,9 +150,59 @@ static void fmt_semi_circles(char *label, int32_t c) {
 
 /* Format rate of semi-circles (with 2^-43 scale factor) for
  * - inclination angle
+ * - right ascension
+ * - mean motion difference
  */
 static void fmt_semi_circles_rate(char *label, int16_t c) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-43 semi-circles/s", c);
+}
+
+/* Format SISA */
+static void fmt_sisa(char *label, uint8_t i) {
+    if (i <= 49) {
+        // 0 cm to 49 cm with 1 cm resolution
+        snprintf(label, ITEM_LABEL_LENGTH, "%u cm", i);
+    }
+    else if (i <= 74) {
+        // 50 cm to 98 cm with 2 cm resolution
+        snprintf(label, ITEM_LABEL_LENGTH, "%u cm", 50 + ((i - 50) * 2));
+    }
+    else if (i <= 99) {
+        // 100 cm to 196 cm with 4 cm resolution
+        snprintf(label, ITEM_LABEL_LENGTH, "%u cm", 100 + ((i - 75) * 4));
+    }
+    else if (i <= 125) {
+        // 200 cm to 600 cm with 16 cm resolution
+        snprintf(label, ITEM_LABEL_LENGTH, "%u cm", 200 + ((i - 100) * 16));
+    }
+    else if (i <= 254) {
+        // Spare
+        snprintf(label, ITEM_LABEL_LENGTH, "Spare");
+    }
+    else { // i == 255
+        snprintf(label, ITEM_LABEL_LENGTH, "No Accuracy Prediction Available (NAPA)");
+    }
+}
+
+/* Format SV clock bias (with 2^-34 scale factor) for
+ * a_f0
+ */
+static void fmt_sv_clk_bias(char *label, int32_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-34 s", c);
+}
+
+/* Format SV clock drift (with 2^-46 scale factor) for
+ * a_f1
+ */
+static void fmt_sv_clk_drift(char *label, int32_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-46 s/s", c);
+}
+
+/* Format SV clock drift rate (with 2^-59 scale factor) for
+ * a_f1
+ */
+static void fmt_sv_clk_drift_rate(char *label, int32_t c) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d * 2^-59 s/s" UTF8_SUPERSCRIPT_TWO, c);
 }
 
 /* Format eccentricity */
@@ -132,8 +226,8 @@ static int dissect_ubx_gal_inav(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     tvbuff_t *next_tvb;
 
     bool sar_start, sar_long_rlm;
-    uint32_t inav_type, even_page_type, odd_page_type;
-    uint64_t data_122_67, data_66_17, data_16_1;
+    uint32_t inav_type = 0, even_page_type, odd_page_type;
+    uint64_t data_122_67 = 0, data_66_17 = 0, data_16_1 = 0;
     uint8_t *word;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Galileo E1-B I/NAV");
@@ -194,7 +288,7 @@ static int dissect_ubx_gal_inav(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     if (even_page_type == 0 && odd_page_type == 0) {
         // create new tvb with the data word
         word = wmem_alloc(pinfo->pool, 16);
-        phton16(word + 14, data_16_1);
+        phton16(word + 14, (uint16_t)data_16_1);
         phton64(word + 6, data_66_17);
         phton64(word, (((uint64_t) inav_type) << 58) | (data_122_67 << 2) | (data_66_17 >> 48));
 
@@ -262,6 +356,47 @@ static int dissect_ubx_gal_inav_word2(tvbuff_t *tvb, packet_info *pinfo _U_, pro
     return tvb_captured_length(tvb);
 }
 
+/* Dissect word 3 - Ephemeris (3/4) */
+static int dissect_ubx_gal_inav_word3(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_) {
+    col_append_str(pinfo->cinfo, COL_INFO, "Word 3 (Ephemeris (3/4))");
+
+    proto_item *ti = proto_tree_add_item(tree, hf_ubx_gal_inav_word3, tvb, 0, 16, ENC_NA);
+    proto_tree *word_tree = proto_item_add_subtree(ti, ett_ubx_gal_inav_word3);
+
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word_type,         tvb,  0, 1, ENC_NA);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_iodnav,      tvb,  0, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_omega_rate,  tvb,  2, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_delta_n,     tvb,  5, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_c_uc,        tvb,  7, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_c_us,        tvb,  9, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_c_rc,        tvb, 11, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_c_rs,        tvb, 13, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word3_sisa_e1_e5b, tvb, 15, 1, ENC_NA);
+
+    return tvb_captured_length(tvb);
+}
+
+/* Dissect word 4 - Ephemeris (4/4) */
+static int dissect_ubx_gal_inav_word4(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_) {
+    col_append_str(pinfo->cinfo, COL_INFO, "Word 4 (Ephemeris (4/4))");
+
+    proto_item *ti = proto_tree_add_item(tree, hf_ubx_gal_inav_word4, tvb, 0, 16, ENC_NA);
+    proto_tree *word_tree = proto_item_add_subtree(ti, ett_ubx_gal_inav_word4);
+
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word_type,    tvb,  0, 1, ENC_NA);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_iodnav, tvb,  0, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_svid,   tvb,  2, 1, ENC_NA);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_c_ic,   tvb,  2, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_c_is,   tvb,  4, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_t_0c,   tvb,  6, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_a_f0,   tvb,  8, 8, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_a_f1,   tvb, 12, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_a_f2,   tvb, 12, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item(word_tree, hf_ubx_gal_inav_word4_spare,  tvb, 15, 1, ENC_NA);
+
+    return tvb_captured_length(tvb);
+}
+
 void proto_register_ubx_gal_inav(void) {
 
     static hf_register_info hf[] = {
@@ -310,10 +445,38 @@ void proto_register_ubx_gal_inav(void) {
         {&hf_ubx_gal_inav_word2_omega,           {"Argument of perigee (" UTF8_OMEGA ")",                                                                      "gal_inav.word2.omega",    FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles),      0xffffffff, NULL, HFILL}},
         {&hf_ubx_gal_inav_word2_incl_angle_rate, {"Rate of change of inclination angle (di)",                                                                  "gal_inav.word2.di",       FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles_rate), 0xfffc,     NULL, HFILL}},
         {&hf_ubx_gal_inav_word2_reserved,        {"Reserved",                                                                                                  "gal_inav.word2.reserved", FT_UINT8,  BASE_HEX,    NULL,                            0x03,       NULL, HFILL}},
+
+        // Word 3
+        {&hf_ubx_gal_inav_word3,             {"Word 3 (Ephemeris (3/4))",                                                            "gal_inav.word3",             FT_NONE,   BASE_NONE,   NULL,                            0x0,        NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_iodnav,      {"IOD_nav",                                                                             "gal_inav.word3.iod_nav",     FT_UINT16, BASE_DEC,    NULL,                            0x03ff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_omega_rate,  {"Rate of change of right ascension (dot " UTF8_CAPITAL_OMEGA ")",                      "gal_inav.word3.omega_rate",  FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles_rate), 0xffffff00, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_delta_n,     {"Mean motion difference from computed value (" UTF8_CAPITAL_DELTA "n)",                "gal_inav.word3.delta_n",     FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles_rate), 0xffff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_c_uc,        {"Amplitude of the cosine harmonic correction term to the argument of latitude (C_UC)", "gal_inav.word3.c_uc",        FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_lat_correction),    0xffff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_c_us,        {"Amplitude of the sine harmonic correction term to the argument of latitude (C_US)",   "gal_inav.word3.c_us",        FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_lat_correction),    0xffff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_c_rc,        {"Amplitude of the cosine harmonic correction term to the orbit radius (C_RC)",         "gal_inav.word3.c_rc",        FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_orbit_correction),  0xffff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_c_rs,        {"Amplitude of the sine harmonic correction term to the orbit radius (C_RS)",           "gal_inav.word3.c_rs",        FT_INT16,  BASE_CUSTOM, CF_FUNC(&fmt_orbit_correction),  0xffff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word3_sisa_e1_e5b, {"Signal-in-Space Accuracy (SISA(E1,E5b))",                                             "gal_inav.word3.sisa_e1_e5b", FT_UINT8,  BASE_CUSTOM, CF_FUNC(&fmt_sisa),              0xff,       NULL, HFILL}},
+
+        // Word 4
+        {&hf_ubx_gal_inav_word4,             {"Word 4 (Ephemeris (4/4))",                                                            "gal_inav.word4",             FT_NONE,   BASE_NONE,   NULL,                            0x0,        NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_iodnav,      {"IOD_nav",                                                                             "gal_inav.word4.iod_nav",     FT_UINT16, BASE_DEC,    NULL,                            0x03ff,     NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_svid,        {"SVID",                                                                                "gal_inav.word4.svid",        FT_UINT8,  BASE_DEC,    NULL,                            0xfc,       NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_c_ic,        {"Amplitude of the cosine harmonic correction term to the angle of inclination (C_IC)", "gal_inav.word4.c_ic",        FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_lat_correction),    0x03fffc00, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_c_is,        {"Amplitude of the sine harmonic correction term to the angle of inclination (C_IS)",   "gal_inav.word4.c_is",        FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_lat_correction),    0x03fffc00, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_t_0c,        {"Clock correction data reference Time of Week (t_0c)",                                 "gal_inav.word4.t_0c",        FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_clk_correction),    0x03fff000, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_a_f0,        {"SV clock bias correction coefficient (a_f0)",                                         "gal_inav.word4.a_f0",        FT_INT64,  BASE_CUSTOM, CF_FUNC(&fmt_sv_clk_bias),       0x0fffffffe0000000, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_a_f1,        {"SV clock drift correction coefficient (a_f1)",                                        "gal_inav.word4.a_f1",        FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_sv_clk_drift),      0x1fffff00, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_a_f2,        {"SV clock drift rate correction coefficient (a_f2)",                                   "gal_inav.word4.a_f2",        FT_INT32,  BASE_CUSTOM, CF_FUNC(&fmt_sv_clk_drift_rate), 0x000000fc, NULL, HFILL}},
+        {&hf_ubx_gal_inav_word4_spare,       {"Spare",                                                                               "gal_inav.word4.spare",       FT_UINT8,  BASE_HEX,    NULL,                            0x03,       NULL, HFILL}},
     };
 
     static int *ett[] = {
         &ett_ubx_gal_inav,
+        &ett_ubx_gal_inav_word0,
+        &ett_ubx_gal_inav_word1,
+        &ett_ubx_gal_inav_word2,
+        &ett_ubx_gal_inav_word3,
+        &ett_ubx_gal_inav_word4,
         &ett_ubx_gal_inav_sar,
     };
 
@@ -334,4 +497,6 @@ void proto_reg_handoff_ubx_gal_inav(void) {
     dissector_add_uint("ubx.rxm.sfrbx.gal_inav.word", 0, create_dissector_handle(dissect_ubx_gal_inav_word0, proto_ubx_gal_inav));
     dissector_add_uint("ubx.rxm.sfrbx.gal_inav.word", 1, create_dissector_handle(dissect_ubx_gal_inav_word1, proto_ubx_gal_inav));
     dissector_add_uint("ubx.rxm.sfrbx.gal_inav.word", 2, create_dissector_handle(dissect_ubx_gal_inav_word2, proto_ubx_gal_inav));
+    dissector_add_uint("ubx.rxm.sfrbx.gal_inav.word", 3, create_dissector_handle(dissect_ubx_gal_inav_word3, proto_ubx_gal_inav));
+    dissector_add_uint("ubx.rxm.sfrbx.gal_inav.word", 4, create_dissector_handle(dissect_ubx_gal_inav_word4, proto_ubx_gal_inav));
 }

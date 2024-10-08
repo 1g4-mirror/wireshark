@@ -1398,9 +1398,9 @@ static bool dtls13_create_aad(tvbuff_t *tvb, SslDecryptSession *ssl, bool is_fro
   }
 
   if (seq_length == 2) {
-    phton16(&dec->dtls13_aad.data[1 + cid_length], sequence_number);
+    phton16(&dec->dtls13_aad.data[1 + cid_length], (uint16_t)sequence_number);
   } else {
-    dec->dtls13_aad.data[1 + cid_length] = sequence_number;
+    dec->dtls13_aad.data[1 + cid_length] = (uint8_t)sequence_number;
   }
   if (hdr_flags & DTLS13_L_BIT_MASK) {
       phton16(&dec->dtls13_aad.data[1 + cid_length + seq_length], dtls_record_length);
@@ -1741,9 +1741,10 @@ dissect_dtls13_record(tvbuff_t *tvb, packet_info *pinfo _U_,
     /* on first pass add seq suffix decrypted info */
     if (ssl) {
       if (is_from_server && ssl->server) {
-        record->dtls13_seq_suffix = ssl->server->seq;
+        // XXX - Should the cast depend on seq_length ?
+        record->dtls13_seq_suffix = (uint16_t)ssl->server->seq;
       } else if (ssl->client) {
-        record->dtls13_seq_suffix = ssl->client->seq;
+        record->dtls13_seq_suffix = (uint16_t)ssl->client->seq;
       }
     }
 
@@ -2689,12 +2690,16 @@ dtlsdecrypt_uat_fld_protocol_chk_cb(void* r _U_, const char* p, unsigned len _U_
         return true;
     }
 
-    if (!find_dissector(p)) {
-        if (proto_get_id_by_filter_name(p) != -1) {
+    if (!ssl_find_appdata_dissector(p)) {
+        if (find_dissector(p)) {
+            // ssl_find_appdata_dissector accepts any valid dissector name so
+            // this path cannot happen
             *err = ws_strdup_printf("While '%s' is a valid dissector filter name, that dissector is not configured"
                                    " to support DTLS decryption.\n\n"
                                    "If you need to decrypt '%s' over DTLS, please contact the Wireshark development team.", p, p);
         } else {
+            // The GUI validates dissector names now so this path shouldn't
+            // occur either. (Perhaps if the UAT is hand-edited it might?)
             char* ssl_str = ssl_association_info("dtls.port", "UDP");
             *err = ws_strdup_printf("Could not find dissector for: '%s'\nCommonly used DTLS dissectors include:\n%s", p, ssl_str);
             g_free(ssl_str);
@@ -3059,7 +3064,7 @@ proto_register_dtls(void)
      { &ei_dtls_msg_len_diff_fragment, { "dtls.msg_len_diff_fragment", PI_PROTOCOL, PI_ERROR, "Message length differs from value in earlier fragment", EXPFILL }},
      { &ei_dtls_heartbeat_payload_length, { "dtls.heartbeat_message.payload_length.invalid", PI_MALFORMED, PI_ERROR, "Invalid heartbeat payload length", EXPFILL }},
      { &ei_dtls_cid_invalid_content_type, { "dtls.cid.content_type.invalid", PI_MALFORMED, PI_ERROR, "Invalid real content type", EXPFILL }},
-     { &ei_dtls_use_srtp_profiles_length, { "dtls.use_srtp.protection_profiles_length.invalid", PI_PROTOCOL, PI_ERROR, "Invalid real content type", EXPFILL }},
+     { &ei_dtls_use_srtp_profiles_length, { "dtls.use_srtp.protection_profiles_length.invalid", PI_PROTOCOL, PI_ERROR, "Invalid protection profiles length", EXPFILL }},
 #if 0
      { &ei_dtls_cid_invalid_enc_content, { "dtls.cid.enc_content.invalid", PI_MALFORMED, PI_ERROR, "Invalid encrypted content", EXPFILL }},
 #endif
@@ -3100,7 +3105,7 @@ proto_register_dtls(void)
     static uat_field_t dtlskeylist_uats_flds[] = {
       UAT_FLD_CSTRING_OTHER(sslkeylist_uats, ipaddr, "IP address", ssldecrypt_uat_fld_ip_chk_cb, "IPv4 or IPv6 address (unused)"),
       UAT_FLD_CSTRING_OTHER(sslkeylist_uats, port, "Port", ssldecrypt_uat_fld_port_chk_cb, "Port Number (optional)"),
-      UAT_FLD_CSTRING_OTHER(sslkeylist_uats, protocol, "Protocol", dtlsdecrypt_uat_fld_protocol_chk_cb, "Application Layer Protocol (optional)"),
+      UAT_FLD_DISSECTOR_OTHER(sslkeylist_uats, protocol, "Protocol", dtlsdecrypt_uat_fld_protocol_chk_cb, "Application Layer Protocol (optional)"),
       UAT_FLD_FILENAME_OTHER(sslkeylist_uats, keyfile, "Key File", ssldecrypt_uat_fld_fileopen_chk_cb, "Path to the keyfile."),
       UAT_FLD_CSTRING_OTHER(sslkeylist_uats, password," Password (p12 file)", ssldecrypt_uat_fld_password_chk_cb, "Password"),
       UAT_END_FIELDS
