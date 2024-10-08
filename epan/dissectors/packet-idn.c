@@ -1281,10 +1281,6 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 		int byte_len; //length of samples
     char values[MAX_BUFFER];
 		char group_numbers[MAX_BUFFER];
-		if(max_samples *2 < tvb_reported_length_remaining(tvb, offset)){
-			proto_item_append_text(idn_tree, " WARNING: not enough captured length for all Audio Samples");
-			max_samples = tvb_reported_length_remaining(tvb, offset);
-		}
 
 		switch (audio_format) {
 			case 0x0:
@@ -1297,7 +1293,13 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 				byte_len = 3;
 				break;
 			default:
+				proto_item_append_text(idn_tree, " ERROR: unknown format");
 				return offset;
+		}
+
+		if(max_samples * byte_len != tvb_reported_length_remaining(tvb, offset)){
+			proto_item_append_text(idn_tree, " WARNING: length not matching captured bytes");
+			max_samples = tvb_reported_length_remaining(tvb, offset) / byte_len;
 		}
 
   while (tvb_reported_length_remaining(tvb, offset) >= 10*channels*byte_len) {
@@ -1326,9 +1328,39 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 				offset += byte_len;
 			}
 			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+j-10, values);
+			max_samples -= 10;
+
 		}
   }
 
+	if (tvb_reported_length_remaining(tvb, offset) > 0) {
+		printf("%d remaining\n",tvb_reported_length_remaining(tvb, offset) );
+		sprintf(group_numbers, "Sample %4d-%4d", count_sample_groups, count_sample_groups + tvb_reported_length_remaining(tvb, offset)/byte_len/channels);
+		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
+		int remainder = 1;
+		while (tvb_reported_length_remaining(tvb, offset) > channels * byte_len) {
+			int l = 0;
+				for(int i=0; i<(int)channels; i++){
+					switch (audio_format) {
+						case 0x0:
+							l += snprintf(values+l, MAX_BUFFER-l, "%5d    ", tvb_get_int8(tvb, offset));
+							break;
+						case 0x1:
+							l += snprintf(values+l, MAX_BUFFER-l, "%5d    ", tvb_get_ntohis(tvb, offset));
+							break;
+						case 0x2:
+							l += snprintf(values+l, MAX_BUFFER-l, "%5d    ", tvb_get_ntohi24(tvb, offset));
+							break;
+						default:
+							break;
+					}
+
+					offset += byte_len;
+				}
+				proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+remainder, values);
+				remainder++;
+		}
+	}
 
 			return offset;
 }
