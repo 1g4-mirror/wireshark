@@ -468,7 +468,9 @@ void ProtoTree::updateContentWidth()
 
 void ProtoTree::setMonospaceFont(const QFont &mono_font)
 {
+    qreal em_width = QFontMetrics(mono_font).horizontalAdvance('m');
     setFont(mono_font);
+    setIndentation(em_width * 1.5f);
     update();
 }
 
