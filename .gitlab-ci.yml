@@ -410,7 +410,7 @@ Ubuntu APT Package:
   extends: .build-ubuntu
   rules: !reference [.if-2x-daily-schedule]
   script:
-    # build-ubuntu puts us in `build`.
+    # .build-ubuntu puts us in `build`.
     - cd ..
     - ln --symbolic --no-dereference --force packaging/debian
     - CC=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++ MAKE=ninja dpkg-buildpackage -us -uc -rfakeroot -jauto -zfast
@@ -969,6 +969,25 @@ macOS Build:
     reports:
       junit: macos_tests.xml
   needs: [ 'Commit Check' ]
+
+macOS Setup Test:
+  tags: [ saas-macos-medium-m1 ] # https://docs.gitlab.com/ee/ci/runners/saas/macos/environment.html
+  stage: build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
+      interruptible: true
+      changes:
+        - "test/macos-setup.sh"
+        - "test/macos-setup-patches/*"
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
+      when: manual
+      allow_failure: true
+  variables:
+    FALCO_LIBS_VERSION: "0.18.1"
+  script:
+    - mkdir /tmp/macos-setup-test
+    - tools/macos-setup.sh -p /tmp/macos-setup-test -t 11.0
+    - tools/macos-setup.sh -p /tmp/macos-setup-test -u
 
 # Adapted from https://www.synopsys.com/blogs/software-security/integrating-coverity-scan-with-gitlab-ci/
 # and https://gitlab.gnome.org/GNOME/glib/-/blob/8f57a5b9/.gitlab-ci.yml#L481
