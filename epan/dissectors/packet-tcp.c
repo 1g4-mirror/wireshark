@@ -14,6 +14,7 @@
 #include <epan/capture_dissectors.h>
 #include <epan/exceptions.h>
 #include <epan/addr_resolv.h>
+#include <epan/address.h>
 #include <epan/ipproto.h>
 #include <epan/expert.h>
 #include <epan/ip_opts.h>
@@ -2049,6 +2050,8 @@ init_tcp_conversation_data(packet_info *pinfo, int direction)
     tcpd->flow_direction = 0;
     tcpd->flow1.flow_count = 0;
     tcpd->flow2.flow_count = 0;
+    tcpd->flow1.mss = -1;
+    tcpd->flow2.mss = -1;
 
     return tcpd;
 }
@@ -2407,13 +2410,13 @@ mptcp_select_subflow_from_meta(const struct tcp_analysis *tcpd, const mptcp_meta
 }
 
 /* if we saw a window scaling option, store it for future reference
-*/
+*
 static void
 pdu_store_window_scale_option(uint8_t ws, struct tcp_analysis *tcpd)
 {
     if (tcpd)
         tcpd->fwd->win_scale=ws;
-}
+}*/
 
 /* when this function returns, it will (if createflag) populate the ta pointer.
  */
@@ -2464,6 +2467,7 @@ tcp_analyze_sequence_number(packet_info *pinfo, uint32_t seq, uint32_t ack, uint
     tcp_unacked_t *ual=NULL;
     tcp_unacked_t *prevual=NULL;
     uint32_t nextseq;
+    bool is_delayed = false;
 
 #if 0
     printf("\nanalyze_sequence numbers   frame:%u\n",pinfo->num);
@@ -2794,6 +2798,9 @@ finished_fwd:
         if(!seq_not_advanced)
             goto finished_checking_retransmission_type;
 
+        /* marking the packet to be exclude of further UAL investigations */
+        is_delayed = true;
+
         /* Some OOO vs Retrans interpretations can be wrong when the capture needs a reorder.
          * Avoid such cases by enforcing the delta to 0 when the order seems bad, instead of
          * calculating an absurd value.
@@ -2811,6 +2818,35 @@ finished_fwd:
             t = 0;
         }
 
+        /* Distal evaluation */
+        bool looksLikeFRT = false;
+        ual = tcpd->fwd->tcp_analyze_seq_info->segments;
+
+        while(ual) {
+            if(!ual->delayed) {
+                if(LE_SEQ(seq, ual->seq))  {
+                    nstime_t ns_delta;
+                    nstime_delta(&ns_delta , &pinfo->abs_ts, &ual->ts);
+                    uint64_t val_delta = (ns_delta.secs )*1000000000;
+                    val_delta += (ns_delta.nsecs);
+
+                    uint64_t val_irtt = (tcpd->ts_first_rtt.secs)*1000000000 + (tcpd->ts_first_rtt.nsecs);
+
+                    /* XXX - how much can we trust iRTT ?
+                     * Should we just blindly apply coefficients for estimating realistic RTT and RTO ?
+                     * Or track better all RTTs ?
+                     */
+                    if( (val_delta > val_irtt*0.8) && (val_delta < val_irtt*2.4) )
+                        looksLikeFRT = true;
+                }
+                else {
+                    // stop before going too far on the head (if that can happen..)
+                    break;
+                }
+            }
+            ual=ual->next;
+        }
+
         bool precedence_count = tcp_fastrt_precedence;
         do {
             if (precedence_count) {
@@ -2821,7 +2857,8 @@ finished_fwd:
                      * duplicate ack
                      * then this is a fast retransmission
                      */
-                    if( t<20000000
+                    //if( t<20000000
+                    if( looksLikeFRT
                     &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
                     &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
                         if(!tcpd->ta) {
@@ -2831,10 +2868,34 @@ finished_fwd:
                         goto finished_checking_retransmission_type;
                     }
 
+                    /* RFC 6675 also suggests to compare how many bytes were SACKed with 2*SMSS
+                     */
+                    //if( t<20000000
+                    if( looksLikeFRT
+                    &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>0
+                    &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0
+                    &&  tcpd->rev->mss > 0) {
+
+                        int count_sacked = 0;
+                        for(int i = 0; i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges; i++) {
+                            count_sacked += (tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i] -
+                                             tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i]);
+                        }
+
+                        if(count_sacked > 2*tcpd->rev->mss) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                            goto finished_checking_retransmission_type;
+                        }
+                    }
+
                     /* Look for this segment in reported SACK ranges,
                      * if not present this might very well be a FAST Retrans,
                      * when the conditions above (timing, number of retrans) are still true */
-                    if( t<20000000
+                    //if( t<20000000
+                    if( looksLikeFRT
                     &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
                     &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
 
@@ -3010,6 +3071,7 @@ finished_checking_retransmission_type:
             nextseq+=1;
         }
         ual->nextseq=nextseq;
+        ual->delayed=is_delayed;
     }
 
     /* Every time we are moving the highest number seen,
@@ -5845,6 +5907,11 @@ dissect_tcpopt_mss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
     int offset = 0;
     struct tcpheader *tcph = (struct tcpheader *)data;
     uint32_t mss;
+    struct tcp_analysis *tcpd;
+
+    /* find the conversation for this TCP session and its stored data */
+    conversation_t *stratconv = find_conversation_strat(pinfo, CONVERSATION_TCP, 0);
+    tcpd=get_tcp_conversation_data_idempotent(stratconv);
 
     item = proto_tree_add_item(tree, proto_tcp_option_mss, tvb, offset, -1, ENC_NA);
     exp_tree = proto_item_add_subtree(item, ett_tcp_option_mss);
@@ -5863,6 +5930,12 @@ dissect_tcpopt_mss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
     proto_tree_add_item_ret_uint(exp_tree, hf_tcp_option_mss_val, tvb, offset + 2, 2, ENC_BIG_ENDIAN, &mss);
     proto_item_append_text(item, ": %u bytes", mss);
     tcp_info_append_uint(pinfo, "MSS", mss);
+
+    /* Only SYN packets are supposed to have this option
+     * XXX - we could a bit more restrict with seq_analyze */
+    if( tcpd && (tcph->th_flags & TH_SYN) && !pinfo->fd->visited ) {
+        tcpd->fwd->mss=mss;
+    }
 
     return tvb_captured_length(tvb);
 }
@@ -5913,8 +5986,8 @@ dissect_tcpopt_wscale(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 
     tcp_info_append_uint(pinfo, "WS", 1 << shift);
 
-    if(!pinfo->fd->visited) {
-        pdu_store_window_scale_option(shift, tcpd);
+    if(tcpd && !pinfo->fd->visited) {
+        tcpd->fwd->win_scale=shift;
     }
 
     return tvb_captured_length(tvb);
@@ -9024,7 +9097,29 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     }
 
-    /* handle TCP seq# analysis, print any extra SEQ/ACK data for this segment*/
+    /* Handle default MSS values for IPv4 and IPv6
+     * If MSS is still -1 after dissecting the options,
+     * it means it is missing in these SYN packets and
+     * should be set to the default from RFC 9293.
+     */
+    if(tcp_analyze_seq && conversation_is_new &&
+           (tcph->th_flags & TH_SYN) && !(pinfo->fd->visited) &&
+           (tcpd->fwd->mss==-1)) {
+
+        switch(pinfo->src.type) {
+        case AT_IPv4:
+            tcpd->fwd->mss = 536;
+            break;
+        case AT_IPv6:
+            tcpd->fwd->mss = 1220;
+            break;
+        default:
+            DISSECTOR_ASSERT_NOT_REACHED();
+            break;
+        }
+    }
+
+    /* handle TCP seq# analysis, print any extra SEQ/ACK data for this segment */
     if(tcp_analyze_seq) {
         uint32_t use_seq = tcph->th_seq;
         uint32_t use_ack = tcph->th_ack;
