@@ -184,6 +184,7 @@ col_format_abbrev(const int fmt_num) {
     { COL_DELTA_TIME_DIS, COLUMN_FIELD_FILTER"delta_time_dis" },
     { COL_NUMBER_DIS, COLUMN_FIELD_FILTER"number_displayed" },
 #endif
+    { COL_CUSTOM, COLUMN_FIELD_FILTER"custom" },
     { COL_DELTA_TIME, COLUMN_FIELD_FILTER"delta_time" },
     { COL_RES_DST, COLUMN_FIELD_FILTER"res_dst" },
     { COL_UNRES_DST, COLUMN_FIELD_FILTER"unres_dst" },

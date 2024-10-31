@@ -231,8 +231,9 @@ static bool infoprint;      /* if true, print capture info after clearing infode
 static void capture_loop_stop(void);
 /** Close a pipe, or socket if \a from_socket is true */
 static void cap_pipe_close(int pipe_fd, bool from_socket);
-
+struct process_info pinfo;  // process_info struct to store the process information retrieved
 #if defined (__linux__)
+
 /* whatever the deal with pcap_breakloop, linux doesn't support timeouts
  * in pcap_dispatch(); on the other hand, select() works just fine there.
  * Hence we use a select for that come what may.
@@ -243,7 +244,13 @@ static void cap_pipe_close(int pipe_fd, bool from_socket);
  */
 #define MUST_DO_SELECT
 #endif
-
+#if defined(WITH_LIBBPF) && WITH_LIBBPF
+#pragma message("Found LIbbpf in dumpcap. !!")
+static int map_fd = -1;         /* map_fd for the bpf map that stores the process_info struct mapped
+                                *  against the portkey, */
+static bool process_info_enabled = false;    /* True if process info column is selected.
+                                        */
+#endif
 /** init the capture filter */
 typedef enum {
     INITFILTER_NO_ERROR,
@@ -1298,6 +1305,22 @@ relinquish_privs_except_capture(void)
     // XXX - Do we really need CAP_INHERITABLE?
     cap_set_flag(caps, CAP_INHERITABLE, cl_len, cap_list, value);
     cap_set_flag(caps, CAP_EFFECTIVE, cl_len, cap_list, value);
+#if WITH_LIBBPF
+    /* We need CAP_SYS_ADMIN to attach kprobes.
+     * If we want to capture process information without CAP_SYSADMIN
+     * We have the alternative to use CAP_BPF and attach tracepoints
+     */
+    if (process_info_enabled) {
+        cap_list[0] = CAP_SYS_ADMIN;
+        cap_get_flag(current_caps, cap_list[0], CAP_PERMITTED, &value);
+        if (value != CAP_SET) {
+            printf("Warning: Capability %d is NOT set.\n", cap_list[0]);
+        }
+        cap_set_flag(caps, CAP_PERMITTED, cl_len, cap_list, value);
+        cap_set_flag(caps, CAP_INHERITABLE, cl_len, cap_list, value);
+        cap_set_flag(caps, CAP_EFFECTIVE, cl_len, cap_list, value);
+    }
+#endif
 
     if (cap_set_proc(caps)) {
         /*
@@ -4746,6 +4769,12 @@ capture_loop_stop(void)
             pcap_breakloop(pcap_src->pcap_h);
     }
     global_ld.go = false;
+
+#if WITH_LIBBPF
+    if (process_info_enabled)
+        cleanup_ebpf();
+#endif
+
 }
 
 
@@ -4906,6 +4935,87 @@ capture_loop_write_pcapng_cb(capture_src *pcap_src, const pcapng_block_header_t 
         }
     }
 }
+#if WITH_LIBBPF
+int packetCount = 0;
+static void capture_process_info(const uint8_t *pd,struct process_info *p_info) {
+
+    unsigned int ethernet_header_size = 14;
+
+    const uint8_t *ip_header = pd + ethernet_header_size;
+
+    // Determine whether this is IPv4 or IPv6 based on the version field
+    uint8_t version = (*ip_header) >> 4;
+
+    // Variables to store source IP and source port
+    char src_ip[INET6_ADDRSTRLEN];
+    uint16_t src_port = 0;
+    uint16_t dst_port = 0;
+    // uint8_t protocol = 0;
+    // const char* proc_protocol = "";
+
+    if (version == 4) {
+        // IPv4 Packet
+        uint8_t ip_header_length = (*ip_header & 0x0F) * 4;
+
+        // Source IP address is 12 bytes offset from the start of the IPv4 header
+        const uint8_t *src_ip_v4 = ip_header + 12;
+        inet_ntop(AF_INET, src_ip_v4, src_ip, INET_ADDRSTRLEN);
+
+        // Pointer to the TCP/UDP header, which is after the IP header
+        const uint8_t *transport_header = ip_header + ip_header_length;
+
+        // ports extracted from the packet's transport header are in network byte order.
+        // Source port is the first 2 bytes of the transport header
+        src_port = g_ntohs(*(uint16_t *)transport_header);
+        // Destination port is the third and fourth byte.
+        dst_port = g_ntohs(*(uint16_t *)(transport_header + 2));
+    }
+    else if (version == 6) {
+        // IPv6 Packet
+        const uint8_t *src_ip_v6 = ip_header + 8;
+        inet_ntop(AF_INET6, src_ip_v6, src_ip, INET6_ADDRSTRLEN);
+
+        // IPv6 header length is fixed at 40 bytes; the next header points to the transport layer
+        const uint8_t *transport_header = ip_header + 40;
+
+        // ports extracted from the packet's transport header are in network byte order.
+        // Source port is the first 2 bytes of the transport header
+        src_port = g_ntohs(*(uint16_t *)transport_header);
+        dst_port = g_ntohs(*(uint16_t *)(transport_header + 2));
+    }
+
+    /* Port key can be arranged in two ways with source as first or destination at first.
+     * Since there is no way of knowing whether a packet is inbound or outgoing, we
+     * query both ways.
+     */
+    uint32_t port_key = ((uint32_t)(src_port) << 16) | ((dst_port) & 0xFFFF);
+    uint32_t port_key2 = ((uint32_t)(dst_port) << 16) | ((src_port) & 0xFFFF);
+    if (map_fd >= 0) {
+        // Try looking up with the first port key
+        if (map_lookup_ebpf(map_fd, &port_key, p_info) == 0) {
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Captured packet: Source Port: %u, Dest Port: %u\n", src_port, dst_port);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Process Info:\n");
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Packet: %d, PID: %" G_GUINT64_FORMAT ", Command: %s\n", packetCount++ , (guint64)p_info->pid, p_info->comm);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"  Parent PID: %" G_GUINT64_FORMAT ", Parent Command: %s\n", (guint64)p_info->ppid, p_info->p_comm);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"  Grandparent PID: %" G_GUINT64_FORMAT ", Grandparent Command: %s\n", (guint64)p_info->gpid, p_info->gp_comm);
+        }
+        // Try looking up with the second port key
+        else if (map_lookup_ebpf(map_fd, &port_key2, p_info) == 0) {
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Captured packet: Source Port: %u, Dest Port: %u\n", src_port, dst_port);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Process Info:\n");
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"Packet: %d, PID: %" G_GUINT64_FORMAT ", Command: %s\n", packetCount++ , (guint64)p_info->pid, p_info->comm);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"  Parent PID: %" G_GUINT64_FORMAT ", Parent Command: %s\n", (guint64)p_info->ppid, p_info->p_comm);
+            ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_DEBUG,"  Grandparent PID: %" G_GUINT64_FORMAT ", Grandparent Command: %s\n", (guint64)p_info->gpid, p_info->gp_comm);
+        }
+        // No process info found for the port combination
+        else {
+            g_warning("Packet: %d, Could not find PID for the given port combination. Src Port: %u, Dst Port: %u, pid: %" G_GUINT64_FORMAT "\n", packetCount++ , src_port, dst_port, (guint64)p_info->pid);
+        }
+    } else {
+        g_warning("Packet: %d, Map_fd Failed: src port: %u, dst port: %u\n", packetCount++ , src_port, dst_port);
+    }
+}
+#endif
 
 /* one pcap packet was captured, process it */
 static void
@@ -4915,7 +5025,11 @@ capture_loop_write_packet_cb(uint8_t *pcap_src_p, const struct pcap_pkthdr *phdr
     capture_src *pcap_src = (capture_src *) (void *) pcap_src_p;
     int          err;
     unsigned     ts_mul    = pcap_src->ts_nsec ? 1000000000 : 1000000;
-
+    memset(&pinfo, 0, sizeof(struct process_info)); // initializing all information to 0
+#if WITH_LIBBPF
+    if (process_info_enabled)
+        capture_process_info(pd, &pinfo);
+#endif
     ws_debug("capture_loop_write_packet_cb");
 
     /* We may be called multiple times from pcap_dispatch(); if we've set
@@ -4940,7 +5054,12 @@ capture_loop_write_packet_cb(uint8_t *pcap_src_p, const struct pcap_pkthdr *phdr
                                                             pcap_src->idb_id,
                                                             ts_mul,
                                                             pd, 0,
-                                                            &global_ld.bytes_written, &err);
+                                                            &global_ld.bytes_written, &err
+#if WITH_LIBBPF
+,
+&pinfo
+#endif
+);
         } else {
             successful = libpcap_write_packet(global_ld.pdh,
                                               phdr->ts.tv_sec, (int32_t)phdr->ts.tv_usec,
@@ -5155,6 +5274,7 @@ gather_dumpcap_runtime_info(feature_list l)
 #ifdef _WIN32
 #define LONGOPT_SIGNAL_PIPE        LONGOPT_BASE_APPLICATION+4
 #endif
+#define LONGOPT_PROCESS_INFO       LONGOPT_BASE_APPLICATION+5
 
 /* And now our feature presentation... [ fade to music ] */
 int
@@ -5168,6 +5288,7 @@ main(int argc, char *argv[])
         LONGOPT_CAPTURE_COMMON
         {"ifname", ws_required_argument, NULL, LONGOPT_IFNAME},
         {"ifdescr", ws_required_argument, NULL, LONGOPT_IFDESCR},
+        {"process-info", 0, 0, LONGOPT_PROCESS_INFO },
         {"capture-comment", ws_required_argument, NULL, LONGOPT_CAPTURE_COMMENT},
 #ifdef _WIN32
         {"signal-pipe", ws_required_argument, NULL, LONGOPT_SIGNAL_PIPE},
@@ -5254,6 +5375,17 @@ main(int argc, char *argv[])
 #endif
             }
         }
+        /* We need to look up if "--process-info" is present
+        * and set the process_info_enabled to true
+        * before relinquish_privs_except_capture,
+        * so we can retain the CAP_SYS_ADMIN priviledge required to load kprobes.
+        */
+#if WITH_LIBBPF
+        else if (strcmp("--process-info", argv[i]) == 0) {
+            process_info_enabled = true;
+            load_ebpf_program(&map_fd);
+        }
+#endif
     }
 
     cmdarg_err_init(dumpcap_cmdarg_err, dumpcap_cmdarg_err_cont);
@@ -5564,6 +5696,18 @@ main(int argc, char *argv[])
                 capture_comments = g_ptr_array_new_with_free_func(g_free);
             }
             g_ptr_array_add(capture_comments, g_strdup(ws_optarg));
+            break;
+
+        case LONGOPT_PROCESS_INFO:
+#if WITH_LIBBPF
+            /* The following will never execute
+             * because we've taken care of --process-info already.
+             */
+            if (!process_info_enabled) {
+                load_ebpf_program(&map_fd);
+                process_info_enabled = true;
+            }
+#endif
             break;
         case 'Z':
             capture_child = true;

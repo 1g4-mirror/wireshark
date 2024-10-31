@@ -88,6 +88,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="captureProcessInfoCheckBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable capturing process information associated with each packet. Requires Admin privileges, while packet capturing alone requires Net Admin privileges.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+x     </property>
+     <property name="text">
+      <string>Capture Process Information</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QCheckBox" name="captureRealTimeCheckBox">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Update the list of packets while capture is in progress. This can result in dropped packets on high-speed networks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

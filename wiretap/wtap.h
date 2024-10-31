@@ -1453,6 +1453,7 @@ typedef struct wtap_rec {
      * a buffer for the options for each record.
      */
     Buffer    options_buf;       /* file-type specific data */
+    struct process_info process_info;   /* Process information if bpf linraries present. */
 } wtap_rec;
 
 /*

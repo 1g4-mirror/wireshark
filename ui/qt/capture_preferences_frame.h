@@ -34,6 +34,9 @@ private slots:
     void on_capturePromModeCheckBox_toggled(bool checked);
     void on_captureMonitorModeCheckBox_toggled(bool checked);
     void on_capturePcapNgCheckBox_toggled(bool checked);
+#if WITH_LIBBPF
+    void on_captureProcessInfoCheckBox_toggled(bool checked);                   //New option for capturing process information.
+#endif
     void on_captureRealTimeCheckBox_toggled(bool checked);
     void on_captureUpdateIntervalLineEdit_textChanged(const QString &new_str);
     void on_captureNoInterfaceLoad_toggled(bool checked);
@@ -50,6 +53,7 @@ private:
     pref_t *pref_update_interval_;
     pref_t *pref_no_interface_load_;
     pref_t *pref_no_extcap_;
+    pref_t *pref_process_info_; // New preference for capturing process information
 
     void updateWidgets();
 };

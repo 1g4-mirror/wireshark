@@ -1054,7 +1054,6 @@ pcapng_process_unhandled_option(wtapng_block_t *wblock _U_,
     return true;
 }
 #endif
-
 bool
 pcapng_process_options(FILE_T fh, wtapng_block_t *wblock,
                        section_info_t *section_info,
@@ -1179,6 +1178,32 @@ pcapng_process_options(FILE_T fh, wtapng_block_t *wblock,
                     g_free(option_content);
                     return false;
                 }
+                break;
+            case(OPT_PROCESS_INFO):
+                // Ensure that the option length matches the expected size of process_info
+                if (option_length != sizeof(struct process_info)) {
+                    fprintf(stderr, "Invalid option length for process_info. Got %u, expected %lu\n",
+                            option_length, (unsigned long)sizeof(struct process_info));
+                    ws_log_print_usage(stderr);
+                    g_free(option_content);
+                    return false;
+                }
+
+                // Cast the option data to process_info
+                struct process_info pinfo;
+                memcpy(&pinfo, option_ptr, sizeof(struct process_info));
+            if (pinfo.pid == 0) {
+                // No process info available; clear the struct to avoid stale data.
+                memset(&wblock->rec->process_info, 0, sizeof(struct process_info));
+            } else {
+                // Copy valid data
+                wblock->rec->process_info.pid = pinfo.pid;
+                wblock->rec->process_info.ppid = pinfo.ppid;
+                wblock->rec->process_info.gpid = pinfo.gpid;
+                g_strlcpy(wblock->rec->process_info.comm, pinfo.comm, TASK_COMM_LEN);
+                g_strlcpy(wblock->rec->process_info.p_comm, pinfo.p_comm, TASK_COMM_LEN);
+                g_strlcpy(wblock->rec->process_info.gp_comm, pinfo.gp_comm, TASK_COMM_LEN);
+            }
                 break;
 
             default:

@@ -226,6 +226,7 @@ typedef struct _e_prefs {
   bool         capture_prom_mode;
   bool         capture_monitor_mode;
   bool         capture_pcap_ng;
+  bool         capture_process_info;
   bool         capture_real_time;
   unsigned     capture_update_interval;
   bool         capture_no_interface_load;

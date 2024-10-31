@@ -727,6 +727,13 @@ sync_pipe_start(capture_options *capture_opts, GPtrArray *capture_comments,
             argv = sync_pipe_add_arg(argv, &argc, capture_opts->temp_dir);
     }
 
+#if WITH_LIBBPF
+    // --process-info passed to dumpcap if process information column is selected
+    if (prefs.capture_process_info){
+        argv = sync_pipe_add_arg(argv, &argc, "--process-info");
+    }
+#endif
+
     if (capture_opts->multi_files_on) {
         if (capture_opts->has_autostop_filesize) {
             char sfilesize[ARGV_NUMBER_LEN];

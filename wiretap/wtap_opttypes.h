@@ -13,6 +13,9 @@
 #include "ws_symbol_export.h"
 
 #include <wsutil/inet_addr.h>
+#ifndef PROCESS_INFO_H
+#include "process_info.h"  // Include process_info.h
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +32,7 @@ extern "C" {
 #define OPT_CUSTOM_BIN_COPY    2989  /**< A custom option containing binary data, copying allowed. */
 #define OPT_CUSTOM_STR_NO_COPY 19372 /**< A custom option containing a UTF-8 string, copying not allowed. */
 #define OPT_CUSTOM_BIN_NO_COPY 19373 /**< A custom option containing binary data, copying not allowed. */
+#define OPT_PROCESS_INFO       43981 /**< Process information as defined in process_info.h's struct process_info */
 
 /* Section Header block (SHB) */
 #define OPT_SHB_HARDWARE       2     /**< A UTF-8 string containing the description of the
