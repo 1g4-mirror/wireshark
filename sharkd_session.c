@@ -5556,8 +5556,6 @@ sharkd_rtp_download_decode(struct sharkd_download_rtp *req)
     /* based on RtpAudioStream::decode() 6e29d874f8b5e6ebc59f661a0bb0dab8e56f122a */
     /* TODO, for now only without silence (timing_mode_ = Uninterrupted) */
 
-    static const int sample_bytes_ = sizeof(SAMPLE) / sizeof(char);
-
     uint32_t audio_out_rate_ = 0;
     struct _GHashTable *decoders_hash_ = rtp_decoder_hash_table_new();
     struct SpeexResamplerState_ *audio_resampler_ = NULL;
@@ -5614,13 +5612,13 @@ sharkd_rtp_download_decode(struct sharkd_download_rtp *req)
             tmp32 = sample_rate;
             memcpy(&wav_hdr[24], &tmp32, 4);
             /* byte rate */
-            tmp32 = sample_rate * channels * sample_bytes_;
+            tmp32 = sample_rate * channels * SAMPLE_BYTES;
             memcpy(&wav_hdr[28], &tmp32, 4);
             /* block align */
-            tmp16 = channels * sample_bytes_;
+            tmp16 = channels * SAMPLE_BYTES;
             memcpy(&wav_hdr[32], &tmp16, 2);
             /* bits per sample */
-            tmp16 = 8 * sample_bytes_;
+            tmp16 = 8 * SAMPLE_BYTES;
             memcpy(&wav_hdr[34], &tmp16, 2);
 
             memcpy(&wav_hdr[36], "data", 4);
@@ -5657,16 +5655,16 @@ sharkd_rtp_download_decode(struct sharkd_download_rtp *req)
             }
             in_len = (spx_uint32_t)rtp_packet->info->info_payload_len;
             out_len = (audio_out_rate_ * (spx_uint32_t)rtp_packet->info->info_payload_len / sample_rate) + (audio_out_rate_ % sample_rate != 0);
-            if (out_len * sample_bytes_ > resample_buff_len)
+            if (out_len * SAMPLE_BYTES > resample_buff_len)
             {
-                while ((out_len * sample_bytes_ > resample_buff_len))
+                while ((out_len * SAMPLE_BYTES > resample_buff_len))
                     resample_buff_len *= 2;
                 resample_buff = (SAMPLE *) g_realloc(resample_buff, resample_buff_len);
             }
 
             speex_resampler_process_int(audio_resampler_, 0, decode_buff, &in_len, resample_buff, &out_len);
             write_buff = (char *) resample_buff;
-            write_bytes = out_len * sample_bytes_;
+            write_bytes = out_len * SAMPLE_BYTES;
         }
 
         /* Write the decoded, possibly-resampled audio */
