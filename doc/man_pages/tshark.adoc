@@ -1213,6 +1213,7 @@ want to generate the statistics; currently the supported ones are:
 
   "bluetooth" Bluetooth addresses
   "dccp"      DCCP/IP socket pairs Both IPv4 and IPv6 are supported
+  "dnp3"      DNP3 addresses
   "eth"       Ethernet addresses
   "fc"        Fibre Channel addresses
   "fddi"      FDDI addresses
@@ -1337,6 +1338,7 @@ want to generate the statistics; currently the supported ones are:
 
   "bluetooth" Bluetooth addresses
   "dccp"      DCCP/IP socket pairs Both IPv4 and IPv6 are supported
+  "dnp3"      DNP3 addresses
   "eth"       Ethernet addresses
   "fc"        Fibre Channel addresses
   "fddi"      FDDI addresses
