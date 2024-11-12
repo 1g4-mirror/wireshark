@@ -48,10 +48,10 @@ extern "C" {
 #define STRING_CASE_SENSITIVE 0
 #define STRING_CASE_INSENSITIVE 1
 
-extern void packet_init(void);
-extern void packet_cache_proto_handles(void);
-extern void packet_all_tables_sort_handles(void);
-extern void packet_cleanup(void);
+WS_DLL_PUBLIC void packet_init(void);
+WS_DLL_PUBLIC void packet_cache_proto_handles(void);
+WS_DLL_PUBLIC void packet_all_tables_sort_handles(void);
+WS_DLL_PUBLIC void packet_cleanup(void);
 
 /* Handle for dissectors you call directly or register with "dissector_add_uint()".
    This handle is opaque outside of "packet.c". */

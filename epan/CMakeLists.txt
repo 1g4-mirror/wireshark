@@ -404,6 +404,15 @@ install(FILES ${LIBWIRESHARK_PUBLIC_HEADERS}
 	EXCLUDE_FROM_ALL
 )
 
+add_executable(dissector_table_test EXCLUDE_FROM_ALL dissector_table_test.c)
+target_link_libraries(dissector_table_test epan)
+set_target_properties(dissector_table_test PROPERTIES
+	FOLDER "Tests"
+	EXCLUDE_FROM_DEFAULT_BUILD True
+	COMPILE_DEFINITIONS "WS_BUILD_DLL"
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
+
 add_executable(exntest EXCLUDE_FROM_ALL exntest.c except.c)
 target_link_libraries(exntest epan)
 set_target_properties(exntest PROPERTIES
