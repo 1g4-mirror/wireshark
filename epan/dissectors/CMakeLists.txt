@@ -957,6 +957,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dbus.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dcc.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dccp.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-dccrails.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dcerpc-bossvr.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dcerpc-browser.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dcerpc-cds_clerkserver.c
