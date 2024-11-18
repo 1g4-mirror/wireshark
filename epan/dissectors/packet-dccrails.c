@@ -24,19 +24,6 @@ static int hf_dcc_rails_cv_value_type;
 static int ett_dcc_rails;
 
 /*
-static const value_string dccrails_address_type[] = {
-    //
-    // RCN-212 - Chapter "2 Befehlspakete für Fahrzeugdecoder"
-    //
-    { 0b0,  "Locomotive Short" }, //  7-bit address,  '0' prefix on first byte
-    { 0b11, "Locomotive Long" },  // 14-bit address, '11' prefix on first byte
-    //
-    // RCN-213 - Chapter "2.1 Paketformat für Einfache Zubehördecoder"
-    //
-    { 0b10, "Accessory" },  // 14-bit address, '11' prefix on first byte
-    { 0, NULL }
-};
-
 //
 // RCN-212 - Chapter "2.1 Befehlscodierung"
 //
@@ -46,15 +33,6 @@ static const value_string dccrails_loco_groups[] = {
     { 0b001,  "Erweiterte Betriebsbefehle" }, 
     { 0b01,   "Basis Geschwindigkeits- und Richtungsbefehl" }, 
     { 0b10,   "Funktionsgruppen" },
-    { 0, NULL }
-};
-
-//
-// RCN-212 - Chapter "2.2.1 Basis Geschwindigkeits- und Richtungsbefehl"
-//
-static const value_string dccrails_loco_direction[] = {
-    { 0b0,  "Rückwärts" }, 
-    { 0b10, "Vorwärts" },
     { 0, NULL }
 };
 
@@ -195,7 +173,10 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 offset += 2;                
                 // CV Value
                 proto_tree_add_uint(dcc_rails_tree, hf_dcc_rails_addr_type, tvb, offset, 1,tvb_get_bits16(tvb, offset * 8 + 4, 12, ENC_BIG_ENDIAN));
-                offset += 2;                
+                offset += 2;           
+
+                // https://normen.railcommunity.de/RCN-225.pdf
+                // https://www.nmra.org/sites/default/files/s-9.2.2_2012_10.pdf
             }
         }
      }
@@ -212,6 +193,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
     return tvb_captured_length(tvb);
 }
 
+/*
 static const true_false_string dcc_rails_map_direction_bool_val  = {
     "Forward",
     "Backward"
@@ -221,6 +203,7 @@ static const true_false_string dcc_rails_map_function_bool_val  = {
     "On",
     "Off"
 };
+*/
 
 void
 proto_register_dcc_rails(void)
@@ -228,40 +211,40 @@ proto_register_dcc_rails(void)
 
     static hf_register_info hf[] = {
         { &hf_dcc_rails_addr_type,
-            { "Address", "dcc.type",
+            { "Address", "dcc-rails.addr",
             FT_UINT8, 
             BASE_DEC,
             NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_dcc_rails_speed_type,
-            { "Speed", "dcc.speed",
+            { "Speed", "dcc-rails.speed",
             FT_UINT8, 
             BASE_DEC,
             NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_dcc_rails_dir_type,
-            { "Direction", "dcc.dir",
+            { "Direction", "dcc-rails.dir",
             FT_BOOLEAN, 8,
-            TFS(&dcc_rails_map_direction_bool_val), 0x1,
+            TFS(&tfs_forward_backward), 0x1,
             NULL, HFILL }
         },
         { &hf_dcc_rails_func_type,
-            { "Function", "dcc.func",
+            { "Function", "dcc-rails.func",
             FT_BOOLEAN, 8,
-            TFS(&dcc_rails_map_function_bool_val), 0x1,
+            TFS(&tfs_on_off), 0x1,
             NULL, HFILL }
         },
         { &hf_dcc_rails_cv_addr_type,
-            { "CV address", "dcc.cv.addr",
+            { "CV address", "dcc-rails.cv.addr",
             FT_UINT8, 
             BASE_DEC,
             NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_dcc_rails_cv_value_type,
-            { "CV value", "dcc.cv.value",
+            { "CV value", "dcc-rails.cv.value",
             FT_UINT8, 
             BASE_DEC,
             NULL, 0x0,
