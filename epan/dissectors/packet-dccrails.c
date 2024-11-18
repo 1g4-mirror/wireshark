@@ -1,19 +1,16 @@
- #include "config.h"
+#include "config.h"
+
+#define WS_LOG_DOMAIN "dcc-rails"
+
 #include <wiretap/wtap.h>
 #include <epan/packet.h>
 #include <epan/tfs.h>
 
-#define DCC_RAILSPORT 1234
+void proto_reg_handoff_dcc_rails(void);
+void proto_register_dcc_rails(void);
 
 static int proto_dcc_rails;
-static dissector_handle_t dcc_rails_handle;
 
-
-// === Glossary ===
-//
-// - EPAN Tree Type (ETT)
-// - Header Type (HF)
-// - Protocol Data Unit (PDU)
 static int hf_dcc_rails_addr_type;
 static int hf_dcc_rails_dir_type;
 static int hf_dcc_rails_speed_type;
@@ -21,39 +18,10 @@ static int hf_dcc_rails_func_type;
 static int hf_dcc_rails_cv_addr_type;
 static int hf_dcc_rails_cv_value_type;
 
+static dissector_handle_t dcc_rails_handle;
+
 static int ett_dcc_rails;
-
-/*
-//
-// RCN-212 - Chapter "2.1 Befehlscodierung"
-//
-static const value_string dccrails_loco_groups[] = {
-    { 0b0000, "Decodersteuerungsbefehl" }, 
-    { 0b0001, "Mehrfachtraktionssteuerungsbefehle" }, 
-    { 0b001,  "Erweiterte Betriebsbefehle" }, 
-    { 0b01,   "Basis Geschwindigkeits- und Richtungsbefehl" }, 
-    { 0b10,   "Funktionsgruppen" },
-    { 0, NULL }
-};
-
-//
-// RCN-212 - Chapter "2.3.x Funktionssteuerung Fx-Fy"
-// - TWo bytes
-//
-static const value_string dccrails_loco_function_groups[] = {
-    { 0b100,       "F0  bis F4"   }, // 5-bit payload (F0, F4, F3, F2, F1)
-    { 0b1011,      "F5  bis F8"   }, // 4-bit payload (F5..F8)
-    { 0b1010,      "F9  bis F12"  }, // 4-bit payload (F9..F12)
-    { 0b11011110,  "F13 bis F20"  }, // 8-bit payload (F13..F20)
-    { 0b11011111,  "F21 bis F28"  }, // 8-bit payload (F21..F28)
-    { 0b11011000,  "F29 bis F36"  }, // 8-bit payload (F29..F36)
-    { 0b11011001,  "F37 bis F44"  }, // 8-bit payload (F37..F44)
-    { 0b11011010,  "F45 bis F52"  }, // 8-bit payload (F45..F52)
-    { 0b11011011,  "F53 bis F60"  }, // 8-bit payload (F53..F60)
-    { 0b11011100,  "F61 bis F68"  }, // 8-bit payload (F61..F68)
-    { 0, NULL }
-};
-*/
+#define DCC_RAILS_MIN_LENGTH 2
 
 static int
 dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -63,6 +31,9 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
 
     unsigned offset = 0;
     // int      len    = 0;
+
+    if (tvb_reported_length(tvb) < DCC_RAILS_MIN_LENGTH)
+        return 0;    
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "DCC-RAILS");
     col_clear(pinfo->cinfo,COL_INFO);
@@ -80,31 +51,42 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
 
         //
         // Loco - Short address - RCN-212 - Chapter 2 Befehlspakete für Fahrzeugdecoder
+        // - 0AAA-AAAA {Befehlsbytes}
         //
-        if(tvb_get_bits8(tvb, 0, 1) == 0b0 ) { // https://www.wireshark.org/docs/wsar_html/tvbuff_8h.html
-    
+        #define dcc_cmd_loco_short_val  0x0 // 0b0.......
+        #define dcc_cmd_loco_short_len    1
+
+        if(dcc_cmd_loco_short_val == tvb_get_bits8(tvb, 0, dcc_cmd_loco_short_len)) {
+
             is_loco = true;
-            dcc_address = tvb_get_bits8(tvb, 1, 7);
+            dcc_address = tvb_get_bits8(tvb, 1, 8 - dcc_cmd_loco_short_len);
             proto_tree_add_uint(dcc_rails_tree, hf_dcc_rails_addr_type, tvb, offset++, 1, dcc_address );
         } 
-
         //
         // Loco - Long address - RCN-213 - Chapter 2 Befehlspakete für Fahrzeugdecoder 
+        // - 11AA-AAAA AAAA-AAAA {Befehlsbytes}
         //
-        else if(tvb_get_bits8(tvb, 0, 2) == 0b11 ) {
+        #define dcc_cmd_loco_long_val 0xC // 0b11......
+        #define dcc_cmd_loco_long_len   2
+
+        else if(dcc_cmd_loco_long_val == tvb_get_bits8(tvb, 0, dcc_cmd_loco_long_len)) {
 
             is_loco = true;
             dcc_address = tvb_get_bits16(tvb, 2, 14, ENC_BIG_ENDIAN);
             proto_tree_add_uint(dcc_rails_tree, hf_dcc_rails_addr_type, tvb, offset, 2, dcc_address );
             offset += 2;
         }
-
         //
         // Accessory address - RCN-213 - Chapter 2.1 Paketformat für Einfache Zubehördecoder
+        // - 10AA-AAAA xAAA-xAAx {Befehlsbytes}
         //
-        else if(tvb_get_bits8(tvb, 0, 2) == 0b10 ) {
+        #define dcc_cmd_accessory_val 0x8 // 0b10......
+        #define dcc_cmd_accessory_len   2
+
+        else if(dcc_cmd_accessory_val == tvb_get_bits8(tvb, 0, dcc_cmd_accessory_len)) {
 
             is_accessory = true;
+
             dcc_address  =  tvb_get_bits16( tvb,  2, 2, ENC_BIG_ENDIAN ) << 6;
             dcc_address |=  tvb_get_bits16( tvb,  5, 4, ENC_BIG_ENDIAN ) << 2;
             dcc_address |=  tvb_get_bits16( tvb,  9, 3, ENC_BIG_ENDIAN ) << 8;
@@ -118,9 +100,29 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
             while(tvb_reported_length_remaining(tvb, offset) >= 1) {
 
                 //
-                // Loco - RCN-213 - Chapter 2.2.2 128 Geschwindigkeitsstufen-Befehl 
+                // Loco - RCN-212 - 2.2.1 Basis Geschwindigkeits- und Richtungsbefehl
+                // - 01RG-GGGG
                 //
-                if(tvb_get_bits8(tvb, 8 * offset, 8) == 0b00111111) {
+                #define dcc_cmd_loco_speed7_val 0x4 // 0b01......
+                #define dcc_cmd_loco_speed7_len   2
+
+                if(tvb_get_bits8(tvb, 8 * offset, dcc_cmd_loco_speed7_len) == dcc_cmd_loco_speed7_val) {
+                    // Direction
+                    proto_tree_add_boolean ( dcc_rails_tree, hf_dcc_rails_dir_type,   tvb, offset + 1, 1
+                                           , tvb_get_bits16(tvb, 8 * offset + dcc_cmd_loco_speed7_len    , 1, ENC_BIG_ENDIAN));
+                    // Speed
+                    proto_tree_add_uint(     dcc_rails_tree, hf_dcc_rails_speed_type, tvb, offset + 1, 2
+                                           , tvb_get_bits16(tvb, 8 * offset + dcc_cmd_loco_speed7_len + 1, 7, ENC_BIG_ENDIAN));
+                    offset++;
+                }
+
+                //
+                // Loco - RCN-212 - Chapter 2.2.2 128 Geschwindigkeitsstufen-Befehl 
+                // - 0011-1111 RGGG-GGGG
+                //
+                #define dcc_cmd_loco_speed128_val 0x3F // 0b00111111
+
+                if(tvb_get_bits8(tvb, 8 * offset, 8) == dcc_cmd_loco_speed128_val) {
 
                     // Direction
                     proto_tree_add_boolean ( dcc_rails_tree, hf_dcc_rails_dir_type,   tvb, offset + 1, 1, tvb_get_bits16(tvb, 8 * offset + 8, 1, ENC_BIG_ENDIAN));
@@ -130,7 +132,51 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 } 
 
                 //
+                // Loco - RCN-213 - Chapter 2.2.3 Sonderbetriebsarten-Befehl
+                // - 0011-1110 DDDD-DD00
+                //
+                #define dcc_cmd_loco_special_val 0x3E // 0b0011-1110
+
+                if(tvb_get_uint8(tvb, 8 * offset) == dcc_cmd_loco_special_val) {
+
+                    // Bits 3 und 2: Traktionsbits – Information zur Position in einer Mehrfachtraktion.
+                    #define dcc_cmd_loco_trac_msk 0x30 // 0b00TT-xxxx
+
+                    int traction = dcc_cmd_loco_trac_msk & tvb_get_uint8(tvb, 8 * offset);
+                    
+                    // - 00 Nicht Teil einer Mehrfachtraktion
+                    #define dcc_cmd_loco_trac_standalone 0x00
+                    if( traction == dcc_cmd_loco_trac_standalone ) {
+                        // tbd: enum traction standalone
+                    }
+
+                    // Mehrfachtraktion
+                    // - 10 Führende Lok
+                    #define dcc_cmd_loco_trac_leading    0x20
+                    if( traction == dcc_cmd_loco_trac_leading) {
+                        // tbd: enum traction leading
+                    }
+                    // - 01 Mittel-Lok
+                    #define dcc_cmd_loco_trac_middle     0x10
+                    if( traction == dcc_cmd_loco_trac_middle) {
+                        // tbd: enum traction middle
+                    }
+                    // - 11 Schluss-Lok
+                    #define dcc_cmd_loco_trac_trailing   0x30
+                    if( traction == dcc_cmd_loco_trac_trailing) {
+                        // tbd: enum traction trailing
+                    }
+
+
+                    #define dcc_cmd_loco_rank_msk 0x01 // 0b00xx-Rxxx
+                    #define dcc_cmd_loco_rank_len    1
+                    // <boolean>
+
+                    offset++;
+                }
+                //
                 // Loco - RCN-213 - Chapter 2.3.1 Funktionssteuerung F0-F4
+                // - 100D-DDDD
                 //
                 else if(tvb_get_bits8(tvb, 8 * offset, 3) == 0b100) {
 
@@ -142,11 +188,123 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                     offset += 1;
                 }
 
+                //
+                // Loco - RCN-213 - Chapter 2.3.2 Funktionssteuerung F5-F8
+                // - 1011-DDDD
+                //
+                else if(tvb_get_bits8(tvb, 8 * offset, 4) == 0b1011) {
+
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 7, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
+                }
+
+                //
+                // Loco - RCN-213 - 2.3.3 Funktionssteuerung F9-F12 
+                // - 1010-DDDD
+                //
+                else if(tvb_get_bits8(tvb, 8 * offset, 4) == 0b1010) {
+
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 7, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
+                    proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
+                }
+
+                //
+                // Loco - RCN-213 - 2.3.4 Funktionssteuerung F13-F68
+                // - F13-F20: 1101-1110 DDDD-DDDD
+                // - F21-F28: 1101-1111 DDDD-DDDD
+                // - F29-F36: 1101-1000 DDDD-DDDD
+                // - F37-F44: 1101-1001 DDDD-DDDD
+                // - F45-F52: 1101-1010 DDDD-DDDD
+                // - F53-F60: 1101-1011 DDDD-DDDD
+                // - F61-F68: 1101-1100 DDDD-DDDD        
+                else if(tvb_get_bits8(tvb, 8 * offset, 5) == 0b11011) {
+                    // tbd: implementation
+                }
+
+                //
+                // Loco - RCN-213 - 2.3.5 Binärzustandssteuerungsbefehl kurze Form
+                // - 1101-1101 DLLL-LLLL
+                //
+                else if(tvb_get_bits8(tvb, 8 * offset, 8) == 0b11011101) {
+                    // tbd: implementation
+                }
+
+                //
+                // Loco - RCN-213 - 2.3.6 Binärzustandssteuerungsbefehl lange Form
+                // -  1100-0000 DLLL-LLLL HHHH-HHHH
+                //
+                else if(tvb_get_bits8(tvb, 8 * offset, 5) == 0b11000000) {
+                    // tbd: implementation
+                }
+
+                //
+                // Loco - RCN-213 - 2.3.7 Geschwindigkeit, Richtung und Funktionen
+                // - 0011-1100 RGGG-GGGG DDDD-DDDD {DDDD-DDDD {DDDD-DDDD {DDDD-DDDD}}}
+                //
+                else if(tvb_get_bits8(tvb, 8 * offset, 5) == 0b11110000) {
+                    // tbd: implementation
+                }
+                
+                //
+                // Loco - RCN-213 - 2.3.8 Analogfunktionsgruppe
+                // - 0011-1101 SSSS-SSSS DDDD-DDDD
+                //   * SSSS-SSSS = 0000-0001 - Lautstärkesteuerung
+                //   * SSSS-SSSS = 0001-0000 bis 0001-1111 - Positionssteuerung
+                //   * 0111-1111 sind reserviert
+                //   * 1000-0000 bis 1111-1111 können beliebig verwendet werden
+                else if(tvb_get_bits8(tvb, 8 * offset, 5) == 0b00111101) {
+                    // tbd: implementation
+                }
+
+                //
+                // Loco - RCN-213 - 2.4.1 Mehrfachtraktionsadresse setzen
+                // - 0001-001R 0AAA-AAAA (Die Adresse wird in CV19:0..6 gespeichert)
+                //
+
+                //
+                // Loco - RCN-213 - 2.5.1 Rücksetzbefehl
+                // - 0000-0000
+                //
+
+                //
+                // Loco - RCN-213 - 2.5.2 Decoder Hard Reset
+                // - 0000-0001 (19, 29, 31 und 32 werden zurückgesetzt)
+                //
+
+                //
+                // Loco - RCN-213 - 2.5.4 Setze erweiterte Adressierung (CV #29 Bit 5)
+                // - 0000-101D (CV29:0)
+                //
+
+                //
+                // Loco - RCN-213 - 2.5.5 Decoderquittungsanforderung (RailCom)
+                // - 0000-1111
+                //
+
+
                 else offset++;
             }
         }
 
         if(is_accessory) {
+            
+            //
+            // Accessory address - RCN-213 - Chapter 2.1 Paketformat für Einfache Zubehördecoder
+            // - 10AA-AAAA 1AAA-DAAR
+            //
+
+            //
+            // Accessory address - RCN-213 - Chapter 2.2 Paketformat für Erweiterte Zubehördecoder
+            // - 10AA-AAAA 0AAA-0AA1 DDDD-DDDD (drei Byte Format) 
+            //
+
+            //
+            // Accessory address - RCN-213 - Chapter 2.3 NOP Befehl für einfache und erweiterte Zubehördecoder
+            // - 10AA-AAAA 0AAA-1AAT
 
         }
 
@@ -179,7 +337,9 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 // https://www.nmra.org/sites/default/files/s-9.2.2_2012_10.pdf
             }
         }
-     }
+    }
+
+#if 0    
     if(pinfo->p2p_dir == P2P_DIR_RECV) {
 
         proto_item_append_text(ti, " - Inbound Stuff (Railcom)");
@@ -189,21 +349,10 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
          */
 
     }
+#endif    
 
     return tvb_captured_length(tvb);
 }
-
-/*
-static const true_false_string dcc_rails_map_direction_bool_val  = {
-    "Forward",
-    "Backward"
-};
-
-static const true_false_string dcc_rails_map_function_bool_val  = {
-    "On",
-    "Off"
-};
-*/
 
 void
 proto_register_dcc_rails(void)
@@ -258,19 +407,26 @@ proto_register_dcc_rails(void)
     };
 
     proto_dcc_rails = proto_register_protocol (
-        "DCC Rails", /* name        */
-        "DCC_RAILS", /* short_name  */
-        "dcc-rails"  /* filter_name */
+        "DCC Rails", // name
+        "DCC_RAILS", // short_name
+        "dcc-rails"  // filter_name
         );
-    register_dissector("dcc-rails", dissect_dcc_rails, proto_dcc_rails);
 
     proto_register_field_array(proto_dcc_rails, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    dcc_rails_handle = register_dissector("dcc-rails", dissect_dcc_rails, proto_dcc_rails);
 }
 
 void
 proto_reg_handoff_dcc_rails(void)
 {
+    static bool initialized = false;
+
+    if (!initialized) {
+        initialized = true;
+    }
+
     dcc_rails_handle = create_dissector_handle(dissect_dcc_rails, proto_dcc_rails);
 
 	// Use temporary "WTAP_ENCAP_USER13" until final protocol is accepted
