@@ -1,3 +1,17 @@
+/* packet-dcc-rails.c
+ * Routines for model railroad digital protocols packet dissection
+ * Digital Command Control (DCC) Home: 
+ *
+ * Copyright 2024, Olivier Châtelain-Gmür <olivier.chatelain@gmail.com>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * Copied from packet-dcc.c
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #include "config.h"
 
 #define WS_LOG_DOMAIN "dcc-rails"
