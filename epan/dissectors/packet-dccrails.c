@@ -64,23 +64,48 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
         bool is_accessory   = false;
 
         //
+        // Broadcast - RCN-211 - 4.1 Rücksetzpaket
+        // - 0000-0000 0000-0000 0000-0000
+        //
+        if(0x000000 == tvb_get_uint24(tvb, 0, ENC_BIG_ENDIAN)) {
+            offset += 3;
+        }
+
+        //
+        // Broadcast - RCN-211 - 4.2 Leerlaufpaket 
+        // - 1111-1111 0000-0000 1111-1111
+        //
+        else if(0xFF00FF == tvb_get_uint24(tvb, 0, ENC_BIG_ENDIAN)) {
+            offset += 3;
+        }
+
+        //
+        // Broadcast - RCN-211 - 5.1 Zeitbefehl
+        // - 0000-0000 1100-0001 CCxx-xxxx xxxx-xxxxx xxxx-xxxx
+        //
+        else if(0x00C1 == tvb_get_uint16(tvb, 0, ENC_BIG_ENDIAN)) {
+            offset += 5;
+        }
+
+        //
         // Loco - Short address - RCN-212 - Chapter 2 Befehlspakete für Fahrzeugdecoder
         // - 0AAA-AAAA {Befehlsbytes}
         //
         #define dcc_cmd_loco_short_val  0x0 // 0b0.......
         #define dcc_cmd_loco_short_len    1
 
-        if(dcc_cmd_loco_short_val == tvb_get_bits8(tvb, 0, dcc_cmd_loco_short_len)) {
+        else if(dcc_cmd_loco_short_val == tvb_get_bits8(tvb, 0, dcc_cmd_loco_short_len)) {
 
             is_loco = true;
             dcc_address = tvb_get_bits8(tvb, 1, 8 - dcc_cmd_loco_short_len);
             proto_tree_add_uint(dcc_rails_tree, hf_dcc_rails_addr_type, tvb, offset++, 1, dcc_address );
-        } 
+        }
+
         //
         // Loco - Long address - RCN-213 - Chapter 2 Befehlspakete für Fahrzeugdecoder 
         // - 11AA-AAAA AAAA-AAAA {Befehlsbytes}
         //
-        #define dcc_cmd_loco_long_val 0xC // 0b11......
+        #define dcc_cmd_loco_long_val 0x3 // 0b11......
         #define dcc_cmd_loco_long_len   2
 
         else if(dcc_cmd_loco_long_val == tvb_get_bits8(tvb, 0, dcc_cmd_loco_long_len)) {
@@ -94,7 +119,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
         // Accessory address - RCN-213 - Chapter 2.1 Paketformat für Einfache Zubehördecoder
         // - 10AA-AAAA xAAA-xAAx {Befehlsbytes}
         //
-        #define dcc_cmd_accessory_val 0x8 // 0b10......
+        #define dcc_cmd_accessory_val 0x2 // 0b10......
         #define dcc_cmd_accessory_len   2
 
         else if(dcc_cmd_accessory_val == tvb_get_bits8(tvb, 0, dcc_cmd_accessory_len)) {
@@ -106,7 +131,6 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
             dcc_address |=  tvb_get_bits16( tvb,  9, 3, ENC_BIG_ENDIAN ) << 8;
             dcc_address |=  tvb_get_bits16( tvb, 13, 2, ENC_BIG_ENDIAN );
             proto_tree_add_uint(dcc_rails_tree, hf_dcc_rails_addr_type, tvb, offset, 2, dcc_address );
-            offset += 2;
         }
 
         if(is_loco) {
@@ -117,7 +141,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 // Loco - RCN-212 - 2.2.1 Basis Geschwindigkeits- und Richtungsbefehl
                 // - 01RG-GGGG
                 //
-                #define dcc_cmd_loco_speed7_val 0x4 // 0b01......
+                #define dcc_cmd_loco_speed7_val 0x1 // 0b01......
                 #define dcc_cmd_loco_speed7_len   2
 
                 if(tvb_get_bits8(tvb, 8 * offset, dcc_cmd_loco_speed7_len) == dcc_cmd_loco_speed7_val) {
@@ -136,12 +160,12 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_cmd_loco_speed128_val 0x3F // 0b00111111
 
-                if(tvb_get_bits8(tvb, 8 * offset, 8) == dcc_cmd_loco_speed128_val) {
+                if(tvb_get_uint8(tvb, 8 * offset) == dcc_cmd_loco_speed128_val) {
 
                     // Direction
                     proto_tree_add_boolean ( dcc_rails_tree, hf_dcc_rails_dir_type,   tvb, offset + 1, 1, tvb_get_bits16(tvb, 8 * offset + 8, 1, ENC_BIG_ENDIAN));
                     // Speed
-                    proto_tree_add_uint(     dcc_rails_tree, hf_dcc_rails_speed_type, tvb, offset + 1, 2, tvb_get_bits16(tvb, 8 * offset + 1, 7, ENC_BIG_ENDIAN));
+                    proto_tree_add_uint(     dcc_rails_tree, hf_dcc_rails_speed_type, tvb, offset + 1, 2, tvb_get_bits16(tvb, 8 * offset + 9, 7, ENC_BIG_ENDIAN))   ;
                     offset += 2;
                 } 
 
@@ -218,6 +242,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
+
+                    offset += 1;
                 }
 
                 //
@@ -233,23 +259,58 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
                     proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
-                }
 
+                    offset += 1;
+                }
                 //
                 // Loco - RCN-213 - 2.3.4 Funktionssteuerung F13-F68
                 // - F13-F20: 1101-1110 DDDD-DDDD
                 // - F21-F28: 1101-1111 DDDD-DDDD
+
                 // - F29-F36: 1101-1000 DDDD-DDDD
                 // - F37-F44: 1101-1001 DDDD-DDDD
                 // - F45-F52: 1101-1010 DDDD-DDDD
                 // - F53-F60: 1101-1011 DDDD-DDDD
-                // - F61-F68: 1101-1100 DDDD-DDDD        
+                // - F61-F68: 1101-1100 DDDD-DDDD
                 //
                 #define dcc_loco_func1368_cmd 0x1B // 0b11011
                 #define dcc_loco_func1368_len    5
 
                 else if( dcc_loco_func1368_cmd == tvb_get_bits8(tvb, 8 * offset, dcc_loco_func1368_len)) {
-                    // tbd: implementation
+
+                    #define dcc_loco_func1320_cmd 0x6 // 0b110
+                    #define dcc_loco_func1320_len   3
+                    if( dcc_loco_func1320_cmd == tvb_get_bits8(tvb, 8 * offset + dcc_loco_func1368_len, dcc_loco_func1320_cmd)) {
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 7, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 7, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 6, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 5, 1) );
+                        proto_tree_add_boolean (dcc_rails_tree, hf_dcc_rails_func_type, tvb, offset, 1, tvb_get_bits8(tvb, 8 * offset + 4, 1) );
+
+                        offset += 2;
+                    }
+
+                    #define dcc_loco_func2028_cmd 0x7 // 0b111
+                    #define dcc_loco_func2028_len   3
+                    else if( dcc_loco_func2028_cmd == tvb_get_bits8(tvb, 8 * offset + dcc_loco_func1368_len, dcc_loco_func2028_len)) {
+                        offset += 2;
+                    }
+
+                    // - F29-F36: 1101-1000 DDDD-DDDD
+                    // - F37-F44: 1101-1001 DDDD-DDDD
+                    // - F45-F52: 1101-1010 DDDD-DDDD
+                    // - F53-F60: 1101-1011 DDDD-DDDD
+                    // - F61-F68: 1101-1100 DDDD-DDDD
+                    #define dcc_loco_func2968_len   3
+                    else {
+                        // int block = tvb_get_bits8(tvb, 8 * offset + dcc_loco_func1368_len, dcc_loco_func2968_len);
+                        // F(29+block*8)..F(29+block*8 +7)
+
+                        offset += 2;
+                    }
                 }
 
                 //
@@ -258,7 +319,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_loco_bin_short_cmd 0xDD // 0b11011101
                 else if(dcc_loco_bin_short_cmd == tvb_get_uint8(tvb, 8 * offset)) {
-                    // tbd: implementation
+                    offset += 1;
                 }
 
                 //
@@ -267,7 +328,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_loco_bin_long_cmd 0xC0 // 0b11000000
                 else if(dcc_loco_bin_long_cmd == tvb_get_uint8(tvb, 8 * offset)) {
-                    // tbd: implementation
+                    offset += 3;
                 }
 
                 //
@@ -276,7 +337,9 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_loco_spddrfnc_cmd 0x3C // 0b00111100
                 else if(dcc_loco_spddrfnc_cmd == tvb_get_uint8(tvb, 8 * offset)) {
-                    // tbd: implementation
+                    offset += 3;
+                    // ???
+                    // tbd: check if more byte or "checksum"
                 }
                 
                 //
@@ -289,6 +352,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 #define dcc_loco_analog_cmd 0x3D // 0b00111100
                 else if(dcc_loco_analog_cmd == tvb_get_uint8(tvb, 8 * offset)) {
                     // tbd: implementation
+                    offset += 3;
                 }
 
                 //
@@ -299,7 +363,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 #define dcc_loco_trac_addr_len    7
 
                 else if( dcc_loco_trac_addr_cmd == tvb_get_bits8(tvb, 8 * offset, dcc_loco_trac_addr_len)) {
-
+                    // tbd: implementation
+                    offset += 2;
                 }
 
                 //
@@ -308,7 +373,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_loco_reset_cmd 0x0 // 0b00000000
                 else if( dcc_loco_reset_cmd == tvb_get_uint8(tvb, 8 * offset)) {
-                    
+                    // tbd: implementation
+                    offset += 1;                    
                 }
 
                 //
@@ -317,7 +383,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 //
                 #define dcc_loco_factory_cmd 0x01 // 0b00000001
                 else if( dcc_loco_factory_cmd == tvb_get_uint8(tvb, 8 * offset)) {
-                    
+                    // tbd: implementation
+                    offset += 1;                    
                 }
 
                 //
@@ -329,6 +396,7 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
 
                 else if( dcc_loco_ext_addr_cmd == tvb_get_bits8(tvb, 8 * offset, dcc_loco_ext_addr_len)) {
                     // tbd: implementation
+                    offset += 1;                    
                 }
 
                 //
@@ -338,8 +406,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
                 #define dcc_loco_ack_cmd 0x0F // 0b00001111
                 else if(dcc_loco_ack_cmd == tvb_get_uint8(tvb, 8 * offset)) {
                     // tbd: implementation
+                    offset += 1;                    
                 }
-
                 else offset++;
             }
         }
@@ -350,15 +418,33 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
             // Accessory address - RCN-213 - Chapter 2.1 Paketformat für Einfache Zubehördecoder
             // - 10AA-AAAA 1AAA-DAAR
             //
+            if( 1 == tvb_get_bits8(tvb, 8 * offset + 9, 1)) {
+
+                // D
+                tvb_get_bits8(tvb, 8 * offset + 12, 1);
+
+                // R
+                tvb_get_bits8(tvb, 8 * offset + 15, 1);
+                offset += 2;
+            }
 
             //
             // Accessory address - RCN-213 - Chapter 2.2 Paketformat für Erweiterte Zubehördecoder
             // - 10AA-AAAA 0AAA-0AA1 DDDD-DDDD (drei Byte Format) 
             //
+            else if(   0 == tvb_get_bits8(tvb, 8 * offset +  9, 1)
+                    || 0 == tvb_get_bits8(tvb, 8 * offset + 13, 1) 
+                    || 1 == tvb_get_bits8(tvb, 8 * offset + 16, 1) ) {
+                offset += 3;
+            }
 
             //
             // Accessory address - RCN-213 - Chapter 2.3 NOP Befehl für einfache und erweiterte Zubehördecoder
             // - 10AA-AAAA 0AAA-1AAT
+            else if(   0 == tvb_get_bits8(tvb, 8 * offset +  9, 1)
+                    || 1 == tvb_get_bits8(tvb, 8 * offset + 13, 1) ) {
+                offset += 2;
+            }
 
         }
 
@@ -389,6 +475,8 @@ dissect_dcc_rails(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void 
 
                 // https://normen.railcommunity.de/RCN-225.pdf
                 // https://www.nmra.org/sites/default/files/s-9.2.2_2012_10.pdf
+            } else {
+                offset += 2;
             }
         }
     }
