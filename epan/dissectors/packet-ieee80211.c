@@ -8872,6 +8872,7 @@ static dissector_handle_t llc_handle;
 static dissector_handle_t epd_llc_handle;
 static dissector_handle_t ipx_handle;
 static dissector_handle_t eth_withoutfcs_handle;
+static dissector_handle_t eht_sta_profile_handle;
 
 static capture_dissector_handle_t llc_cap_handle;
 static capture_dissector_handle_t ipx_cap_handle;
@@ -28084,6 +28085,16 @@ static int * const reconfig_operation_para_info_hdrs[] = {
 #define RECONF_NSTR_BITMAP_SIZE                  0x1000
 
 static int
+ieee80211_eht_ml_sta_profile(tvbuff_t *tvbi _U_, packet_info *pinfo _U_,
+                             proto_tree *tree _U_, void* data _U_)
+{
+  /* This func is to have different curr_proto_layer_num and we can use layer
+   * operator to identify elements in sta_profile or not in sta_profile
+   */
+  return 1;
+}
+
+static int
 dissect_multi_link_per_sta(tvbuff_t *tvb, packet_info *pinfo _U_,
                            proto_tree *tree,
                            uint8_t multi_link_type,
@@ -28823,6 +28834,7 @@ dissect_multi_link(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
        * before use.
        */
 
+      call_dissector(eht_sta_profile_handle, new_tvb, pinfo, subelt_tree);
       offset += dissect_multi_link_per_sta(new_tvb, pinfo, subelt_tree,
                                            multi_link_type, &link_id);
 
@@ -28857,6 +28869,7 @@ dissect_multi_link(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
     }
     proto_tree_add_string(tree, hf_ieee80211_eht_multi_link_link_id_list, tvb,
                           0, 0, link_id_list);
+    call_dissector(eht_sta_profile_handle, tvb, pinfo, tree);
   }
 }
 
@@ -61292,6 +61305,8 @@ proto_reg_handoff_ieee80211(void)
   dissector_add_uint("eapol.keydes.type", EAPOL_RSN_KEY, wlan_rsna_eapol_rsn_key_handle);
 
   dissector_add_uint("sflow_245.header_protocol", SFLOW_5_HEADER_80211_MAC, wlan_withoutfcs_handle);
+
+  eht_sta_profile_handle = create_dissector_handle(ieee80211_eht_ml_sta_profile, proto_wlan);
 
   /* Tagged fields */
   /* XXX - for now, do it without pinos so the protocol is -1 */
