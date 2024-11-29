@@ -50,6 +50,7 @@ typedef struct _smb2_fid_info_t {
 	uint32_t frame_end;
 	/* file name used to open this FID */
 	char *name;
+	char *filename;
 } smb2_fid_info_t;
 
 typedef enum {
