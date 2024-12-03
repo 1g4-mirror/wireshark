@@ -106,6 +106,7 @@ typedef struct {
 	uint16_t total_size;
 	uint8_t channel_id;
 	uint8_t chunk_type;
+	uint32_t frame_duration;
 } message_info;
 
 typedef struct {
@@ -617,11 +618,13 @@ static int dissect_idn_dmx_data(tvbuff_t *tvb, packet_info *pinfo, int offset, p
 	return offset;
 }
 
-static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config) {
+static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config, message_info *minfo) {
 	char values[MAX_BUFFER];
 	values[0] = '\0';
 	int i;
 	int laser_data_size = tvb_reported_length_remaining(tvb, offset);
+	int sample_count = laser_data_size / 8;
+	float pps = sample_count / (minfo->frame_duration / 1000);
 
 	if (config->sample_size == 0) {
 	    /* TODO: log expert info error? */
@@ -629,14 +632,14 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 	}
 
 	int sample_size = laser_data_size/config->sample_size;
-	proto_tree *idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Samples %s", config->sample_column_string);
+	proto_tree *idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, %u, with %f pps", sample_count, pps);
 	proto_tree *idn_samples_subtree = NULL;
 
 	for(i=1; i<=sample_size; i++) {
 		if((i-1)%10 == 0 && i+10 > sample_size) {
 			idn_samples_subtree = proto_tree_add_subtree_format(idn_samples_tree, tvb, offset, tvb_reported_length_remaining(tvb, offset), ett_subdata, NULL, "Samples %3d - %3d", i, sample_size);
 		}else if((i-1)%10 == 0) {
-			idn_samples_subtree = proto_tree_add_subtree_format(idn_samples_tree, tvb, offset, config->sample_size*10, ett_subdata, NULL, "Samples %3d - %3d", i, i+9);
+			idn_samples_subtree = proto_tree_add_subtree_format(idn_samples_tree, tvb, offset, config->sample_size*10, ett_subdata, NULL, "Samples %3d - %3d %s", i, i+9, config->sample_column_string);
 		}
 		set_laser_sample_values_string(tvb, offset, config, values);
 		proto_tree_add_int_format(idn_samples_subtree, hf_idn_gts_sample, tvb, offset, config->sample_size, config->sample_size,  "Sample %3d: %s", i, values);
@@ -701,7 +704,7 @@ static int dissect_idn_octet_segment_chunk_header(tvbuff_t *tvb, int offset, pro
 	return offset;
 }
 
-static int dissect_idn_frame_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree) {
+static int dissect_idn_frame_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, message_info *minfo) {
 	static int * const frame_sample_chunk_flags[] = {
 		&hf_idn_two_bits_reserved_1,
 		&hf_idn_scm,
@@ -713,6 +716,7 @@ static int dissect_idn_frame_chunk_header(tvbuff_t *tvb, int offset, proto_tree 
 	proto_tree_add_bitmask(chunk_header_tree, tvb, offset, hf_idn_chunk_header_flags, ett_chunk_header_flags, frame_sample_chunk_flags, ENC_BIG_ENDIAN);
 	offset += 1;
 	proto_tree_add_item(chunk_header_tree, hf_idn_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
+	minfo->frame_duration = tvb_get_ntohi24(tvb, offset);
 	offset += 3;
 	return offset;
 }
@@ -738,10 +742,10 @@ static int dissect_idn_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 			offset = dissect_idn_wave_chunk_header(tvb, offset, idn_tree);
 			break;
 		case IDNCT_LP_FRAME_CHUNK:
-			offset = dissect_idn_frame_chunk_header(tvb, offset, idn_tree);
+			offset = dissect_idn_frame_chunk_header(tvb, offset, idn_tree, minfo);
 			break;
 		case IDNCT_LP_FRAME_FF:
-			offset = dissect_idn_frame_chunk_header(tvb, offset, idn_tree);
+			offset = dissect_idn_frame_chunk_header(tvb, offset, idn_tree, minfo);
 			break;
 		case IDNCT_OCTET_SEGMENT:
 			offset = dissect_idn_octet_segment_chunk_header(tvb, offset, idn_tree);
@@ -1373,7 +1377,7 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 	uint16_t sample_count = config->max_samples;
 	uint16_t audio_channels = config->audio_channels;
 	float freq = config->audio_freq;
-	proto_item_append_text(audio_samples_tree, "  %u Samples, %f kHZ", sample_count/audio_channels ,freq);
+	proto_item_append_text(audio_samples_tree, "  %u Samples, %f kHz", sample_count/audio_channels ,freq);
 	switch (audio_format) {
 		case 0x00:
 			proto_item_append_text(audio_samples_tree, " ,format 0x0(8 Bit Words)");
@@ -1441,7 +1445,7 @@ static int dissect_idn_message(tvbuff_t *tvb, packet_info *pinfo, int offset, pr
 		}else if(minfo->chunk_type == IDNCT_AUDIO_WAVE_SAMPLE){
 			offset = dissect_idn_audio(tvb, pinfo, offset, idn_tree, config, minfo);
 		}else {
-			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config);
+			offset = dissect_idn_laser_data(tvb, offset, idn_tree, config, minfo);
 		}
 	}
 	return offset;
