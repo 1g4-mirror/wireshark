@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include "wtap_opttypes.h"
 #include <config.h>
 
 #include <stdio.h>
@@ -5328,7 +5327,7 @@ sharkd_session_process_dumpconf_cb(pref_t *pref, void *d)
     switch (prefs_get_type(pref))
     {
         case PREF_UINT:
-            sharkd_json_value_anyf("u", "%u", prefs_get_uint_value_real(pref, pref_current));
+            sharkd_json_value_anyf("u", "%u", prefs_get_uint_value(pref, pref_current));
             if (prefs_get_uint_base(pref) != 10)
                 sharkd_json_value_anyf("ub", "%u", prefs_get_uint_base(pref));
             break;

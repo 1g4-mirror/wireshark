@@ -29,7 +29,6 @@ DIAG_ON(frame-larger-than=)
 #include <epan/stats_tree_priv.h>
 #include <epan/plugin_if.h>
 #include <epan/export_object.h>
-#include <frame_tvbuff.h>
 
 #include "ui/iface_toolbar.h"
 #include "ui/commandline.h"
@@ -643,8 +642,8 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
     connect(packet_list_, &PacketList::packetDissectionChanged, this, &WiresharkMainWindow::redissectPackets);
     connect(packet_list_, &PacketList::showColumnPreferences, this, &WiresharkMainWindow::showPreferencesDialog);
     connect(packet_list_, &PacketList::showProtocolPreferences, this, &WiresharkMainWindow::showPreferencesDialog);
-    connect(packet_list_, SIGNAL(editProtocolPreference(preference*, pref_module*)),
-            main_ui_->preferenceEditorFrame, SLOT(editPreference(preference*, pref_module*)));
+    connect(packet_list_, SIGNAL(editProtocolPreference(pref_t*, module_t*)),
+            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*, module_t*)));
     connect(packet_list_, &PacketList::editColumn, this, &WiresharkMainWindow::showColumnEditor);
     connect(main_ui_->columnEditorFrame, &ColumnEditorFrame::columnEdited, packet_list_, &PacketList::columnsChanged);
     connect(packet_list_, &QAbstractItemView::doubleClicked, this, [=](const QModelIndex &){ openPacketDialog(); });
@@ -652,8 +651,8 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
 
     connect(proto_tree_, &ProtoTree::openPacketInNewWindow, this, &WiresharkMainWindow::openPacketDialog);
     connect(proto_tree_, &ProtoTree::showProtocolPreferences, this, &WiresharkMainWindow::showPreferencesDialog);
-    connect(proto_tree_, SIGNAL(editProtocolPreference(preference*, pref_module*)),
-            main_ui_->preferenceEditorFrame, SLOT(editPreference(preference*, pref_module*)));
+    connect(proto_tree_, SIGNAL(editProtocolPreference(pref_t*, module_t*)),
+            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*, module_t*)));
 
     connect(main_ui_->statusBar, &MainStatusBar::showExpertInfo, this, [=]() {
         statCommandExpertInfo(NULL, NULL);
@@ -701,6 +700,7 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
     /* Show tooltips on menu items that go to websites */
     main_ui_->actionHelpMPWireshark->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_MAN_WIRESHARK)));
     main_ui_->actionHelpMPWireshark_Filter->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_MAN_WIRESHARK_FILTER)));
+    main_ui_->actionHelpMPWireshark_FilterReference->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_DFILTER_REF)));
     main_ui_->actionHelpMPCapinfos->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_MAN_CAPINFOS)));
     main_ui_->actionHelpMPDumpcap->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_MAN_DUMPCAP)));
     main_ui_->actionHelpMPEditcap->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_MAN_EDITCAP)));
@@ -717,6 +717,7 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
     main_ui_->actionHelpDownloads->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_DOWNLOAD)));
     main_ui_->actionHelpWiki->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_WIKI)));
     main_ui_->actionHelpSampleCaptures->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_SAMPLE_CAPTURES)));
+    main_ui_->actionHelpReleaseNotes->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_RELEASE_NOTES)));
 
     showWelcome();
 }
@@ -906,7 +907,7 @@ void WiresharkMainWindow::keyPressEvent(QKeyEvent *event) {
     }
 
     if (mainApp->focusWidget() == main_ui_->goToLineEdit) {
-        if (event->modifiers() == Qt::NoModifier) {
+        if (event->modifiers() == Qt::NoModifier || event->modifiers() == Qt::KeypadModifier) {
             if (event->key() == Qt::Key_Escape) {
                 goToCancelClicked();
             } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
@@ -1227,7 +1228,7 @@ void WiresharkMainWindow::mergeCaptureFile()
                  * Format the message.
                  */
                 display_basename = g_filename_display_basename(capture_file_.capFile()->filename);
-                msg_dialog.setText(QString(tr("Save changes in \"%1\" before merging?")).arg(display_basename));
+                msg_dialog.setText(tr("Save changes in \"%1\" before merging?").arg(display_basename));
                 g_free(display_basename);
                 msg_dialog.setInformativeText(tr("Changes must be saved before the files can be merged."));
             }
@@ -1267,7 +1268,7 @@ void WiresharkMainWindow::mergeCaptureFile()
                    selection box again once they dismiss the alert. */
                 // Similar to commandline_info.jfilter section in main().
                 QMessageBox::warning(this, tr("Invalid Read Filter"),
-                                     QString(tr("The filter expression %1 isn't a valid read filter. (%2).").arg(read_filter, df_err->msg)),
+                                     tr("The filter expression \"%1\" isn't a valid read filter.\n(%2).").arg(read_filter, df_err->msg),
                                      QMessageBox::Ok);
                 df_error_free(&df_err);
                 continue;
@@ -1669,7 +1670,7 @@ void WiresharkMainWindow::exportSelectedPackets() {
             char *display_basename = g_filename_display_basename(qUtf8Printable(file_name));
 
             msg_box.setIcon(QMessageBox::Critical);
-            msg_box.setText(QString(tr("Unable to export to \"%1\".").arg(display_basename)));
+            msg_box.setText(tr("Unable to export to \"%1\".").arg(display_basename));
             msg_box.setInformativeText(tr("You cannot export packets to the current capture file."));
             msg_box.setStandardButtons(QMessageBox::Ok);
             msg_box.setDefaultButton(QMessageBox::Ok);
@@ -2110,6 +2111,8 @@ void WiresharkMainWindow::initMainToolbarIcons()
     main_ui_->actionGoPreviousConversationPacket->setShortcut(QKeySequence(Qt::META | Qt::Key_Comma));
     main_ui_->actionGoNextConversationPacket->setShortcut(QKeySequence(Qt::META | Qt::Key_Period));
 #endif
+    main_ui_->actionGoFirstConversationPacket->setIcon(StockIcon("go-first"));
+    main_ui_->actionGoLastConversationPacket->setIcon(StockIcon("go-last"));
     main_ui_->actionGoPreviousHistoryPacket->setIcon(StockIcon("go-previous"));
     main_ui_->actionGoNextHistoryPacket->setIcon(StockIcon("go-next"));
     main_ui_->actionGoAutoScroll->setIcon(StockIcon("x-stay-last"));
@@ -2456,7 +2459,7 @@ void WiresharkMainWindow::setWSWindowTitle(QString title)
     if (prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
         QString custom_title = replaceWindowTitleVariables(prefs.gui_prepend_window_title);
         if (custom_title.length() > 0) {
-            title.prepend(QString("[%1] ").arg(custom_title));
+            title.prepend(QStringLiteral("[%1] ").arg(custom_title));
         }
     }
 
@@ -2465,9 +2468,9 @@ void WiresharkMainWindow::setWSWindowTitle(QString title)
         if (custom_title.length() > 0) {
 #ifdef __APPLE__
             // On macOS we separate the titles with a unicode em dash
-            title.append(QString(" %1 %2").arg(UTF8_EM_DASH).arg(custom_title));
+            title.append(QStringLiteral(" %1 %2").arg(UTF8_EM_DASH).arg(custom_title));
 #else
-            title.append(QString(" [%1]").arg(custom_title));
+            title.append(QStringLiteral(" [%1]").arg(custom_title));
 #endif
         }
     }
@@ -2487,7 +2490,7 @@ void WiresharkMainWindow::updateTitlebar()
     if (use_capturing_title_ && capture_file_.capFile()) {
         setWSWindowTitle(tr("Capturing from %1").arg(cf_get_tempfile_source(capture_file_.capFile())));
     } else if (capture_file_.capFile() && capture_file_.capFile()->filename) {
-        setWSWindowTitle(QString("[*]%1").arg(capture_file_.fileDisplayName()));
+        setWSWindowTitle(QStringLiteral("[*]%1").arg(capture_file_.fileDisplayName()));
         //
         // XXX - on non-Mac platforms, put in the application
         // name?  Or do so only for temporary files?
@@ -2967,7 +2970,7 @@ QMenu * WiresharkMainWindow::searchSubMenu(QString objectName)
     QList<QMenu*> lst;
 
     if (objectName.length() > 0) {
-        QString searchName = QString("menu") + objectName;
+        QString searchName = QStringLiteral("menu") + objectName;
 
         lst = main_ui_->menuBar->findChildren<QMenu*>();
         foreach(QMenu* m, lst) {
@@ -3147,9 +3150,7 @@ QString WiresharkMainWindow::findRtpStreams(QVector<rtpstream_id_t *> *stream_id
     epan_dissect_prime_with_hfid(&edt, hfid_rtp_ssrc);
     epan_dissect_run(&edt, capture_file_.capFile()->cd_t,
                      &capture_file_.capFile()->rec,
-                     frame_tvbuff_new_buffer(
-                         &capture_file_.capFile()->provider, fdata,
-                         &capture_file_.capFile()->buf),
+                     ws_buffer_start_ptr(&capture_file_.capFile()->buf),
                      fdata, NULL);
 
     /*

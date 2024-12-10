@@ -34,12 +34,11 @@
 #include "ui/util.h"
 
 #include "wiretap/wtap_opttypes.h"
-#include "wsutil/filesystem.h"
+#include "wsutil/application_flavor.h"
 #include "wsutil/str_util.h"
 #include <wsutil/wslog.h>
 
 #include <epan/color_filters.h>
-#include "frame_tvbuff.h"
 
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/widgets/overlay_scroll_bar.h>
@@ -268,7 +267,6 @@ PacketList::PacketList(QWidget *parent) :
     gbl_cur_packet_list = this;
 
     connect(packet_list_model_, SIGNAL(goToPacket(int)), this, SLOT(goToPacket(int)));
-    connect(packet_list_model_, SIGNAL(itemHeightChanged(const QModelIndex&)), this, SLOT(updateRowHeights(const QModelIndex&)));
     connect(mainApp, SIGNAL(addressResolutionChanged()), this, SLOT(redrawVisiblePacketsDontSelectCurrent()));
     connect(mainApp, SIGNAL(columnDataChanged()), this, SLOT(redrawVisiblePacketsDontSelectCurrent()));
     connect(mainApp, &MainApplication::preferencesChanged, this, [=]() {
@@ -331,7 +329,7 @@ void PacketList::colorsChanged()
 
     QString hover_style;
 #if !defined(Q_OS_WIN)
-    hover_style = QString(
+    hover_style = QStringLiteral(
         "QTreeView:item:hover {"
         "  background-color: %1;"
         "  color: palette(text);"
@@ -425,7 +423,7 @@ QString PacketList::joinSummaryRow(QStringList col_parts, int row, SummaryCopyTy
         break;
     case CopyAsYAML:
         copy_text = "----\n";
-        copy_text += QString("# Packet %1 from %2\n").arg(row).arg(cap_file_->filename);
+        copy_text += QStringLiteral("# Packet %1 from %2\n").arg(row).arg(cap_file_->filename);
         copy_text += "- ";
         copy_text += col_parts.join("\n- ");
         copy_text += "\n";
@@ -761,7 +759,7 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
     copyEntries->setParent(submenu);
     frameData->setParent(submenu);
 
-    if (is_packet_configuration_namespace()) {
+    if (application_flavor_is_wireshark()) {
         /* i.e., Wireshark only */
         ctx_menu->addSeparator();
         QMenu *proto_prefs_menus = new QMenu(ProtocolPreferencesMenu::tr("Protocol Preferences"), ctx_menu);
@@ -788,8 +786,8 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
 
                     connect(proto_prefs_menu, SIGNAL(showProtocolPreferences(QString)),
                             this, SIGNAL(showProtocolPreferences(QString)));
-                    connect(proto_prefs_menu, SIGNAL(editProtocolPreference(preference*,pref_module*)),
-                            this, SIGNAL(editProtocolPreference(preference*,pref_module*)));
+                    connect(proto_prefs_menu, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+                            this, SIGNAL(editProtocolPreference(pref_t*,module_t*)));
 
                     proto_prefs_menus->addMenu(proto_prefs_menu);
                     added_proto_prefs << module_name;
@@ -856,11 +854,7 @@ void PacketList::mousePressEvent (QMouseEvent *event)
     QModelIndex curIndex = indexAt(event->pos());
     mouse_pressed_at_ = curIndex;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
     bool midButton = (event->buttons() & Qt::MiddleButton) == Qt::MiddleButton;
-#else
-    bool midButton = (event->buttons() & Qt::MidButton) == Qt::MidButton;
-#endif
     if (midButton && cap_file_ && packet_list_model_)
     {
         packet_list_model_->toggleFrameMark(QModelIndexList() << curIndex);
@@ -929,7 +923,7 @@ void PacketList::mouseMoveEvent (QMouseEvent *event)
             filterData["description"] = name;
 
             mimeData->setData(WiresharkMimeData::DisplayFilterMimeType, QJsonDocument(filterData).toJson());
-            content = new DragLabel(QString("%1\n%2").arg(name, abbrev), this);
+            content = new DragLabel(QStringLiteral("%1\n%2").arg(name, abbrev), this);
         }
         else
         {
@@ -1472,7 +1466,7 @@ QString PacketList::getFilterFromRowAndColumn(QModelIndex idx)
         col_custom_prime_edt(&edt, &cap_file_->cinfo);
 
         epan_dissect_run(&edt, cap_file_->cd_t, &rec,
-                         frame_tvbuff_new_buffer(&cap_file_->provider, fdata, &buf),
+                         ws_buffer_start_ptr(&buf),
                          fdata, &cap_file_->cinfo);
 
         if (cap_file_->cinfo.columns[column].col_fmt == COL_CUSTOM) {
@@ -1493,11 +1487,11 @@ QString PacketList::getFilterFromRowAndColumn(QModelIndex idx)
 
                 if (filter.isEmpty()) {
                     if (is_string_value) {
-                        filter.append(QString("%1 == \"%2\"")
+                        filter.append(QStringLiteral("%1 == \"%2\"")
                                       .arg(cap_file_->cinfo.col_expr.col_expr[column])
                                       .arg(cap_file_->cinfo.col_expr.col_expr_val[column]));
                     } else {
-                        filter.append(QString("%1 == %2")
+                        filter.append(QStringLiteral("%1 == %2")
                                       .arg(cap_file_->cinfo.col_expr.col_expr[column])
                                       .arg(cap_file_->cinfo.col_expr.col_expr_val[column]));
                     }
@@ -1610,9 +1604,9 @@ QString PacketList::allPacketComments()
             for (unsigned i = 0; i < n_comments; i++) {
                 char *comment_text;
                 if (WTAP_OPTTYPE_SUCCESS == wtap_block_get_nth_string_option_value(pkt_block, OPT_COMMENT, i, &comment_text)) {
-                    buf_str.append(QString(tr("Frame %1: %2\n\n")).arg(framenum).arg(comment_text));
+                    buf_str.append(tr("Frame %1: %2\n\n").arg(framenum).arg(comment_text));
                     if (buf_str.length() > max_comments_to_fetch_) {
-                        buf_str.append(QString(tr("[ Comment text exceeds %1. Stopping. ]"))
+                        buf_str.append(tr("[ Comment text exceeds %1. Stopping. ]")
                                 .arg(format_size(max_comments_to_fetch_, FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
                         return buf_str;
                     }
@@ -1983,27 +1977,6 @@ void PacketList::sectionMoved(int logicalIndex, int oldVisualIndex, int newVisua
     }
 }
 
-void PacketList::updateRowHeights(const QModelIndex &ih_index)
-{
-    QStyleOptionViewItem option;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    initViewItemOption(&option);
-#else
-    option = viewOptions();
-#endif
-    int max_height = 0;
-
-    // One of our columns increased the maximum row height. Find out which one.
-    for (int col = 0; col < packet_list_model_->columnCount(); col++) {
-        QSize size_hint = itemDelegate()->sizeHint(option, packet_list_model_->index(ih_index.row(), col));
-        max_height = qMax(max_height, size_hint.height());
-    }
-
-    if (max_height > 0) {
-        packet_list_model_->setMaximumRowHeight(max_height);
-    }
-}
-
 QString PacketList::createSummaryText(QModelIndex idx, SummaryCopyType type)
 {
     if (! idx.isValid())
@@ -2098,7 +2071,7 @@ QString PacketList::createHeaderSummaryForAligned(QStringList hdr_parts, QList<i
             hdr_text += hdr_parts[i].rightJustified(size_parts.at(i), ' ') + "  ";
         }
     }
-    return QString("-" + hdr_text).trimmed().mid(1);
+    return QStringLiteral("-%1").arg(hdr_text).trimmed().mid(1);
 }
 
 QString PacketList::createSummaryForAligned(QModelIndex idx, QList<int> align_parts, QList<int> size_parts)
@@ -2124,7 +2097,7 @@ QString PacketList::createSummaryForAligned(QModelIndex idx, QList<int> align_pa
         }
     }
 
-    return QString("-" + col_text).trimmed().mid(1);
+    return QStringLiteral("-%1").arg(col_text).trimmed().mid(1);
 }
 
 QString PacketList::createDefaultStyleForHtml()

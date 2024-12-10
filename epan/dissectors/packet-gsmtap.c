@@ -4,6 +4,7 @@
  * (C) 2008-2013 by Harald Welte <laforge@gnumonks.org>
  * (C) 2011 by Holger Hans Peter Freyther
  * (C) 2020 by sysmocom s.f.m.c. GmbH <info@sysmocom.de>
+ * (C) 2024 by Tamas Regos <tamas.regos@infostam.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -67,8 +68,10 @@ static int hf_gsmtap_burst_type;
 static int hf_gsmtap_channel_type;
 static int hf_gsmtap_tetra_channel_type;
 static int hf_gsmtap_gmr1_channel_type;
+static int hf_gsmtap_lte_rrc_channel_type;
 static int hf_gsmtap_rrc_sub_type;
 static int hf_gsmtap_e1t1_sub_type;
+static int hf_gsmtap_sim_sub_type;
 static int hf_gsmtap_antenna;
 
 static int hf_sacch_l1h_power_lev;
@@ -430,6 +433,34 @@ static const value_string gsmtap_gmr1_channels[] = {
 	{ 0,				NULL },
 };
 
+/* Logical channal names for LTE RRC messages according to 3GPP TS 38.331 */
+static const value_string gsmtap_lte_rrc_channels[] = {
+    { GSMTAP_LTE_RRC_SUB_DL_CCCH_Message,           "CCCH" },
+    { GSMTAP_LTE_RRC_SUB_DL_DCCH_Message,           "DCCH" },
+    { GSMTAP_LTE_RRC_SUB_UL_CCCH_Message,           "CCCH" },
+    { GSMTAP_LTE_RRC_SUB_UL_DCCH_Message,           "DCCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_BCH_Message,          "BBCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_DL_SCH_Message,       "BBCH" },
+    { GSMTAP_LTE_RRC_SUB_PCCH_Message,              "PCCH" },
+    { GSMTAP_LTE_RRC_SUB_MCCH_Message,              "MCCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_BCH_Message_MBMS,     "BBCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_DL_SCH_Message_BR,    "BCCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_DL_SCH_Message_MBMS,  "BCCH" },
+    { GSMTAP_LTE_RRC_SUB_SC_MCCH_Message,           "MCCH" },
+    { GSMTAP_LTE_RRC_SUB_SBCCH_SL_BCH_Message,      "SBCCH" },
+    { GSMTAP_LTE_RRC_SUB_SBCCH_SL_BCH_Message_V2X,  "SBCCH" },
+    { GSMTAP_LTE_RRC_SUB_DL_CCCH_Message_NB,        "CCCH" },
+    { GSMTAP_LTE_RRC_SUB_DL_DCCH_Message_NB,        "DCCH" },
+    { GSMTAP_LTE_RRC_SUB_UL_CCCH_Message_NB,        "CCCH" },
+    { GSMTAP_LTE_RRC_SUB_UL_DCCH_Message_NB,        "DCCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_BCH_Message_NB,       "BBCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_BCH_Message_TDD_NB,   "BBCH" },
+    { GSMTAP_LTE_RRC_SUB_BCCH_DL_SCH_Message_NB,    "BCCH" },
+    { GSMTAP_LTE_RRC_SUB_PCCH_Message_NB,           "PCCH" },
+    { GSMTAP_LTE_RRC_SUB_SC_MCCH_Message_NB,        "MCCH" },
+    { 0,                                            NULL },
+};
+
 /* the mapping is not complete */
 static const int gsmtap_to_tetra[9] = {
 	0,
@@ -495,6 +526,18 @@ static const value_string gsmtap_um_e1t1_types[] = {
 	{ GSMTAP_E1T1_H221,			"H.221" },	/* H.221 B-channel data */
 	{ GSMTAP_E1T1_PPP,			"PPP" },	/* PPP */
 	{ 0,					NULL },
+};
+
+static const value_string gsmtap_sim_types[] = {
+	{ GSMTAP_SIM_APDU,	"APDU" },
+	{ GSMTAP_SIM_ATR,	"ATR" },
+	{ GSMTAP_SIM_PPS_REQ,	"PPS request" },
+	{ GSMTAP_SIM_PPS_RSP,	"PPS response" },
+	{ GSMTAP_SIM_TPDU_HDR,	"TPDU command header" },
+	{ GSMTAP_SIM_TPDU_CMD,	"TPDU command body" },
+	{ GSMTAP_SIM_TPDU_RSP,	"TPDU response body" },
+	{ GSMTAP_SIM_TPDU_SW,	"TPDU response trailer" },
+	{ 0,			NULL },
 };
 
 /* dissect a SACCH L1 header which is included in the first 2 bytes
@@ -898,61 +941,72 @@ dissect_gsmtap_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	conversation_set_elements_by_id(pinfo, CONVERSATION_GSMTAP, (timeslot << 3) | subslot);
 
 	if (tree) {
-		uint8_t channel;
-		const char *channel_str;
-		channel = tvb_get_uint8(tvb, offset+12);
-		if (type == GSMTAP_TYPE_TETRA_I1)
-			channel_str = val_to_str(channel, gsmtap_tetra_channels, "Unknown: %d");
-		else if (type == GSMTAP_TYPE_GMR1_UM)
-			channel_str = val_to_str(channel, gsmtap_gmr1_channels, "Unknown: %d");
-		else
-			channel_str = val_to_str(channel, gsmtap_channels, "Unknown: %d");
+		if (type == GSMTAP_TYPE_SIM) {
+			/* Skip parsing radio fields for SIM type. */
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_sim_sub_type,
+					tvb, offset+12, 1, ENC_BIG_ENDIAN);
+		} else {
+			uint8_t channel;
+			const char *channel_str;
+			channel = tvb_get_uint8(tvb, offset+12);
+			if (type == GSMTAP_TYPE_TETRA_I1)
+				channel_str = val_to_str(channel, gsmtap_tetra_channels, "Unknown: %d");
+			else if (type == GSMTAP_TYPE_GMR1_UM)
+				channel_str = val_to_str(channel, gsmtap_gmr1_channels, "Unknown: %d");
+			else if (type == GSMTAP_TYPE_LTE_RRC)
+				channel_str = val_to_str(channel, gsmtap_lte_rrc_channels, "Unknown: %d");
+			else
+				channel_str = val_to_str(channel, gsmtap_channels, "Unknown: %d");
 
-		proto_item_append_text(ti, ", ARFCN: %u (%s), TS: %u, Channel: %s (%u)",
-			arfcn & GSMTAP_ARFCN_MASK,
-			arfcn & GSMTAP_ARFCN_F_UPLINK ? "Uplink" : "Downlink",
-			tvb_get_uint8(tvb, offset+3),
-			channel_str,
-			tvb_get_uint8(tvb, offset+14));
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_timeslot,
-				    tvb, offset+3, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_arfcn,
-				    tvb, offset+4, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_uplink,
-				    tvb, offset+4, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_pcs,
-				    tvb, offset+4, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_signal_dbm,
-				    tvb, offset+6, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_snr_db,
-				    tvb, offset+7, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_frame_nr,
-				    tvb, offset+8, 4, ENC_BIG_ENDIAN);
-		if (type == GSMTAP_TYPE_UM_BURST)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_burst_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_UM)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_channel_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_TETRA_I1)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_tetra_channel_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_WMX_BURST)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_burst_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_GMR1_UM)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_gmr1_channel_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_UMTS_RRC)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_rrc_sub_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		else if (type == GSMTAP_TYPE_E1T1)
-			proto_tree_add_item(gsmtap_tree, hf_gsmtap_e1t1_sub_type,
-					    tvb, offset+12, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_antenna,
-				    tvb, offset+13, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(gsmtap_tree, hf_gsmtap_subslot,
-				    tvb, offset+14, 1, ENC_BIG_ENDIAN);
+			proto_item_append_text(ti, ", ARFCN: %u (%s), TS: %u, Channel: %s (%u)",
+				arfcn & GSMTAP_ARFCN_MASK,
+				arfcn & GSMTAP_ARFCN_F_UPLINK ? "Uplink" : "Downlink",
+				tvb_get_uint8(tvb, offset+3),
+				channel_str,
+				tvb_get_uint8(tvb, offset+14));
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_timeslot,
+					tvb, offset+3, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_arfcn,
+					tvb, offset+4, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_uplink,
+					tvb, offset+4, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_pcs,
+					tvb, offset+4, 2, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_signal_dbm,
+					tvb, offset+6, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_snr_db,
+					tvb, offset+7, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_frame_nr,
+					tvb, offset+8, 4, ENC_BIG_ENDIAN);
+			if (type == GSMTAP_TYPE_UM_BURST)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_burst_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_UM)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_channel_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_TETRA_I1)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_tetra_channel_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_WMX_BURST)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_burst_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_GMR1_UM)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_gmr1_channel_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_LTE_RRC)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_lte_rrc_channel_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_UMTS_RRC)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_rrc_sub_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			else if (type == GSMTAP_TYPE_E1T1)
+				proto_tree_add_item(gsmtap_tree, hf_gsmtap_e1t1_sub_type,
+						tvb, offset+12, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_antenna,
+					tvb, offset+13, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(gsmtap_tree, hf_gsmtap_subslot,
+					tvb, offset+14, 1, ENC_BIG_ENDIAN);
+		}
 	}
 
 	switch (type) {
@@ -1262,10 +1316,14 @@ proto_register_gsmtap(void)
 		  FT_UINT8, BASE_DEC, VALS(gsmtap_tetra_channels), 0, NULL, HFILL }},
 		{ &hf_gsmtap_gmr1_channel_type, { "Channel Type", "gsmtap.gmr1_chan_type",
 		  FT_UINT8, BASE_DEC, VALS(gsmtap_gmr1_channels), 0, NULL, HFILL }},
+		{ &hf_gsmtap_lte_rrc_channel_type, { "Channel Type", "gsmtap.lte_rrc_chan_type",
+		  FT_UINT8, BASE_DEC, VALS(gsmtap_lte_rrc_channels), 0, NULL, HFILL }},
 		{ &hf_gsmtap_rrc_sub_type, { "Message Type", "gsmtap.rrc_sub_type",
 		  FT_UINT8, BASE_DEC, VALS(rrc_sub_types), 0, NULL, HFILL }},
 		{ &hf_gsmtap_e1t1_sub_type, { "Channel Type", "gsmtap.e1t1_sub_type",
 		  FT_UINT8, BASE_DEC, VALS(gsmtap_um_e1t1_types), 0, NULL, HFILL }},
+		{ &hf_gsmtap_sim_sub_type, { "SIM Type", "gsmtap.sim_sub_type",
+		  FT_UINT8, BASE_DEC, VALS(gsmtap_sim_types), 0, NULL, HFILL }},
 		{ &hf_gsmtap_antenna, { "Antenna Number", "gsmtap.antenna",
 		  FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
 		{ &hf_gsmtap_subslot, { "Sub-Slot", "gsmtap.sub_slot",

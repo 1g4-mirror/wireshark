@@ -1091,7 +1091,7 @@ dissect_iso14443_cmd_type_block(tvbuff_t *tvb, packet_info *pinfo,
                     &i_block_frag_items, NULL, tree);
 
             if (payload_tvb) {
-                if (!dissector_try_payload_new(iso14443_subdissector_table,
+                if (!dissector_try_payload_with_data(iso14443_subdissector_table,
                             payload_tvb, pinfo, tree, true, NULL)) {
                     call_data_dissector(payload_tvb, pinfo, tree);
                 }
@@ -1320,7 +1320,7 @@ dissect_iso14443_msg(tvbuff_t *tvb, packet_info *pinfo,
     msg_tree = proto_tree_add_subtree(
             tree, tvb, 0, -1, ett_iso14443_msg, NULL, "Message");
 
-    ret = dissector_try_uint_new(iso14443_cmd_type_table, cmd,
+    ret = dissector_try_uint_with_data(iso14443_cmd_type_table, cmd,
             tvb, pinfo, msg_tree, false, GUINT_TO_POINTER((unsigned)crc_dropped));
     if (ret == 0) {
         proto_tree_add_expert(tree, pinfo, &ei_iso14443_unknown_cmd,
@@ -1424,11 +1424,11 @@ proto_register_iso14443(void)
         },
         { &hf_iso14443_resp_in,
             { "Response In", "iso14443.resp_in",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL }
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, NULL, HFILL }
         },
         { &hf_iso14443_resp_to,
             { "Response To", "iso14443.resp_to",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL }
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, NULL, HFILL }
         },
         { &hf_iso14443_short_frame,
             { "Short frame", "iso14443.short_frame",

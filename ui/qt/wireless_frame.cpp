@@ -52,16 +52,6 @@ WirelessFrame::WirelessFrame(QWidget *parent) :
     if (ws80211_init() == WS80211_INIT_OK) {
         ui->stackedWidget->setEnabled(true);
         ui->stackedWidget->setCurrentWidget(ui->interfacePage);
-
-#ifdef HAVE_AIRPCAP
-        // We should arguably add ws80211_get_helper_name and ws80211_get_helper_tooltip.
-        // This works for now and is translatable.
-        ui->helperToolButton->setText(tr("AirPcap Control Panel"));
-        ui->helperToolButton->setToolTip(tr("Open the AirPcap Control Panel"));
-        ui->helperToolButton->show();
-        ui->helperToolButton->setEnabled(ws80211_get_helper_path() != NULL);
-#endif
-
     } else {
         ui->stackedWidget->setEnabled(false);
         ui->stackedWidget->setCurrentWidget(ui->noWirelessPage);
@@ -203,7 +193,7 @@ void WirelessFrame::on_helperToolButton_clicked()
     const QString helper_path = ws80211_get_helper_path();
     if (helper_path.isEmpty()) return;
 
-    QString command = QString("\"%1\"").arg(helper_path);
+    QString command = QStringLiteral("\"%1\"").arg(helper_path);
     QProcess::startDetached(command, QStringList());
 }
 
@@ -236,8 +226,9 @@ void WirelessFrame::getInterfaceInfo()
             for (unsigned j = 0; j < iface->frequencies->len; j++) {
                 uint32_t frequency = g_array_index(iface->frequencies, uint32_t, j);
                 double ghz = frequency / 1000.0;
-                QString chan_str = QString("%1 " UTF8_MIDDLE_DOT " %2%3")
+                QString chan_str = QStringLiteral("%1 %2 %3%4")
                         .arg(ieee80211_mhz_to_chan(frequency))
+                        .arg(UTF8_MIDDLE_DOT)
                         .arg(ghz, 0, 'f', 3)
                         .arg(units);
                 ui->channelComboBox->addItem(chan_str, frequency);
@@ -326,14 +317,6 @@ void WirelessFrame::setInterfaceInfo()
 
     /* Parse the error msg */
     if (ret) {
-        err_str = tr("Unable to set channel or offset.");
-    }
-#elif defined(HAVE_AIRPCAP)
-    int frequency = ui->channelComboBox->itemData(cur_chan_idx).toInt();
-    int chan_type = ui->channelTypeComboBox->itemData(cur_type_idx).toInt();
-    if (frequency < 0 || chan_type < 0) return;
-
-    if (ws80211_set_freq(cur_iface.toUtf8().constData(), frequency, chan_type, -1, -1) != 0) {
         err_str = tr("Unable to set channel or offset.");
     }
 #endif

@@ -77,7 +77,6 @@
 #include <wsutil/version_info.h>
 #include <ui/failure_message.h>
 #include <wsutil/clopts_common.h>
-#include <wsutil/report_message.h>
 #include <wsutil/inet_addr.h>
 #include <wsutil/cpu_info.h>
 #include <wsutil/os_version_info.h>
@@ -1027,53 +1026,22 @@ parse_options(int argc, char *argv[], text_import_info_t * const info, wtap_dump
     return EXIT_SUCCESS;
 }
 
-/*
- * General errors and warnings are reported with an console message
- * in text2pcap.
- */
-static void
-text2pcap_cmdarg_err(const char *msg_format, va_list ap)
-{
-    fprintf(stderr, "text2pcap: ");
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
-}
-
-/*
- * Report additional information for an error in command-line arguments.
- */
-static void
-text2pcap_cmdarg_err_cont(const char *msg_format, va_list ap)
-{
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
-}
-
 int
 main(int argc, char *argv[])
 {
     char  *configuration_init_error;
-    static const struct report_message_routines text2pcap_report_routines = {
-        failure_message,
-        failure_message,
-        open_failure_message,
-        read_failure_message,
-        write_failure_message,
-        cfile_open_failure_message,
-        cfile_dump_open_failure_message,
-        cfile_read_failure_message,
-        cfile_write_failure_message,
-        cfile_close_failure_message
-    };
     int ret = EXIT_SUCCESS;
     text_import_info_t info;
     wtap_dump_params params;
     uint64_t bytes_written;
 
-    cmdarg_err_init(text2pcap_cmdarg_err, text2pcap_cmdarg_err_cont);
+    /* Set the program name. */
+    g_set_prgname("text2pcap");
+
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("text2pcap", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -1089,14 +1057,14 @@ main(int argc, char *argv[])
     /*
      * Make sure our plugin path is initialized for wtap_init.
      */
-    configuration_init_error = configuration_init(argv[0], NULL);
+    configuration_init_error = configuration_init(argv[0]);
     if (configuration_init_error != NULL) {
         cmdarg_err("Can't get pathname of directory containing the text2pcap program: %s.",
                 configuration_init_error);
         g_free(configuration_init_error);
     }
 
-    init_report_message("text2pcap", &text2pcap_report_routines);
+    init_report_failure_message("text2pcap");
     wtap_init(true);
 
     memset(&info, 0, sizeof(info));

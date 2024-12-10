@@ -41,6 +41,7 @@ void proto_register_pfcp(void);
 void proto_reg_handoff_pfcp(void);
 
 static dissector_handle_t pfcp_handle;
+static dissector_handle_t gtpv2_uli_handle;
 
 #define UDP_PORT_PFCP  8805 /* IANA-registered */
 
@@ -1078,7 +1079,12 @@ static int hf_pfcp_bbf_up_function_features_o7_b0_pppoe;
 static int hf_pfcp_bbf_logical_port_id;
 static int hf_pfcp_bbf_logical_port_id_str;
 
-static int hf_pfcp_bbf_outer_hdr_desc;
+
+static int hf_pfcp_bbf_outer_hdr_creation_desc_spare;
+static int hf_pfcp_bbf_outer_hdr_creation_desc_o7_b4_ppp;
+static int hf_pfcp_bbf_outer_hdr_creation_desc_o7_b3_l2tp;
+static int hf_pfcp_bbf_outer_hdr_creation_desc_o7_b2_traffic_endpoint;
+static int hf_pfcp_bbf_outer_hdr_creation_desc_o7_b1_crp_nsh;
 static int hf_pfcp_bbf_outer_hdr_creation_tunnel_id;
 static int hf_pfcp_bbf_outer_hdr_creation_session_id;
 
@@ -1140,6 +1146,34 @@ static int hf_pfcp_bbf_dynamic_nat_block_port_range_start_port;
 static int hf_pfcp_bbf_dynamic_nat_block_port_range_end_port;
 
 static int hf_pfcp_bbf_event_time_stamp;
+
+static int hf_pfcp_bbf_direction = -1;
+static int hf_pfcp_bbf_family = -1;
+static int hf_pfcp_bbf_sgrp_identifier = -1;
+static int hf_pfcp_bbf_sgrp_state = -1;
+static int hf_pfcp_bbf_sgrp_flags = -1;
+static int hf_pfcp_bbf_sgrp_flags_b0_ras = -1;
+static int hf_pfcp_bbf_sgrp_flags_b1_psa = -1;
+static int hf_pfcp_bbf_operational_condition = -1;
+static int hf_pfcp_bbf_ipv4_prefix = -1;
+static int hf_pfcp_bbf_ipv4_prefix_length = -1;
+static int hf_pfcp_bbf_ipv6_prefix = -1;
+static int hf_pfcp_bbf_ipv6_prefix_length = -1;
+static int hf_pfcp_bbf_prefix_tag_usage = -1;
+static int hf_pfcp_bbf_prefix_tag = -1;
+static int hf_pfcp_bbf_error_code = -1;
+static int hf_pfcp_bbf_error_message = -1;
+static int hf_pfcp_bbf_maximum_acl_chain_length = -1;
+static int hf_pfcp_bbf_forwarding_capability = -1;
+static int hf_pfcp_bbf_connectivity_status = -1;
+static int hf_pfcp_bbf_vendor_specific_node_report_type = -1;
+static int hf_pfcp_bbf_vendor_specific_node_report_type_b0_lpr = -1;
+static int hf_pfcp_bbf_vendor_specific_node_report_type_b1_sgr = -1;
+static int hf_pfcp_bbf_vendor_specific_node_report_type_b2_nir = -1;
+static int hf_pfcp_bbf_ctag_range_start = -1;
+static int hf_pfcp_bbf_ctag_range_end = -1;
+static int hf_pfcp_bbf_stag_range_start = -1;
+static int hf_pfcp_bbf_stag_range_end = -1;
 
 /* Travelping */
 static int hf_pfcp_enterprise_travelping_packet_measurement;
@@ -1274,6 +1308,18 @@ static int hf_pfcp_nokia_access_line_params_act_inter_delay_down;
 static int hf_pfcp_nokia_access_line_params_access_loop_encap;
 static int hf_pfcp_nokia_acct_session_id;
 static int hf_pfcp_nokia_fsg_template_name;
+static int hf_pfcp_nokia_up_profile;
+static int hf_pfcp_nokia_default_qos_id;
+static int hf_pfcp_nokia_serving_node_id_flags;
+static int hf_pfcp_nokia_serving_node_id_flg_b2_uuid;
+static int hf_pfcp_nokia_serving_node_id_flg_b1_v6;
+static int hf_pfcp_nokia_serving_node_id_flg_b0_v4;
+static int hf_pfcp_nokia_serving_node_id_ipv4;
+static int hf_pfcp_nokia_serving_node_id_ipv6;
+static int hf_pfcp_nokia_serving_node_id_uuid;
+static int hf_pfcp_nokia_pcc_rule_name;
+static int hf_pfcp_nokia_calltrace_profile;
+static int hf_pfcp_nokia_custom_charging_group;
 
 
 static int ett_pfcp;
@@ -1304,6 +1350,8 @@ static int ett_pfcp_bbf_l2tp_type_flags;
 static int ett_pfcp_bbf_ppp_lcp_connectivity;
 static int ett_pfcp_bbf_l2tp_tunnel;
 static int ett_pfcp_bbf_nat_port_forward_list;
+static int ett_pfcp_bbf_sgrp_flags;
+static int ett_pfcp_bbf_vendor_specific_node_report_type;
 
 static int ett_pfcp_nokia_detailed_stats_key;
 static int ett_pfcp_nokia_detailed_stats_bitmap;
@@ -1312,6 +1360,7 @@ static int ett_pfcp_nokia_pfcpsmreq_flags;
 static int ett_pfcp_nokia_pfcphb_flags;
 static int ett_pfcp_nokia_l2tp_tunnel_params_flags;
 static int ett_pfcp_nokia_access_line_params_flags;
+static int ett_pfcp_nokia_serving_node_id_flags;
 
 static expert_field ei_pfcp_ie_reserved;
 static expert_field ei_pfcp_ie_data_not_decoded;
@@ -10862,7 +10911,7 @@ dissect_pfcp_generic_enterprise_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree
             offset = dissect_pfcp_unknown_enterprise_ie(data_tvb, pinfo, tree, data);
         } else {
             // A dissector-table is provided from which an IE-specific dissector can be looked up
-            offset = dissector_try_uint_new(ie_table, ie_type, data_tvb, pinfo, tree, false, data);
+            offset = dissector_try_uint_with_data(ie_table, ie_type, data_tvb, pinfo, tree, false, data);
 
             // Fallback to unknown-ie dissector
             if (offset == 0) {
@@ -10947,7 +10996,7 @@ dissect_pfcp_ies_common(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
             ie_tvb = tvb_new_subset_length(tvb, offset, length_ie + 4);
 
             // Find a per-vendor dissector or fallback to the generic-enterprise-dissector without IE-table.
-            if (!dissector_try_uint_new(pfcp_enterprise_ies_dissector_table, enterprise_id, ie_tvb, pinfo, tree, false, pfcp_sub_dis_inf)) {
+            if (!dissector_try_uint_with_data(pfcp_enterprise_ies_dissector_table, enterprise_id, ie_tvb, pinfo, tree, false, pfcp_sub_dis_inf)) {
                 dissect_pfcp_generic_enterprise_ie(ie_tvb, pinfo, tree, pfcp_sub_dis_inf, NULL);
             }
             offset += (4 + length_ie);
@@ -11247,35 +11296,36 @@ dissect_pfcp_enterprise_bbf_logical_port(tvbuff_t *tvb, packet_info *pinfo, prot
 }
 
 /*
- * TR-459: 6.6.3 BBF Outer Header Creation
+ * TR-459i2: 6.9.3 BBF Outer Header Creation
  */
-
-static const value_string pfcp_bbf_outer_hdr_desc_vals[] = {
-
-    { 0x000100, "CPR-NSH " },
-    { 0x000200, "Traffic-Endpoint " },
-    { 0x000300, "L2TP " },
-    { 0x000400, "PPP " },
-    { 0, NULL }
-};
-
 static int
 dissect_pfcp_enterprise_bbf_outer_header_creation(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    uint32_t value;
+    uint64_t value;
 
-    /* Octet 7  Outer Header Creation Description */
-    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_outer_hdr_desc, tvb, offset, 2, ENC_BIG_ENDIAN, &value);
+    static int * const outer_hdr_desc[] = {
+        &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b4_ppp,
+        &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b3_l2tp,
+        &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b2_traffic_endpoint,
+        &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b1_crp_nsh,
+        &hf_pfcp_bbf_outer_hdr_creation_desc_spare,
+        NULL
+    };
+
+    /* Octet 7-8  Outer Header Creation Description */
+    proto_tree_add_bitmask_list_ret_uint64(tree, tvb, offset, 2, outer_hdr_desc, ENC_BIG_ENDIAN, &value);
     offset += 2;
 
-    /* Octet 9 to 10  Tunnel ID */
-    proto_tree_add_item(tree, hf_pfcp_bbf_outer_hdr_creation_tunnel_id, tvb, offset, 2, ENC_BIG_ENDIAN);
-    offset += 2;
+    if ((value & 0x0400) != 0) {
+        /* Octet 9 to 10  Tunnel ID */
+        proto_tree_add_item(tree, hf_pfcp_bbf_outer_hdr_creation_tunnel_id, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
 
-    /* Octet 10 to 11  Session ID */
-    proto_tree_add_item(tree, hf_pfcp_bbf_outer_hdr_creation_session_id, tvb, offset, 2, ENC_BIG_ENDIAN);
-    offset += 2;
+        /* Octet 10 to 11  Session ID */
+        proto_tree_add_item(tree, hf_pfcp_bbf_outer_hdr_creation_session_id, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+    }
 
     return offset;
 }
@@ -11675,6 +11725,350 @@ dissect_pfcp_enterprise_bbf_event_time_stamp(tvbuff_t *tvb, packet_info *pinfo, 
     return offset;
 }
 
+static const value_string pfcp_bbf_direction_vals[] = {
+    {0, "Input/Ingress/Upstream" },
+    {1, "Output/Egress/Downstream" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.13 BBF Direction IE
+ */
+static int
+dissect_pfcp_enterprise_bbf_direction(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_direction, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_direction_vals, "Unknown"));
+
+    return 1;
+}
+
+static const value_string pfcp_bbf_family_vals[] = {
+    {0, "IPv4" },
+    {1, "IPv6" },
+    {2, "IPv46" },
+    {3, "L2eth" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.14 BBF Family IE
+ */
+static int
+dissect_pfcp_enterprise_bbf_family(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_family, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_family_vals, "Unknown"));
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.15 BBF SGRP Identifier
+ */
+static int
+dissect_pfcp_enterprise_bbf_sgrp_identifier(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_sgrp_identifier, tvb, 0, 4, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %d", value);
+
+    return 4;
+}
+
+static const value_string pfcp_bbf_sgrp_state_vals[] = {
+    {0, "(reserved)" },
+    {1, "Active" },
+    {2, "Backup" },
+    {3, "Track Logical Port" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.16 BBF SGRP State
+ */
+static int
+dissect_pfcp_enterprise_bbf_sgrp_state(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_sgrp_state, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_sgrp_state_vals, "Unknown"));
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.17 BBF SGRP Flags
+ */
+static int
+dissect_pfcp_enterprise_bbf_sgrp_flags(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    static int * const flags[] = {
+        &hf_pfcp_spare_b7_b2,
+        &hf_pfcp_bbf_sgrp_flags_b1_psa,
+        &hf_pfcp_bbf_sgrp_flags_b0_ras,
+        NULL
+    };
+
+    proto_tree_add_bitmask_with_flags(tree, tvb, 0, hf_pfcp_bbf_sgrp_flags, ett_pfcp_bbf_sgrp_flags, flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_INT);
+
+    return 1;
+}
+
+static const value_string pfcp_bbf_operational_condition_vals[] = {
+    {0, "Up" },
+    {1, "Down" },
+    {2, "Not ready" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.18 BBF Operational Condition IE
+ */
+static int
+dissect_pfcp_enterprise_bbf_operational_condition(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_operational_condition, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_operational_condition_vals, "Unknown"));
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.19 BBF IPv4 Prefix
+ */
+static int
+dissect_pfcp_enterprise_bbf_ipv4_prefix(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t prefix_len;
+
+    proto_tree_add_item(tree, hf_pfcp_bbf_ipv4_prefix, tvb, 0, 4, ENC_NA);
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_ipv4_prefix_length, tvb, 4, 1, ENC_BIG_ENDIAN, &prefix_len);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s/%d", tvb_ip_to_str(pinfo->pool, tvb, 0), prefix_len);
+
+    return 5;
+}
+
+/*
+ * TR 459i2: 6.9.20 BBF IPv6 Prefix
+ */
+static int
+dissect_pfcp_enterprise_bbf_ipv6_prefix(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t prefix_len;
+
+    proto_tree_add_item(tree, hf_pfcp_bbf_ipv6_prefix, tvb, 0, 16, ENC_NA);
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_ipv6_prefix_length, tvb, 16, 1, ENC_BIG_ENDIAN, &prefix_len);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s/%d", tvb_ip6_to_str(pinfo->pool, tvb, 0), prefix_len);
+
+    return 17;
+}
+
+static const value_string pfcp_bbf_prefix_tag_usage_vals[] = {
+    {0, "(reserved)" },
+    {1, "Active SGRP" },
+    {2, "Standby SGRP" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.21 BBF Prefix Tag
+ */
+static int
+dissect_pfcp_enterprise_bbf_prefix_tag(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+    int offset = 0;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_prefix_tag_usage, tvb, offset, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_prefix_tag_usage_vals, "Unknown"));
+    offset += 1;
+
+    if (tvb_reported_length(tvb) > 1)
+    {
+        uint32_t tag;
+
+        proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_prefix_tag, tvb, offset, 4, ENC_BIG_ENDIAN, &tag);
+        proto_item_append_text(proto_tree_get_parent(tree), " : %d", tag);
+        offset += 4;
+    }
+
+    return offset;
+}
+
+static const value_string pfcp_bbf_error_code_vals[] = {
+    {0x0000, "Reserved"},
+    {0x0001, "SGRP programming error because of resource exhaustion"},
+    {0x0002, "SGRP programming error because of configuration mismatch or incomplete"},
+    {0x0003, "SGRP programming error related to vMAC"},
+    {0x0004, "SGRP Partial state is not supported on DBNG-UP"},
+    {0x0005, "SGRP Track logical port is not supported by DBNG-UP"},
+    {0x0006, "ACL name not found"},
+    {0x0007, "Prefix programming error because of resource exhaustion"},
+    {0x0008, "Prefix programming error because of configuration mismatch or incomplete"},
+    {0x0009, "Prefix's Network Instance not found"},
+    {0x000a, "Prefix Active Tag matching not found"},
+    {0x000b, "Prefix Backup Tag matching not found"},
+    {0x000c, "Prefix's SGRP ID not found"},
+    {0x000d, "Prefix not found (on prefix modify or prefix delete)"},
+    {0x000e, "Prefix in use (when SGRP delete is performed before prefix delete)"},
+    {0xffff, "Other error"},
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.22 BBF Error Code
+ */
+static int
+dissect_pfcp_enterprise_bbf_error_code(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_error_code, tvb, 0, 2, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_error_code_vals, "Unknown"));
+
+    return 2;
+}
+
+/*
+ * TR 459i2: 6.9.23 BBF Error Message
+ */
+static int
+dissect_pfcp_enterprise_bbf_error_message(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    proto_tree_add_item(tree, hf_pfcp_bbf_error_message, tvb, 0, tvb_reported_length(tvb), ENC_ASCII);
+
+    return tvb_reported_length(tvb);
+}
+
+/*
+ * TR 459i2: 6.9.24 BBF Maximum ACL Chain Length
+ */
+static int
+dissect_pfcp_enterprise_bbf_maximum_acl_chain_length(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_maximum_acl_chain_length, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %d", value);
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.25 BBF Forwarding Capability
+ */
+static int
+dissect_pfcp_enterprise_bbf_forwarding_capability(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_forwarding_capability, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %d%%", value);
+
+    return 1;
+}
+
+static const value_string pfcp_bbf_connectivity_status_vals[] = {
+    {0, "(reserved)" },
+    {1, "Connected" },
+    {2, "Isolated" },
+    {0, NULL}
+};
+
+/*
+ * TR 459i2: 6.9.26 BBF Connectivity Status
+ */
+static int
+dissect_pfcp_enterprise_bbf_connectivity_status(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    uint32_t value;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_bbf_connectivity_status, tvb, 0, 1, ENC_BIG_ENDIAN, &value);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %s", val_to_str_const(value, pfcp_bbf_connectivity_status_vals, "Unknown"));
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.27 Vendor-Specific Node Report Type
+ */
+static int
+dissect_pfcp_enterprise_bbf_vendor_specific_node_report_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    static int * const flags[] = {
+        &hf_pfcp_spare_b7_b3,
+        &hf_pfcp_bbf_vendor_specific_node_report_type_b2_nir,
+        &hf_pfcp_bbf_vendor_specific_node_report_type_b1_sgr,
+        &hf_pfcp_bbf_vendor_specific_node_report_type_b0_lpr,
+        NULL
+    };
+
+    proto_tree_add_bitmask_with_flags(tree, tvb, 0, hf_pfcp_bbf_vendor_specific_node_report_type, ett_pfcp_bbf_vendor_specific_node_report_type, flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_INT);
+
+    return 1;
+}
+
+/*
+ * TR 459i2: 6.9.28 BBF C-Tag Range
+ */
+static int
+dissect_pfcp_enterprise_bbf_ctag_range(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    static const crumb_spec_t start_crumbs[] = {
+        {  0, 8 },
+        { 12, 4 },
+        {  0, 0 },
+    };
+    static const crumb_spec_t end_crumbs[] = {
+        { 0, 4 },
+        { 8, 8 },
+        { 0, 0 },
+    };
+
+    uint64_t start, end;
+
+    proto_tree_add_split_bits_item_ret_val(tree, hf_pfcp_bbf_ctag_range_start, tvb, 0, start_crumbs, &start);
+    proto_tree_add_split_bits_item_ret_val(tree, hf_pfcp_bbf_ctag_range_end, tvb, 8, end_crumbs, &end);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %" PRIu64 "-%" PRIu64, start, end);
+
+    return 3;
+}
+
+/*
+ * TR 459i2: 6.9.29 BBF S-Tag Range
+ */
+static int
+dissect_pfcp_enterprise_bbf_stag_range(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+{
+    static const crumb_spec_t start_crumbs[] = {
+        {  0, 8 },
+        { 12, 4 },
+        {  0, 0 },
+    };
+    static const crumb_spec_t end_crumbs[] = {
+        { 0, 4 },
+        { 8, 8 },
+        { 0, 0 },
+    };
+
+    uint64_t start, end;
+
+    proto_tree_add_split_bits_item_ret_val(tree, hf_pfcp_bbf_stag_range_start, tvb, 0, start_crumbs, &start);
+    proto_tree_add_split_bits_item_ret_val(tree, hf_pfcp_bbf_stag_range_end, tvb, 8, end_crumbs, &end);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %" PRIu64 "-%" PRIu64, start, end);
+
+    return 3;
+}
+
 static pfcp_generic_ie_t pfcp_bbf_ies[] = {
     /* TR-459 */
     { VENDOR_BROADBAND_FORUM, 32768 , "UP Function Features"                     , dissect_pfcp_enterprise_bbf_up_function_features  , -1} ,
@@ -11703,6 +12097,35 @@ static pfcp_generic_ie_t pfcp_bbf_ies[] = {
     { VENDOR_BROADBAND_FORUM, 32790 , "BBF Report Trigger"                       , dissect_pfcp_enterprise_bbf_reporting_trigger            , -1} ,
     { VENDOR_BROADBAND_FORUM, 32791 , "BBF Dynamic NAT Block Port Range"         , dissect_pfcp_enterprise_bbf_dynamic_nat_block_port_range , -1} ,
     { VENDOR_BROADBAND_FORUM, 32792 , "BBF Event Time Stamp"                     , dissect_pfcp_enterprise_bbf_event_time_stamp             , -1} ,
+    /* TR-459i2 */
+    { VENDOR_BROADBAND_FORUM, 32793 , "Node Info Create"                         , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32794 , "Node Info Modify"                         , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32795 , "Node Info Delete"                         , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32796 , "Logical Port Report"                      , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32797 , "SGRP Notification Report"                 , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32798 , "Network Instance Report"                  , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32799 , "SGRP Error"                               , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32800 , "SGRP"                                     , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32801 , "UP Subscriber Prefix"                     , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32802 , "ACL"                                      , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32803 , "Direction"                                , dissect_pfcp_enterprise_bbf_direction , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32804 , "Family"                                   , dissect_pfcp_enterprise_bbf_family , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32806 , "SGRP Identifier"                          , dissect_pfcp_enterprise_bbf_sgrp_identifier , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32807 , "SGRP State"                               , dissect_pfcp_enterprise_bbf_sgrp_state , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32808 , "SGRP Flags"                               , dissect_pfcp_enterprise_bbf_sgrp_flags , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32809 , "Operational Condition"                    , dissect_pfcp_enterprise_bbf_operational_condition , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32810 , "IPv4 Prefix"                              , dissect_pfcp_enterprise_bbf_ipv4_prefix, -1} ,
+    { VENDOR_BROADBAND_FORUM, 32811 , "IPv6 Prefix"                              , dissect_pfcp_enterprise_bbf_ipv6_prefix, -1} ,
+    { VENDOR_BROADBAND_FORUM, 32812 , "Prefix Tag"                               , dissect_pfcp_enterprise_bbf_prefix_tag, -1} ,
+    { VENDOR_BROADBAND_FORUM, 32813 , "Error Code"                               , dissect_pfcp_enterprise_bbf_error_code , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32814 , "Error Message"                            , dissect_pfcp_enterprise_bbf_error_message , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32815 , "Maximum ACL Chain Length"                 , dissect_pfcp_enterprise_bbf_maximum_acl_chain_length , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32816 , "Forwarding Capability"                    , dissect_pfcp_enterprise_bbf_forwarding_capability , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32817 , "Connectivity Status"                      , dissect_pfcp_enterprise_bbf_connectivity_status , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32818 , "Vendor-Specific Node Report Type"         , dissect_pfcp_enterprise_bbf_vendor_specific_node_report_type , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32819 , "Prefix Error"                             , dissect_pfcp_grouped_ie_wrapper , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32820 , "C-Tag Range"                              , dissect_pfcp_enterprise_bbf_ctag_range , -1} ,
+    { VENDOR_BROADBAND_FORUM, 32821 , "S-Tag Range"                              , dissect_pfcp_enterprise_bbf_stag_range , -1} ,
 };
 
 /* Enterprise IE decoding Travelping */
@@ -12491,6 +12914,95 @@ static int dissect_pfcp_nokia_fsg_template(tvbuff_t *tvb, packet_info *pinfo, pr
     return dissect_pfcp_string_ie(tvb, pinfo, tree, hf_pfcp_nokia_fsg_template_name);
 }
 
+static int dissect_pfcp_nokia_up_profiles(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    return dissect_pfcp_string_ie(tvb, pinfo, tree, hf_pfcp_nokia_up_profile);
+}
+
+static int dissect_pfcp_nokia_uli(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    return call_dissector(gtpv2_uli_handle, tvb, pinfo, tree);
+}
+
+static int dissect_pfcp_nokia_default_qos_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
+{
+    uint32_t id;
+
+    proto_tree_add_item_ret_uint(tree, hf_pfcp_nokia_default_qos_id, tvb, 0, 1, ENC_BIG_ENDIAN, &id);
+    proto_item_append_text(proto_tree_get_parent(tree), " : %u", id);
+
+    return 1;
+}
+
+static int dissect_pfcp_nokia_serving_node_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    int offset = 0;
+    uint64_t serving_node_id_flags_val;
+    bool firstField = true;
+
+    static int * const pfcp_serving_node_id_flags[] = {
+        &hf_pfcp_spare_b7_b3,
+        &hf_pfcp_nokia_serving_node_id_flg_b2_uuid,
+        &hf_pfcp_nokia_serving_node_id_flg_b1_v6,
+        &hf_pfcp_nokia_serving_node_id_flg_b0_v4,
+        NULL
+    };
+
+    /* Octet 7  Spare  Spare  Spare  Spare  Spare  UUID  V6  V4 */
+    proto_tree_add_bitmask_with_flags_ret_uint64(tree, tvb, offset, hf_pfcp_nokia_serving_node_id_flags,
+        ett_pfcp_nokia_serving_node_id_flags, pfcp_serving_node_id_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_INT | BMT_NO_TFS, &serving_node_id_flags_val);
+    offset++;
+
+    /* The following flags are coded within Octet 5:
+     * Bit 1 - V4: If this bit is set to "1", then the IPv4 address field shall be present,
+     *         otherwise the IPv4 address field shall not be present.
+     * Bit 2 - V6: If this bit is set to "1", then the IPv6 address field shall be present,
+     *         otherwise the IPv6 address field shall not be present.
+     * Bit 3 - UUID: If this bit is set to "1", then the UUID field shall be present,
+     *         otherwise the UUID field shall not be present.
+     */
+    if (serving_node_id_flags_val & 0x1) {
+        /* 0 to 3    IPv4 address */
+        proto_tree_add_item(tree, hf_pfcp_nokia_serving_node_id_ipv4, tvb, offset, 4, ENC_NA);
+        proto_item_append_text(proto_tree_get_parent(tree), "%s IPv4 %s", firstField ? " :" : ",", tvb_ip_to_str(pinfo->pool, tvb, offset));
+        firstField = false;
+        offset += 4;
+    }
+    if (serving_node_id_flags_val & 0x2) {
+        /* m to (m+15)   IPv6 address */
+        proto_tree_add_item(tree, hf_pfcp_nokia_serving_node_id_ipv6, tvb, offset, 16, ENC_NA);
+        proto_item_append_text(proto_tree_get_parent(tree), "%s IPv6 %s", firstField ? " :" : ",", tvb_ip6_to_str(pinfo->pool, tvb, offset));
+        firstField = false;
+        offset += 16;
+    }
+    if (serving_node_id_flags_val & 0x4) {
+        /* p to (p+15)   UUID */
+        e_guid_t guid;
+
+        proto_tree_add_item(tree, hf_pfcp_nokia_serving_node_id_uuid, tvb, offset, 16, ENC_NA);
+        tvb_get_guid(tvb, offset, &guid, ENC_BIG_ENDIAN);
+        proto_item_append_text(proto_tree_get_parent(tree), "%s UUID %s", firstField ? " :" : ",", guid_to_str(pinfo->pool, &guid));
+        offset += 16;
+    }
+
+    return offset;
+}
+
+static int dissect_pfcp_nokia_pcc_rule_name(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    return dissect_pfcp_string_ie(tvb, pinfo, tree, hf_pfcp_nokia_pcc_rule_name);
+}
+
+static int dissect_pfcp_nokia_calltrace_profile(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    return dissect_pfcp_string_ie(tvb, pinfo, tree, hf_pfcp_nokia_calltrace_profile);
+}
+
+static int dissect_pfcp_nokia_custom_charging_group(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    return dissect_pfcp_string_ie(tvb, pinfo, tree, hf_pfcp_nokia_custom_charging_group);
+}
+
 static pfcp_generic_ie_t pfcp_nokia_ies[] = {
     {VENDOR_NOKIA, 32774, "UP Aggregate Route",                dissect_pfcp_grouped_ie_wrapper, -1},
     {VENDOR_NOKIA, 32775, "SAP Template",                      dissect_pfcp_nokia_sap_template, -1},
@@ -12531,6 +13043,13 @@ static pfcp_generic_ie_t pfcp_nokia_ies[] = {
     {VENDOR_NOKIA, 32822, "Access Line Params",                dissect_pfcp_nokia_access_line_params, -1},
     {VENDOR_NOKIA, 32823, "Accounting Session Id",             dissect_pfcp_nokia_acct_session_id, -1},
     {VENDOR_NOKIA, 32830, "FSG Template",                      dissect_pfcp_nokia_fsg_template, -1},
+    {VENDOR_NOKIA, 32832, "UP Profiles",                       dissect_pfcp_nokia_up_profiles, -1},
+    {VENDOR_NOKIA, 32833, "User Location Information",         dissect_pfcp_nokia_uli, -1},
+    {VENDOR_NOKIA, 32834, "Default Qos Id",                    dissect_pfcp_nokia_default_qos_id, -1},
+    {VENDOR_NOKIA, 32835, "Serving Node Id",                   dissect_pfcp_nokia_serving_node_id, -1},
+    {VENDOR_NOKIA, 32836, "PCC Rule Name",                     dissect_pfcp_nokia_pcc_rule_name, -1},
+    {VENDOR_NOKIA, 32837, "Calltrace Profile",                 dissect_pfcp_nokia_calltrace_profile, -1},
+    {VENDOR_NOKIA, 32838, "Custom Charging Group",             dissect_pfcp_nokia_custom_charging_group, -1},
 };
 
 static void
@@ -16933,9 +17452,29 @@ proto_register_pfcp(void)
             NULL, HFILL }
         },
 
-        { &hf_pfcp_bbf_outer_hdr_desc,
-        { "BBF Outer Header Creation Description", "pfcp.bbf.outer_hdr_desc",
-            FT_UINT16, BASE_DEC, VALS(pfcp_bbf_outer_hdr_desc_vals), 0x0,
+        { &hf_pfcp_bbf_outer_hdr_creation_desc_spare,
+        { "Spare", "pfcp.bbf.outer_hdr_creation.desc.spare",
+            FT_BOOLEAN, 16, NULL, 0xf0ff,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b4_ppp,
+        { "PPP", "pfcp.bbf.outer_hdr_creation.desc.ppp",
+            FT_BOOLEAN, 16, NULL, 0x0800,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b3_l2tp,
+        { "L2TP", "pfcp.bbf.outer_hdr_creation.desc.l2tp",
+            FT_BOOLEAN, 16, NULL, 0x0400,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b2_traffic_endpoint,
+        { "Traffic-Endpoint", "pfcp.bbf.outer_hdr_creation.desc.trfep",
+            FT_BOOLEAN, 16, NULL, 0x0200,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_outer_hdr_creation_desc_o7_b1_crp_nsh,
+        { "CPR-NSH", "pfcp.bbf.outer_hdr_creation.desc.cpr_nsh",
+            FT_BOOLEAN, 16, NULL, 0x0100,
             NULL, HFILL }
         },
         { &hf_pfcp_bbf_outer_hdr_creation_tunnel_id,
@@ -17170,6 +17709,142 @@ proto_register_pfcp(void)
         { &hf_pfcp_bbf_event_time_stamp,
           { "Event Time Stamp", "pfcp.bbf.event_time_stamp",
             FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC, NULL, 0x0,
+            NULL, HFILL }
+        },
+
+        { &hf_pfcp_bbf_direction,
+        { "Direction", "pfcp.bbf.direction",
+            FT_UINT8, BASE_HEX, VALS(pfcp_bbf_direction_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_family,
+        { "Family", "pfcp.bbf.family",
+            FT_UINT8, BASE_HEX, VALS(pfcp_bbf_family_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_sgrp_identifier,
+        { "SGRP Identifier", "pfcp.bbf.sgrp_identifier",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_sgrp_state,
+        { "SGRP State", "pfcp.bbf.sgrp_state",
+            FT_UINT8, BASE_HEX, VALS(pfcp_bbf_sgrp_state_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_sgrp_flags,
+        { "Flags", "pfcp.bbf.sgrp_flags",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_sgrp_flags_b0_ras,
+        { "RAS", "pfcp.bbf.sgrp_flags.ras",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            "Route Advertisement State", HFILL }
+        },
+        { &hf_pfcp_bbf_sgrp_flags_b1_psa,
+        { "PSA", "pfcp.bbf.sgrp_flags.psa",
+            FT_BOOLEAN, 8, NULL, 0x02,
+            "Partial State Allowed", HFILL }
+        },
+        { &hf_pfcp_bbf_operational_condition,
+        { "Operational Condition", "pfcp.bbf.operational_condition",
+            FT_UINT8, BASE_HEX, VALS(pfcp_bbf_operational_condition_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_ipv4_prefix,
+        { "IPv4 Prefix", "pfcp.bbf.ipv4_prefix",
+            FT_IPv4, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_ipv4_prefix_length,
+        { "IPv4 Prefix Length", "pfcp.bbf.ipv4_prefix_length",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_ipv6_prefix,
+        { "IPv6 Prefix", "pfcp.bbf.ipv6_prefix",
+            FT_IPv6, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_ipv6_prefix_length,
+        { "IPv6 Prefix Length", "pfcp.bbf.ipv6_prefix_length",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_prefix_tag_usage,
+        { "Prefix Tag Usage", "pfcp.bbf.prefix_tag_usage",
+            FT_UINT8, BASE_HEX, VALS(pfcp_bbf_prefix_tag_usage_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_prefix_tag,
+        { "Prefix Tag", "pfcp.bbf.prefix_tag",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_error_code,
+        { "Error Code", "pfcp.bbf.error_code",
+            FT_UINT16, BASE_HEX, VALS(pfcp_bbf_error_code_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_error_message,
+        { "Error Message", "pfcp.bbf.error_message",
+            FT_STRING, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_maximum_acl_chain_length,
+        { "Maximum ACL Chain Length", "pfcp.bbf.maximum_acl_chain_length",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_forwarding_capability,
+        { "Forwarding Capability", "pfcp.bbf.forwarding_capability",
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_percent), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_connectivity_status,
+        { "Connectivity Status", "pfcp.bbf.connectivity_status",
+            FT_UINT8, BASE_DEC, VALS(pfcp_bbf_connectivity_status_vals), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_vendor_specific_node_report_type,
+        { "Flags", "pfcp.bbf.vendor_specific_node_report_type",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_vendor_specific_node_report_type_b0_lpr,
+        { "LPR", "pfcp.bbf.vendor_specific_node_report_type.lpr",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            "Logical Port Report", HFILL }
+        },
+        { &hf_pfcp_bbf_vendor_specific_node_report_type_b1_sgr,
+        { "SGR", "pfcp.bbf.vendor_specific_node_report_type.sgr",
+            FT_BOOLEAN, 8, NULL, 0x02,
+            "Subscriber Group Report", HFILL }
+        },
+        { &hf_pfcp_bbf_vendor_specific_node_report_type_b2_nir,
+        { "NIR", "pfcp.bbf.vendor_specific_node_report_type.nir",
+            FT_BOOLEAN, 8, NULL, 0x04,
+            "Network Instance Report", HFILL }
+        },
+        { &hf_pfcp_bbf_ctag_range_start,
+        { "C-Tag Range Start", "pfcp.bbf.ctag_range_start",
+            FT_UINT24, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_ctag_range_end,
+        { "C-Tag Range End", "pfcp.bbf.ctag_range_end",
+            FT_UINT24, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_stag_range_start,
+        { "S-Tag Range Start", "pfcp.bbf.stag_range_start",
+            FT_UINT24, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_bbf_stag_range_end,
+        { "S-Tag Range End", "pfcp.bbf.stag_range_end",
+            FT_UINT24, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
 
@@ -17817,6 +18492,66 @@ proto_register_pfcp(void)
             FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }
         },
+        { &hf_pfcp_nokia_up_profile,
+        { "UP Profiles", "pfcp.nokia.up_profiles",
+            FT_STRING, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_default_qos_id,
+        { "Default Qos Id", "pfcp.nokia.default_qos_id",
+            FT_UINT8, BASE_DEC, NULL, 0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_flags,
+        { "Flags", "pfcp.nokia.serving_node_id.flags",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_flg_b2_uuid,
+        { "UUID", "pfcp.nokia.serving_node_id.flags.uuid",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), 0x04,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_flg_b1_v6,
+        { "V6 (IPv6)", "pfcp.nokia.serving_node_id.flags.v6",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), 0x02,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_flg_b0_v4,
+        { "V4 (IPv4)", "pfcp.nokia.serving_node_id.flags.v4",
+            FT_BOOLEAN, 8, TFS(&tfs_present_not_present), 0x01,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_ipv4,
+        { "IPv4 address", "pfcp.nokia.serving_node_id.ipv4_addr",
+            FT_IPv4, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_ipv6,
+        { "IPv6 address", "pfcp.nokia.serving_node_id.ipv6_addr",
+            FT_IPv6, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_serving_node_id_uuid,
+        { "UUID", "pfcp.nokia.serving_node_id.uuid",
+            FT_GUID, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_pcc_rule_name,
+        { "PCC Rule Name", "pfcp.nokia.pcc_rule_name",
+            FT_STRING, BASE_NONE, NULL, 0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_calltrace_profile,
+        { "Calltrace Profile", "pfcp.nokia.calltrace_profile",
+            FT_STRING, BASE_NONE, NULL, 0,
+            NULL, HFILL }
+        },
+        { &hf_pfcp_nokia_custom_charging_group,
+        { "Custom Charging Group", "pfcp.nokia.custom_charging_group",
+            FT_STRING, BASE_NONE, NULL, 0,
+            NULL, HFILL }
+        },
     };
 
     /* Setup protocol subtree array */
@@ -17849,6 +18584,8 @@ proto_register_pfcp(void)
         &ett_pfcp_bbf_ppp_lcp_connectivity,
         &ett_pfcp_bbf_l2tp_tunnel,
         &ett_pfcp_bbf_nat_port_forward_list,
+        &ett_pfcp_bbf_sgrp_flags,
+        &ett_pfcp_bbf_vendor_specific_node_report_type,
        /* Nokia */
         &ett_pfcp_nokia_detailed_stats_key,
         &ett_pfcp_nokia_detailed_stats_bitmap,
@@ -17857,6 +18594,7 @@ proto_register_pfcp(void)
         &ett_pfcp_nokia_pfcphb_flags,
         &ett_pfcp_nokia_l2tp_tunnel_params_flags,
         &ett_pfcp_nokia_access_line_params_flags,
+        &ett_pfcp_nokia_serving_node_id_flags,
     };
 
     // Each IE gets its own subtree
@@ -17911,6 +18649,8 @@ proto_reg_handoff_pfcp(void)
 {
     dissector_add_uint_with_preference("udp.port", UDP_PORT_PFCP, pfcp_handle);
     dissector_add_string("media_type", "application/vnd.3gpp.pfcp", pfcp_handle);
+
+    gtpv2_uli_handle = find_dissector("gtpv2.uli");
 }
 
 /*

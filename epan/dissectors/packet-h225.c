@@ -1251,6 +1251,26 @@ h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, co
   return TAP_PACKET_REDRAW;
 }
 
+static void h225_set_cs_type(h225_packet_info* h225_pi, h225_cs_type cs_type, bool faststart)
+{
+  if (h225_pi == NULL)
+    return;
+
+  h225_pi->cs_type = cs_type;
+  /* XXX - Why not always use contains_faststart or h225_pi->is_faststart
+   * There are some UUIEs (e.g., Facility-UUIE) where a fastStart can be
+   * included but the path adding extra to the label has never been used.
+   * Is that an oversight or intentional?
+   */
+  if (faststart) {
+    char temp[50];
+    snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
+    (void) g_strlcpy(h225_pi->frame_label, temp, 50);
+  } else {
+    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
+  }
+}
+
 /*--- Cyclic dependencies ---*/
 
 /* EnumeratedParameter -> Content -> Content/compound -> EnumeratedParameter */
@@ -3843,7 +3863,7 @@ dissect_h225_GenericIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
   if (gefx) {
     ti = proto_tree_add_string(tree, hf_h225_debug_dissector_try_string, tvb, offset>>3, 0, gefx->key);
   proto_item_set_hidden(ti);
-    dissector_try_string_new(gef_name_dissector_table, gefx->key, tvb_new_subset_length_caplen(tvb, offset>>3, 0, 0), actx->pinfo, tree, false, actx);
+    dissector_try_string_with_data(gef_name_dissector_table, gefx->key, tvb_new_subset_length_caplen(tvb, offset>>3, 0, 0), actx->pinfo, tree, false, actx);
   }
   actx->private_data = gefx;  /* subdissector could overwrite it */
   return offset;
@@ -3864,7 +3884,7 @@ dissect_h225_T_raw(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
   if (gefx) {
     ti = proto_tree_add_string(tree, hf_h225_debug_dissector_try_string, tvb, offset>>3, 0, gefx->key);
   proto_item_set_hidden(ti);
-    dissector_try_string(gef_content_dissector_table, gefx->key, value_tvb, actx->pinfo, tree, actx);
+    dissector_try_string_with_data(gef_content_dissector_table, gefx->key, value_tvb, actx->pinfo, tree, true, actx);
   }
 
   return offset;
@@ -4229,15 +4249,7 @@ dissect_h225_Setup_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_SETUP;
-    if (contains_faststart) {
-      char temp[50];
-      snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      (void) g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_SETUP, contains_faststart);
   return offset;
 }
 
@@ -4283,15 +4295,7 @@ dissect_h225_CallProceeding_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_CALL_PROCEDING;
-    if (contains_faststart) {
-      char temp[50];
-      snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      (void) g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_CALL_PROCEDING, contains_faststart);
   return offset;
 }
 
@@ -4328,15 +4332,7 @@ dissect_h225_Connect_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_CONNECT;
-    if (contains_faststart) {
-      char temp[50];
-      snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      (void) g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_CONNECT, contains_faststart);
   return offset;
 }
 
@@ -4371,15 +4367,7 @@ dissect_h225_Alerting_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_ALERTING;
-    if (contains_faststart) {
-      char temp[50];
-      snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      (void) g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_ALERTING, contains_faststart);
   return offset;
 }
 
@@ -4403,10 +4391,7 @@ dissect_h225_Information_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_INFORMATION;
-    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_INFORMATION, false);
   return offset;
 }
 
@@ -4562,10 +4547,7 @@ dissect_h225_ReleaseComplete_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_RELEASE_COMPLET;
-    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_RELEASE_COMPLET, false);
   return offset;
 }
 
@@ -4680,10 +4662,7 @@ dissect_h225_Facility_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_FACILITY;
-    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_FACILITY, false);
   return offset;
 }
 
@@ -4711,15 +4690,7 @@ dissect_h225_Progress_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_PROGRESS;
-    if (contains_faststart) {
-      char temp[50];
-      snprintf(temp, 50, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      (void) g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_PROGRESS, contains_faststart);
   return offset;
 }
 
@@ -4754,10 +4725,7 @@ dissect_h225_Status_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_STATUS;
-    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_STATUS, false);
   return offset;
 }
 
@@ -4795,10 +4763,7 @@ dissect_h225_SetupAcknowledge_UUIE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
   /* Add to packet info */
   h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_SETUP_ACK;
-    snprintf(h225_pi->frame_label, 50, "%s", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_set_cs_type(h225_pi, H225_SETUP_ACK, false);
   return offset;
 }
 
@@ -8242,11 +8207,11 @@ void proto_register_h225(void) {
 
   { &hf_h225_ras_req_frame,
     { "RAS Request Frame", "h225.ras.reqframe", FT_FRAMENUM, BASE_NONE,
-    NULL, 0, NULL, HFILL }},
+    FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0, NULL, HFILL }},
 
   { &hf_h225_ras_rsp_frame,
     { "RAS Response Frame", "h225.ras.rspframe", FT_FRAMENUM, BASE_NONE,
-    NULL, 0, NULL, HFILL }},
+    FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0, NULL, HFILL }},
 
   { &hf_h225_ras_dup,
     { "Duplicate RAS Message", "h225.ras.dup", FT_UINT32, BASE_DEC,

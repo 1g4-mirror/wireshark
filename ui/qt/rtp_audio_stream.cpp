@@ -311,6 +311,14 @@ void RtpAudioStream::decodeAudio(QAudioDeviceInfo out_device)
             // G.722 sample rate is 16kHz, but RTP clock rate is 8kHz
             // for historic reasons.
             rtp_clock_rate = 8000;
+        } else if (rtp_packet->info->info_is_iuup) {
+            /* IuUP uses a fixed RTP clock rate of 16kHz, regardless of the payload's codec sample rate.
+             * See: 3GPP TS 25.414 section 5.1.3.3.1.8
+             *      "A clock frequency of 16000 Hz shall be used."
+             * See: https://www.iana.org/assignments/media-types/audio/vnd.3gpp.iufp
+             *      "A fixed RTP clock rate of 16000 is used.""
+             */
+            rtp_clock_rate = 16000;
         }
 
         // Length 2 for PT_PCM mean silence packet probably, ignore
@@ -656,7 +664,7 @@ QAudio::State RtpAudioStream::outputState() const
 
 const QString RtpAudioStream::formatDescription(const QAudioFormat &format)
 {
-    QString fmt_descr = QString("%1 Hz, ").arg(format.sampleRate());
+    QString fmt_descr = QStringLiteral("%1 Hz, ").arg(format.sampleRate());
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     switch (format.sampleFormat()) {
     case QAudioFormat::UInt8:
@@ -703,12 +711,12 @@ QString RtpAudioStream::getIDAsQString()
 {
     char *src_addr_str = address_to_display(NULL, &id_.src_addr);
     char *dst_addr_str = address_to_display(NULL, &id_.dst_addr);
-    QString str = QString("%1:%2 - %3:%4 %5")
+    QString str = QStringLiteral("%1:%2 - %3:%4 %5")
         .arg(src_addr_str)
         .arg(id_.src_port)
         .arg(dst_addr_str)
         .arg(id_.dst_port)
-        .arg(QString("0x%1").arg(id_.ssrc, 0, 16));
+        .arg(QStringLiteral("0x%1").arg(id_.ssrc, 0, 16));
     wmem_free(NULL, src_addr_str);
     wmem_free(NULL, dst_addr_str);
 

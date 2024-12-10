@@ -67,7 +67,7 @@ check_relation(dfwork_t *dfw, stnode_op_t st_op,
 		FtypeCanFunc can_func, bool allow_partial_value,
 		stnode_t *st_node, stnode_t *st_arg1, stnode_t *st_arg2);
 
-static void
+static ftenum_t
 semcheck(dfwork_t *dfw, stnode_t *st_node);
 
 enum mk_result {
@@ -105,12 +105,13 @@ compatible_ftypes(ftenum_t a, ftenum_t b)
 		case FT_NONE:
 		case FT_BOOLEAN:
 		case FT_PROTOCOL:
-		case FT_ABSOLUTE_TIME:
+		case FT_ABSOLUTE_TIME: /* XXX - README.dissector says the time types are compatible */
 		case FT_RELATIVE_TIME:
-		case FT_IEEE_11073_SFLOAT:
-		case FT_IEEE_11073_FLOAT:
+		case FT_IEEE_11073_SFLOAT: /* XXX - should be able to compare with DOUBLE (#19011) */
+		case FT_IEEE_11073_FLOAT:  /* XXX - should be able to compare with DOUBLE */
 		case FT_IPv4:
 		case FT_IPv6:
+		case FT_GUID:
 			return a == b;
 
 		case FT_FLOAT:		/* XXX - should be able to compare with INT */
@@ -126,14 +127,14 @@ compatible_ftypes(ftenum_t a, ftenum_t b)
 		case FT_ETHER:
 		case FT_BYTES:
 		case FT_UINT_BYTES:
-		case FT_GUID:
 		case FT_OID:
 		case FT_VINES:
 		case FT_FCWWN:
 		case FT_REL_OID:
 		case FT_SYSTEM_ID:
+		case FT_EUI64:
 
-			return (b == FT_ETHER || b == FT_BYTES || b == FT_UINT_BYTES || b == FT_GUID || b == FT_OID || b == FT_VINES || b == FT_FCWWN || b == FT_REL_OID || b == FT_SYSTEM_ID);
+			return (b == FT_ETHER || b == FT_BYTES || b == FT_UINT_BYTES || b == FT_OID || b == FT_VINES || b == FT_FCWWN || b == FT_REL_OID || b == FT_SYSTEM_ID || b == FT_EUI64);
 
 		case FT_UINT8:
 		case FT_UINT16:
@@ -148,7 +149,6 @@ compatible_ftypes(ftenum_t a, ftenum_t b)
 		case FT_UINT48:
 		case FT_UINT56:
 		case FT_UINT64:
-		case FT_EUI64:
 			return ftype_can_val_to_uinteger64(b);
 
 		case FT_INT8:
@@ -397,10 +397,21 @@ mk_uint64_fvalue(uint64_t val)
  * If the mapping number<->string is unique convert the string to a number
  * by inverting the value string function.
  * Otherwise we compile it as a string and map the field value at runtime
- * to a string for the comparison. */
+ * to a string for the comparison.
+ *
+ * XXX - This should check all hfinfo with the same abbreviation, not just the
+ * last registered. If there are multiple fields registered, then all the fields
+ * must map the same number (and only that number) to the string in order for
+ * optimizing into a number test to be valid (see #19111). Otherwise, we should
+ * allow the string match if it at least one field with the same abbreviation has
+ * a value string with that string as an entry.
+ */
 static enum mk_result
 mk_fvalue_from_val_string(dfwork_t *dfw, header_field_info *hfinfo, const char *s, stnode_t *st)
 {
+	static const true_false_string  default_tf = { "True", "False" };
+	const true_false_string	*tf;
+
 	/* Early return? */
 	switch(hfinfo->type) {
 		case FT_NONE:
@@ -458,6 +469,34 @@ mk_fvalue_from_val_string(dfwork_t *dfw, header_field_info *hfinfo, const char *
 			ASSERT_FTYPE_NOT_REACHED(hfinfo->type);
 	}
 
+	fvalue_t *fv;
+
+	/* Always handle FT_BOOLEAN (fallback to default tfs). */
+	if (hfinfo->type == FT_BOOLEAN) {
+		tf = hfinfo->strings ? (const true_false_string *)hfinfo->strings : &default_tf;
+
+		if (g_ascii_strcasecmp(s, tf->true_string) == 0) {
+			fv = mk_boolean_fvalue(true);
+			stnode_replace(st, STTYPE_FVALUE, fv);
+			return MK_OK_BOOLEAN;
+		}
+		if (g_ascii_strcasecmp(s, tf->false_string) == 0) {
+			fv = mk_boolean_fvalue(false);
+			stnode_replace(st, STTYPE_FVALUE, fv);
+			return MK_OK_BOOLEAN;
+		}
+		df_error_free(&dfw->error);
+		/* XXX - If the FT_BOOLEAN has a non-default tfs, should "True" or
+		 * "False" (with quotes, so a string not a literal in the grammar)
+		 * fall back to matching the default string with a deprecation
+		 * warning?
+		 */
+		dfilter_fail(dfw, DF_ERROR_GENERIC, stnode_location(st), "expected \"%s\" or \"%s\", not \"%s\" for %s.",
+								tf->true_string, tf->false_string,
+								s, hfinfo->abbrev);
+		return MK_ERROR;
+	}
+
 	/* Do val_strings exist? */
 	if (!hfinfo->strings) {
 		dfilter_fail(dfw, DF_ERROR_GENERIC, stnode_location(st), "%s cannot accept strings as values.",
@@ -470,27 +509,10 @@ mk_fvalue_from_val_string(dfwork_t *dfw, header_field_info *hfinfo, const char *
 	 * I happen to have now. */
 	df_error_free(&dfw->error);
 
-	fvalue_t *fv;
 	uint64_t val = 0, val_max = 0;
 	size_t count = 0;
 
-	if (hfinfo->type == FT_BOOLEAN) {
-		const true_false_string	*tf = (const true_false_string *)hfinfo->strings;
-
-		if (g_ascii_strcasecmp(s, tf->true_string) == 0) {
-			fv = mk_boolean_fvalue(true);
-			stnode_replace(st, STTYPE_FVALUE, fv);
-			return MK_OK_BOOLEAN;
-		}
-		if (g_ascii_strcasecmp(s, tf->false_string) == 0) {
-			fv = mk_boolean_fvalue(false);
-			stnode_replace(st, STTYPE_FVALUE, fv);
-			return MK_OK_BOOLEAN;
-		}
-		dfilter_fail(dfw, DF_ERROR_GENERIC, stnode_location(st), "\"%s\" cannot be found among the possible values for %s.",
-								s, hfinfo->abbrev);
-	}
-	else if (hfinfo->display & BASE_RANGE_STRING) {
+	if (hfinfo->display & BASE_RANGE_STRING) {
 		const range_string *vals = (const range_string *)hfinfo->strings;
 
 		while (vals->strptr != NULL && count <= 1) {
@@ -607,10 +629,10 @@ is_bytes_type(enum ftenum type)
 		case FT_BYTES:
 		case FT_UINT_BYTES:
 		case FT_IPv6:
-		case FT_GUID:
 		case FT_OID:
 		case FT_REL_OID:
 		case FT_SYSTEM_ID:
+		case FT_EUI64:
 			return true;
 
 		case FT_NONE:
@@ -623,6 +645,7 @@ is_bytes_type(enum ftenum type)
 		case FT_RELATIVE_TIME:
 		case FT_IPv4:
 		case FT_IPXNET:
+		case FT_GUID:
 		case FT_STRING:
 		case FT_STRINGZ:
 		case FT_UINT_STRING:
@@ -648,7 +671,6 @@ is_bytes_type(enum ftenum type)
 		case FT_INT48:
 		case FT_INT56:
 		case FT_INT64:
-		case FT_EUI64:
 			return false;
 
 		case FT_NUM_TYPES:
@@ -754,10 +776,10 @@ find_logical_ftype(dfwork_t *dfw, stnode_t *st_node)
 }
 
 /* Check the semantics of an existence test. */
-static void
+static ftenum_t
 check_exists(dfwork_t *dfw, stnode_t *st_arg1)
 {
-
+	ftenum_t ftype = FT_NONE;
 	resolve_unparsed(dfw, st_arg1, true);
 
 	LOG_NODE(st_arg1);
@@ -768,6 +790,9 @@ check_exists(dfwork_t *dfw, stnode_t *st_arg1)
 			/* fall-through */
 		case STTYPE_REFERENCE:
 			/* This is OK */
+			if (dfw->flags & DF_RETURN_VALUES) {
+				ftype = sttype_field_ftenum(st_arg1);
+			}
 			break;
 		case STTYPE_STRING:
 		case STTYPE_LITERAL:
@@ -789,6 +814,8 @@ check_exists(dfwork_t *dfw, stnode_t *st_arg1)
 		case STTYPE_SLICE:
 			ASSERT_STTYPE_NOT_REACHED(stnode_type_id(st_arg1));
 	}
+
+	return ftype;
 }
 
 ftenum_t
@@ -1039,10 +1066,6 @@ check_relation_LHS_FIELD(dfwork_t *dfw, stnode_op_t st_op,
 					stnode_todisplay(st_arg2), ftype_pretty_name(ftype2));
 		}
 	}
-	else if (type2 == STTYPE_UNPARSED) {
-		resolve_unparsed(dfw, st_arg2, true);
-		ASSERT_STTYPE_NOT_REACHED(type2);
-	}
 	else {
 		ASSERT_STTYPE_NOT_REACHED(type2);
 	}
@@ -1106,10 +1129,6 @@ check_relation_LHS_FVALUE(dfwork_t *dfw, stnode_op_t st_op,
 			FAIL(dfw, st_arg2, "%s (type=%s) cannot participate in specified comparison.",
 					stnode_todisplay(st_arg2), ftype_pretty_name(ftype2));
 		}
-	}
-	else if (type2 == STTYPE_UNPARSED) {
-		resolve_unparsed(dfw, st_arg2, true);
-		ASSERT_STTYPE_NOT_REACHED(type2);
 	}
 	else {
 		ASSERT_STTYPE_NOT_REACHED(type2);
@@ -1236,10 +1255,6 @@ check_relation_LHS_SLICE(dfwork_t *dfw, stnode_op_t st_op _U_,
 					stnode_todisplay(st_arg2), ftype_pretty_name(ftype2));
 		}
 	}
-	else if (type2 == STTYPE_UNPARSED) {
-		resolve_unparsed(dfw, st_arg2, true);
-		ASSERT_STTYPE_NOT_REACHED(type2);
-	}
 	else {
 		ASSERT_STTYPE_NOT_REACHED(type2);
 	}
@@ -1350,10 +1365,6 @@ check_relation_LHS_FUNCTION(dfwork_t *dfw, stnode_op_t st_op _U_,
 					stnode_todisplay(st_arg2), ftype_pretty_name(ftype2));
 		}
 	}
-	else if (type2 == STTYPE_UNPARSED) {
-		resolve_unparsed(dfw, st_arg2, true);
-		ASSERT_STTYPE_NOT_REACHED(type2);
-	}
 	else {
 		ASSERT_STTYPE_NOT_REACHED(type2);
 	}
@@ -1455,10 +1466,6 @@ check_relation_LHS_ARITHMETIC(dfwork_t *dfw, stnode_op_t st_op _U_,
 			FAIL(dfw, st_arg2, "%s (type=%s) cannot participate in specified comparison.",
 					stnode_todisplay(st_arg2), ftype_pretty_name(ftype2));
 		}
-	}
-	else if (type2 == STTYPE_UNPARSED) {
-		resolve_unparsed(dfw, st_arg2, true);
-		ASSERT_STTYPE_NOT_REACHED(type2);
 	}
 	else {
 		ASSERT_STTYPE_NOT_REACHED(type2);
@@ -1638,6 +1645,7 @@ check_relation_in(dfwork_t *dfw, stnode_t *st_node _U_,
 	nodelist = stnode_data(st_arg2);
 	while (nodelist) {
 		node_left = nodelist->data;
+		resolve_unparsed(dfw, node_left, false);
 
 		/* Don't let a range on the RHS affect the LHS field. */
 		if (stnode_type_id(node_left) == STTYPE_SLICE) {
@@ -1649,6 +1657,7 @@ check_relation_in(dfwork_t *dfw, stnode_t *st_node _U_,
 		ws_assert(nodelist);
 		node_right = nodelist->data;
 		if (node_right) {
+			resolve_unparsed(dfw, node_right, false);
 			check_relation_LHS_FIELD(dfw, STNODE_OP_GE, ftype_can_cmp,
 					false, st_node, st_arg1, node_left);
 			check_relation_LHS_FIELD(dfw, STNODE_OP_LE, ftype_can_cmp,
@@ -1716,7 +1725,7 @@ check_test(dfwork_t *dfw, stnode_t *st_node)
 	}
 }
 
-static void
+static ftenum_t
 check_nonzero(dfwork_t *dfw, stnode_t *st_node)
 {
 	ftenum_t ftype;
@@ -1741,6 +1750,8 @@ check_nonzero(dfwork_t *dfw, stnode_t *st_node)
 		FAIL(dfw, st_node, "Type %s cannot be assigned a truth value.",
 					ftype_pretty_name(ftype));
 	}
+
+	return ftype;
 }
 
 static const char *
@@ -1967,7 +1978,7 @@ check_arithmetic_LHS_TIME(dfwork_t *dfw, stnode_op_t st_op, stnode_t *st_node,
 			}
 			ftype2 = check_arithmetic(dfw, st_arg2, FT_SCALAR);
 			if (!FT_IS_SCALAR(ftype2)) {
-				FAIL(dfw, st_node, "Right hand side must be an integer ou float type, not %s.", ftype_pretty_name(ftype2));
+				FAIL(dfw, st_node, "Right hand side must be an integer or float type, not %s.", ftype_pretty_name(ftype2));
 			}
 			break;
 		default:
@@ -2077,9 +2088,15 @@ check_arithmetic(dfwork_t *dfw, stnode_t *st_node, ftenum_t logical_ftype)
 
 
 /* Check the entire syntax tree. */
-static void
+static ftenum_t
 semcheck(dfwork_t *dfw, stnode_t *st_node)
 {
+	/* Does FT_NONE make sense for tests and exists? We don't actually
+	 * return an fvalue in those cases, so, e.g., custom columns have
+	 * check marks, not boolean true/false.
+	 */
+	ftenum_t ftype = FT_NONE;
+
 	LOG_NODE(st_node);
 
 	dfw->field_count = 0;
@@ -2091,15 +2108,17 @@ semcheck(dfwork_t *dfw, stnode_t *st_node)
 		case STTYPE_ARITHMETIC:
 		case STTYPE_SLICE:
 		case STTYPE_FUNCTION:
-			check_nonzero(dfw, st_node);
+			ftype = check_nonzero(dfw, st_node);
 			break;
 		default:
-			check_exists(dfw, st_node);
+			ftype = check_exists(dfw, st_node);
 	}
 
 	if (dfw->field_count == 0) {
 		FAIL(dfw, st_node, "Constant expression is invalid.");
 	}
+
+	return ftype;
 }
 
 
@@ -2110,6 +2129,7 @@ bool
 dfw_semcheck(dfwork_t *dfw)
 {
 	volatile bool ok_filter = true;
+	volatile ftenum_t ftype = FT_NONE;
 
 	ws_debug("Starting semantic check (dfw = %p)", dfw);
 
@@ -2117,15 +2137,16 @@ dfw_semcheck(dfwork_t *dfw)
 	 * the semantic-checking, the semantic-checking code will
 	 * throw an exception if a problem is found. */
 	TRY {
-		semcheck(dfw, dfw->st_root);
+		ftype = semcheck(dfw, dfw->st_root);
 	}
 	CATCH(TypeError) {
 		ok_filter = false;
 	}
 	ENDTRY;
 
-	ws_debug("Semantic check (dfw = %p) returns %s",
-			dfw, ok_filter ? "TRUE" : "FALSE");
+	ws_debug("Semantic check (dfw = %p) returns %s, return type %s",
+			dfw, ok_filter ? "TRUE" : "FALSE", ftype_name(ftype));
+	dfw->ret_type = ftype;
 
 	return ok_filter;
 }

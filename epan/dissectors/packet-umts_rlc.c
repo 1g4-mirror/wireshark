@@ -435,7 +435,7 @@ rlc_frag_delete(void *data)
     struct rlc_frag *frag = (struct rlc_frag *)data;
 
     if (frag->data) {
-        g_free(frag->data);
+        wmem_free(wmem_file_scope(), frag->data);
         frag->data = NULL;
     }
 }
@@ -449,7 +449,7 @@ rlc_sdu_frags_delete(void *data)
     frag = sdu->frags;
     while (frag) {
         if (frag->data) {
-            g_free(frag->data);
+            wmem_free(wmem_file_scope(), frag->data);
         }
         frag->data = NULL;
         frag = frag->next;
@@ -861,8 +861,10 @@ reassemble_data(struct rlc_channel *ch, struct rlc_sdu *sdu, struct rlc_frag *fr
     sdu->data = (uint8_t *)wmem_alloc(wmem_file_scope(), sdu->len);
     temp = sdu->frags;
     while (temp && ((offs + temp->len) <= sdu->len)) {
-        memcpy(sdu->data + offs, temp->data, temp->len);
-        wmem_free(wmem_file_scope(), temp->data);
+        if (temp->data) {
+            memcpy(sdu->data + offs, temp->data, temp->len);
+            wmem_free(wmem_file_scope(), temp->data);
+        }
         temp->data = NULL;
         /* mark this fragment in reassembled table */
         g_hash_table_insert(reassembled_table, temp, sdu);
@@ -3067,7 +3069,7 @@ proto_register_rlc(void)
         { &ei_rlc_kasumi_implementation_missing, { "rlc.kasumi_implementation_missing", PI_UNDECODED, PI_WARN, "Unable to decipher packet since KASUMI implementation is missing.", EXPFILL }},
         { &ei_rlc_li_reserved, { "rlc.li.reserved", PI_PROTOCOL, PI_WARN, "Uses reserved LI", EXPFILL }},
         { &ei_rlc_li_incorrect_warn, { "rlc.li.incorrect", PI_PROTOCOL, PI_WARN, "Incorrect LI value", EXPFILL }},
-        { &ei_rlc_li_incorrect_mal, { "rlc.li.incorrect", PI_MALFORMED, PI_ERROR, "Incorrect LI value 0x%x", EXPFILL }},
+        { &ei_rlc_li_incorrect_mal, { "rlc.li.incorrect", PI_MALFORMED, PI_ERROR, "Incorrect LI value", EXPFILL }},
         { &ei_rlc_li_too_many, { "rlc.li.too_many", PI_MALFORMED, PI_ERROR, "Too many LI entries", EXPFILL }},
         { &ei_rlc_header_only, { "rlc.header_only.expert", PI_SEQUENCE, PI_NOTE, "RLC PDU SDUs have been omitted", EXPFILL }},
         { &ei_rlc_sufi_len, { "rlc.sufi.len.invalid", PI_MALFORMED, PI_ERROR, "Invalid length", EXPFILL }},

@@ -40,8 +40,6 @@
 #include <wsutil/plugins.h>
 #endif
 
-#include <wsutil/report_message.h>
-
 #include <wiretap/merge.h>
 
 #include "ui/failure_message.h"
@@ -73,27 +71,6 @@ print_usage(FILE *output)
     fprintf(output, "  -h, --help        display this help and exit.\n");
     fprintf(output, "  -V                verbose output.\n");
     fprintf(output, "  -v, --version     print version information and exit.\n");
-}
-
-/*
- * Report an error in command-line arguments.
- */
-static void
-mergecap_cmdarg_err(const char *fmt, va_list ap)
-{
-    fprintf(stderr, "mergecap: ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-}
-
-/*
- * Report additional information for an error in command-line arguments.
- */
-static void
-mergecap_cmdarg_err_cont(const char *fmt, va_list ap)
-{
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
 }
 
 static void
@@ -204,18 +181,6 @@ int
 main(int argc, char *argv[])
 {
     char               *configuration_init_error;
-    static const struct report_message_routines mergecap_report_routines = {
-        failure_message,
-        failure_message,
-        open_failure_message,
-        read_failure_message,
-        write_failure_message,
-        cfile_open_failure_message,
-        cfile_dump_open_failure_message,
-        cfile_read_failure_message,
-        cfile_write_failure_message,
-        cfile_close_failure_message
-    };
     int                 opt;
     static const struct ws_option long_options[] = {
         {"help", ws_no_argument, NULL, 'h'},
@@ -234,10 +199,13 @@ main(int argc, char *argv[])
     wtap_compression_type compression_type = WTAP_UNKNOWN_COMPRESSION;
     merge_progress_callback_t cb;
 
-    cmdarg_err_init(mergecap_cmdarg_err, mergecap_cmdarg_err_cont);
+    /* Set the program name. */
+    g_set_prgname("mergecap");
+
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("mergecap", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, vcmdarg_err, 1);
@@ -248,9 +216,6 @@ main(int argc, char *argv[])
     create_app_running_mutex();
 #endif /* _WIN32 */
 
-    /* Initialize the version information. */
-    ws_init_version_info("Mergecap", NULL, NULL);
-
     /*
      * Get credential information for later use.
      */
@@ -260,7 +225,7 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0], NULL);
+    configuration_init_error = configuration_init(argv[0]);
     if (configuration_init_error != NULL) {
         cmdarg_err(
                 "Can't get pathname of directory containing the mergecap program: %s.",
@@ -268,7 +233,10 @@ main(int argc, char *argv[])
         g_free(configuration_init_error);
     }
 
-    init_report_message("mergecap", &mergecap_report_routines);
+    /* Initialize the version information. */
+    ws_init_version_info("Mergecap", NULL, NULL);
+
+    init_report_failure_message("mergecap");
 
     wtap_init(true);
 

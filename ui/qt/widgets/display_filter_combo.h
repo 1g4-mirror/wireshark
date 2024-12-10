@@ -23,16 +23,10 @@ public:
     void updateStyleSheet();
 
 protected:
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    void rowsAboutToBeInserted(const QModelIndex&, int, int);
     void rowsInserted(const QModelIndex&, int, int);
-#endif
     virtual bool event(QEvent *event);
 
 private:
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    bool clear_state_;
-#endif
 
 public slots:
     bool checkDisplayFilter();
@@ -41,7 +35,7 @@ public slots:
 
 private slots:
     void updateMaxCount();
-    void onActivated(int index);
+    void filterApplied(QString filter, bool force);
 };
 
 #endif // DISPLAY_FILTER_COMBO_H

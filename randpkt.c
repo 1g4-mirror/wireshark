@@ -30,7 +30,6 @@
 #include <wsutil/plugins.h>
 #endif
 
-#include <wsutil/report_message.h>
 #include <wsutil/wslog.h>
 
 #include <wsutil/ws_getopt.h>
@@ -54,27 +53,6 @@ list_capture_types(void) {
             wtap_file_type_subtype_description(ft));
     }
     g_array_free(writable_type_subtypes, TRUE);
-}
-
-/*
- * Report an error in command-line arguments.
- */
-static void
-randpkt_cmdarg_err(const char *msg_format, va_list ap)
-{
-    fprintf(stderr, "randpkt: ");
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
-}
-
-/*
- * Report additional information for an error in command-line arguments.
- */
-static void
-randpkt_cmdarg_err_cont(const char *msg_format, va_list ap)
-{
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
 }
 
 /* Print usage statement and exit program */
@@ -124,18 +102,6 @@ int
 main(int argc, char *argv[])
 {
     char *configuration_init_error;
-    static const struct report_message_routines randpkt_report_routines = {
-        failure_message,
-        failure_message,
-        open_failure_message,
-        read_failure_message,
-        write_failure_message,
-        cfile_open_failure_message,
-        cfile_dump_open_failure_message,
-        cfile_read_failure_message,
-        cfile_write_failure_message,
-        cfile_close_failure_message
-    };
     int opt;
     int produce_type = -1;
     char *produce_filename = NULL;
@@ -153,10 +119,13 @@ main(int argc, char *argv[])
         {0, 0, 0, 0 }
     };
 
-    cmdarg_err_init(randpkt_cmdarg_err, randpkt_cmdarg_err_cont);
+    /* Set the program name. */
+    g_set_prgname("randpkt");
+
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("randpkt", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -172,7 +141,7 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0], NULL);
+    configuration_init_error = configuration_init(argv[0]);
     if (configuration_init_error != NULL) {
         fprintf(stderr,
             "capinfos: Can't get pathname of directory containing the capinfos program: %s.\n",
@@ -180,7 +149,7 @@ main(int argc, char *argv[])
         g_free(configuration_init_error);
     }
 
-    init_report_message("randpkt", &randpkt_report_routines);
+    init_report_failure_message("randpkt");
 
     wtap_init(true);
 

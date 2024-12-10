@@ -30,7 +30,7 @@
 #include "extcap.h"
 
 #include <ui/recent.h>
-#include "capture_opts.h"
+#include "ui/capture_opts.h"
 #include "ui/capture_globals.h"
 #include <ui/iface_lists.h>
 #include <wsutil/utf8_entities.h>
@@ -68,7 +68,7 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
 {
     ui->setupUi(this);
 
-    setStyleSheet(QString(
+    setStyleSheet(QStringLiteral(
                       "QFrame {"
                       "  border: 0;"
                       "}"
@@ -296,7 +296,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     ui->warningLabel->hide();
     ui->warningLabel->clear();
 
-    ui->warningLabel->setStyleSheet(QString(
+    ui->warningLabel->setStyleSheet(QStringLiteral(
                 "QLabel {"
                 "  border-radius: 0.5em;"
                 "  padding: 0.33em;"
@@ -367,7 +367,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     if (!ui->warningLabel->text().isEmpty() && recent.sys_warn_if_no_capture)
     {
         QString warning_text = ui->warningLabel->text();
-        warning_text.append(QString("<p><a href=\"%1\">%2</a></p>")
+        warning_text.append(QStringLiteral("<p><a href=\"%1\">%2</a></p>")
                             .arg(no_capture_link)
                             .arg(SimpleDialog::dontShowThisAgain()));
         ui->warningLabel->setText(warning_text);

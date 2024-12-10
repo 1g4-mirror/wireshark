@@ -80,7 +80,11 @@ BluetoothAttServerAttributesDialog::BluetoothAttServerAttributesDialog(QWidget &
     connect(ui->tableTreeWidget, &QTreeWidget::customContextMenuRequested, this, &BluetoothAttServerAttributesDialog::tableContextMenu);
     connect(ui->interfaceComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &BluetoothAttServerAttributesDialog::interfaceCurrentIndexChanged);
     connect(ui->deviceComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &BluetoothAttServerAttributesDialog::deviceCurrentIndexChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    connect(ui->removeDuplicatesCheckBox, &QCheckBox::checkStateChanged, this, &BluetoothAttServerAttributesDialog::removeDuplicatesStateChanged);
+#else
     connect(ui->removeDuplicatesCheckBox, &QCheckBox::stateChanged, this, &BluetoothAttServerAttributesDialog::removeDuplicatesStateChanged);
+#endif
 
     ui->tableTreeWidget->sortByColumn(column_number_handle, Qt::AscendingOrder);
 
@@ -235,7 +239,7 @@ void BluetoothAttServerAttributesDialog::on_actionCopy_Rows_triggered()
     items =  ui->tableTreeWidget->selectedItems();
 
     for (i_item = items.begin(); i_item != items.end(); ++i_item) {
-        copy += QString("%1  %2  %3\n")
+        copy += QStringLiteral("%1  %2  %3\n")
                 .arg((*i_item)->text(column_number_handle), -6)
                 .arg((*i_item)->text(column_number_uuid), -32)
                 .arg((*i_item)->text(column_number_uuid_name));
@@ -300,7 +304,7 @@ tap_packet_status BluetoothAttServerAttributesDialog::tapPacket(void *tapinfo_pt
             return TAP_PACKET_REDRAW;
     }
 
-    handle = QString("0x%1").arg(tap_handles->handle, 4, 16, QChar('0'));
+    handle = QStringLiteral("0x%1").arg(tap_handles->handle, 4, 16, QChar('0'));
     uuid = QString(print_numeric_bluetooth_uuid(pinfo->pool, &tap_handles->uuid));
     uuid_name = QString(print_bluetooth_uuid(pinfo->pool, &tap_handles->uuid));
 
@@ -366,8 +370,11 @@ void BluetoothAttServerAttributesDialog::deviceCurrentIndexChanged(int)
     cap_file_.retapPackets();
 }
 
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+void BluetoothAttServerAttributesDialog::removeDuplicatesStateChanged(Qt::CheckState)
+#else
 void BluetoothAttServerAttributesDialog::removeDuplicatesStateChanged(int)
+#endif
 {
     cap_file_.retapPackets();
 }
@@ -391,14 +398,14 @@ void BluetoothAttServerAttributesDialog::on_actionCopy_All_triggered()
     QString                 copy;
     QTreeWidgetItemIterator i_item(ui->tableTreeWidget);
 
-    copy = QString("%1  %2  %3\n")
+    copy = QStringLiteral("%1  %2  %3\n")
             .arg(ui->tableTreeWidget->headerItem()->text(column_number_handle), -6)
             .arg(ui->tableTreeWidget->headerItem()->text(column_number_uuid), -32)
             .arg(ui->tableTreeWidget->headerItem()->text(column_number_uuid_name));
 
     while (*i_item) {
         QTreeWidgetItem *item = static_cast<QTreeWidgetItem*>(*i_item);
-        copy += QString("%1  %2  %3\n")
+        copy += QStringLiteral("%1  %2  %3\n")
                 .arg(item->text(column_number_handle), -6)
                 .arg(item->text(column_number_uuid), -32)
                 .arg(item->text(column_number_uuid_name));

@@ -80,12 +80,16 @@
         <translation>Лицензия</translation>
     </message>
     <message>
-        <source>About Logray</source>
-        <translation>О журнале Logray</translation>
+        <source>About Stratoshark</source>
+        <translation>О Stratoshark</translation>
     </message>
     <message>
-        <source>Logray</source>
-        <translation>Журнал</translation>
+        <source>Stratoshark</source>
+        <translation>Stratoshark</translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;System Call and Event Log Analyzer&lt;/h3&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The directory does not exist</source>
@@ -1213,10 +1217,10 @@
 </translation>
     </message>
     <message>
-        <source>Created by Logray %1
+        <source>Created by Stratoshark %1
 
 </source>
-        <translation>Создано журналом Logray %1
+        <translation>Создано Stratoshark %1
 
 </translation>
     </message>
@@ -1863,31 +1867,23 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Display as:</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображать как:</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;p&gt;Values will show the raw values for fields.&lt;p&gt;Strings will show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings and custom columns which can be resolved to strings.&lt;p&gt;Details will show the values using the same format as in Packet Details. Only applicable to custom columns.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resolve Names:</source>
-        <translation type="vanished">Разрешать имена:</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;p&gt;Show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;p&gt;Отображать человекочитаемые строки вместо необработанных значений полей. Может применяться только к дополнительным столбцам с полями, содержащими строки значений.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;p&gt;Значения будут отображать необработанные значения для полей.&lt;p&gt;В строках будут отображаться человекочитаемые строки вместо необработанных значений для полей. Применимо только к пользовательским столбцам с полями, содержащими строки значений, и пользовательским столбцам, которые могут быть преобразованы в строки.&lt;p&gt;В разделе &quot;Подробности&quot; значения будут отображаться в том же формате, что и в разделе &quot;Подробная информация о пакете&quot;. Применимо только к пользовательским столбцам.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Values</source>
-        <translation type="unfinished"></translation>
+        <translation>Значения</translation>
     </message>
     <message>
         <source>Strings</source>
-        <translation type="unfinished"></translation>
+        <translation>Строки</translation>
     </message>
     <message>
         <source>Details</source>
-        <translation type="unfinished">Подробности</translation>
+        <translation>Подробности</translation>
     </message>
     <message>
         <source>Missing fields.</source>
@@ -1917,36 +1913,28 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Тип</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>Поля</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>Вхождение поля</translation>
     </message>
     <message>
         <source>Display Format</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат отображения</translation>
     </message>
     <message>
         <source>&lt;html&gt;Values will show the raw values for fields.&lt;p&gt;Strings will show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings and custom columns which can be resolved to strings.&lt;p&gt;Details will show the values using the same format as in Packet Details. Only applicable to custom columns.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Resolved</source>
-        <translation type="vanished">Разрешено</translation>
+        <translation>&lt;html&gt;Значения будут отображать необработанные значения для полей.&lt;p&gt;В строках будут отображаться человекочитаемые строки вместо необработанных значений для полей. Применимо только к пользовательским столбцам с полями, содержащими строки значений, и пользовательским столбцам, которые могут быть преобразованы в строки.&lt;p&gt;В разделе &quot;Подробности&quot; значения будут отображаться в том же формате, что и в разделе &quot;Подробная информация о пакете&quot;. Применимо только к пользовательским столбцам.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Width</source>
         <translation>Ширина</translation>
     </message>
     <message>
-        <source>Alignment</source>
-        <translation>Выравнивание</translation>
+        <source>Custom Expression</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;html&gt;Show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Показывать человекочитаемые строки вместо необработанных значений полей. Может применяться только к дополнительным столбцам с полями, содержащими строки значений.&lt;/html&gt;</translation>
+        <source>Alignment</source>
+        <translation>Выравнивание</translation>
     </message>
     <message>
         <source>New Column</source>
@@ -2397,6 +2385,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Apply a read filter %1</source>
         <translation>Примените фильтр чтения %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3112,16 +3104,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>Запись фильтра отображения</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>Ввести поле %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>Недопустимый фильтр: </translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3866,6 +3858,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Съешь же ещё этих мягких французских булок да выпей чаю</translation>
     </message>
     <message>
+        <source>Color Scheme:</source>
+        <translation>Цветовая схема:</translation>
+    </message>
+    <message>
+        <source>Light Mode</source>
+        <translation>Светлый режим</translation>
+    </message>
+    <message>
+        <source>Dark Mode</source>
+        <translation>Темный режим</translation>
+    </message>
+    <message>
         <source>Font</source>
         <translation>Шрифт</translation>
     </message>
@@ -4181,10 +4185,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Автоматическое обновление</translation>
     </message>
     <message>
-        <source>Enable legend</source>
-        <translation>Включить легенду</translation>
-    </message>
-    <message>
         <source>Reset Graph</source>
         <translation>Сбросить график</translation>
     </message>
@@ -4318,6 +4318,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>T</translation>
     </message>
     <message>
+        <source>Toggle X-axis between relative time and time of day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle Y-axis between logarithmic and linear scale</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Crosshairs</source>
         <translation>Перекрестия</translation>
     </message>
@@ -4328,6 +4336,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Space</source>
         <translation>Пробел</translation>
+    </message>
+    <message>
+        <source>Legend</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle legend</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom In X Axis</source>
@@ -7632,19 +7648,19 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>&lt;html&gt;Values will show the raw values for fields.&lt;p&gt;Strings will show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings and custom columns which can be resolved to strings.&lt;p&gt;Details will show the values using the same format as in Packet Details. Only applicable to custom columns.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Значения будут отображать необработанные значения для полей.&lt;p&gt;В строках будут отображаться человекочитаемые строки вместо необработанных значений для полей. Применимо только к пользовательским столбцам с полями, содержащими строки значений, и пользовательским столбцам, которые могут быть преобразованы в строки.&lt;p&gt;В разделе &quot;Подробности&quot; значения будут отображаться в том же формате, что и в разделе &quot;Подробная информация о пакете&quot;. Применимо только к пользовательским столбцам.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Display as Values</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображать как значения</translation>
     </message>
     <message>
         <source>Display as Strings</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображать как строки</translation>
     </message>
     <message>
         <source>Display as packet Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Отображать как описание пакета</translation>
     </message>
     <message>
         <source>Column Preferences…</source>
@@ -7653,10 +7669,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Resize Column to Width…</source>
         <translation>Изменить размер столбцов по ширине…</translation>
-    </message>
-    <message>
-        <source>Resolve Names</source>
-        <translation type="vanished">Выполнить разрешение имён</translation>
     </message>
     <message>
         <source>Remove this Column</source>
@@ -7861,6 +7873,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Preferences</source>
         <translation>Параметры</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Копировать</translation>
+    </message>
+    <message numerus="yes">
+        <source>Copy Row(s)</source>
+        <translation type="unfinished">
+            <numerusform>Копировать Строку</numerusform>
+            <numerusform>Копировать Строки</numerusform>
+            <numerusform>Копировать Строки</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -8520,34 +8544,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>QObject</name>
     <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>Средняя пропускная способность (бит/с)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>Время приёма-передачи (мс)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>Длина сегмента (Б)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>Порядковый номер (Б)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>Время (с)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>Размер окна (Б)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>Нераспакованные (выданные) байты (B)</translation>
-    </message>
-    <message>
         <source>[no capture file]</source>
         <translation>[нет файла захвата]</translation>
     </message>
@@ -8901,15 +8897,15 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Values</source>
-        <translation type="unfinished"></translation>
+        <translation>Значения</translation>
     </message>
     <message>
         <source>Strings</source>
-        <translation type="unfinished"></translation>
+        <translation>Строки</translation>
     </message>
     <message>
         <source>Details</source>
-        <translation type="unfinished">Подробности</translation>
+        <translation>Подробности</translation>
     </message>
     <message>
         <source>UE Id</source>
@@ -8940,8 +8936,9 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Недопустимый фильтр отображения</translation>
     </message>
     <message>
-        <source>The filter expression %1 isn&apos;t a valid display filter. (%2).</source>
-        <translation>Выражение фильтра %1 не является допустимым фильтром отображения. (%2).</translation>
+        <source>The filter expression &quot;%1&quot; isn&apos;t a valid display filter.
+(%2).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error</source>
@@ -9034,6 +9031,34 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>LOAD</source>
         <translation>ЗАГРУЗКА</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">Время приёма-передачи</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">Длина сегмента</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">Номер последовательности</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">Время</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13169,16 +13194,16 @@ a:hover {
         <translation>Все составные звенья Интернета анализировать поможет Wireshark </translation>
     </message>
     <message>
-        <source>You are sniffing the glue that holds your system together using Logray </source>
-        <translation>Вы нюхаете клей, который держит вашу систему вместе, используя Logray </translation>
+        <source>You are sniffing the glue that holds your system together using Stratoshark </source>
+        <translation>С помощью Stratoshark вы обнаруживаете клей, на котором держится ваша система.</translation>
+    </message>
+    <message>
+        <source>You are running Stratoshark </source>
+        <translation>Вы запускаете Stratoshark</translation>
     </message>
     <message>
         <source>You are running Wireshark </source>
         <translation>Работа производится в Wireshark </translation>
-    </message>
-    <message>
-        <source>You are running Logray </source>
-        <translation>Вы используете Logray </translation>
     </message>
     <message>
         <source> You receive automatic updates.</source>
@@ -13254,14 +13279,6 @@ a:hover {
     <message>
         <source>802.11 Preferences</source>
         <translation>Параметры 802.11</translation>
-    </message>
-    <message>
-        <source>AirPcap Control Panel</source>
-        <translation>Панель управления AirPcap</translation>
-    </message>
-    <message>
-        <source>Open the AirPcap Control Panel</source>
-        <translation>Открыть панель управления AirPcap</translation>
     </message>
     <message>
         <source>Unable to set channel or offset.</source>
@@ -14494,6 +14511,26 @@ a:hover {
         <translation>Фильтры дисплея</translation>
     </message>
     <message>
+        <source>Display Filter Reference</source>
+        <translation>Ссылка на фильтр дисплея</translation>
+    </message>
+    <message>
+        <source>First Packet in Conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the first packet in this conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last Packet in Conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the last packet in this conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Capture &amp;Filters…</source>
         <translation>Фильтры &amp;захвата…</translation>
     </message>
@@ -15180,16 +15217,8 @@ a:hover {
         <translation>Необходимо сохранить изменения перед объединением файлов.</translation>
     </message>
     <message>
-        <source>Invalid Display Filter</source>
-        <translation>Недопустимый фильтр отображения</translation>
-    </message>
-    <message>
         <source>Invalid Read Filter</source>
         <translation>Недопустимый фильтр чтения</translation>
-    </message>
-    <message>
-        <source>The filter expression %1 isn&apos;t a valid read filter. (%2).</source>
-        <translation>Выражение фильтра %1 не является допустимым фильтром чтения. (%2).</translation>
     </message>
     <message>
         <source> before importing a capture</source>
@@ -15228,6 +15257,11 @@ a:hover {
     <message>
         <source>Unable to drop files during capture.</source>
         <translation>Нельзя перетаскивать файлы во время захвата.</translation>
+    </message>
+    <message>
+        <source>The filter expression &quot;%1&quot; isn&apos;t a valid read filter.
+(%2).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown file type returned by merge dialog.</source>

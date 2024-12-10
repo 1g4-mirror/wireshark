@@ -754,12 +754,12 @@ decode_xmcp_attr_value (proto_tree *attr_tree, uint16_t attr_type,
       tok = strtok(test_string, " \t\r\n");
       if (tok && tok[0] == '<') {
         /* Looks like XML */
-        dissector_try_string(media_type_dissector_table, "application/xml",
-                             next_tvb, pinfo, attr_tree, NULL);
+        dissector_try_string_with_data(media_type_dissector_table, "application/xml",
+                             next_tvb, pinfo, attr_tree, true, NULL);
       } else {
         /* Try plain text */
-        dissector_try_string(media_type_dissector_table, "text/plain",
-                             next_tvb, pinfo, attr_tree, NULL);
+        dissector_try_string_with_data(media_type_dissector_table, "text/plain",
+                             next_tvb, pinfo, attr_tree, true, NULL);
       }
     }
     break;
@@ -1101,12 +1101,12 @@ proto_register_xmcp(void)
     },
     { &hf_xmcp_response_in,
       { "Response In",          "xmcp.response-in",
-        FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+        FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
         "The response to this XMCP request is in this frame",   HFILL }
     },
     { &hf_xmcp_response_to,
       { "Response To",          "xmcp.response-to",
-        FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+        FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
         "This is a response to the XMCP request in this frame", HFILL }
     },
     { &hf_xmcp_time,

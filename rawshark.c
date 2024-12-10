@@ -49,7 +49,6 @@
 #include <wsutil/file_util.h>
 #include <wsutil/socket.h>
 #include <wsutil/privileges.h>
-#include <wsutil/report_message.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
 #include <wsutil/clopts_common.h>
@@ -63,7 +62,6 @@
 #include <epan/packet.h>
 #include <epan/ftypes/ftypes.h>
 #include "file.h"
-#include "frame_tvbuff.h"
 #include <epan/disabled_protos.h>
 #include <epan/prefs.h>
 #include <epan/column.h>
@@ -137,8 +135,6 @@ static bool process_packet(capture_file *cf, epan_dissect_t *edt, int64_t offset
                                wtap_rec *rec, Buffer *buf);
 static void show_print_file_io_error(int err);
 
-static void rawshark_cmdarg_err(const char *fmt, va_list ap);
-static void rawshark_cmdarg_err_cont(const char *fmt, va_list ap);
 static void protocolinfo_init(char *field);
 static bool parse_field_string_format(char *format);
 
@@ -431,18 +427,9 @@ main(int argc, char *argv[])
 #define OPTSTRING_INIT OPTSTRING_DISSECT_COMMON OPTSTRING_READ_CAPTURE_COMMON "F:hlm:o:psS:v"
 
     static const char    optstring[] = OPTSTRING_INIT;
-    static const struct report_message_routines rawshark_report_routines = {
-      failure_message,
-      failure_message,
-      open_failure_message,
-      read_failure_message,
-      write_failure_message,
-      cfile_open_failure_message,
-      cfile_dump_open_failure_message,
-      cfile_read_failure_message,
-      cfile_write_failure_message,
-      cfile_close_failure_message
-    };
+
+    /* Set the program name. */
+    g_set_prgname("rawshark");
 
     /*
      * Set the C-language locale to the native environment and set the
@@ -454,20 +441,15 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 #endif
 
-    cmdarg_err_init(rawshark_cmdarg_err, rawshark_cmdarg_err_cont);
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("rawshark", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, vcmdarg_err, WS_EXIT_INVALID_OPTION);
 
     ws_noisy("Finished log init and parsing command line log arguments");
-
-    /* Initialize the version information. */
-    ws_init_version_info("Rawshark",
-                         epan_gather_compile_info,
-                         NULL);
 
 #ifdef _WIN32
     create_app_running_mutex();
@@ -495,13 +477,18 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    err_msg = configuration_init(argv[0], NULL);
+    err_msg = configuration_init(argv[0]);
     if (err_msg != NULL) {
         fprintf(stderr, "rawshark: Can't get pathname of rawshark program: %s.\n",
                 err_msg);
     }
 
-    init_report_message("rawshark", &rawshark_report_routines);
+    /* Initialize the version information. */
+    ws_init_version_info("Rawshark",
+                         epan_gather_compile_info,
+                         NULL);
+
+    init_report_failure_message("rawshark");
 
     timestamp_set_type(TS_RELATIVE);
     timestamp_set_precision(TS_PREC_AUTO);
@@ -1012,7 +999,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt, int64_t offset,
      *not* verbose; in verbose mode, we print the protocol tree, not
      the protocol summary. */
     epan_dissect_run_with_taps(edt, cf->cd_t, rec,
-                               frame_tvbuff_new_buffer(&cf->provider, &fdata, buf),
+                               ws_buffer_start_ptr(buf),
                                &fdata, &cf->cinfo);
 
     frame_data_set_after_dissect(&fdata, &cum_bytes);
@@ -1464,27 +1451,6 @@ raw_cf_open(capture_file *cf, const char *fname)
     cf->provider.prev_cap = NULL;
 
     return CF_OK;
-}
-
-/*
- * Report an error in command-line arguments.
- */
-static void
-rawshark_cmdarg_err(const char *fmt, va_list ap)
-{
-    fprintf(stderr, "rawshark: ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-}
-
-/*
- * Report additional information for an error in command-line arguments.
- */
-static void
-rawshark_cmdarg_err_cont(const char *fmt, va_list ap)
-{
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
 }
 
 /*

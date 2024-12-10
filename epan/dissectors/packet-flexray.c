@@ -269,34 +269,34 @@ flexray_call_subdissectors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     uint32_t flexray_id = flexray_flexrayinfo_to_flexrayid(flexray_info);
 
     /* lets try an exact match first */
-    if (dissector_try_uint_new(flexrayid_subdissector_table, flexray_id, tvb, pinfo, tree, true, flexray_info)) {
+    if (dissector_try_uint_with_data(flexrayid_subdissector_table, flexray_id, tvb, pinfo, tree, true, flexray_info)) {
         return true;
     }
 
     /* lets try with BUS-ID = 0 (any) */
-    if (dissector_try_uint_new(flexrayid_subdissector_table, flexray_id & ~FLEXRAY_ID_BUS_ID_MASK, tvb, pinfo, tree, true, flexray_info)) {
+    if (dissector_try_uint_with_data(flexrayid_subdissector_table, flexray_id & ~FLEXRAY_ID_BUS_ID_MASK, tvb, pinfo, tree, true, flexray_info)) {
         return true;
     }
 
     /* lets try with cycle = 0xff (any) */
-    if (dissector_try_uint_new(flexrayid_subdissector_table, flexray_id | FLEXRAY_ID_CYCLE_MASK, tvb, pinfo, tree, true, flexray_info)) {
+    if (dissector_try_uint_with_data(flexrayid_subdissector_table, flexray_id | FLEXRAY_ID_CYCLE_MASK, tvb, pinfo, tree, true, flexray_info)) {
         return true;
     }
 
     /* lets try with BUS-ID = 0 (any) and cycle = 0xff (any) */
-    if (dissector_try_uint_new(flexrayid_subdissector_table, (flexray_id & ~FLEXRAY_ID_BUS_ID_MASK) | FLEXRAY_ID_CYCLE_MASK, tvb, pinfo, tree, true, flexray_info)) {
+    if (dissector_try_uint_with_data(flexrayid_subdissector_table, (flexray_id & ~FLEXRAY_ID_BUS_ID_MASK) | FLEXRAY_ID_CYCLE_MASK, tvb, pinfo, tree, true, flexray_info)) {
         return true;
     }
 
     if (!use_heuristics_first) {
-        if (!dissector_try_payload_new(subdissector_table, tvb, pinfo, tree, false, flexray_info)) {
+        if (!dissector_try_payload_with_data(subdissector_table, tvb, pinfo, tree, false, flexray_info)) {
             if (!dissector_try_heuristic(heur_subdissector_list, tvb, pinfo, tree, &heur_dtbl_entry, flexray_info)) {
                 return false;
             }
         }
     } else {
         if (!dissector_try_heuristic(heur_subdissector_list, tvb, pinfo, tree, &heur_dtbl_entry, flexray_info)) {
-            if (!dissector_try_payload_new(subdissector_table, tvb, pinfo, tree, false, flexray_info)) {
+            if (!dissector_try_payload_with_data(subdissector_table, tvb, pinfo, tree, false, flexray_info)) {
                 return false;
             }
         }

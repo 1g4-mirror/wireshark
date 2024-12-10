@@ -174,6 +174,7 @@ set(CLEAN_ASN1_DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-q932-ros.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-qsig.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-ranap.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-rc-v3.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-rnsap.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-roon_discovery.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-ros.c
@@ -274,6 +275,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-afp.h
 	packet-alcap.h
 	packet-amp.h
+	packet-amr.h
 	packet-ansi_a.h
 	packet-ansi_map.h
 	packet-ansi_tcap.h
@@ -361,6 +363,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-dtls.h
 	packet-dvbci.h
 	packet-e1ap.h
+	packet-eap.h
 	packet-enip.h
 	packet-erf.h
 	packet-e164.h
@@ -400,6 +403,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-gsm_a_common.h
 	packet-gsm_a_rr.h
 	packet-gsm_map.h
+	packet-gsm_osmux.h
 	packet-gsm_rlcmac.h
 	packet-gsm_sms.h
 	packet-gsmtap.h
@@ -440,6 +444,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-ip.h
 	packet-ipmi.h
 	packet-ipsec.h
+	packet-ipv6.h
 	packet-ipx.h
 	packet-irdma.h
 	packet-isakmp.h
@@ -452,6 +457,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-isobus-parameters.h
 	packet-isup.h
 	packet-its.h
+	packet-iuup.h
 	packet-iwarp-ddp-rdmap.h
 	packet-json.h
 	packet-juniper.h
@@ -703,6 +709,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/file-rfc7468.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-rtpdump.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-tiff.c
+	${CMAKE_CURRENT_SOURCE_DIR}/file-ttl.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-2dparityfec.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-3com-njack.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-3com-xns.c
@@ -840,7 +847,9 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_evt.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_iso.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_sco.c
-	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_vendor.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_vendor_android.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_vendor_broadcom.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthci_vendor_intel.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthcrp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthfp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bthid.c
@@ -2108,6 +2117,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x25.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x29.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x75.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-xcp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xcsl.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xdmcp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xip.c

@@ -75,6 +75,7 @@
 #include "packet-tls.h"
 #include "packet-dtls.h"
 #include "packet-http2.h"
+#include <wsutil/array.h>
 
 // parent knob to turn on-off the entire query-response statistics (at runtime)
 // qr = Query-Response
@@ -521,6 +522,10 @@ static int hf_dns_opt_chain_fqdn;
 static int hf_dns_opt_ext_error_info_code;
 static int hf_dns_opt_ext_error_extra_text;
 static int hf_dns_opt_agent_domain;
+static int hf_dns_opt_zoneversion_labelcount;
+static int hf_dns_opt_zoneversion_type;
+static int hf_dns_opt_zoneversion_soa;
+static int hf_dns_opt_zoneversion_version;
 static int hf_dns_nsec3_algo;
 static int hf_dns_nsec3_flags;
 static int hf_dns_nsec3_flag_optout;
@@ -879,6 +884,7 @@ typedef struct _dns_conv_info_t {
 #define O_CHAIN         13              /* draft-ietf-dnsop-edns-chain-query */
 #define O_EXT_ERROR     15              /* Extended DNS Errors (RFC8914) */
 #define O_REPORT_CHANNEL 18             /* DNS Error Reporting (RFC9567) */
+#define O_ZONEVERSION   19              /* DNS Zone Version (ZONEVERSION) Option (RFC9660) */
 
 #define MIN_DNAME_LEN    2              /* minimum domain name length */
 
@@ -1330,6 +1336,7 @@ static const value_string edns0_opt_code_vals[] = {
   {O_CHAIN,       "CHAIN"},
   {O_EXT_ERROR,   "Extended DNS Error"},
   {O_REPORT_CHANNEL, "Report-Channel"},
+  {O_ZONEVERSION, "Zone Version"},
   {0,             NULL}
  };
 /* DNS-Based Authentication of Named Entities (DANE) Parameters
@@ -1517,6 +1524,14 @@ static const range_string dns_ext_err_info_code[] = {
   {    30, 49151, "Unassigned"                   },
   { 49152, 65535, "Reserved for Private Use"     },
   {     0,     0, NULL                           } };
+
+#define DNS_ZONEVERSION_TYPE_SOA_SERIAL  0
+static const range_string dns_zoneversion_type[] = {
+  { DNS_ZONEVERSION_TYPE_SOA_SERIAL, DNS_ZONEVERSION_TYPE_SOA_SERIAL, "SOA-SERIAL" },
+  {     1,   245, "Unassigned"  },
+  {   246,   254, "Private Use" },
+  {   255,   255, "Reserved"    },
+  {     0,     0, NULL          } };
 
 static void qname_host_and_domain(char* name, int name_len, char* host, char* domain)
 {
@@ -3479,6 +3494,33 @@ dissect_dns_answer(tvbuff_t *tvb, int offsetx, int dns_data_offset,
             rropt_len  -= used_bytes;
           }
           break;
+
+          case O_ZONEVERSION:
+          {
+            uint32_t  type;
+            if (optlen >= 2) {
+              proto_tree_add_item(rropt_tree, hf_dns_opt_zoneversion_labelcount, tvb, cur_offset, 1, ENC_NA);
+              cur_offset += 1;
+              rropt_len  -= 1;
+              proto_tree_add_item_ret_uint(rropt_tree, hf_dns_opt_zoneversion_type, tvb, cur_offset, 1, ENC_NA, &type);
+              cur_offset += 1;
+              rropt_len  -= 1;
+              if (optlen > 2) {
+                switch (type) {
+                  case DNS_ZONEVERSION_TYPE_SOA_SERIAL:
+                    proto_tree_add_item(rropt_tree, hf_dns_opt_zoneversion_soa, tvb, cur_offset, 4, ENC_BIG_ENDIAN);
+                    cur_offset += 4;
+                    rropt_len  -= 4;
+                    break;
+                  default:
+                    proto_tree_add_item(rropt_tree, hf_dns_opt_zoneversion_version, tvb, cur_offset, optlen - 2, ENC_NA);
+                    cur_offset += (optlen - 2);
+                    rropt_len  -= (optlen - 2);
+                }
+              }
+            }
+          }
+          break;
           default:
           {
             cur_offset += optlen;
@@ -4237,7 +4279,7 @@ dissect_dns_answer(tvbuff_t *tvb, int offsetx, int dns_data_offset,
 
         sub_tvb=tvb_new_subset_length(tvb, cur_offset, tsig_siglen);
 
-        if (!dissector_try_string(dns_tsig_dissector_table, tsig_algname, sub_tvb, pinfo, mac_tree, NULL)) {
+        if (!dissector_try_string_with_data(dns_tsig_dissector_table, tsig_algname, sub_tvb, pinfo, mac_tree, true, NULL)) {
           expert_add_info_format(pinfo, mac_item, &ei_dns_tsig_alg,
                 "No dissector for algorithm:%s", name_out);
         }
@@ -6002,7 +6044,7 @@ static tap_packet_status dns_qr_stats_tree_packet(stats_tree* st, packet_info* p
       // responses, ttl count will be 2 but summation of answers, authorities
       // and additionals could be more as each response could contain multiple
       // answers, authorities and additionals. if ttl count is changed to
-      // reflect summation, then it would standout withing its siblings like
+      // reflect summation, then it would standout within its siblings like
       // rcode, payload etc.
       //tick_stat_node(st, st_str_qr_rt_packets, st_node_qr_r_packets, true);
 
@@ -7291,6 +7333,26 @@ proto_register_dns(void)
         FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
 
+    { &hf_dns_opt_zoneversion_labelcount,
+      { "Labelcount", "dns.opt.zoneversion.labelcount",
+        FT_UINT8, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_dns_opt_zoneversion_type,
+      { "Type", "dns.opt.zoneversion.type",
+        FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(dns_zoneversion_type), 0x0,
+        NULL, HFILL }},
+
+    { &hf_dns_opt_zoneversion_soa,
+      { "SOA-SERIAL", "dns.opt.zoneversion.soa",
+        FT_UINT32, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_dns_opt_zoneversion_version,
+      { "Version", "dns.opt.zoneversion.version",
+        FT_BYTES, BASE_NONE, NULL, 0x0,
+        NULL, HFILL }},
+
     { &hf_dns_count_questions,
       { "Questions", "dns.count.queries",
         FT_UINT16, BASE_DEC, NULL, 0x0,
@@ -7882,6 +7944,7 @@ proto_register_dns(void)
     &ett_dns_dso_tlv,
     &ett_dns_svcb,
     &ett_dns_extraneous,
+    &ett_dns_dnscrypt
   };
 
   module_t *dns_module;

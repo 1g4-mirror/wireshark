@@ -71,26 +71,6 @@ Plugins - Some of the protocol dissectors are implemented as plugins. Source cod
 
 Display-Filters - the display filter engine at epan/dfilter
 
-
-
-Ref2 for further edits - delete when done
-	\section Introduction
-
-	This document describes the data structures and the functions exported by the CACE Technologies AirPcap library.
-	The AirPcap library provides low-level access to the AirPcap driver including advanced capabilities such as channel setting,
-	link type control and WEP configuration.<br>
-	This manual includes the following sections:
-
-	\note throughout this documentation, \e device refers to a physical USB AirPcap device, while \e adapter is an open API
-	instance. Most of the AirPcap API operations are adapter-specific but some of them, like setting the channel, are
-	per-device and will be reflected on all the open adapters. These functions will have "Device" in their name, e.g.
-	AirpcapSetDeviceChannel().
-
-	\b Sections:
-
-	- \ref airpcapfuncs
-	- \ref airpcapdefs
-	- \ref radiotap
 */
 
 /**
@@ -206,25 +186,25 @@ epan_dissect_fake_protocols(epan_dissect_t *edt, const bool fake_protocols);
 WS_DLL_PUBLIC
 void
 epan_dissect_run(epan_dissect_t *edt, int file_type_subtype,
-        wtap_rec *rec, tvbuff_t *tvb, frame_data *fd,
+        wtap_rec *rec, const uint8_t *data, frame_data *fd,
         struct epan_column_info *cinfo);
 
 WS_DLL_PUBLIC
 void
 epan_dissect_run_with_taps(epan_dissect_t *edt, int file_type_subtype,
-        wtap_rec *rec, tvbuff_t *tvb, frame_data *fd,
+        wtap_rec *rec, const uint8_t *data, frame_data *fd,
         struct epan_column_info *cinfo);
 
 /** run a single file packet dissection */
 WS_DLL_PUBLIC
 void
 epan_dissect_file_run(epan_dissect_t *edt, wtap_rec *rec,
-        tvbuff_t *tvb, frame_data *fd, struct epan_column_info *cinfo);
+        const uint8_t *data, frame_data *fd, struct epan_column_info *cinfo);
 
 WS_DLL_PUBLIC
 void
 epan_dissect_file_run_with_taps(epan_dissect_t *edt, wtap_rec *rec,
-        tvbuff_t *tvb, frame_data *fd, struct epan_column_info *cinfo);
+        const uint8_t *data, frame_data *fd, struct epan_column_info *cinfo);
 
 /** Prime an epan_dissect_t's proto_tree using the fields/protocols used in a dfilter. */
 WS_DLL_PUBLIC

@@ -286,7 +286,7 @@ static const value_string nbd_error_vals[] = {
 	{0, NULL}
 };
 
-#define NBD_FLAG_NO_ZEROES 0x00000002
+#define NBD_FLAG_NO_ZEROES 0x0002
 
 static bool
 nbd_from_server(packet_info *pinfo)
@@ -1434,10 +1434,10 @@ void proto_register_nbd(void)
 		    NULL, 0x0, NULL, HFILL }},
 		{ &hf_nbd_response_in,
 		  { "Response In", "nbd.response_in", FT_FRAMENUM, BASE_NONE,
-		    NULL, 0x0, "The response to this NBD request is in this frame", HFILL }},
+		    FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, "The response to this NBD request is in this frame", HFILL }},
 		{ &hf_nbd_response_to,
 		  { "Request In", "nbd.response_to", FT_FRAMENUM, BASE_NONE,
-		    NULL, 0x0, "This is a response to the NBD request in this frame", HFILL }},
+		    FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, "This is a response to the NBD request in this frame", HFILL }},
 		{ &hf_nbd_time,
 		  { "Time", "nbd.time", FT_RELATIVE_TIME, BASE_NONE,
 		    NULL, 0x0, "The time between the Call and the Reply", HFILL }},
@@ -1458,7 +1458,7 @@ void proto_register_nbd(void)
 		  { "Number of Queries", "nbd.query.num", FT_UINT32, BASE_DEC,
 		    NULL, 0x0, NULL, HFILL }},
 		{ &hf_nbd_query,
-		  { "Query", "nbd.info.num", FT_UINT_STRING, BASE_NONE,
+		  { "Query", "nbd.query", FT_UINT_STRING, BASE_NONE,
 		    NULL, 0x0, NULL, HFILL }},
 		{ &hf_nbd_export_description,
 		  { "Export Description", "nbd.export.description", FT_STRING, BASE_NONE,

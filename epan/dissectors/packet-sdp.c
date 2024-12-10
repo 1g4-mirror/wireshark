@@ -29,6 +29,7 @@
 
 #include <wsutil/strtoi.h>
 #include <wsutil/str_util.h>
+#include <wsutil/array.h>
 
 #include "packet-media-type.h"
 #include "packet-sdp.h"
@@ -37,8 +38,8 @@
 /* #define DEBUG_CONVERSATION */
 #include "conversation_debug.h"
 
+#include "packet-gsm_osmux.h"
 #include "packet-rtp.h"
-
 #include "packet-rtcp.h"
 #include "packet-t38.h"
 #include "packet-msrp.h"
@@ -918,10 +919,10 @@ static void dissect_key_mgmt(tvbuff_t *tvb, packet_info * pinfo, proto_item * ti
     add_new_data_source(pinfo, keymgmt_tvb, "Key Management Data");
 
     if ((prtcl_id != NULL) && (key_mgmt_dissector_table != NULL)) {
-        found_match = dissector_try_string(key_mgmt_dissector_table,
+        found_match = dissector_try_string_with_data(key_mgmt_dissector_table,
                                            (const char *)prtcl_id,
                                            keymgmt_tvb, pinfo,
-                                           key_tree, NULL);
+                                           key_tree, true, NULL);
     }
 
     if (found_match) {
@@ -1796,7 +1797,7 @@ dissect_sdp_media_attribute_path(packet_info *pinfo, tvbuff_t *tvb, uint8_t *att
 
         /* Port is after next ':' */
         port_offset = tvb_find_uint8(tvb, address_offset, -1, ':');
-        /* Check if port is present if not skipp */
+        /* Check if port is present, if not skip */
         if (port_offset!= -1) {
             /* Port ends with '/' */
             port_end_offset = tvb_find_uint8(tvb, port_offset, -1, '/');
@@ -2347,7 +2348,13 @@ apply_sdp_transport(packet_info *pinfo, transport_info_t *transport_info, int re
                                  media_desc->media.rtp_dyn_payload, srtp_info,
                                  setup_info);
                 DENDENT();
-            } else if (!setup_info || !setup_info->is_osmux) {
+            } else if (setup_info && setup_info->is_osmux) {
+                DPRINT(("calling osmux_add_address, channel=%d, media_port=%d",
+                        i, media_desc->media_port));
+                DINDENT();
+                osmux_add_address(pinfo, &media_desc->conn_addr, media_desc->media_port, 0, establish_frame);
+                DENDENT();
+            } else {
                 DPRINT(("calling rtp_add_address, channel=%d, media_port=%d",
                         i, media_desc->media_port));
                 DINDENT();
