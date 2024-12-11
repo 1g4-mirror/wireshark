@@ -34,6 +34,10 @@
 #include "ui/capture_globals.h"
 #include <ui/iface_lists.h>
 #include <wsutil/utf8_entities.h>
+#ifdef Q_OS_UNIX
+#include <unistd.h> /* for access() and X_OK */
+#include <wsutil/filesystem.h>
+#endif
 
 #include <QDesktopServices>
 #include <QFrame>
@@ -336,7 +340,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
         // used if __APPLE__ is defined, so that it reflects the
         // new message text.
         //
-        QString install_chmodbpf_path = mainApp->applicationDirPath() + "/../Resources/Extras/Install ChmodBPF.pkg";
+        QString install_chmodbpf_path = QStringLiteral("%1/../Resources/Extras/Install ChmodBPF.pkg").arg(mainApp->applicationDirPath());
         ui->warningLabel->setText(tr(
             "<p>"
             "You don't have permission to capture on local interfaces."
@@ -395,6 +399,11 @@ bool InterfaceFrame::haveLocalCapturePermissions() const
 #ifdef Q_OS_MAC
     QFileInfo bpf0_fi = QFileInfo("/dev/bpf0");
     return bpf0_fi.isReadable() && bpf0_fi.isWritable();
+#elif defined(Q_OS_UNIX)
+    char *dumpcap_bin = get_executable_path("dumpcap");
+    bool executable = access(dumpcap_bin, X_OK) == 0;
+    g_free(dumpcap_bin);
+    return executable;
 #else
     // XXX Add checks for other platforms.
     return true;
