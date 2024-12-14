@@ -2581,7 +2581,7 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 			sfi = wmem_new(wmem_file_scope(), smb2_fid_info_t);
 			*sfi = sfi_key;
 			sfi->frame_key = 0;
-			sfi->frame_beg = pinfo->num;
+			sfi->frame_beg = pinfo->fd->num;
 			sfi->frame_end = UINT32_MAX;
 
 			if (si->saved && si->saved->extra_info_type == SMB2_EI_FILENAME) {
@@ -2655,9 +2655,10 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 				/* set last frame */
 				fid->frame_end = pinfo->fd->num;
 			}
-			//if (si->saved)
-			//	si->saved->frame_res = pinfo->fd->num;
-
+			if (si->saved) {
+				si->saved->frame_res      = pinfo->fd->num;
+				si->saved->frame_response = pinfo->fd->num;
+			}
 		}
 		offset = dissect_nt_guid_hnd(tvb, offset, pinfo, tree, &di, drep, hf_smb2_fid, &policy_hnd, &hnd_item, PIDL_POLHND_CLOSE);
 
@@ -2673,7 +2674,6 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 				proto_item_set_generated(item);
 			}
 		}
-
 
 		break;
 	case FID_MODE_USE:
@@ -6862,9 +6862,9 @@ dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 			si->file->frame_beg);
 			proto_item_set_generated(item);
 		} else {
-			if (si->saved && si->saved->frame_req > 0 && si->saved->frame_req < UINT32_MAX) {
+			if (si->saved && si->saved->frame_request > 0 && si->saved->frame_request < UINT32_MAX) {
 				item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
-					si->saved->frame_req);
+					si->saved->frame_request);
 				proto_item_set_generated(item);
 			}
 		}
@@ -12346,7 +12346,8 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, bool fi
 			if (!(si->flags & SMB2_FLAGS_RESPONSE)) {
 				if (ssi->frame_res != UINT32_MAX) {
 					proto_item *tmp_item;
-					tmp_item = proto_tree_add_uint(header_tree, hf_smb2_response_in, tvb, 0, 0, ssi->frame_res);
+					tmp_item = proto_tree_add_uint(header_tree, hf_smb2_response_in, tvb, 0, 0,
+						ssi->frame_res);
 					proto_item_set_generated(tmp_item);
 				}
 			} else {
@@ -12354,7 +12355,8 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, bool fi
 					proto_item *tmp_item;
 					nstime_t    t, deltat;
 
-					tmp_item = proto_tree_add_uint(header_tree, hf_smb2_response_to, tvb, 0, 0, ssi->frame_req);
+					tmp_item = proto_tree_add_uint(header_tree, hf_smb2_response_to, tvb, 0, 0,
+						ssi->frame_req);
 					proto_item_set_generated(tmp_item);
 					t = pinfo->abs_ts;
 					nstime_delta(&deltat, &t, &ssi->req_time);
