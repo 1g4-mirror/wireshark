@@ -3671,7 +3671,7 @@ void proto_register_lcsap(void) {
         FT_UINT32, BASE_DEC, NULL, 0,
         "Uncertainty_Code", HFILL }},
     { &hf_lcsap_orientation_Major_Axis_01,
-      { "orientation-Major-Axis", "lcsap.orientation_Major_Axis",
+      { "orientation-Major-Axis", "lcsap.orientation_Major_Axis_01",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_lcsap_lPP,

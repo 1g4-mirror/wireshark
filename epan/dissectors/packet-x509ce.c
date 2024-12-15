@@ -2832,7 +2832,7 @@ void proto_register_x509ce(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_x509ce_type_id_01,
-      { "type-id", "x509ce.type_id",
+      { "type-id", "x509ce.type_id_01",
         FT_OID, BASE_NONE, NULL, 0,
         "OBJECT_IDENTIFIER", HFILL }},
     { &hf_x509ce_sid,

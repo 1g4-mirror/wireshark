@@ -1320,6 +1320,7 @@ class EthCtx:
                 ethtype = self.type[t]['ethname']
             else:  # undefined type
                 ethtype = self.dummy_import_type(t)
+            attr = self.eth_get_type_attr(t).copy()
             ethtypemod = ethtype + self.field[f]['modified']
             if nm in self.eth_hf:
                 if nm in self.eth_hf_dupl:
@@ -1342,12 +1343,20 @@ class EthCtx:
                         self.eth_hf_dupl[nm] = {self.eth_hf[nm]['ethtype']+self.eth_hf[nm]['modified'] : nm, \
                                                 ethtypemod : nmx}
                         nm = nmx
+                # eth_output_hf_arr adds "_element" to the ABBREV of FT_NONE
+                # fields, so we don't necessarily need to make them unique.
+                # (If we do, perhaps remove that change.)
+                # Instead of adding the count suffix to all fields, we could
+                # add a number by group for unique fields (but some fields
+                # have the same name but unique value strings, and perhaps
+                # those should be distinct?)
+                if attr['TYPE'] != 'FT_NONE':
+                    self.field[f]['attr']['ABBREV'] += nm[-3:]
             if (self.field[f]['pdu']):
                 self.eth_hfpdu_ord.append(nm)
             else:
                 self.eth_hf_ord.append(nm)
             fullname = 'hf_%s_%s' % (self.eproto, nm)
-            attr = self.eth_get_type_attr(self.field[f]['type']).copy()
             attr.update(self.field[f]['attr'])
             if (self.NAPI() and 'NAME' in attr):
                 attr['NAME'] += self.field[f]['idx']

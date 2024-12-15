@@ -10802,7 +10802,7 @@ void proto_register_h225(void) {
         FT_UINT32, BASE_DEC, VALS(AliasAddress_vals), 0,
         NULL, HFILL }},
     { &hf_h225_destinationInfo_01,
-      { "destinationInfo", "h225.destinationInfo",
+      { "destinationInfo", "h225.destinationInfo_01",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_h225_srcInfo,

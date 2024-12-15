@@ -4572,7 +4572,7 @@ void proto_register_lppa(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_lppa_id_01,
-      { "id", "lppa.id",
+      { "id", "lppa.id_01",
         FT_UINT32, BASE_DEC, VALS(lppa_PrivateIE_ID_vals), 0,
         "PrivateIE_ID", HFILL }},
     { &hf_lppa_value,

@@ -1023,7 +1023,7 @@ proto_register_charging_ase(void)
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_charging_ase_tariffControlIndicators_01,
-      { "tariffControlIndicators", "charging_ase.tariffControlIndicators",
+      { "tariffControlIndicators", "charging_ase.tariffControlIndicators_01",
         FT_BYTES, BASE_NONE, NULL, 0,
         "T_tariffControlIndicators_01", HFILL }},
     { &hf_charging_ase_callAttemptChargePulse,

@@ -17770,7 +17770,7 @@ void proto_register_h245(void) {
         FT_OID, BASE_NONE, NULL, 0,
         "OBJECT_IDENTIFIER", HFILL }},
     { &hf_h245_rtpPayloadType_01,
-      { "payloadType", "h245.rtpPayloadType",
+      { "payloadType", "h245.rtpPayloadType_01",
         FT_UINT32, BASE_DEC, NULL, 0,
         "T_rtpPayloadType", HFILL }},
     { &hf_h245_secondaryEncoding,

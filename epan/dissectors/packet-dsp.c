@@ -2378,7 +2378,7 @@ void proto_register_dsp(void) {
         FT_INT32, BASE_DEC, NULL, 0,
         "INTEGER", HFILL }},
     { &hf_dsp_accessPoints_01,
-      { "accessPoints", "dsp.accessPoints",
+      { "accessPoints", "dsp.accessPoints_01",
         FT_UINT32, BASE_DEC, NULL, 0,
         "SET_OF_AccessPointInformation", HFILL }},
     { &hf_dsp_accessPoints_item,
