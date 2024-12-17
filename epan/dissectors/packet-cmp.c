@@ -2122,7 +2122,7 @@ void proto_register_cmp(void) {
         FT_UINT32, BASE_DEC, VALS(cmp_CMPCertificate_vals), 0,
         "CMPCertificate", HFILL }},
     { &hf_cmp_pkistatus_01,
-      { "status", "cmp.pkistatus",
+      { "status", "cmp.pkistatus_01",
         FT_INT32, BASE_DEC, VALS(cmp_PKIStatus_vals), 0,
         "PKIStatus", HFILL }},
     { &hf_cmp_willBeRevokedAt,

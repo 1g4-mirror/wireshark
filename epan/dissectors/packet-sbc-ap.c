@@ -3303,7 +3303,7 @@ void proto_register_sbc_ap(void) {
         FT_UINT32, BASE_DEC, VALS(sbc_ap_GNB_ID_vals), 0,
         NULL, HFILL }},
     { &hf_sbc_ap_gNB_ID_01,
-      { "gNB-ID", "sbc-ap.gNB_ID",
+      { "gNB-ID", "sbc-ap.gNB_ID_01",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_22_32", HFILL }},
     { &hf_sbc_ap_ngENB_ID,

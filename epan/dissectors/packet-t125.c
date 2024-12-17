@@ -526,7 +526,7 @@ void proto_register_t125(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_t125_userData_01,
-      { "userData", "t125.userData",
+      { "userData", "t125.userData_01",
         FT_BYTES, BASE_NONE, NULL, 0,
         "T_userData_01", HFILL }},
     { &hf_t125_dataPriority,

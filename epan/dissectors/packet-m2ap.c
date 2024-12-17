@@ -4403,7 +4403,7 @@ proto_register_m2ap(void) {
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_10", HFILL }},
     { &hf_m2ap_modulationAndCodingScheme_01,
-      { "modulationAndCodingScheme", "m2ap.modulationAndCodingScheme",
+      { "modulationAndCodingScheme", "m2ap.modulationAndCodingScheme_01",
         FT_UINT32, BASE_DEC, VALS(m2ap_T_modulationAndCodingScheme_01_vals), 0,
         "T_modulationAndCodingScheme_01", HFILL }},
     { &hf_m2ap_subcarrier_SpacingMBMSExpanded,
