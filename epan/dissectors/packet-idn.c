@@ -624,8 +624,13 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 	int i;
 	int laser_data_size = tvb_reported_length_remaining(tvb, offset);
 	proto_tree *idn_samples_tree;
-	int sample_count = laser_data_size / 8;
-	float pps = (float)sample_count / ((float)minfo->frame_duration / 1000);
+	float pps;
+	int sample_count = laser_data_size / config->sample_size;
+	if(minfo->chunk_type == IDNCT_LP_FRAME_CHUNK){
+		pps = (float)sample_count / ((float)minfo->frame_duration / 1000000);
+	}else if(minfo->chunk_type == IDNCT_LP_WAVE_SAMPLE){
+		pps = (float)sample_count / ((float)1000 / (float)1000000);
+	}
 
 	if (config->sample_size == 0) {
 	    /* TODO: log expert info error? */
@@ -634,9 +639,9 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 
 	int sample_size = laser_data_size/config->sample_size;
 	if (minfo->chunk_type == IDNCT_LP_WAVE_SAMPLE || minfo->chunk_type == IDNCT_LP_FRAME_CHUNK) {
-		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, %u, with %f pps", sample_count, pps);
+		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, total %u, with %f pps", sample_count, pps);
 	}else{
-		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, %u, pps not applicable", sample_count);
+		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, total %u, pps not applicable", sample_count);
 	}
 
 	proto_tree *idn_samples_subtree = NULL;
