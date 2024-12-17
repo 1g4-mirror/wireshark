@@ -33,10 +33,34 @@ const int num_font_pangrams_ = array_length(font_pangrams_);
 
 FontColorPreferencesFrame::FontColorPreferencesFrame(QWidget *parent) :
     QFrame(parent),
-    ui(new Ui::FontColorPreferencesFrame)
+    ui(new Ui::FontColorPreferencesFrame),
+    colorSchemeComboBox_(nullptr)
 {
     ui->setupUi(this);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0) && (defined(Q_OS_WIN) || defined(Q_OS_MAC))
+    // This doesn't work under most Linux platforms.
+    // KDE doesn't have color scheme as a separate option from theme,
+    // and requires changing the theme. GTK4/libadwaita does have color
+    // scheme as a separate option, but Qt doesn't fully work with it.
+    // On Linux should this be invisible, disabled, or have a warning
+    // label that it probably won't work?
+    QHBoxLayout *colorSchemeLayout = new QHBoxLayout();
+    QLabel *colorSchemeLabel = new QLabel(tr("Color Scheme:"));
+    colorSchemeLayout->addWidget(colorSchemeLabel);
+    colorSchemeComboBox_ = new QComboBox();
+    colorSchemeComboBox_->addItem(tr("System Default"), COLOR_SCHEME_DEFAULT);
+    colorSchemeComboBox_->addItem(tr("Light Mode"), COLOR_SCHEME_LIGHT);
+    colorSchemeComboBox_->addItem(tr("Dark Mode"), COLOR_SCHEME_DARK);
+    connect(colorSchemeComboBox_, &QComboBox::currentIndexChanged,
+        this, &FontColorPreferencesFrame::colorSchemeIndexChanged);
+    colorSchemeLayout->addWidget(colorSchemeComboBox_);
+    colorSchemeLayout->addStretch();
+
+    ui->verticalLayout->insertLayout(ui->verticalLayout->indexOf(ui->colorsLabel), colorSchemeLayout);
+#endif
+
+    pref_color_scheme_ = prefFromPrefPtr(&prefs.gui_color_scheme);
     pref_qt_gui_font_name_ = prefFromPrefPtr(&prefs.gui_font_name);
     pref_active_fg_ = prefFromPrefPtr(&prefs.gui_active_fg);
     pref_active_bg_ = prefFromPrefPtr(&prefs.gui_active_bg);
@@ -68,7 +92,7 @@ FontColorPreferencesFrame::~FontColorPreferencesFrame()
 void FontColorPreferencesFrame::showEvent(QShowEvent *)
 {
     GRand *rand_state = g_rand_new();
-    QString pangram = QString(font_pangrams_[g_rand_int_range(rand_state, 0, num_font_pangrams_)]) + " 0123456789";
+    QString pangram = QStringLiteral("%1 0123456789").arg(font_pangrams_[g_rand_int_range(rand_state, 0, num_font_pangrams_)]);
     ui->fontSampleLineEdit->setText(pangram);
     ui->fontSampleLineEdit->setCursorPosition(0);
     ui->fontSampleLineEdit->setMinimumWidth(mainApp->monospaceTextSize(pangram.toUtf8().constData()) + mainApp->monospaceTextSize(" "));
@@ -90,10 +114,10 @@ void FontColorPreferencesFrame::updateWidgets()
     ui->fontPushButton->setText(
         cur_font_.family() + " " + cur_font_.styleName() + " " +
         QString::number(cur_font_.pointSizeF(), 'f', 1));
-    ui->fontSampleLineEdit->setFont(cur_font_);
 
-    QString line_edit_ss = QString("QLineEdit { margin-left: %1px; }").arg(margin);
+    QString line_edit_ss = QStringLiteral("QLineEdit { margin-left: %1px; }").arg(margin);
     ui->fontSampleLineEdit->setStyleSheet(line_edit_ss);
+    ui->fontSampleLineEdit->setFont(cur_font_);
 
     QString color_button_ss =
         "QPushButton {"
@@ -103,14 +127,20 @@ void FontColorPreferencesFrame::updateWidgets()
         "}";
     QString sample_text_ss =
         "QLineEdit {"
+        "  border: 1px solid palette(Dark);"
         "  color: %1;"
         "  background-color: %2;"
         "}";
     QString sample_text_ex_ss =
         "QLineEdit {"
+        "  border: 1px solid palette(Dark);"
         "  color: %1;"
         "  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1 stop: 0 %3, stop: 0.5 %2, stop: 1 %3);"
         "}";
+
+    if (colorSchemeComboBox_) {
+        colorSchemeComboBox_->setCurrentIndex(colorSchemeComboBox_->findData(prefs_get_enum_value(pref_color_scheme_, pref_stashed)));
+    }
 
     //
     // Sample active selected item
@@ -126,13 +156,11 @@ void FontColorPreferencesFrame::updateWidgets()
 
         foreground  = default_pal.highlightedText().color();
         background1 = default_pal.highlight().color();
-        background2 = default_pal.highlight().color();
         break;
 
     case COLOR_STYLE_FLAT:
         foreground  = ColorUtils::fromColorT(prefs_get_color_value(pref_active_fg_, pref_stashed));
         background1 = ColorUtils::fromColorT(prefs_get_color_value(pref_active_bg_, pref_stashed));
-        background2 = ColorUtils::fromColorT(prefs_get_color_value(pref_active_bg_, pref_stashed));
         break;
 
     case COLOR_STYLE_GRADIENT:
@@ -144,10 +172,16 @@ void FontColorPreferencesFrame::updateWidgets()
 
     ui->activeFGPushButton->setStyleSheet(color_button_ss.arg(foreground.name()).arg(margin));
     ui->activeBGPushButton->setStyleSheet(color_button_ss.arg(background1.name()).arg(0));
-    ui->activeSampleLineEdit->setStyleSheet(sample_text_ex_ss.arg(
+    if (colorstyle == COLOR_STYLE_GRADIENT) {
+        ui->activeSampleLineEdit->setStyleSheet(sample_text_ex_ss.arg(
                                                 foreground.name(),
                                                 background1.name(),
                                                 background2.name()));
+    } else {
+        ui->activeSampleLineEdit->setStyleSheet(sample_text_ss.arg(
+                                                foreground.name(),
+                                                background1.name()));
+    }
     ui->activeSampleLineEdit->setFont(cur_font_);
     ui->activeStyleComboBox->setCurrentIndex(prefs_get_enum_value(pref_active_style_, pref_stashed));
 
@@ -169,13 +203,11 @@ void FontColorPreferencesFrame::updateWidgets()
 
         foreground  = default_pal.highlightedText().color();
         background1 = default_pal.highlight().color();
-        background2 = default_pal.highlight().color();
         break;
 
     case COLOR_STYLE_FLAT:
         foreground  = ColorUtils::fromColorT(prefs_get_color_value(pref_inactive_fg_, pref_stashed));
         background1 = ColorUtils::fromColorT(prefs_get_color_value(pref_inactive_bg_, pref_stashed));
-        background2 = ColorUtils::fromColorT(prefs_get_color_value(pref_inactive_bg_, pref_stashed));
         break;
 
     case COLOR_STYLE_GRADIENT:
@@ -187,10 +219,16 @@ void FontColorPreferencesFrame::updateWidgets()
 
     ui->inactiveFGPushButton->setStyleSheet(color_button_ss.arg(foreground.name()).arg(margin));
     ui->inactiveBGPushButton->setStyleSheet(color_button_ss.arg(background1.name()).arg(0));
-    ui->inactiveSampleLineEdit->setStyleSheet(sample_text_ex_ss.arg(
-                                                foreground.name(),
-                                                background1.name(),
-                                                background2.name()));
+    if (colorstyle == COLOR_STYLE_GRADIENT) {
+        ui->inactiveSampleLineEdit->setStyleSheet(sample_text_ex_ss.arg(
+                                                  foreground.name(),
+                                                  background1.name(),
+                                                  background2.name()));
+    } else {
+        ui->inactiveSampleLineEdit->setStyleSheet(sample_text_ss.arg(
+                                                  foreground.name(),
+                                                  background1.name()));
+    }
     ui->inactiveSampleLineEdit->setFont(cur_font_);
     ui->inactiveStyleComboBox->setCurrentIndex(prefs_get_enum_value(pref_inactive_style_, pref_stashed));
 
@@ -313,6 +351,15 @@ void FontColorPreferencesFrame::colorChanged(pref_t *pref, const QColor &cc)
     new_color.blue = cc.blue() << 8 | cc.blue();
     prefs_set_color_value(pref, new_color, pref_stashed);
     updateWidgets();
+}
+
+void FontColorPreferencesFrame::colorSchemeIndexChanged(int)
+{
+    if (colorSchemeComboBox_) {
+        prefs_set_enum_value(pref_color_scheme_, colorSchemeComboBox_->currentData().toInt(), pref_stashed);
+        // COLOR_SCHEME_DEFAULT is 0 so we don't need to check failure
+        updateWidgets();
+    }
 }
 
 void FontColorPreferencesFrame::on_fontPushButton_clicked()

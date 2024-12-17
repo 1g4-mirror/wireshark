@@ -74,6 +74,7 @@
 #define ws_pcap_findalldevs_ex pcap_findalldevs_ex
 #endif
 
+#include <wsutil/application_flavor.h>
 #include <wsutil/file_util.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
@@ -789,11 +790,11 @@ GList *
 get_interface_list_findalldevs(int *err, char **err_str)
 {
 	GList  *il = NULL;
-	pcap_if_t *alldevs, *dev;
+	pcap_if_t *alldevs = NULL, *dev;
 	if_info_t *if_info;
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
+	if (application_flavor_is_wireshark() && pcap_findalldevs(&alldevs, errbuf) == -1) {
 		*err = CANT_GET_INTERFACE_LIST;
 		if (err_str != NULL)
 			*err_str = cant_get_if_list_error_message(errbuf);
@@ -1381,6 +1382,20 @@ get_if_capabilities_pcap_create(interface_options *interface_opts,
 		caps->can_set_rfmon = false;
 	else if (status == 1) {
 		caps->can_set_rfmon = true;
+		if (interface_opts->monitor_mode) {
+			status = pcap_set_rfmon(pch, 1);
+			if (status < 0) {
+				/*
+				 * This "should not happen".
+				 */
+				*open_status = CAP_DEVICE_OPEN_ERROR_OTHER;
+				*open_status_str = ws_strdup_printf("pcap_set_rfmon() returned %d",
+				    status);
+				pcap_close(pch);
+				g_free(caps);
+				return NULL;
+			}
+		}
 	} else {
 		/*
 		 * This "should not happen".
@@ -1440,63 +1455,14 @@ get_if_capabilities_pcap_create(interface_options *interface_opts,
 		g_free(caps);
 		return NULL;
 	}
+	if (interface_opts->monitor_mode) {
+		caps->data_link_types_rfmon = caps->data_link_types;
+		caps->data_link_types = NULL;
+	}
 
 	caps->timestamp_types = get_pcap_timestamp_types(pch, NULL);
 
 	pcap_close(pch);
-
-	if (caps->can_set_rfmon) {
-		/* This devices claims it can set rfmon. Get the capabilities
-		 * when in monitor mode. We just succeeded above, so if we
-		 * fail on anything here, just say that despite claims we
-		 * can't actually set monitor mode.
-		 */
-		pch = pcap_create(interface_opts->name, errbuf);
-		if (pch == NULL) {
-			/*
-			 * This "should not happen".
-			 * It just succeeded above, what can this mean?
-			 */
-			return caps;
-		}
-
-		status = pcap_set_rfmon(pch, 1);
-		if (status < 0) {
-			/*
-			 * This "should not happen".
-			 * It claims that monitor mode can be set, but
-			 * there's an error when we try to do so.
-			 */
-#if 0
-			*open_status = CAP_DEVICE_OPEN_ERROR_OTHER;
-			*open_status_str = ws_strdup_printf("pcap_set_rfmon() returned %d",
-			    status);
-#endif
-			caps->can_set_rfmon = false;
-			pcap_close(pch);
-			return caps;
-		}
-
-		status = pcap_activate(pch);
-		if (status < 0) {
-			/*
-			 * This "should not happen". (It just succeeded above.)
-			 * pcap_set_rfmon didn't return an error, but it
-			 * can't be activated after setting monitor mode?
-			 */
-			caps->can_set_rfmon = false;
-			pcap_close(pch);
-			return NULL;
-		}
-
-		caps->data_link_types_rfmon = get_data_link_types(pch,
-		    interface_opts, open_status, open_status_str);
-		if (caps->data_link_types == NULL) {
-			caps->can_set_rfmon = false;
-		}
-
-		pcap_close(pch);
-	}
 
 	*open_status = CAP_DEVICE_OPEN_NO_ERR;
 	if (open_status_str != NULL)

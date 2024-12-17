@@ -36,6 +36,7 @@
 #include <epan/uat.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
+#include <epan/exceptions.h>
 
 #include <wsutil/str_util.h>
 #include <wsutil/array.h>
@@ -3101,6 +3102,9 @@ static int dissect_dmp_message (tvbuff_t *tvb, packet_info *pinfo,
   len = tvb_reported_length_remaining (tvb, offset);
   if (dmp.checksum) {
     len -= 2;
+    if (len < 0) {
+      THROW_MESSAGE(ReportedBoundsError, "Packet length too short");
+    }
   }
 
   if (compr_alg == ALGORITHM_ZLIB) {
@@ -4857,7 +4861,7 @@ void proto_register_dmp (void)
         "Recipient number too big", EXPFILL } },
     { &ei_ack_reason,
       { "dmp.ack_reason.expert", PI_RESPONSE_CODE, PI_NOTE,
-        "ACK reason: %s", EXPFILL } },
+        "ACK reason", EXPFILL } },
     { &ei_envelope_version_value,
       { "dmp.version_value.unsupported", PI_UNDECODED, PI_ERROR,
         "Unsupported DMP Version", EXPFILL } },

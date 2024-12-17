@@ -25,10 +25,14 @@
 #include <extcap.h>
 
 #include <ui/qt/utils/qt_ui_utils.h>
+#include <ui/qt/utils/color_utils.h>
 
 #include "main_application.h"
 
+#include <QClipboard>
 #include <QDesktopServices>
+#include <QKeyEvent>
+#include <QMenu>
 #include <QUrl>
 
 extern "C" {
@@ -151,6 +155,9 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     searchLineEditTimer = new QTimer(this);
     searchLineEditTimer->setSingleShot(true);
     connect(searchLineEditTimer, &QTimer::timeout, this, &PreferencesDialog::updateSearchLineEdit);
+
+    pd_ui_->advancedView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(pd_ui_->advancedView, &QTreeView::customContextMenuRequested, this, &PreferencesDialog::handleCopyMenu);
 }
 
 PreferencesDialog::~PreferencesDialog()
@@ -163,6 +170,15 @@ PreferencesDialog::~PreferencesDialog()
 void PreferencesDialog::setPane(const QString module_name)
 {
     pd_ui_->prefsView->setPane(module_name);
+}
+
+void PreferencesDialog::keyPressEvent(QKeyEvent *event)
+{
+    if (pd_ui_->advancedSearchLineEdit->hasFocus() && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)) {
+        return; // Don't close window on enter/return.
+    }
+
+    GeometryStateDialog::keyPressEvent(event);
 }
 
 void PreferencesDialog::showEvent(QShowEvent *)
@@ -216,6 +232,100 @@ void PreferencesDialog::selectPane(QString pane)
     }
 }
 
+void PreferencesDialog::handleCopyMenu(QPoint pos)
+{
+    QTreeView * tree = qobject_cast<QTreeView *>(sender());
+    if (! tree)
+        return;
+
+    QModelIndex index = tree->indexAt(pos);
+    if (! index.isValid())
+        return;
+
+    QMenu * menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+
+    QAction * copyColumnAction = menu->addAction(tr("Copy"));
+    copyColumnAction->setData(VariantPointer<QTreeView>::asQVariant(tree));
+    connect(copyColumnAction, &QAction::triggered, this, &PreferencesDialog::copyActionTriggered);
+
+    QModelIndexList selectedRows = tree->selectionModel()->selectedRows();
+    QAction * copyRowAction = menu->addAction(tr("Copy Row(s)", "", static_cast<int>(selectedRows.count())));
+    copyRowAction->setData(VariantPointer<QTreeView>::asQVariant(tree));
+    connect(copyRowAction, &QAction::triggered, this, &PreferencesDialog::copyRowActionTriggered);
+
+    menu->popup(tree->viewport()->mapToGlobal(pos));
+}
+
+void PreferencesDialog::copyActionTriggered()
+{
+    QAction * sendingAction = qobject_cast<QAction *>(sender());
+    if (! sendingAction)
+        return;
+
+    QTreeView * tree = VariantPointer<QTreeView>::asPtr(sendingAction->data());
+
+    QModelIndexList selIndeces = tree->selectionModel()->selectedIndexes();
+
+    int copyColumn = -1;
+    QMenu * menu = qobject_cast<QMenu *>(sendingAction->parent());
+    if (menu)
+    {
+        QPoint menuPosOnTable = tree->mapFromGlobal(QCursor::pos());
+        QModelIndex clickedIndex = tree->indexAt(menuPosOnTable);
+        if (clickedIndex.isValid())
+            copyColumn = clickedIndex.column();
+        if (copyColumn < 0)
+            copyColumn = 0;
+    }
+
+    QString clipdata;
+    if (selIndeces.count() > 0)
+    {
+        foreach(QModelIndex index, selIndeces)
+        {
+            if (index.column() == copyColumn)
+            {
+                QString data = tree->model()->data(index, Qt::DisplayRole).toString();
+                clipdata.append(data.append("\n"));
+            }
+        }
+    }
+
+    QClipboard * clipBoard = QApplication::clipboard();
+    clipBoard->setText(clipdata);
+}
+
+void PreferencesDialog::copyRowActionTriggered()
+{
+    QAction * sendingAction = qobject_cast<QAction *>(sender());
+    if (! sendingAction)
+        return;
+
+    QTreeView * tree = VariantPointer<QTreeView>::asPtr(sendingAction->data());
+
+    QModelIndexList selIndeces = tree->selectionModel()->selectedIndexes();
+
+    QString clipdata;
+    if (selIndeces.count() > 0)
+    {
+        int lastCol = tree->model()->columnCount() - 1;
+
+        QStringList row;
+        foreach(QModelIndex index, selIndeces)
+        {
+            row << tree->model()->data(index, Qt::DisplayRole).toString();
+            if (index.column() < lastCol)
+                continue;
+            clipdata.append(row.join("\t\t").append("\n"));
+            row.clear();
+        }
+    }
+
+    QClipboard * clipBoard = QApplication::clipboard();
+    clipBoard->setText(clipdata);
+}
+
 void PreferencesDialog::updateSearchLineEdit()
 {
     advancedPrefsModel_.setFilter(searchLineEditText);
@@ -236,8 +346,7 @@ void PreferencesDialog::on_advancedSearchLineEdit_textEdited(const QString &text
      * the countdown.
      */
     searchLineEditText = text;
-    unsigned gui_debounce_timer = prefs_get_uint_value("gui", "debounce.timer");
-    searchLineEditTimer->start(gui_debounce_timer);
+    searchLineEditTimer->start(prefs.gui_debounce_timer);
 }
 
 void PreferencesDialog::on_showChangedValuesCheckBox_toggled(bool checked)
@@ -294,16 +403,6 @@ void PreferencesDialog::apply()
 
     write_language_prefs();
     mainApp->loadLanguage(QString(language));
-
-#ifdef HAVE_AIRPCAP
-  /*
-   * Load the Wireshark decryption keys (just set) and save
-   * the changes to the adapters' registry
-   */
-  //airpcap_load_decryption_keys(airpcap_if_list);
-#endif
-
-    // gtk/prefs_dlg.c:prefs_main_apply_all
     /*
      * Apply the protocol preferences first - "gui_prefs_apply()" could
      * cause redissection, and we have to make sure the protocol
@@ -314,13 +413,10 @@ void PreferencesDialog::apply()
     /* Fill in capture options with values from the preferences */
     prefs_to_capture_opts();
 
-#ifdef HAVE_AIRPCAP
-//    prefs_airpcap_update();
-#endif
-
     mainApp->setMonospaceFont(prefs.gui_font_name);
 
     if (redissect_flags & (PREF_EFFECT_GUI_COLOR)) {
+        ColorUtils::setScheme(prefs.gui_color_scheme);
         mainApp->emitAppSignal(MainApplication::ColorsChanged);
     }
 
@@ -378,7 +474,7 @@ void PreferencesDialog::on_buttonBox_helpRequested()
     QString help_page = modulePrefsModel_.data(pd_ui_->prefsView->currentIndex(), ModulePrefsModel::ModuleHelp).toString();
     if (!help_page.isEmpty()) {
         QString url = gchar_free_to_qstring(user_guide_url(help_page.toUtf8().constData()));
-        QDesktopServices::openUrl(QUrl(url));
+        QDesktopServices::openUrl(QUrl(QDir::fromNativeSeparators(url)));
     } else {
         // Generic help
         mainApp->helpTopicAction(HELP_PREFERENCES_DIALOG);

@@ -39,6 +39,9 @@ macro (ADD_MAN_PAGE _page_name _man_section)
 endmacro()
 
 ADD_MAN_PAGE(wireshark   1)
+ADD_MAN_PAGE(tshark      1)
+ADD_MAN_PAGE(stratoshark 1)
+
 ADD_MAN_PAGE(androiddump 1)
 ADD_MAN_PAGE(capinfos    1)
 ADD_MAN_PAGE(captype     1)
@@ -51,9 +54,9 @@ ADD_MAN_PAGE(randpktdump 1)
 ADD_MAN_PAGE(etwdump     1)
 ADD_MAN_PAGE(rawshark    1)
 ADD_MAN_PAGE(reordercap  1)
+ADD_MAN_PAGE(sshdig      1)
 ADD_MAN_PAGE(sshdump     1)
 ADD_MAN_PAGE(text2pcap   1)
-ADD_MAN_PAGE(tshark      1)
 ADD_MAN_PAGE(falcodump   1)
 ADD_MAN_PAGE(udpdump     1)
 ADD_MAN_PAGE(wifidump    1)
@@ -84,10 +87,10 @@ endif()
 
 set(WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN1_FILES ${MAN1_INSTALL_FILES} PARENT_SCOPE)
 set(WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN4_FILES ${MAN4_INSTALL_FILES} PARENT_SCOPE)
-# XXX We need a Logray-specific man page list, which might overlap with Wireshark's.
+# XXX We need a Stratoshark-specific man page list, which might overlap with Wireshark's.
 # Just install everything for now.
-set(LOGRAY_BUNDLE_RESOURCE_SHARE_MAN1_FILES ${WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN1_FILES} PARENT_SCOPE)
-set(LOGRAY_BUNDLE_RESOURCE_SHARE_MAN4_FILES ${WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN4_FILES} PARENT_SCOPE)
+set(STRATOSHARK_BUNDLE_RESOURCE_SHARE_MAN1_FILES ${WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN1_FILES} PARENT_SCOPE)
+set(STRATOSHARK_BUNDLE_RESOURCE_SHARE_MAN4_FILES ${WIRESHARK_BUNDLE_RESOURCE_SHARE_MAN4_FILES} PARENT_SCOPE)
 
 set(MAN_INCLUDES man_pages/diagnostic-options.adoc man_pages/dissection-options.adoc man_pages/files.adoc)
 
@@ -541,7 +544,7 @@ if(ASCIIDOCTOR_FOUND AND XSLTPROC_EXECUTABLE)
 	endif()
 	# CMake 3.26 has copy_directory_if_different
 	add_custom_command(
-		TARGET user_guide_html
+		TARGET user_guide_html POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 			"${CMAKE_CURRENT_BINARY_DIR}/wsug_html_chunked" "${WSUG_DIR}"
 		VERBATIM

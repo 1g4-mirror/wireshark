@@ -215,6 +215,28 @@ capture_kill_child(capture_session *cap_session)
     sync_pipe_kill(cap_session->fork_child);
 }
 
+#ifdef _WIN32
+  #define NO_PACKETS_CAPTURED_PLATFORM_HELP \
+            "\n\n" \
+            "Wireless (Wi-Fi/WLAN):\n" \
+            "Try to switch off promiscuous mode in the Capture Options."
+#else
+  #define NO_PACKETS_CAPTURED_PLATFORM_HELP
+#endif
+
+static void
+capture_input_no_packets(capture_session *cap_session)
+{
+    simple_message_box(ESD_TYPE_INFO, NULL,
+            "Help about capturing can be found at "
+            WS_WIKI_URL("CaptureSetup")
+            NO_PACKETS_CAPTURED_PLATFORM_HELP,
+            "No packets captured. "
+            "As no data was captured, closing the %scapture file.",
+            (cf_is_tempfile((capture_file *)cap_session->cf)) ? "temporary " : "");
+    cf_close((capture_file *)cap_session->cf);
+}
+
 /* We've succeeded in doing a (non real-time) capture; try to read it into a new capture file */
 static bool
 capture_input_read_all(capture_session *cap_session, bool is_tempfile,
@@ -283,26 +305,10 @@ capture_input_read_all(capture_session *cap_session, bool is_tempfile,
             return false;
     }
 
-    /* if we didn't capture even a single packet, close the file again */
+    /* if we didn't capture even a single packet, report that and
+       close the file again */
     if(cap_session->count == 0 && !capture_opts->restart) {
-        simple_dialog(ESD_TYPE_INFO, ESD_BTN_OK,
-                "%sNo packets captured.%s\n"
-                "\n"
-                "As no data was captured, closing the %scapture file.\n"
-                "\n"
-                "\n"
-                "Help about capturing can be found at\n"
-                "\n"
-                "       " WS_WIKI_URL("CaptureSetup")
-#ifdef _WIN32
-                "\n\n"
-                "Wireless (Wi-Fi/WLAN):\n"
-                "Try to switch off promiscuous mode in the Capture Options"
-#endif
-                "",
-                simple_dialog_primary_start(), simple_dialog_primary_end(),
-                (cf_is_tempfile((capture_file *)cap_session->cf)) ? "temporary " : "");
-        cf_close((capture_file *)cap_session->cf);
+        capture_input_no_packets(cap_session);
     }
     return true;
 }
@@ -449,6 +455,8 @@ capture_input_new_file(capture_session *cap_session, char *new_file)
                 return false;
         }
     } else {
+        /* A new file, so we don't have any pending packets to read. */
+        cap_session->count_pending = 0;
         capture_callback_invoke(capture_cb_capture_prepared, cap_session);
     }
 
@@ -635,15 +643,12 @@ capture_input_error(capture_session *cap_session _U_, char *error_msg,
     if (secondary_error_msg != NULL && *secondary_error_msg != '\0') {
         /* We have both primary and secondary messages. */
         safe_secondary_error_msg = simple_dialog_format_message(secondary_error_msg);
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s%s%s\n\n%s",
-                simple_dialog_primary_start(), safe_error_msg,
-                simple_dialog_primary_end(), safe_secondary_error_msg);
+        simple_message_box(ESD_TYPE_ERROR, NULL, safe_secondary_error_msg,
+                           "%s", safe_error_msg);
         g_free(safe_secondary_error_msg);
     } else {
         /* We have only a primary message. */
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s%s%s",
-                simple_dialog_primary_start(), safe_error_msg,
-                simple_dialog_primary_end());
+        simple_message_box(ESD_TYPE_ERROR, NULL, NULL, "%s", safe_error_msg);
     }
     g_free(safe_error_msg);
 
@@ -662,6 +667,7 @@ capture_input_cfilter_error(capture_session *cap_session, unsigned i,
     char *safe_cfilter;
     char *safe_descr;
     char *safe_cfilter_error_msg;
+    const char *secondary_error_msg;
     interface_options *interface_opts;
 
     ws_message("Capture filter error message from child: \"%s\"", error_message);
@@ -675,28 +681,21 @@ capture_input_cfilter_error(capture_session *cap_session, unsigned i,
     safe_cfilter_error_msg = simple_dialog_format_message(error_message);
     /* Did the user try a display filter? */
     if (dfilter_compile(interface_opts->cfilter, &rfcode, NULL) && rfcode != NULL) {
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
-                "%sInvalid capture filter \"%s\" for interface %s.%s\n"
-                "\n"
-                "That string looks like a valid display filter; however, it isn't a valid\n"
-                "capture filter (%s).\n"
+        secondary_error_msg =
+                "That string looks like a valid display filter.\n"
                 "\n"
                 "Note that display filters and capture filters don't have the same syntax,\n"
                 "so you can't use most display filter expressions as capture filters.\n"
                 "\n"
-                "See the User's Guide for a description of the capture filter syntax.",
-                simple_dialog_primary_start(), safe_cfilter, safe_descr,
-                simple_dialog_primary_end(), safe_cfilter_error_msg);
-        dfilter_free(rfcode);
+                "See the User's Guide for a description of the capture filter syntax.";
     } else {
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
-                "%sInvalid capture filter \"%s\" for interface %s.%s\n"
-                "\n"
-                "That string isn't a valid capture filter (%s).\n"
-                "See the User's Guide for a description of the capture filter syntax.",
-                simple_dialog_primary_start(), safe_cfilter, safe_descr,
-                simple_dialog_primary_end(), safe_cfilter_error_msg);
+        secondary_error_msg =
+                "See the User's Guide for a description of the capture filter syntax.";
     }
+    simple_message_box(ESD_TYPE_ERROR, NULL,
+                       secondary_error_msg,
+                       "\"%s\" is not a valid capture filter for interface \"%s\" (%s).",
+                       safe_cfilter, safe_descr, safe_cfilter_error_msg);
     g_free(safe_cfilter_error_msg);
     g_free(safe_descr);
     g_free(safe_cfilter);
@@ -786,24 +785,7 @@ capture_input_closed(capture_session *cap_session, char *msg)
 
                 case CF_READ_OK:
                     if (cap_session->count == 0 && !capture_opts->restart) {
-                        simple_dialog(ESD_TYPE_INFO, ESD_BTN_OK,
-                                "%sNo packets captured.%s\n"
-                                "\n"
-                                "As no data was captured, closing the %scapture file.\n"
-                                "\n"
-                                "\n"
-                                "Help about capturing can be found at\n"
-                                "\n"
-                                "       " WS_WIKI_URL("CaptureSetup")
-#ifdef _WIN32
-                                "\n\n"
-                                "Wireless (Wi-Fi/WLAN):\n"
-                                "Try to switch off promiscuous mode in the Capture Options."
-#endif
-                                "",
-                                simple_dialog_primary_start(), simple_dialog_primary_end(),
-                                cf_is_tempfile((capture_file *)cap_session->cf) ? "temporary " : "");
-                        cf_close((capture_file *)cap_session->cf);
+                        capture_input_no_packets(cap_session);
                     }
                     break;
                 case CF_READ_ERROR:
@@ -983,6 +965,9 @@ capture_interface_stat_start(capture_options *capture_opts _U_, GList **if_list)
      * that it has to pass through the networking stack and capture
      * mechanism, so opening all the devices and presenting packet
      * counts might not always be a good idea.
+     */
+    /* XXX - We should use capture_opts to control whether we request
+     * the monitor_mode version of the supported link-types for interfaces.
      */
     int status;
     iface_mon_enable(false);

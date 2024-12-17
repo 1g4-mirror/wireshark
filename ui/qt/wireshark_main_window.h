@@ -44,13 +44,13 @@
 
 #include "ui/ws_ui_util.h"
 #include "ui/iface_toolbar.h"
+#ifdef HAVE_LIBPCAP
+#include "ui/capture_opts.h"
+#endif
 
 #include <epan/plugin_if.h>
 #include <epan/timestamp.h>
 
-#ifdef HAVE_LIBPCAP
-#include "capture_opts.h"
-#endif
 #include <capture/capture_session.h>
 
 #include <QMainWindow>
@@ -241,7 +241,7 @@ private:
 
     void addMenuActions(QList<QAction *> &actions, int menu_group);
     void removeMenuActions(QList<QAction *> &actions, int menu_group);
-    void goToConversationFrame(bool go_next);
+    void goToConversationFrame(bool go_next, bool start_current = true);
     void colorizeWithFilter(QByteArray filter, int color_number = -1);
 
 signals:

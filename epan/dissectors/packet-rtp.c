@@ -1565,8 +1565,8 @@ process_rtp_payload(tvbuff_t *newtvb, packet_info *pinfo, proto_tree *tree,
             const char *payload_type_str = rtp_dyn_payload_get_name(p_packet_data->rtp_dyn_payload, payload_type);
             if (payload_type_str) {
                 int len;
-                len = dissector_try_string(rtp_dyn_pt_dissector_table,
-                    payload_type_str, newtvb, pinfo, tree, rtp_info);
+                len = dissector_try_string_with_data(rtp_dyn_pt_dissector_table,
+                    payload_type_str, newtvb, pinfo, tree, true, rtp_info);
                 /* If payload type string set from conversation and
                 * no matching dissector found it's probably because no subdissector
                 * exists. Don't call the dissectors based on payload number
@@ -1581,7 +1581,7 @@ process_rtp_payload(tvbuff_t *newtvb, packet_info *pinfo, proto_tree *tree,
     }
 
     /* if we don't found, it is static OR could be set static from the preferences */
-    if (dissector_try_uint_new(rtp_pt_dissector_table, payload_type, newtvb, pinfo, tree, true, rtp_info))
+    if (dissector_try_uint_with_data(rtp_pt_dissector_table, payload_type, newtvb, pinfo, tree, true, rtp_info))
         proto_item_set_hidden(rtp_data);
 }
 
@@ -2307,6 +2307,7 @@ dissect_rtp( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     rtp_info->info_payload_fmtp_map = NULL;
     rtp_info->info_is_ed137 = false;
     rtp_info->info_ed137_info = NULL;
+    rtp_info->info_is_iuup = false;
 
     /*
      * Do we have all the data?
@@ -2516,7 +2517,7 @@ dissect_rtp( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
                     pinfo, rtp_hext_tree);
             }
             else {
-                if ( !(dissector_try_uint_new(rtp_hdr_ext_dissector_table, hdr_extension_id, newtvb, pinfo, rtp_hext_tree, false, rtp_info)) ) {
+                if ( !(dissector_try_uint_with_data(rtp_hdr_ext_dissector_table, hdr_extension_id, newtvb, pinfo, rtp_hext_tree, false, rtp_info)) ) {
                     unsigned int hdrext_offset;
 
                     hdrext_offset = offset;
@@ -2784,6 +2785,7 @@ dissect_rtp_shim_header(tvbuff_t *tvb, int start, packet_info *pinfo _U_, proto_
         rtp_info->info_payload_fmtp_map = NULL;
         rtp_info->info_is_ed137 = false;
         rtp_info->info_ed137_info = NULL;
+        rtp_info->info_is_iuup = false;
     }
 
     if ( tree ) {

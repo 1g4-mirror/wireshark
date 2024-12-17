@@ -60,6 +60,7 @@
 #include "packet-dtls.h"
 #include "packet-e212.h"
 #include "packet-e164.h"
+#include "packet-eap.h"
 
 void proto_register_diameter(void);
 void proto_reg_handoff_diameter(void);
@@ -555,10 +556,11 @@ static int
 dissect_diameter_user_name(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
 	diam_sub_dis_t *diam_sub_dis = (diam_sub_dis_t*)data;
-	uint32_t application_id = 0, str_len;
+	uint32_t application_id = 0, cmd_code = 0, str_len;
 
 	if (diam_sub_dis) {
 		application_id = diam_sub_dis->application_id;
+		cmd_code = diam_sub_dis->cmd_code;
 	}
 
 	switch (application_id) {
@@ -569,6 +571,40 @@ dissect_diameter_user_name(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 		str_len = tvb_reported_length(tvb);
 		dissect_e212_utf8_imsi(tvb, pinfo, tree, 0, str_len);
 		return str_len;
+	case DIAM_APPID_3GPP_SWX:
+		if (cmd_code != 305) {
+			str_len = tvb_reported_length(tvb);
+			dissect_e212_utf8_imsi(tvb, pinfo, tree, 0, str_len);
+			return str_len;
+		}
+		// cmd_code 305 (Push-Profile), can be either a User Profile
+		// Update (8.1.2.3), in which case User-Name is an IMSI as
+		// above, or an HSS Reset Indication (8.1.2.4.1), in which
+		// case User-Name is a User List containing a wild card
+		// or leading digits of IMSI series.
+		break;
+	case DIAM_APPID_3GPP_SWM:
+	case DIAM_APPID_3GPP_STA:
+	case DIAM_APPID_3GPP_S6B:
+		if (cmd_code == 268) {
+			// 3GPP TS 29.273 - For cmd_code 268 (Diameter-EAP),
+			// "The identity shall be represented in NAI form as
+			// specified in IETF RFC 4282 [15] and shall be formatted
+			// as defined in clause 19 of 3GPP TS 23.003 [14]. This
+			// IE shall include the leading digit used to
+			// differentiate between authentication schemes."
+			//
+			// Note that SWa uses the STa application ID, and
+			// SWd uses the application ID associated with
+			// the proxied command (STa here as well).
+			//
+			// For other command codes, the User-Name is different
+			// and does *not* include the leading digit as in EAP.
+			str_len = tvb_reported_length(tvb);
+			dissect_eap_identity_3gpp(tvb, pinfo, tree, 0, str_len);
+			return str_len;
+		}
+		break;
 	}
 
 	return 0;
@@ -758,16 +794,16 @@ call_avp_subdissector(uint32_t vendorid, uint32_t code, tvbuff_t *subtvb, packet
 	TRY {
 		switch (vendorid) {
 		case 0:
-			dissector_try_uint_new(diameter_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
+			dissector_try_uint_with_data(diameter_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
 			break;
 		case VENDOR_ERICSSON:
-			dissector_try_uint_new(diameter_ericsson_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
+			dissector_try_uint_with_data(diameter_ericsson_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
 			break;
 		case VENDOR_VERIZON:
-			dissector_try_uint_new(diameter_verizon_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
+			dissector_try_uint_with_data(diameter_verizon_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
 			break;
 		case VENDOR_THE3GPP:
-			dissector_try_uint_new(diameter_3gpp_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
+			dissector_try_uint_with_data(diameter_3gpp_avp_dissector_table, code, subtvb, pinfo, avp_tree, false, diam_sub_dis_inf);
 			break;
 		default:
 			break;
@@ -954,7 +990,7 @@ dissect_diameter_avp(diam_ctx_t *c, tvbuff_t *tvb, int offset, diam_sub_dis_t *d
 		&& (diam_sub_dis_inf->vendor_id != VENDOR_THE3GPP))
 	{
 		/* call subdissector */
-		if (!dissector_try_uint_new(diameter_expr_result_vnd_table, diam_sub_dis_inf->vendor_id,
+		if (!dissector_try_uint_with_data(diameter_expr_result_vnd_table, diam_sub_dis_inf->vendor_id,
 					    subtvb, c->pinfo, avp_tree, false, diam_sub_dis_inf)) {
 			/* No subdissector for this vendor ID, use the generic one */
 			dissect_diameter_other_vendor_exp_res(c, subtvb, avp_tree, diam_sub_dis_inf);

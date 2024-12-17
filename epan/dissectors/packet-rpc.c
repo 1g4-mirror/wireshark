@@ -2082,6 +2082,7 @@ looks_like_rpc_call(tvbuff_t *tvb, int offset)
 			return NULL;
 
 		rpc_prog = wmem_new0(wmem_packet_scope(), rpc_prog_info_value);
+		rpc_prog->proto_id = proto_rpc_unknown;
 		rpc_prog->ett = ett_rpc_unknown_program;
 		rpc_prog->progname = wmem_strdup_printf(wmem_packet_scope(), "Unknown RPC program %u", rpc_prog_key);
 	}
@@ -4105,10 +4106,10 @@ proto_register_rpc(void)
 	static hf_register_info hf[] = {
 		{ &hf_rpc_reqframe, {
 			"Request Frame", "rpc.reqframe", FT_FRAMENUM, BASE_NONE,
-			NULL, 0, NULL, HFILL }},
+			FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0, NULL, HFILL }},
 		{ &hf_rpc_repframe, {
 			"Reply Frame", "rpc.repframe", FT_FRAMENUM, BASE_NONE,
-			NULL, 0, NULL, HFILL }},
+			FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0, NULL, HFILL }},
 		{ &hf_rpc_lastfrag, {
 			"Last Fragment", "rpc.lastfrag", FT_BOOLEAN, 32,
 			TFS(&tfs_yes_no), RPC_RM_LASTFRAG, NULL, HFILL }},

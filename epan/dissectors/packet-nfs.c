@@ -2406,7 +2406,7 @@ dissect_fhandle_data(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 		tvbuff_t *fh_tvb;
 
 		fh_tvb = tvb_new_subset_length_caplen(tvb, offset, fhlen, fhlen);
-		if (!dissector_try_payload(nfs_fhandle_table, fh_tvb, pinfo, tree))
+		if (!dissector_try_payload_with_data(nfs_fhandle_table, fh_tvb, pinfo, tree, true, NULL))
 			dissect_fhandle_data_unknown(fh_tvb, pinfo, tree, NULL);
 	}
 }
@@ -6071,7 +6071,7 @@ static const value_string names_nfs4_status[] = {
 	{	10054,	"NFS4ERR_COMPLETE_ALREADY"	    },
 	{	10055,	"NFS4ERR_CONN_NOT_BOUND_TO_SESSION" },
 	{	10056,	"NFS4ERR_DELEG_ALREADY_WANTED"	    },
-	{	10057,	"NFS4ERR_DIRDELEG_UNAVAIL"	    },
+	{	10057,	"NFS4ERR_BACK_CHAN_BUSY"	    },
 	{	10058,	"NFS4ERR_LAYOUTTRYLATER"	    },
 	{	10059,	"NFS4ERR_LAYOUTUNAVAILABLE"	    },
 	{	10060,	"NFS4ERR_NOMATCHING_LAYOUT"	    },
@@ -9125,7 +9125,7 @@ dissect_nfs4_devices_file(tvbuff_t *tvb, int offset, proto_tree *tree)
 	unsigned i, j;
 	uint32_t num_indices, num_multipath, num_addr;
 
-	/* disect indices */
+	/* dissect indices */
 	num_indices = tvb_get_ntohl(tvb, offset);
 	offset += 4;
 	for (i = 0; i < num_indices; i++) {
@@ -9153,7 +9153,7 @@ dissect_nfs4_devices_flexfile(tvbuff_t *tvb, int offset, proto_tree *tree)
 	uint32_t num_addr;
 	uint32_t num_vers;
 
-	/* disect indices */
+	/* dissect indices */
 	num_addr = tvb_get_ntohl(tvb, offset);
 	offset += 4;
 	for (i = 0; i < num_addr; i++) {

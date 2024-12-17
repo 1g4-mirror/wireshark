@@ -23,6 +23,7 @@
 #include <glib.h>
 
 #include <stdio.h>
+#include <wsutil/application_flavor.h>
 #include <wsutil/filesystem.h>
 #include <epan/addr_resolv.h>
 #include <epan/oids.h>
@@ -33,7 +34,7 @@
 #include <epan/strutil.h>
 #include <epan/column.h>
 #include <epan/decode_as.h>
-#include <capture_opts.h>
+#include <ui/capture_opts.h>
 #include <wsutil/file_util.h>
 #include <wsutil/report_message.h>
 #include <wsutil/wslog.h>
@@ -152,6 +153,13 @@ static const enum_val_t gui_selection_style[] = {
     {"DEFAULT", "DEFAULT",   COLOR_STYLE_DEFAULT},
     {"FLAT",    "FLAT",      COLOR_STYLE_FLAT},
     {"GRADIENT", "GRADIENT", COLOR_STYLE_GRADIENT},
+    {NULL, NULL, -1}
+};
+
+static const enum_val_t gui_color_scheme[] = {
+    {"system",  "System Default",   COLOR_SCHEME_DEFAULT},
+    {"light",   "Light Mode",       COLOR_SCHEME_LIGHT},
+    {"dark",    "Dark Mode",        COLOR_SCHEME_DARK},
     {NULL, NULL, -1}
 };
 
@@ -1145,7 +1153,7 @@ module_find_pref_cb(const void *key _U_, void *value, void *data)
 
 /* Tries to find a preference, setting containing_module to the (sub)module
  * holding this preference. */
-static struct preference *
+static pref_t *
 prefs_find_preference_with_submodule(module_t *module, const char *name,
         module_t **containing_module)
 {
@@ -1177,10 +1185,10 @@ prefs_find_preference_with_submodule(module_t *module, const char *name,
     if (containing_module)
         *containing_module = arg.submodule ? arg.submodule : module;
 
-    return (struct preference *) list_entry->data;
+    return (pref_t *) list_entry->data;
 }
 
-struct preference *
+pref_t *
 prefs_find_preference(module_t *module, const char *name)
 {
     return prefs_find_preference_with_submodule(module, name, NULL);
@@ -3358,6 +3366,9 @@ prefs_register_modules(void)
     unsigned gui_color_effect_flags = gui_effect_flags | PREF_EFFECT_GUI_COLOR;
     prefs_set_module_effect_flags(gui_color_module, gui_color_effect_flags);
 
+    prefs_register_enum_preference(gui_color_module, "color_scheme", "Color scheme", "Color scheme",
+        &prefs.gui_color_scheme, gui_color_scheme, false);
+
     prefs_register_color_preference(gui_color_module, "active_frame.fg", "Foreground color for an active selected item",
         "Foreground color for an active selected item", &prefs.gui_active_fg);
 
@@ -4300,7 +4311,7 @@ pre_init_prefs(void)
     static const char **col_fmt = col_fmt_packets;
     int num_cols = 7;
 
-    if (!is_packet_configuration_namespace()) {
+    if (application_flavor_is_stratoshark()) {
         static const char *col_fmt_logs[] = {
             "No.",              "%m",
             "Time",             "%t",
@@ -5122,7 +5133,7 @@ prefs_set_pref(char *prefarg, char **errmsg)
     return ret;
 }
 
-unsigned prefs_get_uint_value_real(pref_t *pref, pref_source_t source)
+unsigned prefs_get_uint_value(pref_t *pref, pref_source_t source)
 {
     switch (source)
     {
@@ -5138,15 +5149,6 @@ unsigned prefs_get_uint_value_real(pref_t *pref, pref_source_t source)
     }
 
     return 0;
-}
-
-unsigned prefs_get_uint_value(const char *module_name, const char* pref_name)
-{
-    pref_t *pref = prefs_find_preference(prefs_find_module(module_name), pref_name);
-    if (pref == NULL) {
-        return 0;
-    }
-    return prefs_get_uint_value_real(pref, pref_current);
 }
 
 char* prefs_get_password_value(pref_t *pref, pref_source_t source)

@@ -112,7 +112,7 @@ public:
         QAction(parent),
         pref_(pref)
     {
-        setText(QString("%1" UTF8_HORIZONTAL_ELLIPSIS).arg(prefs_get_title(pref_)));
+        setText(QStringLiteral("%1%2").arg(prefs_get_title(pref_), UTF8_HORIZONTAL_ELLIPSIS));
     }
 
     void showUatDialog() {
@@ -139,7 +139,7 @@ public:
     {
         QString title = prefs_get_title(pref_);
 
-        title.append(QString(": %1" UTF8_HORIZONTAL_ELLIPSIS).arg(gchar_free_to_qstring(prefs_pref_to_str(pref_, pref_current))));
+        title.append(QStringLiteral(": %1%2").arg(gchar_free_to_qstring(prefs_pref_to_str(pref_, pref_current)), UTF8_HORIZONTAL_ELLIPSIS));
 
         setText(title);
     }
@@ -292,7 +292,7 @@ void ProtocolPreferencesMenu::addMenuItem(preference *pref)
 
         /* ensure we have access to MainWindow, and indirectly to the selection */
         if (mainApp) {
-            MainWindow * mainWin = qobject_cast<MainWindow *>(mainApp->mainWindow());
+            MainWindow * mainWin = mainApp->mainWindow();
 
             if (mainWin != nullptr && !mainWin->selectedRows().isEmpty()) {
                 frame_data * fdata = mainWin->frameDataForRow(mainWin->selectedRows().at(0));
@@ -328,7 +328,7 @@ void ProtocolPreferencesMenu::addMenuItem(preference *pref)
     }
     default:
         // A type we currently don't handle. Just open the prefs dialog.
-        QString title = QString("%1" UTF8_HORIZONTAL_ELLIPSIS).arg(prefs_get_title(pref));
+        QString title = QStringLiteral("%1%2").arg(prefs_get_title(pref), UTF8_HORIZONTAL_ELLIPSIS);
         QAction *mpa = addAction(title);
         connect(mpa, SIGNAL(triggered(bool)), this, SLOT(modulePreferencesTriggered()));
         break;
@@ -405,7 +405,7 @@ void ProtocolPreferencesMenu::enumCustomTCPOverridePreferenceTriggered()
 
     /* ensure we have access to MainWindow, and indirectly to the selection */
     if (mainApp) {
-        MainWindow * mainWin = qobject_cast<MainWindow *>(mainApp->mainWindow());
+        MainWindow * mainWin = mainApp->mainWindow();
         if (mainWin != nullptr && !mainWin->selectedRows().isEmpty()) {
             frame_data * fdata = mainWin->frameDataForRow(mainWin->selectedRows().at(0));
             if(!fdata)

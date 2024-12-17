@@ -34,6 +34,8 @@
 // [ ] Move chunkify_string to a thread? For captures with large command lines,
 //     we spend a lot of time hashing strings.
 
+#define SINSP_CHECK_VERSION(major, minor, micro) \
+    (((SINSP_VERSION_MAJOR << 16) + (SINSP_VERSION_MINOR << 8) + SINSP_VERSION_MICRO) >= ((major << 16) + (minor << 8) + micro))
 
 // epan/address.h and driver/ppm_events_public.h both define PT_NONE, so
 // handle libsinsp calls here.
@@ -299,7 +301,7 @@ void add_arg_event(uint32_t arg_number,
         sinsp_syscall_category_e args_syscall_category) {
 
     if (arg_number >= array_length(args_event_fields)) {
-        ws_error("falco event has too many arguments (%" PRIu32 ")", arg_number);
+        ws_warning("falco event has too many arguments (%" PRIu32 ")", arg_number);
     }
 
     std::string fname = "evt.arg[" + std::to_string(arg_number) + "]";
@@ -307,7 +309,7 @@ void add_arg_event(uint32_t arg_number,
     const filtercheck_field_info *ffi = &args_event_fields[arg_number];
     std::unique_ptr<sinsp_filter_check> sfc = sinsp_span->filter_checks.new_filter_check_from_fldname(fname.c_str(), &sinsp_span->inspector, true);
     if (!sfc) {
-        ws_error("cannot find expected Falco field evt.arg");
+        ws_warning("cannot find expected Falco field evt.arg");
     }
     sfc->parse_field_name(fname.c_str(), true, false);
     ssi->field_to_category.push_back(args_syscall_category);
@@ -339,7 +341,7 @@ void add_lineage_field(std::string basefname,
     const filtercheck_field_info *ffi = &proc_lineage_event_fields[(ancestor_number - 1) * N_PROC_LINEAGE_ENTRY_FIELDS + field_number];
     std::unique_ptr<sinsp_filter_check> sfc = filter_factory->new_filtercheck(fname.c_str());
     if (!sfc) {
-        ws_error("cannot find expected Falco field evt.arg");
+        ws_warning("cannot find expected Falco field evt.arg");
     }
 
     sfc->parse_field_name(fname.c_str(), true, false);
@@ -354,7 +356,7 @@ void add_lineage_events(uint32_t ancestor_number,
         sinsp_syscall_category_e args_syscall_category) {
 
     if (ancestor_number >= array_length(proc_lineage_event_fields) / N_PROC_LINEAGE_ENTRY_FIELDS) {
-        ws_error("falco lineage mismatch (%" PRIu32 ")", ancestor_number);
+        ws_warning("falco lineage mismatch (%" PRIu32 ")", ancestor_number);
     }
 
     add_lineage_field("proc.aname", ancestor_number, 0, filter_factory, ssi, args_syscall_category);
@@ -433,7 +435,11 @@ void create_sinsp_syscall_source(sinsp_span_t *sinsp_span, sinsp_source_info_t *
 
         for (int i = 0; i < fci->m_nfields; i++) {
             const filtercheck_field_info *ffi = &fci->m_fields[i];
+#if SINSP_CHECK_VERSION(0, 18, 1)
+            if (ffi->m_flags == filtercheck_field_flags::EPF_NONE || ffi->m_flags == filtercheck_field_flags::EPF_NO_PTR_STABILITY) {
+#else
             if (ffi->m_flags == filtercheck_field_flags::EPF_NONE) {
+#endif
                 // This is where we exclude fields that are not interesting in a wireshark-like use case.
                 if (skip_field(ffi)) {
                     continue;
@@ -443,6 +449,17 @@ void create_sinsp_syscall_source(sinsp_span_t *sinsp_span, sinsp_source_info_t *
                 if (!sfc) {
                     continue;
                 }
+#if SINSP_CHECK_VERSION(0, 18, 0)
+                if (ffi->m_name.compare("evt.category") == 0) {
+                    ssi->evt_category_idx = ssi->syscall_filter_fields.size();
+                }
+                if (ffi->m_name.compare("evt.cpu") == 0) {
+                    ssi->cpu_id_idx = (uint16_t) ssi->syscall_filter_fields.size();
+                }
+                if (ffi->m_name.compare("proc.pid") == 0) {
+                    ssi->proc_id_idx = (uint16_t) ssi->syscall_filter_fields.size();
+                }
+#else
                 if (strcmp(ffi->m_name, "evt.category") == 0) {
                     ssi->evt_category_idx = ssi->syscall_filter_fields.size();
                 }
@@ -452,6 +469,7 @@ void create_sinsp_syscall_source(sinsp_span_t *sinsp_span, sinsp_source_info_t *
                 if (strcmp(ffi->m_name, "proc.pid") == 0) {
                     ssi->proc_id_idx = (uint16_t) ssi->syscall_filter_fields.size();
                 }
+#endif
                 sfc->parse_field_name(ffi->m_name, true, false);
                 ssi->field_to_category.push_back(syscall_category);
                 ssi->syscall_event_filter_checks.push_back(std::move(sfc));
@@ -559,18 +577,33 @@ bool get_sinsp_source_field_info(sinsp_source_info_t *ssi, size_t field_num, sin
 
     if (ssi->source) {
         ffi = &ssi->source->fields()[field_num];
+#if SINSP_CHECK_VERSION(0, 18, 0)
+        g_strlcpy(field->abbrev, ffi->m_name.c_str(), sizeof(field->abbrev));
+#else
         g_strlcpy(field->abbrev, ffi->m_name, sizeof(field->abbrev));
+#endif
     } else {
         ffi = ssi->syscall_filter_fields[field_num];
         if (ssi->field_to_category[field_num] == SSC_OTHER) {
+#if SINSP_CHECK_VERSION(0, 18, 0)
+            snprintf(field->abbrev, sizeof(field->abbrev), FALCO_FIELD_NAME_PREFIX "%s", ffi->m_name.c_str());
+        } else {
+            g_strlcpy(field->abbrev, ffi->m_name.c_str(), sizeof(field->abbrev));
+#else
             snprintf(field->abbrev, sizeof(field->abbrev), FALCO_FIELD_NAME_PREFIX "%s", ffi->m_name);
         } else {
             g_strlcpy(field->abbrev, ffi->m_name, sizeof(field->abbrev));
+#endif
         }
     }
 
+#if SINSP_CHECK_VERSION(0, 18, 0)
+    g_strlcpy(field->display, ffi->m_display.c_str(), sizeof(field->display));
+    g_strlcpy(field->description, ffi->m_description.c_str(), sizeof(field->description));
+#else
     g_strlcpy(field->display, ffi->m_display, sizeof(field->display));
     g_strlcpy(field->description, ffi->m_description, sizeof(field->description));
+#endif
 
     field->is_hidden = ffi->m_flags & EPF_TABLE_ONLY;
     field->is_conversation = ffi->m_flags & EPF_CONVERSATION;
@@ -657,7 +690,7 @@ char* get_evt_arg_name(void* sinp_evt_info, uint32_t arg_num) {
     ppm_event_info* realinfo = (ppm_event_info*)sinp_evt_info;
 
     if (arg_num > realinfo->nparams) {
-        ws_error("Arg number %u exceeds event parameter count %u", arg_num, realinfo->nparams);
+        ws_warning("Arg number %u exceeds event parameter count %u", arg_num, realinfo->nparams);
         return NULL;
     }
     return realinfo->params[arg_num].name;
@@ -749,9 +782,14 @@ static void add_syscall_event_to_cache(sinsp_span_t *sinsp_span, sinsp_source_in
             continue;
         }
         auto ffi = ssi->syscall_filter_fields[fc_idx];
+
+#if SINSP_CHECK_VERSION(0, 18, 0)
+        if ((ffi->m_flags == filtercheck_field_flags::EPF_NONE || ffi->m_flags == filtercheck_field_flags::EPF_NO_PTR_STABILITY) && values[0].len > 0) {
+#else
         if (ffi->m_flags == filtercheck_field_flags::EPF_NONE && values[0].len > 0) {
+#endif
             if (sinsp_span->sfe_slab_offset + sfe_idx >= sfe_slab_prealloc) {
-                ws_error("Extracting too many fields for event %u (%d vs %d)", (unsigned) evt->get_num(), (int) sfe_idx, (int) ssi->syscall_event_filter_checks.size());
+                ws_warning("Extracting too many fields for event %u (%d vs %d)", (unsigned) evt->get_num(), (int) sfe_idx, (int) ssi->syscall_event_filter_checks.size());
             }
 
             sinsp_field_extract_t *sfe = &sfe_block[sfe_idx];
@@ -917,7 +955,7 @@ bool extract_syscall_source_fields(sinsp_span_t *sinsp_span, sinsp_source_info_t
 
     // Shouldn't happen
     if (frame_num > sinsp_span->sfe_ptrs.size()) {
-        ws_error("Frame number %u exceeds cache size %d", frame_num, (int) sinsp_span->sfe_ptrs.size());
+        ws_warning("Frame number %u exceeds cache size %d", frame_num, (int) sinsp_span->sfe_ptrs.size());
         return false;
     }
 
@@ -931,7 +969,7 @@ bool extract_syscall_source_fields(sinsp_span_t *sinsp_span, sinsp_source_info_t
 bool get_extracted_syscall_source_fields(sinsp_span_t *sinsp_span, uint32_t frame_num, sinsp_field_extract_t **sinsp_fields, uint32_t *sinsp_field_len, void** sinp_evt_info) {
     // Shouldn't happen
     if (frame_num > sinsp_span->sfe_ptrs.size()) {
-        ws_error("Frame number %u exceeds cache size %d", frame_num, (int) sinsp_span->sfe_ptrs.size());
+        ws_warning("Frame number %u exceeds cache size %d", frame_num, (int) sinsp_span->sfe_ptrs.size());
         return false;
     }
 

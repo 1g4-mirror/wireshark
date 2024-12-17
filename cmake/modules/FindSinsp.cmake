@@ -33,7 +33,10 @@ endif()
 
 # Include both legacy (#include <sinsp.h>) and current (#include <libsinsp/sinsp.h>) paths for now.
 if(NOT SINSP_FOUND)
-  # pkg_check_modules didn't work, so look for ourselves.
+  # We're likely building on Windows since libsinsp and libscap ship with .pc modules.
+  # We might want to dispense with this and use pkg_check_modules exclusively, but that
+  # would require adding pkg-config to the Windows build and ensuring that the .pc files
+  # we ship are discoverable and valid.
   find_path(_sinsp_include_dirs NO_CACHE
     NAMES libsinsp/sinsp.h
     HINTS "${SINSP_INCLUDEDIR}" "${SINSP_HINTS}/include"
@@ -64,6 +67,20 @@ if(NOT SINSP_FOUND)
     /usr/lib
     /usr/local/lib
   )
+
+  if (NOT SINSP_VERSION)
+    find_file(_sinsp_pkgconfig NO_CACHE
+      libsinsp.pc
+      PATHS "${SINSP_LIBDIR}/pkgconfig" "${SINSP_HINTS}/lib/pkgconfig"
+    )
+    if (_sinsp_pkgconfig)
+      file(READ ${_sinsp_pkgconfig} _sinsp_pkgconfig_contents)
+      string(REGEX MATCH "Version: *([0-9.]+)" _ ${_sinsp_pkgconfig_contents})
+      set(SINSP_VERSION ${CMAKE_MATCH_1})
+      unset(_sinsp_pkgconfig_contents)
+    endif()
+    unset(_sinsp_pkgconfig)
+  endif()
 
   set(_scap_libs
     scap
@@ -200,10 +217,20 @@ find_package_handle_standard_args(Sinsp
   REQUIRED_VARS
     SINSP_INCLUDE_DIRS
     SINSP_LINK_LIBRARIES
-  # VERSION_VAR SINSP_VERSION
+    VERSION_VAR SINSP_VERSION
 )
 
 if(SINSP_FOUND)
+  if (SINSP_VERSION VERSION_EQUAL 0.0.0)
+    # https://github.com/falcosecurity/libs/blob/master/README.md#versioning
+    message(WARNING "libsinsp version is 0.0.0. If you built it outside of git, did you set FALCOSECURITY_LIBS_VERSION?")
+  endif()
+
+  string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" _ ${SINSP_VERSION})
+  # Should we cache these?
+  set(SINSP_VERSION_MAJOR ${CMAKE_MATCH_1})
+  set(SINSP_VERSION_MINOR ${CMAKE_MATCH_2})
+  set(SINSP_VERSION_MICRO ${CMAKE_MATCH_3})
 #   if (WIN32)
 #     set ( SINSP_DLL_DIR "${SINSP_HINTS}/bin"
 #       CACHE PATH "Path to sinsp DLL"
@@ -220,6 +247,10 @@ if(SINSP_FOUND)
 else()
   set(SINSP_INCLUDE_DIRS)
   set(SINSP_LINK_LIBRARIES)
+  set(SINSP_VERSION)
+  set(SINSP_VERSION_MAJOR)
+  set(SINSP_VERSION_MINOR)
+  set(SINSP_VERSION_MICRO)
 endif()
 
 mark_as_advanced(SINSP_INCLUDE_DIRS SINSP_LINK_LIBRARIES)

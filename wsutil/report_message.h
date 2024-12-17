@@ -10,6 +10,8 @@
  * doesn't itself know whether to pop up a dialog or print something
  * to the standard error.
  *
+ * XXX - Should the capture file (_cfile_) routines be moved to libwiretap?
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
@@ -35,6 +37,7 @@ struct report_message_routines {
 	void (*report_open_failure)(const char *, int, bool);
 	void (*report_read_failure)(const char *, int);
 	void (*report_write_failure)(const char *, int);
+	void (*report_rename_failure)(const char *, const char *, int);
 	void (*report_cfile_open_failure)(const char *, int, char *);
 	void (*report_cfile_dump_open_failure)(const char *, int, char *, int);
 	void (*report_cfile_read_failure)(const char *, int, char *);
@@ -76,6 +79,13 @@ WS_DLL_PUBLIC void report_read_failure(const char *filename, int err);
  * "err" is assumed to be a UNIX-style errno.
  */
 WS_DLL_PUBLIC void report_write_failure(const char *filename, int err);
+
+/*
+ * Report an error when trying to rename a file.
+ * "err" is assumed to be a UNIX-style errno.
+ */
+WS_DLL_PUBLIC void report_rename_failure(const char *old_filename,
+    const char *new_filename, int err);
 
 /*
  * Report an error from opening a capture file for reading.

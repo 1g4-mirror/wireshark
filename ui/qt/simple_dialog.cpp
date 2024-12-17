@@ -19,6 +19,7 @@
 #include <wsutil/utf8_entities.h>
 #include <wsutil/wslog.h>
 
+#include <ui/qt/main_window.h>
 #include <ui/qt/utils/qt_ui_utils.h>
 #include "main_application.h"
 
@@ -45,8 +46,6 @@
 QList<MessagePair> message_queue_;
 ESD_TYPE_E max_severity_ = ESD_TYPE_INFO;
 
-const char *primary_delimiter_ = "__CB754A38-94A2-4E59-922D-DD87EDC80E22__";
-
 struct VisibleAsyncMessage
 {
     QMessageBox *box;
@@ -72,16 +71,6 @@ static void visible_message_finished(QMessageBox *box, int result _U_)
         }
     }
     visible_messages_mutex.unlock();
-}
-
-const char *
-simple_dialog_primary_start(void) {
-    return primary_delimiter_;
-}
-
-const char *
-simple_dialog_primary_end(void) {
-    return primary_delimiter_;
 }
 
 char *
@@ -134,7 +123,7 @@ simple_message_box(ESD_TYPE_E type, bool *notagain,
     SimpleDialog sd(mainApp->mainWindow(), type, ESD_BTN_OK, msg_format, ap);
     va_end(ap);
 
-    sd.setDetailedText(secondary_msg);
+    sd.setInformativeText(secondary_msg);
 
     QCheckBox *cb = NULL;
     if (notagain) {
@@ -221,7 +210,7 @@ SimpleDialog::SimpleDialog(QWidget *parent, ESD_TYPE_E type, int btn_mask, const
 #endif
     g_free(vmessage);
 
-    MessagePair msg_pair = splitMessage(message);
+    MessagePair msg_pair(message, QString());
     // Remove leading and trailing whitespace along with excessive newline runs.
     QString primary = msg_pair.first.trimmed();
     QString secondary = msg_pair.second.trimmed();
@@ -356,12 +345,14 @@ int SimpleDialog::exec()
         return 0;
     }
 
+    message_box_->setInformativeText(informative_text_);
     message_box_->setDetailedText(detailed_text_);
     message_box_->setCheckBox(check_box_);
 
     int status = message_box_->exec();
     delete message_box_;
     message_box_ = 0;
+    informative_text_ = QString();
     detailed_text_ = QString();
 
     switch (status) {
@@ -387,6 +378,7 @@ void SimpleDialog::show()
         return;
     }
 
+    message_box_->setInformativeText(informative_text_);
     message_box_->setDetailedText(detailed_text_);
     message_box_->setCheckBox(check_box_);
 
@@ -426,25 +418,4 @@ void SimpleDialog::show()
 
     /* Message box was shown and will be deleted once user closes it */
     message_box_ = 0;
-}
-
-const MessagePair SimpleDialog::splitMessage(QString &message) const
-{
-    if (message.startsWith(primary_delimiter_)) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-        QStringList parts = message.split(primary_delimiter_, Qt::SkipEmptyParts);
-#else
-        QStringList parts = message.split(primary_delimiter_, QString::SkipEmptyParts);
-#endif
-        switch (parts.length()) {
-        case 0:
-            return MessagePair(QString(), QString());
-        case 1:
-            return MessagePair(parts[0], QString());
-        default:
-            QString first = parts.takeFirst();
-            return MessagePair(first, parts.join(" "));
-        }
-    }
-    return MessagePair(message, QString());
 }

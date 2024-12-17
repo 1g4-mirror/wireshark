@@ -332,7 +332,7 @@ StringTypes = ['Numeric', 'Printable', 'IA5', 'BMP', 'Universal', 'UTF8',
 # for the known-multiplier character string types (X.691 27.1)
 #
 # XXX: This should include BMPString (UCS2) and UniversalString (UCS4),
-# but asn2wrs only suports the RestrictedCharacterStringValue
+# but asn2wrs only supports the RestrictedCharacterStringValue
 # notation of "cstring", but not that of "CharacterStringList",
 # "Quadruple", or "Tuple" (See X.680 41.8), and packet-per.c does
 # not support members of the permitted-alphabet being outside the
@@ -4612,6 +4612,9 @@ class ChoiceType (Type):
         return not self.HasOwnTag()
 
     def detect_tagval(self, ectx):
+        '''Returns True if the tag numbers are used as the tree values.
+           Returns False if we assign our own tree values for each choice.
+        '''
         tagval = False
         lst = self.elt_list[:]
         if hasattr(self, 'ext_list'):
@@ -4623,6 +4626,10 @@ class ChoiceType (Type):
             t = ''
             tagval = False
         if (t == 'BER_CLASS_UNI'):
+            # Don't use universal tags
+            tagval = False
+        if t == 'BER_CLASS_ANY/*choice*/':
+            # Don't use -1 tags that refer to another level of CHOICE
             tagval = False
         for e in (lst):
             if not (ectx.Per() or ectx.Oer()) or e.HasOwnTag():

@@ -23,7 +23,6 @@
 #include <wsutil/strtoi.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/privileges.h>
-#include <wsutil/report_message.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
 #include <wsutil/cmdarg_err.h>
@@ -352,19 +351,6 @@ static const char* interface_to_logbuf(char* interface)
     else if (is_specified_interface(interface, INTERFACE_ANDROID_LOGCAT_EVENTS))
         logbuf = adb_log_events;
     return logbuf;
-}
-
-/*
- * General errors and warnings are reported through ws_warning() in
- * androiddump.
- *
- * Unfortunately, ws_warning() may be a macro, so we do it by calling
- * g_logv() with the appropriate arguments.
- */
-static void
-androiddump_cmdarg_err(const char *msg_format, va_list ap)
-{
-    ws_logv(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_WARNING, msg_format, ap);
 }
 
 static void useSndTimeout(socket_handle_t  sock) {
@@ -820,7 +806,12 @@ static int adb_send(socket_handle_t sock, const char *adb_service) {
     size_t   adb_service_length;
 
     adb_service_length = strlen(adb_service);
-    snprintf(buffer, sizeof(buffer), ADB_HEX4_FORMAT, adb_service_length);
+    result = snprintf(buffer, sizeof(buffer), ADB_HEX4_FORMAT, adb_service_length);
+    if ((size_t)result >= sizeof(buffer)) {
+        /* Truncation (or failure somehow) */
+        ws_warning("Service name too long when sending <%s> to ADB daemon", adb_service);
+        return EXIT_CODE_ERROR_WHILE_SENDING_ADB_PACKET_1;
+    }
 
     result = send(sock, buffer, ADB_HEX4_LEN, 0);
     if (result < ADB_HEX4_LEN) {
@@ -2502,18 +2493,6 @@ static int capture_android_tcpdump(char *interface, char *fifo,
 
 int main(int argc, char *argv[]) {
     char            *err_msg;
-    static const struct report_message_routines androiddummp_report_routines = {
-        failure_message,
-        failure_message,
-        open_failure_message,
-        read_failure_message,
-        write_failure_message,
-        cfile_open_failure_message,
-        cfile_dump_open_failure_message,
-        cfile_read_failure_message,
-        cfile_write_failure_message,
-        cfile_close_failure_message
-    };
     int              ret = EXIT_CODE_GENERIC;
     int              option_idx = 0;
     int              result;
@@ -2538,10 +2517,13 @@ int main(int argc, char *argv[]) {
     char            *help_url;
     char            *help_header = NULL;
 
-    cmdarg_err_init(androiddump_cmdarg_err, androiddump_cmdarg_err);
+    /* Set the program name. */
+    g_set_prgname("androiddump");
+
+    cmdarg_err_init(extcap_log_cmdarg_err, extcap_log_cmdarg_err);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    extcap_log_init("androiddump");
+    extcap_log_init();
 
     /*
      * Get credential information for later use.
@@ -2552,14 +2534,14 @@ int main(int argc, char *argv[]) {
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    err_msg = configuration_init(argv[0], NULL);
+    err_msg = configuration_init(argv[0]);
     if (err_msg != NULL) {
         ws_warning("Can't get pathname of directory containing the extcap program: %s.",
                   err_msg);
         g_free(err_msg);
     }
 
-    init_report_message("androiddump", &androiddummp_report_routines);
+    init_report_failure_message("androiddump");
 
     extcap_conf = g_new0(extcap_parameters, 1);
 

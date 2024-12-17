@@ -38,6 +38,23 @@ struct _address_type_t {
     /* XXX - Some sort of compare functions (like ftype)? ***/
 };
 
+/*
+ * For address types that do have resolution (ETHER, IPv4, IPv6),
+ * addr_name_res_str returns a string that is the same as what
+ * addr_to_str returns even if resolution is off; this ends up
+ * allocating persistent memory for the resolution result even so.
+ * This affects address_to_name, address_to_display, etc.
+ *
+ * Perhaps it should return NULL in such cases.
+ *
+ * As other address types don't support resolution, callers that use
+ * addr_name_res_str (e.g. address_to_name, address_to_display, etc.)
+ * must be prepared to handle NULL already. Note that the header
+ * documentation for address_to_name() claims that if name resolution
+ * is disabled then it returns NULL for such types, but as a result of
+ * the above it does not.
+ */
+
 #define MAX_DISSECTOR_ADDR_TYPE     30
 #define MAX_ADDR_TYPE_VALUE (AT_END_OF_LIST+MAX_DISSECTOR_ADDR_TYPE)
 
@@ -442,6 +459,16 @@ static int eui64_len(void)
     return 8;
 }
 
+const char* eui64_name_resolution_str(const address* addr)
+{
+    return get_eui64_name((const uint8_t *)addr->data);
+}
+
+int eui64_name_resolution_len(void)
+{
+    return MAX_ADDR_STR_LEN; /* XXX - This can be lower */
+}
+
 /******************************************************************************
  * AT_IB
  ******************************************************************************/
@@ -729,8 +756,8 @@ void address_types_initialize(void)
         NULL,              /* addr_to_byte */
         NULL,              /* addr_col_filter */
         eui64_len,         /* addr_fixed_len */
-        NULL,              /* addr_name_res_str */
-        NULL,              /* addr_name_res_len */
+        eui64_name_resolution_str, /* addr_name_res_str */
+        eui64_name_resolution_len, /* addr_name_res_len */
     };
 
     static address_type_t ib_address = {
@@ -911,7 +938,9 @@ address_to_name(const address *addr)
     /*
      * XXX - addr_name_res_str is expected to return a string from
      * a persistent database, so that it lives a long time, past
-     * the lifetime of addr itself.
+     * the lifetime of addr itself. That string is addr_resolv scope,
+     * which is roughly that of file scope, so in unusual circumstances
+     * it can be freed before addr.
      *
      * We'd like to avoid copying, so this is what we do here.
      */

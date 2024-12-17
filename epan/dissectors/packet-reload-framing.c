@@ -124,8 +124,14 @@ dissect_reload_framing_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
   effective_length = tvb_captured_length(tvb);
 
   /* First, make sure we have enough data to do the check. */
-  if (effective_length < MIN_HDR_LENGTH)
+  if (effective_length < MIN_HDR_LENGTH) {
     return 0;
+  }
+
+  /* Next, make sure we can create transaction ID keys. */
+  if (!(pinfo->src.data && pinfo->dst.data)) {
+    return 0;
+  }
 
   conversation = find_conversation_pinfo(pinfo, 0);
   if (conversation)
@@ -186,22 +192,24 @@ dissect_reload_framing_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
   transaction_id_key[0].key = &sequence; /* sequence number */
 
   /* When the wmem_tree_* functions iterate through the keys, they
-   * perform pointer arithmetic with uint32_t, so we have to divide
-   * our length fields by that to make things work, but we still want
-   * to g_malloc and memcpy the entire amounts, since those both operate
-   * in raw bytes. */
+   * perform pointer arithmetic with uint32_t (which requires copying
+   * the address, at least on some platforms, as there's no guarantee
+   * that the address structure data field is 4-byte aligned), so we
+   * have to divide our length fields by that to make things work, but
+   * we still want to wmem_alloc and memcpy the entire amounts, since
+   * those both operate in raw bytes. */
   if (type==DATA) {
     transaction_id_key[1].length = 1;
     transaction_id_key[1].key    = &pinfo->srcport;
     transaction_id_key[2].length = (pinfo->src.len) / (unsigned)sizeof(uint32_t);
-    transaction_id_key[2].key    = (uint32_t *)g_malloc(pinfo->src.len);
+    transaction_id_key[2].key    = (uint32_t *)wmem_alloc(pinfo->pool, pinfo->src.len);
     memcpy(transaction_id_key[2].key, pinfo->src.data, pinfo->src.len);
   }
   else {
     transaction_id_key[1].length = 1;
     transaction_id_key[1].key    = &pinfo->destport;
     transaction_id_key[2].length = (pinfo->dst.len) / (unsigned)sizeof(uint32_t);
-    transaction_id_key[2].key    = (uint32_t *)g_malloc(pinfo->dst.len);
+    transaction_id_key[2].key    = (uint32_t *)wmem_alloc(pinfo->pool, pinfo->dst.len);
     memcpy(transaction_id_key[2].key, pinfo->dst.data, pinfo->dst.len);
   }
   transaction_id_key[3].length=0;
@@ -262,7 +270,6 @@ dissect_reload_framing_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
     transaction_id_key[2].key    = key_save;
     transaction_id_key[2].length = len_save;
   }
-  g_free(transaction_id_key[2].key);
 
   if (!reload_frame) {
     /* create a "fake" pana_trans structure */
@@ -525,12 +532,12 @@ proto_register_reload_framing(void)
     },
     { &hf_reload_framing_response_in,
       { "Response In",  "reload_framing.response-in", FT_FRAMENUM,
-        BASE_NONE, NULL, 0x0, "The response to this RELOAD Request is in this frame", HFILL
+        BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, "The response to this RELOAD Request is in this frame", HFILL
       }
     },
     { &hf_reload_framing_response_to,
       { "Request In", "reload_framing.response-to", FT_FRAMENUM,
-        BASE_NONE, NULL, 0x0, "This is a response to the RELOAD Request in this frame", HFILL
+        BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, "This is a response to the RELOAD Request in this frame", HFILL
       }
     },
     { &hf_reload_framing_time,

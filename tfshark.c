@@ -35,7 +35,6 @@
 #include <wsutil/filesystem.h>
 #include <wsutil/file_util.h>
 #include <wsutil/privileges.h>
-#include <wsutil/report_message.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
 #include <cli_main.h>
@@ -48,7 +47,6 @@
 #include <epan/wslua/init_wslua.h>
 #endif
 #include "file.h"
-#include "frame_tvbuff.h"
 #include <epan/disabled_protos.h>
 #include <epan/prefs.h>
 #include <epan/column.h>
@@ -121,9 +119,6 @@ static void show_print_file_io_error(int err);
 static bool write_preamble(capture_file *cf);
 static bool print_packet(capture_file *cf, epan_dissect_t *edt);
 static bool write_finale(void);
-
-static void tfshark_cmdarg_err(const char *msg_format, va_list ap);
-static void tfshark_cmdarg_err_cont(const char *msg_format, va_list ap);
 
 static GHashTable *output_only_tables;
 
@@ -308,18 +303,9 @@ main(int argc, char *argv[])
 #define OPTSTRING "+2C:d:e:E:hK:lo:O:qQr:R:S:t:T:u:vVxX:Y:z:"
 
     static const char    optstring[] = OPTSTRING;
-    static const struct report_message_routines tfshark_report_routines = {
-        failure_message,
-        failure_message,
-        open_failure_message,
-        read_failure_message,
-        write_failure_message,
-        cfile_open_failure_message,
-        cfile_dump_open_failure_message,
-        cfile_read_failure_message,
-        cfile_write_failure_message,
-        cfile_close_failure_message
-    };
+
+    /* Set the program name. */
+    g_set_prgname("tfshark");
 
     /*
      * Set the C-language locale to the native environment and set the
@@ -331,10 +317,10 @@ main(int argc, char *argv[])
     setlocale(LC_ALL, "");
 #endif
 
-    cmdarg_err_init(tfshark_cmdarg_err, tfshark_cmdarg_err_cont);
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("tfshark", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -358,7 +344,7 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0], NULL);
+    configuration_init_error = configuration_init(argv[0]);
     if (configuration_init_error != NULL) {
         fprintf(stderr,
                 "tfshark: Can't get pathname of directory containing the tfshark program: %s.\n",
@@ -450,7 +436,7 @@ main(int argc, char *argv[])
     if (print_summary == -1)
         print_summary = (print_details || print_hex) ? false : true;
 
-    init_report_message("tfshark", &tfshark_report_routines);
+    init_report_failure_message("tfshark");
 
     timestamp_set_type(TS_RELATIVE);
     timestamp_set_precision(TS_PREC_AUTO);
@@ -1035,7 +1021,7 @@ process_packet_first_pass(capture_file *cf, epan_dissect_t *edt,
         }
 
         epan_dissect_file_run(edt, rec,
-                file_tvbuff_new(&cf->provider, &fdlocal, pd),
+                pd,
                 &fdlocal, NULL);
 
         /* Run the read filter if we have one. */
@@ -1116,7 +1102,7 @@ process_packet_second_pass(capture_file *cf, epan_dissect_t *edt,
         }
 
         epan_dissect_file_run_with_taps(edt, rec,
-                file_tvbuff_new_buffer(&cf->provider, fdata, buf), fdata, cinfo);
+                ws_buffer_start_ptr(buf), fdata, cinfo);
 
         /* Run the read/display filter if we have one. */
         if (cf->dfcode)
@@ -1557,7 +1543,7 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, int64_t offset
         }
 
         epan_dissect_file_run_with_taps(edt, rec,
-                frame_tvbuff_new(&cf->provider, &fdata, pd),
+                pd,
                 &fdata, cinfo);
 
         /* Run the filter if we have it. */
@@ -1699,6 +1685,7 @@ print_columns(capture_file *cf)
         const char* col_text = get_column_text(&cf->cinfo, i);
         switch (col_item->col_fmt) {
             case COL_NUMBER:
+            case COL_NUMBER_DIS:
                 column_len = col_len = strlen(col_text);
                 if (column_len < 3)
                     column_len = 3;
@@ -2060,25 +2047,4 @@ show_print_file_io_error(int err)
                     g_strerror(err));
             break;
     }
-}
-
-/*
- * Report an error in command-line arguments.
- */
-static void
-tfshark_cmdarg_err(const char *msg_format, va_list ap)
-{
-    fprintf(stderr, "tfshark: ");
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
-}
-
-/*
- * Report additional information for an error in command-line arguments.
- */
-static void
-tfshark_cmdarg_err_cont(const char *msg_format, va_list ap)
-{
-    vfprintf(stderr, msg_format, ap);
-    fprintf(stderr, "\n");
 }

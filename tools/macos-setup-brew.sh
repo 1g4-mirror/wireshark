@@ -23,7 +23,7 @@ function print_usage() {
     printf "\\t--install-dmg-deps: install packages required to build the .dmg file\\n"
     printf "\\t--install-sparkle-deps: install the Sparkle automatic updater\\n"
     printf "\\t--install-all: install everything\\n"
-    printf "\\t--install-logray: install everything to compile Logray and falco bridge\\n"
+    printf "\\t--install-stratoshark: install everything to compile Stratoshark and Falco bridge\\n"
     printf "\\t[other]: other options are passed as-is to brew\\n"
 }
 
@@ -47,7 +47,7 @@ INSTALL_DOC_DEPS=0
 INSTALL_DMG_DEPS=0
 INSTALL_SPARKLE_DEPS=0
 INSTALL_TEST_DEPS=0
-INSTALL_LOGRAY=0
+INSTALL_STRATOSHARK=0
 OPTIONS=()
 for arg; do
     case $arg in
@@ -70,8 +70,8 @@ for arg; do
         --install-test-deps)
             INSTALL_TEST_DEPS=1
             ;;
-        --install-logray)
-            INSTALL_LOGRAY=1
+        --install-stratoshark)
+            INSTALL_STRATOSHARK=1
             ;;
         --install-all)
             INSTALL_OPTIONAL=1
@@ -131,7 +131,7 @@ DOC_DEPS_LIST=(
     docbook-xsl
 )
 
-LOGRAY_LIST=(
+STRATOSHARK_LIST=(
     jsoncpp
     onetbb
     re2
@@ -148,8 +148,8 @@ if [ $INSTALL_DOC_DEPS -ne 0 ] ; then
     ACTUAL_LIST+=( "${DOC_DEPS_LIST[@]}" )
 fi
 
-if [ $INSTALL_LOGRAY -ne 0 ] ; then
-    ACTUAL_LIST+=( "${LOGRAY_LIST[@]}" )
+if [ $INSTALL_STRATOSHARK -ne 0 ] ; then
+    ACTUAL_LIST+=( "${STRATOSHARK_LIST[@]}" )
 fi
 
 if (( ${#OPTIONS[@]} != 0 )); then
@@ -160,7 +160,7 @@ install_formulae "${ACTUAL_LIST[@]}"
 
 if [ $INSTALL_DMG_DEPS -ne 0 ] ; then
     printf "Sorry, you'll have to install dmgbuild yourself for the time being.\\n"
-    # pip3 install dmgbuild
+    # pip3 install "dmgbuild[badge_icons]"
 fi
 
 if [ $INSTALL_SPARKLE_DEPS -ne 0 ] ; then
@@ -172,19 +172,22 @@ if [ $INSTALL_TEST_DEPS -ne 0 ] ; then
     # pip3 install pytest pytest-xdist
 fi
 
-if [ $INSTALL_LOGRAY -ne 0 ] ; then
-    FALCO_LIBS_VERSION=0.17.1
+if [ $INSTALL_STRATOSHARK -ne 0 ] ; then
+    FALCO_LIBS_VERSION=0.18.1
+    FALCO_LIBS_SHA256=1812e8236c4cb51d3fe5dd066d71be99f25da7ed22d8feeeebeed09bdc26325f
     if [ "$FALCO_LIBS_VERSION" ] && [ ! -f "falco-libs-$FALCO_LIBS_VERSION-done" ] ; then
         echo "Downloading, building, and installing libsinsp and libscap:"
         [ -f "falco-libs-$FALCO_LIBS_VERSION.tar.gz" ] || curl -L -O --remote-header-name "https://github.com/falcosecurity/libs/archive/refs/tags/$FALCO_LIBS_VERSION.tar.gz"
         mv "libs-$FALCO_LIBS_VERSION.tar.gz" "falco-libs-$FALCO_LIBS_VERSION.tar.gz"
+        echo "$FALCO_LIBS_SHA256  falco-libs-$FALCO_LIBS_VERSION.tar.gz" | shasum --algorithm 256 --check
         tar -xf "falco-libs-$FALCO_LIBS_VERSION.tar.gz"
         mv "libs-$FALCO_LIBS_VERSION" "falco-libs-$FALCO_LIBS_VERSION"
         cd "falco-libs-$FALCO_LIBS_VERSION"
         patch -p1 < "../tools/macos-setup-patches/falco-uthash_h-install.patch"
         mkdir build_dir
         cd build_dir
-        cmake -DBUILD_SHARED_LIBS=ON -DMINIMAL_BUILD=ON -DCREATE_TEST_TARGETS=OFF \
+        cmake -DFALCOSECURITY_LIBS_VERSION="$FALCO_LIBS_VERSION" \
+            -DBUILD_SHARED_LIBS=ON -DMINIMAL_BUILD=ON -DCREATE_TEST_TARGETS=OFF \
             -DUSE_BUNDLED_DEPS=ON -DUSE_BUNDLED_CARES=OFF -DUSE_BUNDLED_ZLIB=OFF \
             -DUSE_BUNDLED_JSONCPP=OFF -DUSE_BUNDLED_TBB=OFF -DUSE_BUNDLED_RE2=OFF \
             ..

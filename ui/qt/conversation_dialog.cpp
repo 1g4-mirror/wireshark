@@ -18,6 +18,7 @@
 
 #include "wsutil/str_util.h"
 
+#include <ui/qt/main_window.h>
 #include <ui/qt/utils/qt_ui_utils.h>
 #include <ui/qt/models/timeline_delegate.h>
 #include <ui/qt/models/atap_data_model.h>
@@ -140,7 +141,7 @@ void ConversationDialog::graphTcp()
 
     // XXX The GTK+ code opens the TCP Stream dialog. We might want
     // to open the I/O Graphs dialog instead.
-    QString filter = QString("tcp.stream eq %1").arg(convId);
+    QString filter = QStringLiteral("tcp.stream eq %1").arg(convId);
 
     tcp_graph_requested_ = true;
     // Apply the filter for this conversation. When the filter is active, we

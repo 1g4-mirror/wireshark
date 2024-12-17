@@ -30,10 +30,14 @@
 #include "extcap.h"
 
 #include <ui/recent.h>
-#include "capture_opts.h"
+#include "ui/capture_opts.h"
 #include "ui/capture_globals.h"
 #include <ui/iface_lists.h>
 #include <wsutil/utf8_entities.h>
+#ifdef Q_OS_UNIX
+#include <unistd.h> /* for access() and X_OK */
+#include <wsutil/filesystem.h>
+#endif
 
 #include <QDesktopServices>
 #include <QFrame>
@@ -68,7 +72,7 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
 {
     ui->setupUi(this);
 
-    setStyleSheet(QString(
+    setStyleSheet(QStringLiteral(
                       "QFrame {"
                       "  border: 0;"
                       "}"
@@ -296,7 +300,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     ui->warningLabel->hide();
     ui->warningLabel->clear();
 
-    ui->warningLabel->setStyleSheet(QString(
+    ui->warningLabel->setStyleSheet(QStringLiteral(
                 "QLabel {"
                 "  border-radius: 0.5em;"
                 "  padding: 0.33em;"
@@ -336,7 +340,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
         // used if __APPLE__ is defined, so that it reflects the
         // new message text.
         //
-        QString install_chmodbpf_path = mainApp->applicationDirPath() + "/../Resources/Extras/Install ChmodBPF.pkg";
+        QString install_chmodbpf_path = QStringLiteral("%1/../Resources/Extras/Install ChmodBPF.pkg").arg(mainApp->applicationDirPath());
         ui->warningLabel->setText(tr(
             "<p>"
             "You don't have permission to capture on local interfaces."
@@ -367,7 +371,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     if (!ui->warningLabel->text().isEmpty() && recent.sys_warn_if_no_capture)
     {
         QString warning_text = ui->warningLabel->text();
-        warning_text.append(QString("<p><a href=\"%1\">%2</a></p>")
+        warning_text.append(QStringLiteral("<p><a href=\"%1\">%2</a></p>")
                             .arg(no_capture_link)
                             .arg(SimpleDialog::dontShowThisAgain()));
         ui->warningLabel->setText(warning_text);
@@ -395,6 +399,11 @@ bool InterfaceFrame::haveLocalCapturePermissions() const
 #ifdef Q_OS_MAC
     QFileInfo bpf0_fi = QFileInfo("/dev/bpf0");
     return bpf0_fi.isReadable() && bpf0_fi.isWritable();
+#elif defined(Q_OS_UNIX)
+    char *dumpcap_bin = get_executable_path("dumpcap");
+    bool executable = access(dumpcap_bin, X_OK) == 0;
+    g_free(dumpcap_bin);
+    return executable;
 #else
     // XXX Add checks for other platforms.
     return true;

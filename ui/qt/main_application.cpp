@@ -100,9 +100,7 @@
 #endif
 #include <QMimeDatabase>
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
 #include <QStyleHints>
-#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0) && defined(Q_OS_WIN)
 #include <QStyleFactory>
@@ -496,6 +494,7 @@ void MainApplication::setConfigurationProfile(const char *profile_name, bool wri
 #endif
 
     setMonospaceFont(prefs.gui_font_name);
+    ColorUtils::setScheme(prefs.gui_color_scheme);
 
     // Freeze the packet list early to avoid updating column data before doing a
     // full redissection. The packet list will be thawed when redissection is done.
@@ -574,16 +573,16 @@ void MainApplication::applyCustomColorsFromRecent()
     }
 }
 
-// Return the first top-level QMainWindow.
-QWidget *MainApplication::mainWindow()
+// Return the first top-level MainWindow.
+MainWindow *MainApplication::mainWindow()
 {
     foreach (QWidget *tlw, topLevelWidgets()) {
-        QMainWindow *tlmw = qobject_cast<QMainWindow *>(tlw);
+        MainWindow *tlmw = qobject_cast<MainWindow *>(tlw);
         if (tlmw && tlmw->isVisible()) {
             return tlmw;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 void MainApplication::storeCustomColorsInRecent()
@@ -685,10 +684,6 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && defined(Q_OS_WIN)
-    setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-#endif
-
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
 #endif
@@ -696,9 +691,7 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     // Throw various settings at the wall with the hope that one of them will
     // enable context menu shortcuts QTBUG-69452, QTBUG-109590
     setAttribute(Qt::AA_DontShowShortcutsInContextMenus, false);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
     styleHints()->setShowShortcutsInContextMenus(true);
-#endif
 
     //
     // XXX - this means we try to check for the existence of all files
@@ -801,6 +794,11 @@ MainApplication::MainApplication(int &argc,  char **argv) :
 
     // Application-wide style sheet
     QString app_style_sheet = qApp->styleSheet();
+    app_style_sheet += QStringLiteral(
+        "QMessageBox { "
+        "  messagebox-text-interaction-flags: %1;"
+        "}"
+        ).arg(Qt::TextSelectableByMouse);
     qApp->setStyleSheet(app_style_sheet);
 
     // If our window text is lighter than the window background, assume the theme is dark.
@@ -1096,13 +1094,13 @@ void MainApplication::refreshLocalInterfaces()
 #ifdef HAVE_LIBPCAP
 GList* MainApplication::getInterfaceList() const
 {
-     return interface_list_copy(cached_if_list_);
+    return interface_list_copy(cached_if_list_);
 }
 
 void MainApplication::setInterfaceList(GList *if_list)
 {
-     free_interface_list(cached_if_list_);
-     cached_if_list_ = interface_list_copy(if_list);
+    free_interface_list(cached_if_list_);
+    cached_if_list_ = interface_list_copy(if_list);
 }
 #endif
 
@@ -1215,30 +1213,30 @@ void MainApplication::loadLanguage(const QString newLanguage)
 
     QLocale::setDefault(locale);
     switchTranslator(mainApp->translator,
-            QString("wireshark_%1.qm").arg(localeLanguage), QString(":/i18n/"));
-    if (QFile::exists(QString("%1/%2/wireshark_%3.qm")
+            QStringLiteral("wireshark_%1.qm").arg(localeLanguage), QStringLiteral(":/i18n/"));
+    if (QFile::exists(QStringLiteral("%1/%2/wireshark_%3.qm")
             .arg(get_datafile_dir()).arg("languages").arg(localeLanguage)))
         switchTranslator(mainApp->translator,
-                QString("wireshark_%1.qm").arg(localeLanguage), QString(get_datafile_dir()) + QString("/languages"));
-    if (QFile::exists(QString("%1/wireshark_%3.qm")
+                QStringLiteral("wireshark_%1.qm").arg(localeLanguage), QStringLiteral("%1/languages").arg(get_datafile_dir()));
+    if (QFile::exists(QStringLiteral("%1/wireshark_%3.qm")
             .arg(gchar_free_to_qstring(get_persconffile_path("languages", false))).arg(localeLanguage)))
         switchTranslator(mainApp->translator,
-                QString("wireshark_%1.qm").arg(localeLanguage), gchar_free_to_qstring(get_persconffile_path("languages", false)));
-    if (QFile::exists(QString("%1/qt_%2.qm")
+                QStringLiteral("wireshark_%1.qm").arg(localeLanguage), gchar_free_to_qstring(get_persconffile_path("languages", false)));
+    if (QFile::exists(QStringLiteral("%1/qt_%2.qm")
             .arg(get_datafile_dir()).arg(localeLanguage))) {
         switchTranslator(mainApp->translatorQt,
-                QString("qt_%1.qm").arg(localeLanguage), QString(get_datafile_dir()));
-    } else if (QFile::exists(QString("%1/qt_%2.qm")
+                QStringLiteral("qt_%1.qm").arg(localeLanguage), QString(get_datafile_dir()));
+    } else if (QFile::exists(QStringLiteral("%1/qt_%2.qm")
             .arg(get_datafile_dir()).arg(localeLanguage.left(localeLanguage.lastIndexOf('_'))))) {
         switchTranslator(mainApp->translatorQt,
-                QString("qt_%1.qm").arg(localeLanguage.left(localeLanguage.lastIndexOf('_'))), QString(get_datafile_dir()));
+                QStringLiteral("qt_%1.qm").arg(localeLanguage.left(localeLanguage.lastIndexOf('_'))), QString(get_datafile_dir()));
     } else {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QString translationPath = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
 #else
         QString translationPath = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
 #endif
-        switchTranslator(mainApp->translatorQt, QString("qt_%1.qm").arg(localeLanguage), translationPath);
+        switchTranslator(mainApp->translatorQt, QStringLiteral("qt_%1.qm").arg(localeLanguage), translationPath);
     }
 }
 
@@ -1356,14 +1354,15 @@ void MainApplication::captureEventHandler(CaptureEvent ev)
 
 void MainApplication::pushStatus(StatusInfo status, const QString &message, const QString &messagetip)
 {
-    if (! mainWindow() || ! qobject_cast<MainWindow *>(mainWindow()))
+    MainWindow * mw = mainWindow();
+    if (! mw) {
         return;
-
-    MainWindow * mw = qobject_cast<MainWindow *>(mainWindow());
-    if (! mw->statusBar())
-        return;
+    }
 
     MainStatusBar * bar = mw->statusBar();
+    if (! bar) {
+        return;
+    }
 
     switch(status)
     {
@@ -1390,14 +1389,15 @@ void MainApplication::pushStatus(StatusInfo status, const QString &message, cons
 
 void MainApplication::popStatus(StatusInfo status)
 {
-    if (! mainWindow() || ! qobject_cast<MainWindow *>(mainWindow()))
+    MainWindow * mw = mainWindow();
+    if (! mw) {
         return;
-
-    MainWindow * mw = qobject_cast<MainWindow *>(mainWindow());
-    if (! mw->statusBar())
-        return;
+    }
 
     MainStatusBar * bar = mw->statusBar();
+    if (! bar) {
+        return;
+    }
 
     switch(status)
     {
@@ -1424,10 +1424,11 @@ void MainApplication::popStatus(StatusInfo status)
 
 void MainApplication::gotoFrame(int frame)
 {
-    if (! mainWindow() || ! qobject_cast<MainWindow *>(mainWindow()))
+    MainWindow * mw = mainWindow();
+    if (! mw) {
         return;
+    }
 
-    MainWindow * mw = qobject_cast<MainWindow *>(mainWindow());
     mw->gotoFrame(frame);
 }
 

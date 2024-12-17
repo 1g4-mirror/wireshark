@@ -102,7 +102,7 @@ There are two scripts available for macOS which will install the packages and li
 * `--install-dmg-deps` install packages required to build the .dmg file
 * `--install-sparkle-deps` install the Sparkle automatic updater
 * `--install-all` install everything
-* `--install-logray` install everything to compile Logray and falco bridge
+* `--install-stratoshark` install everything to compile Stratoshark and Falco bridge
 * `[other]` other options are passed as-is to brew
 
 `tools/macos-setup.sh` supports the following options:
@@ -257,7 +257,7 @@ https://appimage.org[AppImage] package::
   Build the `wireshark_appimage` target.
 
 macOS .dmg package containing an application bundle::
-  Build the `wireshark_dmg` or `logray_dmg` targets.
+  Build the `wireshark_dmg` or `stratoshark_dmg` targets.
 
 Installable packages typically require building Wireshark first.
 
@@ -299,7 +299,7 @@ and if the build breaks, please re-read this guide carefully.
 
 Known traps are:
 
-. Not using the correct (x64 or x86) version of the Visual Studio command prompt.
+. Not using the correct (x64 or arm64) version of the Visual Studio command prompt.
 
 . Not using a supported version of Windows. Please check
   https://support.microsoft.com/en-gb/help/13853/windows-lifecycle-fact-sheet[here]
@@ -404,6 +404,19 @@ Alternatively you can also use the environment variable WIRESHARK_QT6_PREFIX_PAT
 
 Qt 6 is the default option for building Wireshark, but Wireshark has support for Qt 5.12 and later. To enable Wireshark to build with Qt 5 pass `-DUSE_qt6=OFF`
 to cmake.
+
+====== Install Qt using AQt
+
+If you don't want register for the Qt Online Installer for Windows, an alternate possibility can be to use https://github.com/miurahr/aqtinstall/releases[Another (unofficial) Qt CLI Installer].
+
+To achieve the recommended configuration above, download the latest release and copy `aqt.exe` into _C:\Qt{backslash}_.
+
+Then just run the following command to launch the installation.
+
+[subs="attributes+"]
+----
+.\aqt.exe install-qt windows desktop {windows-qt6-lts-version} win64_msvc2019_64 -m qt5compat debug_info qtmultimedia
+----
 
 [#ChSetupPython]
 
@@ -818,7 +831,7 @@ system libraries used etc. If you are unsure, go with UCRT64.
 
     mkdir build && cd build
     # Ninja generator is the default
-    cmake -DENABLE_CCACHE=On -DFETCH_lua=Yes ..
+    cmake -DENABLE_CCACHE=On ..
     ninja
     ninja test        # optional, to run the test suite
     ninja install     # optional, install to the MSYS2 shell path
@@ -851,8 +864,6 @@ the build using MSVC:
 * The Event Tracing for Windows (ETW) extcap cannot be compiled using MinGW-w64.
 
 * Enhanced Kerberos dissection with decryption is not available.
-
-* AirPcap is not supported.
 
 [#ChSetupCross]
 
@@ -911,8 +922,6 @@ If successful the installer can be found in `$CMAKE_BINARY_DIR/packaging/nsis`.
 * The Event Tracing for Windows (ETW) extcap cannot be compiled using MinGW-w64.
 
 * Enhanced Kerberos dissection with decryption is not available.
-
-* AirPcap is not supported.
 
 ===== Using Arch Linux
 

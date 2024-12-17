@@ -13,6 +13,7 @@
 #include <ui/qt/utils/qt_ui_utils.h>
 
 #include <QDateTime>
+#include <QTimeZone>
 
 VoipCallsInfoModel::VoipCallsInfoModel(QObject *parent) :
     QAbstractTableModel(parent),
@@ -59,7 +60,7 @@ QVariant VoipCallsInfoModel::data(const QModelIndex &index, int role) const
     case Duration:
     {
         unsigned callDuration = nstime_to_sec(&(call_info->stop_fd->abs_ts)) - nstime_to_sec(&(call_info->start_fd->abs_ts));
-        return QString("%1:%2:%3").arg(callDuration / 3600, 2, 10, QChar('0')).arg((callDuration % 3600) / 60, 2, 10, QChar('0')).arg(callDuration % 60, 2, 10, QChar('0'));
+        return QStringLiteral("%1:%2:%3").arg(callDuration / 3600, 2, 10, QChar('0')).arg((callDuration % 3600) / 60, 2, 10, QChar('0')).arg(callDuration % 60, 2, 10, QChar('0'));
     }
     case Packets:
         return call_info->npackets;
@@ -71,7 +72,7 @@ QVariant VoipCallsInfoModel::data(const QModelIndex &index, int role) const
         case VOIP_ISUP:
         {
             isup_calls_info_t *isup_info = (isup_calls_info_t *)call_info->prot_info;
-            return QString("%1-%2 %3 %4-%5")
+            return QStringLiteral("%1-%2 %3 %4-%5")
                     .arg(isup_info->ni)
                     .arg(isup_info->opc)
                     .arg(UTF8_RIGHTWARDS_ARROW)
@@ -161,7 +162,11 @@ int VoipCallsInfoModel::columnCount(const QModelIndex &parent) const
 QVariant VoipCallsInfoModel::timeData(nstime_t *abs_ts, nstime_t *rel_ts) const
 {
     if (mTimeOfDay_) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        return QDateTime::fromMSecsSinceEpoch(nstime_to_msec(abs_ts), QTimeZone::LocalTime).toString("yyyy-MM-dd hh:mm:ss");
+#else
         return QDateTime::fromMSecsSinceEpoch(nstime_to_msec(abs_ts), Qt::LocalTime).toString("yyyy-MM-dd hh:mm:ss");
+#endif
     } else {
         // XXX Pull digit count from capture file precision
         return QString::number(nstime_to_sec(rel_ts), 'f', 6);

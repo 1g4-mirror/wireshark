@@ -566,8 +566,9 @@ set(WIRESHARK_QT_NONGENERATED_SRC
 	${WIRESHARK_MODEL_SRCS}
 	${WIRESHARK_UTILS_SRCS}
 	${WIRESHARK_MANAGER_SRCS}
-	${WIRESHARK_3RD_PARTY_WIDGET_SRCS}
 	${WIRESHARK_WIDGET_SRCS}
+	# WIRESHARK_3RD_PARTY_WIDGET_SRCS is allowed to have warnings
+	#${WIRESHARK_3RD_PARTY_WIDGET_SRCS}
 )
 
 set(WIRESHARK_QT_UI
@@ -710,7 +711,19 @@ add_custom_command(
 		${CMAKE_SOURCE_DIR}/AUTHORS
 )
 
-set(WIRESHARK_QT_QRC
+# Drop the file modification time of source files from generated files
+# to help with reproducible builds. We do not use QFileInfo.lastModified
+# so this has no unwanted side effects. This mtime started appearing in
+# Qt 5.8. The option to force the old file format without mtime was
+# added in Qt 5.9. See https://bugreports.qt.io/browse/QTBUG-58769.
+# Force the compression algorithm to zlib, since zstd requires format
+# version 3. See https://gitlab.com/wireshark/wireshark/-/issues/18100.
+# Use the number of dashes for each argument as documented at
+# https://doc.qt.io/qt-6/rcc.html.
+set(CMAKE_AUTORCC_OPTIONS --format-version 1)
+list(APPEND CMAKE_AUTORCC_OPTIONS -compress-algo zlib)
+
+qt_add_resources(WIRESHARK_QT_QRC
 	../../resources/about.qrc
 	../../resources/languages/languages.qrc
 	../../resources/layout.qrc
@@ -718,24 +731,8 @@ set(WIRESHARK_QT_QRC
 	../../resources/wsicon.qrc
 	${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc
 	${CMAKE_CURRENT_BINARY_DIR}/authors.qrc
-	${CMAKE_CURRENT_BINARY_DIR}/authors.csv
+	OPTIONS ${CMAKE_AUTORCC_OPTIONS}
 )
-
-if(NOT Qt${qtver}Widgets_VERSION VERSION_LESS "5.9")
-	# Drop the file modification time of source files from generated files
-	# to help with reproducible builds. We do not use QFileInfo.lastModified
-	# so this has no unwanted side effects. This mtime started appearing in
-	# Qt 5.8. The option to force the old file format without mtime was
-	# added in Qt 5.9. See https://bugreports.qt.io/browse/QTBUG-58769.
-	# Force the compression algorithm to zlib, since zstd requires format
-	# version 3. See https://gitlab.com/wireshark/wireshark/-/issues/18100.
-	# Use the number of dashes for each argument as documented at
-	# https://doc.qt.io/qt-6/rcc.html.
-	set(CMAKE_AUTORCC_OPTIONS --format-version 1)
-	if(Qt${qtver}Widgets_VERSION VERSION_GREATER_EQUAL "5.13")
-		list(APPEND CMAKE_AUTORCC_OPTIONS -compress-algo zlib)
-	endif()
-endif()
 
 if (USE_qt6)
 	QT6_ADD_TRANSLATION(WIRESHARK_QT_QM ${WIRESHARK_QT_TS} OPTIONS -silent)
@@ -799,6 +796,7 @@ add_library(qtui OBJECT
 	${WIRESHARK_MODEL_HEADERS}
 
 	${WIRESHARK_QT_NONGENERATED_SRC}
+	${WIRESHARK_3RD_PARTY_WIDGET_SRCS}
 
 	# For AUTOUIC and AUTORCC.
 	${WIRESHARK_QT_UI}
@@ -851,13 +849,18 @@ set_target_properties(qtui PROPERTIES
 	FOLDER "UI"
 	AUTOMOC ON
 	AUTOUIC ON
-	AUTORCC ON
+	# AUTORCC not needed with qt_add_resources
+	#AUTORCC ON
 	# Ensure .qm files are generated before autogenerating i18n.qrc
 	AUTOGEN_TARGET_DEPENDS "${WIRESHARK_QT_QM}"
 )
 
 if(MSVC)
 	set_target_properties(qtui PROPERTIES LINK_FLAGS_DEBUG "${WS_MSVC_DEBUG_LINK_FLAGS}")
+	# https://bugreports.qt.io/browse/QTBUG-118993
+	if(Qt${qtver}Widgets_VERSION VERSION_LESS "6.5.4")
+		target_compile_definitions(qtui PUBLIC _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+	endif()
 endif()
 
 CHECKAPI(

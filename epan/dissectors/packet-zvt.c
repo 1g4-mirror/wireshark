@@ -1320,10 +1320,10 @@ proto_register_zvt(void)
     static hf_register_info hf[] = {
         { &hf_zvt_resp_in,
             { "Response In", "zvt.resp_in",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, NULL, HFILL } },
         { &hf_zvt_resp_to,
             { "Response To", "zvt.resp_to",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, NULL, HFILL } },
          { &hf_zvt_serial_char,
             { "Serial character", "zvt.serial_char", FT_UINT8,
                 BASE_HEX|BASE_EXT_STRING, &serial_char_ext, 0, NULL, HFILL } },
@@ -1473,7 +1473,7 @@ proto_register_zvt(void)
     static ei_register_info ei[] = {
         { &ei_invalid_apdu_len,
             { "zvt.apdu_len.invalid", PI_PROTOCOL, PI_WARN,
-                "The APDU length is too short. The minimum length is %d",
+                "The APDU length is too short",
                 EXPFILL }}
     };
 

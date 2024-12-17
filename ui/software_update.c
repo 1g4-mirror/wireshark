@@ -12,14 +12,14 @@
 
 #include "software_update.h"
 #include "language.h"
-#include "../epan/prefs.h"
-#include "../wsutil/filesystem.h"
+#include "epan/prefs.h"
+#include "wsutil/application_flavor.h"
 
 /*
  * Version 0 of the update URI path has the following elements:
  * - The update path prefix (fixed, "update")
  * - The schema version (fixed, 0)
- * - The application name (variable, "Wireshark" or "Logray")
+ * - The application name (variable, "Wireshark" or "Stratoshark")
  * - The application version ("<major>.<minor>.<micro>")
  * - The operating system (variable, one of "Windows" or "macOS")
  * - The architecture name (variable, one of "x86", "x86-64", or "arm64")
@@ -66,10 +66,10 @@
 static char *get_appcast_update_url(software_update_channel_e chan) {
     GString *update_url_str = g_string_new("");
     const char *chan_name;
-    const char *su_application = get_configuration_namespace();
+    const char *su_application = application_flavor_name_proper();
     const char *su_version = VERSION;
 
-    if (!is_packet_configuration_namespace()) {
+    if (application_flavor_is_stratoshark()) {
         su_version = LOG_VERSION;
     }
 

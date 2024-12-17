@@ -32,7 +32,6 @@
 #ifdef HAVE_PLUGINS
 #include <wsutil/plugins.h>
 #endif
-#include <wsutil/report_message.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/unicode-utils.h>
 #include <wsutil/version_info.h>
@@ -99,13 +98,6 @@
 #  include "capture/capture-wpcap.h"
 #  include <wsutil/file_util.h>
 #endif /* _WIN32 */
-
-#ifdef HAVE_AIRPCAP
-#  include <capture/airpcap.h>
-#  include <capture/airpcap_loader.h>
-//#  include "airpcap_dlg.h"
-//#  include "airpcap_gui_utils.h"
-#endif
 
 #include "epan/crypt/dot11decrypt_ws.h"
 
@@ -232,17 +224,11 @@ gather_wireshark_qt_compiled_info(feature_list l)
 
     const char *update_info = software_update_info();
     if (update_info) {
-        with_feature(l, "automatic updates using %s", update_info);
+        with_feature(l, "automatic updates");
+        with_feature(l, "%s", update_info);
     } else {
         without_feature(l, "automatic updates");
     }
-#ifdef _WIN32
-#ifdef HAVE_AIRPCAP
-    gather_airpcap_compile_info(l);
-#else
-    without_feature(l, "AirPcap");
-#endif
-#endif /* _WIN32 */
 }
 
 void
@@ -253,10 +239,6 @@ gather_wireshark_runtime_info(feature_list l)
     gather_caplibs_runtime_info(l);
 #endif
     epan_gather_runtime_info(l);
-
-#ifdef HAVE_AIRPCAP
-    gather_airpcap_runtime_info(l);
-#endif
 
     if (mainApp) {
         // Display information
@@ -425,19 +407,14 @@ macos_enable_layer_backing(void)
 {
     // At the time of this writing, the QTBUG-87014 for layerEnabledByMacOS is...
     //
-    // ...in https://github.com/qt/qtbase/blob/5.12/src/plugins/platforms/cocoa/qnsview_drawing.mm
-    // ...not in https://github.com/qt/qtbase/blob/5.12.10/src/plugins/platforms/cocoa/qnsview_drawing.mm
     // ...in https://github.com/qt/qtbase/blob/5.15/src/plugins/platforms/cocoa/qnsview_drawing.mm
     // ...not in https://github.com/qt/qtbase/blob/5.15.2/src/plugins/platforms/cocoa/qnsview_drawing.mm
     // ...not in https://github.com/qt/qtbase/blob/6.0/src/plugins/platforms/cocoa/qnsview_drawing.mm
     // ...not in https://github.com/qt/qtbase/blob/6.0.0/src/plugins/platforms/cocoa/qnsview_drawing.mm
     //
-    // We'll assume that it will be fixed in 5.12.11, 5.15.3, and 6.0.1.
-    // Note that we only ship LTS versions of Qt with our macOS packages.
-    // Feel free to add other versions if needed.
+    // We'll assume that it will be fixed in 5.15.3, 6.0.1, and >= 6.1.
 #if  \
-        (QT_VERSION >= QT_VERSION_CHECK(5, 12, 0) && QT_VERSION < QT_VERSION_CHECK(5, 12, 11) \
-        || (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0) &&  QT_VERSION < QT_VERSION_CHECK(5, 15, 3)) \
+        ((QT_VERSION >= QT_VERSION_CHECK(5, 15, 0) &&  QT_VERSION < QT_VERSION_CHECK(5, 15, 3)) \
         || (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) &&  QT_VERSION < QT_VERSION_CHECK(6, 0, 1)) \
     )
     QOperatingSystemVersion os_ver = QOperatingSystemVersion::current();
@@ -484,12 +461,6 @@ int main(int argc, char *qt_argv[])
     int                  rf_open_errno;
 #ifdef HAVE_LIBPCAP
     char                *err_str, *err_str_secondary;
-#else
-#ifdef _WIN32
-#ifdef HAVE_AIRPCAP
-    char                *err_str;
-#endif
-#endif
 #endif
     char                *err_msg = NULL;
     df_error_t          *df_err = NULL;
@@ -500,18 +471,9 @@ int main(int argc, char *qt_argv[])
 #endif
     /* Start time in microseconds */
     uint64_t start_time = g_get_monotonic_time();
-    static const struct report_message_routines wireshark_report_routines = {
-        vfailure_alert_box,
-        vwarning_alert_box,
-        open_failure_alert_box,
-        read_failure_alert_box,
-        write_failure_alert_box,
-        cfile_open_failure_alert_box,
-        cfile_dump_open_failure_alert_box,
-        cfile_read_failure_alert_box,
-        cfile_write_failure_alert_box,
-        cfile_close_failure_alert_box
-    };
+
+    /* Set the program name. */
+    g_set_prgname("wireshark");
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     /*
@@ -548,7 +510,7 @@ int main(int argc, char *qt_argv[])
     cmdarg_err_init(wireshark_cmdarg_err, wireshark_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("wireshark", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
     /* For backward compatibility with GLib logging and Wireshark 3.4. */
     ws_log_console_writer_set_use_stdout(true);
 
@@ -617,7 +579,7 @@ int main(int argc, char *qt_argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    /* configuration_init_error = */ configuration_init(argv[0], NULL);
+    /* configuration_init_error = */ configuration_init(argv[0]);
     /* ws_log(NULL, LOG_LEVEL_DEBUG, "progfile_dir: %s", get_progfile_dir()); */
 
 #ifdef _WIN32
@@ -625,55 +587,13 @@ int main(int argc, char *qt_argv[])
     /* Load wpcap if possible. Do this before collecting the run-time version information */
     load_wpcap();
 
-#ifdef HAVE_AIRPCAP
-    /* Load the airpcap.dll.  This must also be done before collecting
-     * run-time version information. */
-    load_airpcap();
-#if 0
-    airpcap_dll_ret_val = load_airpcap();
-
-    switch (airpcap_dll_ret_val) {
-    case AIRPCAP_DLL_OK:
-        /* load the airpcap interfaces */
-        g_airpcap_if_list = get_airpcap_interface_list(&err, &err_str);
-
-        if (g_airpcap_if_list == NULL || g_list_length(g_airpcap_if_list) == 0) {
-            if (err == CANT_GET_AIRPCAP_INTERFACE_LIST && err_str != NULL) {
-                simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", "Failed to open Airpcap Adapters.");
-                g_free(err_str);
-            }
-            airpcap_if_active = NULL;
-
-        } else {
-
-            /* select the first as default (THIS SHOULD BE CHANGED) */
-            airpcap_if_active = airpcap_get_default_if(airpcap_if_list);
-        }
-        break;
-    /*
-     * XXX - Maybe we need to warn the user if one of the following happens???
-     */
-    case AIRPCAP_DLL_OLD:
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s","AIRPCAP_DLL_OLD\n");
-        break;
-
-    case AIRPCAP_DLL_ERROR:
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s","AIRPCAP_DLL_ERROR\n");
-        break;
-
-    case AIRPCAP_DLL_NOT_FOUND:
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s","AIRPCAP_DDL_NOT_FOUND\n");
-        break;
-    }
-#endif
-#endif /* HAVE_AIRPCAP */
 #endif /* _WIN32 */
 
     /* Get the compile-time version information string */
     ws_init_version_info("Wireshark", gather_wireshark_qt_compiled_info,
                          gather_wireshark_runtime_info);
 
-    init_report_message("Wireshark", &wireshark_report_routines);
+    init_report_alert_box("Wireshark");
 
     /* Create the user profiles directory */
     if (create_profiles_dir(&rf_path) == -1) {
@@ -717,6 +637,13 @@ int main(int argc, char *qt_argv[])
     //    This attribute no longer has any effect.
 #if defined(Q_OS_WIN) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
+    // This function must be called before creating the application object.
+    // Qt::HighDpiScaleFactorRoundingPolicy::PassThrough is the default in Qt6,
+    // so this doesn't have any effect (Round is the default in 5.14 & 5.15)
+#if defined(Q_OS_WIN)
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
 
     /* Create The Wireshark app */
@@ -1021,6 +948,7 @@ int main(int argc, char *qt_argv[])
 #endif
     splash_update(RA_PREFERENCES_APPLY, NULL, NULL);
     prefs_apply_all();
+    ColorUtils::setScheme(prefs.gui_color_scheme);
     wsApp->emitAppSignal(WiresharkApplication::ColorsChanged);
     wsApp->emitAppSignal(WiresharkApplication::PreferencesChanged);
 
@@ -1100,15 +1028,15 @@ int main(int argc, char *qt_argv[])
                 if (!dfilter_compile(global_commandline_info.jfilter, &jump_to_filter, &df_err)) {
                     // Similar code in MainWindow::mergeCaptureFile().
                     QMessageBox::warning(main_w, QObject::tr("Invalid Display Filter"),
-                                         QObject::tr("The filter expression %1 isn't a valid display filter. (%2).")
+                                         QObject::tr("The filter expression \"%1\" isn't a valid display filter.\n(%2).")
                                                  .arg(global_commandline_info.jfilter, df_err->msg),
                                          QMessageBox::Ok);
                     df_error_free(&df_err);
                 } else {
                     /* Filter ok, jump to the first packet matching the filter
                        conditions. Default search direction is forward, but if
-                       option d was given, search backwards */
-                    cf_find_packet_dfilter(CaptureFile::globalCapFile(), jump_to_filter, global_commandline_info.jump_backwards);
+                       option j was given, search backwards */
+                    cf_find_packet_dfilter(CaptureFile::globalCapFile(), jump_to_filter, global_commandline_info.jump_backwards, false);
                 }
             }
         }

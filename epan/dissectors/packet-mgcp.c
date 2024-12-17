@@ -21,7 +21,10 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#define WS_LOG_DOMAIN "packet-mgcp"
+
 #include "config.h"
+#include <wireshark.h>
 
 #include <stdlib.h>
 
@@ -899,7 +902,7 @@ static int tvb_parse_param(tvbuff_t* tvb, int offset, int len, int** hf, mgcp_in
 					if (tempchar == ':')
 					{
 						/* Looks like a valid vendor param name */
-						//fprintf(stderr, "MGCP Extension: %s\n", tvb_get_string_enc(wmem_packet_scope(), tvb, tvb_current_offset, ext_off, ENC_ASCII));
+						ws_debug("MGCP Extension: %s", tvb_get_string_enc(wmem_packet_scope(), tvb, tvb_current_offset, ext_off, ENC_ASCII));
 						switch (plus_minus)
 						{
 							case '+':
@@ -2343,10 +2346,10 @@ void proto_register_mgcp(void)
 			  { "Response", "mgcp.rsp", FT_BOOLEAN, BASE_NONE, NULL, 0x0,
 			    "true if MGCP response", HFILL }},
 			{ &hf_mgcp_req_frame,
-			  { "Request Frame", "mgcp.reqframe", FT_FRAMENUM, BASE_NONE, NULL, 0,
+			  { "Request Frame", "mgcp.reqframe", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0,
 			    NULL, HFILL }},
 			{ &hf_mgcp_rsp_frame,
-			  { "Response Frame", "mgcp.rspframe", FT_FRAMENUM, BASE_NONE, NULL, 0,
+			  { "Response Frame", "mgcp.rspframe", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0,
 			    NULL, HFILL }},
 			{ &hf_mgcp_time,
 			  { "Time from request", "mgcp.time", FT_RELATIVE_TIME, BASE_NONE, NULL, 0,

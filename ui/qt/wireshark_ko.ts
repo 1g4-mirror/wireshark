@@ -80,12 +80,16 @@
         <translation>라이선스</translation>
     </message>
     <message>
-        <source>About Logray</source>
-        <translation>Logray 정보</translation>
+        <source>About Stratoshark</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Logray</source>
-        <translation>Logray</translation>
+        <source>Stratoshark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;System Call and Event Log Analyzer&lt;/h3&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The directory does not exist</source>
@@ -1199,12 +1203,10 @@
 </translation>
     </message>
     <message>
-        <source>Created by Logray %1
+        <source>Created by Stratoshark %1
 
 </source>
-        <translation>Logray %1에서 생성됨
-
-</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1856,14 +1858,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resolve Names:</source>
-        <translation type="vanished">해석된 이름:</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;p&gt;Show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;p&gt;필드의 원시값 대신 사람이 읽을 수 있는 문자열로 표시합니다. 문자열 값을 갖는 필드가 있는 사용자 지정 칼럼에만 적용할 수 있습니다.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
         <source>Values</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1903,10 +1897,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>유형</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>필드</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>필드 출현 횟수</translation>
     </message>
@@ -1919,20 +1909,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resolved</source>
-        <translation type="vanished">해석됨</translation>
-    </message>
-    <message>
         <source>Width</source>
         <translation>폭</translation>
     </message>
     <message>
-        <source>Alignment</source>
-        <translation>정렬</translation>
+        <source>Custom Expression</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;html&gt;Show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;필드의 원시값 대신 사람이 읽을 수 있는 문자열로 보여 줍니다. 문자열 값을 갖는 필드를 가진 사용자 지정 칼럼에 대해서만 적용 가능합니다.&lt;/html&gt;</translation>
+        <source>Alignment</source>
+        <translation>정렬</translation>
     </message>
     <message>
         <source>New Column</source>
@@ -2383,6 +2369,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Apply a read filter %1</source>
         <translation>읽기 필터 적용 %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3098,16 +3088,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>표시 필터 항목</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>필드 입력 %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>잘못된 필터: </translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3832,6 +3822,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>겉표지보다 큰 몇 향수류</translation>
     </message>
     <message>
+        <source>Color Scheme:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Font</source>
         <translation>글꼴</translation>
     </message>
@@ -4147,10 +4149,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>자동 업데이트</translation>
     </message>
     <message>
-        <source>Enable legend</source>
-        <translation>범례 활성화</translation>
-    </message>
-    <message>
         <source>Reset Graph</source>
         <translation>그래프 초기화</translation>
     </message>
@@ -4284,6 +4282,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>T</translation>
     </message>
     <message>
+        <source>Toggle X-axis between relative time and time of day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle Y-axis between logarithmic and linear scale</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Crosshairs</source>
         <translation>십자선</translation>
     </message>
@@ -4294,6 +4300,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Space</source>
         <translation>Space</translation>
+    </message>
+    <message>
+        <source>Legend</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle legend</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom In X Axis</source>
@@ -7607,10 +7621,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>열 너비 조정…</translation>
     </message>
     <message>
-        <source>Resolve Names</source>
-        <translation type="vanished">이름 해석</translation>
-    </message>
-    <message>
         <source>Remove this Column</source>
         <translation>이 열 삭제</translation>
     </message>
@@ -7813,6 +7823,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Preferences</source>
         <translation>설정</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">복사</translation>
+    </message>
+    <message numerus="yes">
+        <source>Copy Row(s)</source>
+        <translation type="unfinished">
+            <numerusform>행 복사</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -8458,34 +8478,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>QObject</name>
     <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>평균 처리량(비트/초)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>왕복 시간(ms)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>세그먼트 길이(바이트)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>시퀀스 번호(바이트)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>시간(초)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>윈도 크기(바이트)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>ACK되지 않은(대기 중) 바이트(바이트)</translation>
-    </message>
-    <message>
         <source>[no capture file]</source>
         <translation>[캡처 파일 없음]</translation>
     </message>
@@ -8878,8 +8870,9 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>잘못된 표시 필터</translation>
     </message>
     <message>
-        <source>The filter expression %1 isn&apos;t a valid display filter. (%2).</source>
-        <translation>필터 표현식 %1이(가) 올바른 표시 필터가 아닙니다. (%2).</translation>
+        <source>The filter expression &quot;%1&quot; isn&apos;t a valid display filter.
+(%2).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error</source>
@@ -8972,6 +8965,34 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>LOAD</source>
         <translation>부하</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">왕복 시간</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">세그먼트 길이</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">시퀀스 번호</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">시간</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13097,16 +13118,16 @@ a:hover {
         <translation>Wireshark를 사용하여 인터넷을 고정하는 접착제의 냄새를 맡고(스니핑) 있습니다 </translation>
     </message>
     <message>
-        <source>You are sniffing the glue that holds your system together using Logray </source>
-        <translation>Logray를 사용하여 시스템을 고정하는 접착제의 냄새를 맡고(스니핑) 있습니다 </translation>
+        <source>You are sniffing the glue that holds your system together using Stratoshark </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are running Stratoshark </source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>You are running Wireshark </source>
         <translation>실행 중인 Wireshark 버전: </translation>
-    </message>
-    <message>
-        <source>You are running Logray </source>
-        <translation>실행 중인 Logray 버전: </translation>
     </message>
     <message>
         <source> You receive automatic updates.</source>
@@ -13182,14 +13203,6 @@ a:hover {
     <message>
         <source>802.11 Preferences</source>
         <translation>802.11 설정</translation>
-    </message>
-    <message>
-        <source>AirPcap Control Panel</source>
-        <translation>AirPcap 제어판</translation>
-    </message>
-    <message>
-        <source>Open the AirPcap Control Panel</source>
-        <translation>AirPcap 제어판 열기</translation>
     </message>
     <message>
         <source>Unable to set channel or offset.</source>
@@ -14422,6 +14435,26 @@ a:hover {
         <translation>표시 필터</translation>
     </message>
     <message>
+        <source>Display Filter Reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>First Packet in Conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the first packet in this conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Last Packet in Conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the last packet in this conversation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Capture &amp;Filters…</source>
         <translation>캡처 필터(&amp;F)…</translation>
     </message>
@@ -15108,16 +15141,8 @@ a:hover {
         <translation>파일을 병합하기 전에 변경된 내용을 저장해야 합니다.</translation>
     </message>
     <message>
-        <source>Invalid Display Filter</source>
-        <translation>잘못된 표시 필터</translation>
-    </message>
-    <message>
         <source>Invalid Read Filter</source>
         <translation>잘못된 읽기 필터</translation>
-    </message>
-    <message>
-        <source>The filter expression %1 isn&apos;t a valid read filter. (%2).</source>
-        <translation>필터 표현식 %1은(는) 잘못된 읽기 필터입니다. (%2).</translation>
     </message>
     <message>
         <source> before importing a capture</source>
@@ -15156,6 +15181,11 @@ a:hover {
     <message>
         <source>Unable to drop files during capture.</source>
         <translation>캡처 중에는 파일을 버릴 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The filter expression &quot;%1&quot; isn&apos;t a valid read filter.
+(%2).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown file type returned by merge dialog.</source>
