@@ -78,6 +78,7 @@ typedef struct _smb2_saved_info_t {
 	e_guid_t  uuid_fid;
 	uint32_t  frame_request;
 	uint32_t  frame_response;
+	const uint8_t  *filename;
 } smb2_saved_info_t;
 
 typedef struct _smb2_tid_info_t {
