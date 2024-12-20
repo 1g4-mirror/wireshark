@@ -33,6 +33,10 @@ CapturePreferencesFrame::CapturePreferencesFrame(QWidget *parent) :
     ui(new Ui::CapturePreferencesFrame)
 {
     ui->setupUi(this);
+#if WITH_LIBBPF
+    // Connect the new process information checkbox signal to the slot
+    connect(ui->captureProcessInfoCheckBox, &QCheckBox::toggled, this, &CapturePreferencesFrame::on_captureProcessInfoCheckBox_toggled);
+#endif
 
     pref_device_ = prefFromPrefPtr(&prefs.capture_device);
     pref_prom_mode_ = prefFromPrefPtr(&prefs.capture_prom_mode);
@@ -42,7 +46,10 @@ CapturePreferencesFrame::CapturePreferencesFrame(QWidget *parent) :
     pref_update_interval_ = prefFromPrefPtr(&prefs.capture_update_interval);
     pref_no_interface_load_ = prefFromPrefPtr(&prefs.capture_no_interface_load);
     pref_no_extcap_ = prefFromPrefPtr(&prefs.capture_no_extcap);
-
+#if WITH_LIBBPF
+    // Register the new preference for process information capture
+    pref_process_info_ = prefFromPrefPtr(&prefs.capture_process_info);
+#endif
     // Setting the left margin via a style sheet clobbers its
     // appearance.
     int margin = style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
@@ -130,6 +137,9 @@ void CapturePreferencesFrame::updateWidgets()
     ui->captureUpdateIntervalLineEdit->setPlaceholderText(QString::number(prefs_get_uint_value(pref_update_interval_, pref_default)));
     ui->captureUpdateIntervalLineEdit->setSyntaxState(SyntaxLineEdit::Empty);
 #endif // HAVE_LIBPCAP
+#if WITH_LIBBPF
+    ui->captureProcessInfoCheckBox->setChecked(prefs_get_bool_value(pref_process_info_, pref_stashed));
+#endif
     ui->captureNoInterfaceLoad->setChecked(prefs_get_bool_value(pref_no_interface_load_, pref_stashed));
     ui->captureNoExtcapCheckBox->setChecked(prefs_get_bool_value(pref_no_extcap_, pref_stashed));
 }
@@ -153,6 +163,21 @@ void CapturePreferencesFrame::on_capturePcapNgCheckBox_toggled(bool checked)
 {
     prefs_set_bool_value(pref_pcap_ng_, checked, pref_stashed);
 }
+
+#if WITH_LIBBPF
+void CapturePreferencesFrame::on_captureProcessInfoCheckBox_toggled(bool checked)
+{
+fprintf(stdout, "toggle box\n");
+fflush(stdout);
+    prefs_set_bool_value(pref_process_info_, checked, pref_stashed);
+
+    if (checked) {
+        // Enable pcapng format if process info capture is enabled
+        ui->capturePcapNgCheckBox->setChecked(true);
+        prefs_set_bool_value(pref_pcap_ng_, true, pref_stashed);
+    }
+}
+#endif
 
 void CapturePreferencesFrame::on_captureRealTimeCheckBox_toggled(bool checked)
 {

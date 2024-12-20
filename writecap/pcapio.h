@@ -13,7 +13,7 @@
  */
 
 /* Writing pcap files */
-
+#include "ebpf_userspace.h"
 /** Write the file header to a dump file.
    Returns true on success, false on failure.
    Sets "*err" to an error code, or 0 for a short write, on failure*/
@@ -98,7 +98,12 @@ pcapng_write_enhanced_packet_block(FILE* pfile,
                                    const uint8_t *pd,
                                    uint32_t flags,
                                    uint64_t *bytes_written,
-                                   int *err);
+                                   int *err
+                                   #if WITH_LIBBPF
+                                   ,
+                                   struct process_info *pinfo
+                                   #endif
+                                   );
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

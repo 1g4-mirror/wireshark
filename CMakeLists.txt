@@ -6,6 +6,8 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
+option(WITH_LIBBPF "Enable eBPF support with libbpf" ON)
+
 if(DEFINED ENV{FORCE_CMAKE_NINJA_NON_VERBOSE})
 	#
 	# Forcibly unset CMAKE_VERBOSE_MAKEFILE,
@@ -165,17 +167,17 @@ if(WIN32)
 	if(MSVC AND DEFINED ENV{PLATFORM})
 		string(TOLOWER $ENV{PLATFORM} _vs_platform)
 		if(
-			(_vs_platform STREQUAL "x64" AND NOT WIRESHARK_TARGET_PLATFORM STREQUAL "x64")
-			OR
-			(_vs_platform STREQUAL "arm64" AND NOT WIRESHARK_TARGET_PLATFORM STREQUAL "arm64")
-		)
+				(_vs_platform STREQUAL "x64" AND NOT WIRESHARK_TARGET_PLATFORM STREQUAL "x64")
+				OR
+				(_vs_platform STREQUAL "arm64" AND NOT WIRESHARK_TARGET_PLATFORM STREQUAL "arm64")
+				)
 			message(FATAL_ERROR "The PLATFORM environment variable (${_vs_platform})"
-				" doesn't match the generator platform (${WIRESHARK_TARGET_PLATFORM})")
+				    " doesn't match the generator platform (${WIRESHARK_TARGET_PLATFORM})")
 		endif()
 	endif()
 
 	message(STATUS
-		"Building for ${WIRESHARK_TARGET_PLATFORM}"
+		    "Building for ${WIRESHARK_TARGET_PLATFORM}"
 	)
 
 	if(NOT CMAKE_CROSSCOMPILING)
@@ -316,7 +318,7 @@ if(NOT (WIN32 OR APPLE OR USE_STATIC))
 		# for hardening.
 		# XXX Should this be a CMake option?
 		set(ENABLE_RPATH_ORIGIN ${_enable_rpath_origin} CACHE BOOL
-			"Use $ORIGIN with INSTALL_RPATH")
+			    "Use $ORIGIN with INSTALL_RPATH")
 		mark_as_advanced(ENABLE_RPATH_ORIGIN)
 
 		if(ENABLE_RPATH_ORIGIN)
@@ -440,9 +442,9 @@ if(CMAKE_EXTRA_GENERATOR MATCHES "Eclipse CDT4")
 endif()
 
 include_directories(
-	${CMAKE_BINARY_DIR}
-	${CMAKE_SOURCE_DIR}
-	${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/include
 )
 
 if( DUMPCAP_INSTALL_OPTION STREQUAL "suid" )
@@ -451,7 +453,7 @@ else()
 	set( DUMPCAP_SETUID )
 endif()
 if( NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
-	DUMPCAP_INSTALL_OPTION STREQUAL "capabilities" )
+	    DUMPCAP_INSTALL_OPTION STREQUAL "capabilities" )
 	message( WARNING "Capabilities are only supported on Linux" )
 	set( DUMPCAP_INSTALL_OPTION )
 endif()
@@ -498,7 +500,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Preprocessor definitions common to all compilers
 set_property(DIRECTORY
-	PROPERTY COMPILE_DEFINITIONS
+	    PROPERTY COMPILE_DEFINITIONS
 		"G_DISABLE_DEPRECATED"
 		"G_DISABLE_SINGLE_INCLUDES"
 		$<$<OR:$<BOOL:${ENABLE_DEBUG}>,$<CONFIG:Debug>>:WS_DEBUG>
@@ -547,21 +549,21 @@ if( CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	endif()
 
 	add_definitions(
-		/D_CRT_SECURE_NO_DEPRECATE
-		# -DPSAPI_VERSION=1                 Programs that must run on earlier versions of Windows as well as Windows 7 and later
-		#                                   versions should always call this function as GetProcessMemoryInfo. To ensure correct
-		#                                   resolution of symbols, add Psapi.lib to the TARGETLIBS macro and compile the program
-		#                                   with -DPSAPI_VERSION=1.To use run-time dynamic linking, load Psapi.dll.
-		#                                   https://docs.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
-		# -D_ALLOW_KEYWORD_MACROS           For VS2012 onwards the, C++ STL does not permit macro redefinitions of keywords
-		#                                   (see https://docs.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2012/bb531344(v=vs.110))
-		#                                   This definition prevents the complaint about the redefinition of inline by WinPCap
-		#                                   in pcap-stdinc.h when compiling C++ files, e.g. the Qt UI
-		/DPSAPI_VERSION=1
-		/D_ALLOW_KEYWORD_MACROS
-		# Disable deprecation of POSIX function names.
-		# https://stackoverflow.com/questions/37845163/what-is-the-purpose-of-microsofts-underscore-c-functions
-		/D_CRT_NONSTDC_NO_WARNINGS
+            /D_CRT_SECURE_NO_DEPRECATE
+            # -DPSAPI_VERSION=1                 Programs that must run on earlier versions of Windows as well as Windows 7 and later
+            #                                   versions should always call this function as GetProcessMemoryInfo. To ensure correct
+            #                                   resolution of symbols, add Psapi.lib to the TARGETLIBS macro and compile the program
+            #                                   with -DPSAPI_VERSION=1.To use run-time dynamic linking, load Psapi.dll.
+            #                                   https://docs.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
+            # -D_ALLOW_KEYWORD_MACROS           For VS2012 onwards the, C++ STL does not permit macro redefinitions of keywords
+            #                                   (see https://docs.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2012/bb531344(v=vs.110))
+            #                                   This definition prevents the complaint about the redefinition of inline by WinPCap
+            #                                   in pcap-stdinc.h when compiling C++ files, e.g. the Qt UI
+            /DPSAPI_VERSION=1
+            /D_ALLOW_KEYWORD_MACROS
+            # Disable deprecation of POSIX function names.
+            # https://stackoverflow.com/questions/37845163/what-is-the-purpose-of-microsofts-underscore-c-functions
+            /D_CRT_NONSTDC_NO_WARNINGS
 	)
 
 	if(NOT WIRESHARK_TARGET_PLATFORM STREQUAL "x64")
@@ -571,8 +573,8 @@ if( CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	# TODO: Re-enable /W3. It was disabled for a year and some warnings crept
 	# in that will fail with /Wx.
 	set(LOCAL_CFLAGS
-		/MP
-		/W3
+            /MP
+            /W3
 	)
 
 	set(WS_LINK_FLAGS "/LARGEADDRESSAWARE /MANIFEST:NO /INCREMENTAL:NO /RELEASE")
@@ -605,9 +607,9 @@ if( CMAKE_C_COMPILER_ID MATCHES "MSVC")
 		# For now, we set CAExcludePath=C:\Qt;%include% in the Visual Studio
 		# Code Analys builder's environment.
 		list(APPEND LOCAL_CFLAGS
-			/analyze:WX-
-			/analyze:log:format:sarif
-			)
+                /analyze:WX-
+                /analyze:log:format:sarif
+        )
 	endif()
 
 	# Additional compiler warnings to be treated as "Level 3"
@@ -3422,6 +3424,118 @@ if(BUILD_editcap)
 	install(TARGETS editcap RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
+# Find the libbpf library before compiling the ebpf_packet_capture.c
+find_package(LIBBPF)
+if (LIBBPF_FOUND)
+	message(STATUS "Found libbpf: ${LIBBPF_LIBRARY}")
+else()
+	set(WITH_LIBBPF OFF CACHE BOOL "Disable libbpf support" FORCE)
+endif()
+
+if (WITH_LIBBPF)
+	find_program(CLANG_BINARY
+			NAMES clang clang-16 clang-15 clang-14 clang-13 clang-12
+	)
+	# If clang is not found, disable WITH_LIBBPF and warn the user
+	if(NOT CLANG_BINARY)
+		message(WARNING "Clang not found; disabling eBPF support.")
+		set(WITH_LIBBPF OFF CACHE BOOL "Disable eBPF support due to missing Clang" FORCE)
+		return()
+	else()
+		set(WITH_LIBBPF ON CACHE BOOL "Disable eBPF support due to missing Clang" FORCE)
+		message(STATUS "Clang found: ${CLANG_BINARY}")
+	endif()
+	# Add your custom target for eBPF compilation in the CMakeLists.txt
+	set(EbpfCaptureFile ${CMAKE_SOURCE_DIR}/capture/ebpf_packet_capture.c)  # Path to the .c file
+	set(EbpfCaptureObj ${CMAKE_BINARY_DIR}/capture/ebpf_packet_capture.o)    # Path to the .o file
+
+	# Get the Clang resource directory
+	execute_process(
+			COMMAND ${CLANG_BINARY} -print-resource-dir
+			OUTPUT_VARIABLE CLANG_RESOURCE_DIR
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			RESULT_VARIABLE CLANG_STATUS
+	)
+
+	if (NOT CLANG_STATUS EQUAL 0)
+		message(WARNING "Failed to determine Clang resource directory. Disabling eBPF support.")
+		set(WITH_LIBBPF OFF CACHE BOOL "Disable libbpf support" FORCE)
+		return()
+	endif()
+
+	# Get the multiarch triple
+	execute_process(
+			COMMAND ${CMAKE_C_COMPILER} -print-multiarch
+			OUTPUT_VARIABLE MULTIARCH_TRIPLE
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_QUIET
+	)
+
+	if(NOT MULTIARCH_TRIPLE)
+		# If -print-multiarch is not supported, set to empty
+		set(MULTIARCH_TRIPLE "")
+	endif()
+
+	# Determine the system include directory
+	if(EXISTS "/usr/include/${MULTIARCH_TRIPLE}")
+		set(SYS_INCLUDE_DIR "/usr/include/${MULTIARCH_TRIPLE}")
+	else()
+		set(SYS_INCLUDE_DIR "/usr/include")
+	endif()
+
+	message(STATUS "System include directory: ${SYS_INCLUDE_DIR}")
+
+	# Determine the target architecture
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+		set(ARCH "x86")
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+		set(ARCH "arm64")
+	elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "armv7l")
+		set(ARCH "arm")
+	else()
+		message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+		set(WITH_LIBBPF OFF CACHE BOOL "Disable libbpf support" FORCE)
+		return()
+	endif()
+
+	# Find bpftool
+	find_program(BPFTOOL_BINARY bpftool)
+	if(NOT BPFTOOL_BINARY)
+		message(FATAL_ERROR "bpftool not found; required for generating vmlinux.h")
+		set(WITH_LIBBPF OFF CACHE BOOL "Disable libbpf support" FORCE)
+		return()
+	else()
+		message(STATUS "bpftool found: ${BPFTOOL_BINARY}")
+		# Set the path for vmlinux.h
+		set(VMLINUX_H ${CMAKE_BINARY_DIR}/vmlinux.h)
+
+		# Add custom command to generate vmlinux.h
+		add_custom_command(
+				OUTPUT ${VMLINUX_H}
+				COMMAND echo "Generating vmlinux.h from /sys/kernel/btf/vmlinux"
+				COMMAND sudo ${BPFTOOL_BINARY} btf dump file /sys/kernel/btf/vmlinux format c > ${VMLINUX_H}
+				COMMENT "Generating vmlinux.h"
+				VERBATIM
+		)
+		# Use the result in your custom command
+		add_custom_command(
+				OUTPUT ${EbpfCaptureObj}
+				COMMAND echo "Running eBPF compile command"
+				COMMAND ${CLANG_BINARY} -g -O2 -target bpf -c -D__TARGET_ARCH_${ARCH}
+				-I${CLANG_RESOURCE_DIR}/include
+				-I${CMAKE_SOURCE_DIR}
+				-I${SYS_INCLUDE_DIR}
+				-o ${EbpfCaptureObj} ${EbpfCaptureFile}
+				WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+				DEPENDS ${EbpfCaptureFile}
+				COMMENT "Compiling eBPF program: ${EbpfCaptureFile}"
+				VERBATIM
+		)
+		# Add a custom target to ensure the command runs as part of the build process
+		add_custom_target(compile_ebpf ALL DEPENDS ${EbpfCaptureObj})
+	endif()
+endif()
+
 if(BUILD_dumpcap AND PCAP_FOUND)
 	set(dumpcap_LIBS
 		writecap
@@ -3471,6 +3585,26 @@ if(BUILD_dumpcap AND PCAP_FOUND)
 		ui/capture_opts.c
 		${CAPUTILS_SRC}
 	)
+	# Check if the WITH_LIBBPF option is enabled
+	if (WITH_LIBBPF)
+		message(STATUS "WITH_LIBBPF is on")
+
+		if (LIBBPF_FOUND)
+			message(STATUS "Found libbpf: ${LIBBPF_LIBRARY}")
+			include_directories(${LIBBPF_INCLUDE_DIRS})
+			list(APPEND dumpcap_LIBS ${LIBBPF_LIBRARIES})
+			list(APPEND dumpcap_FILES
+					ebpf_userspace.c
+					ebpf_userspace.h
+					process_info.c
+			)
+		else()
+			message(WARNING "libbpf not found, disabling eBPF support.")
+			set(WITH_LIBBPF OFF CACHE BOOL "Disable eBPF support due to missing libbpf" FORCE)
+		endif()
+	else()
+		message("WITH_LIBBPF not found")
+	endif()
 	set_executable_resources(dumpcap "Dumpcap" UNIQUE_RC)
 	add_executable(dumpcap ${dumpcap_FILES})
 	set_extra_executable_properties(dumpcap "Executables")
@@ -4506,6 +4640,53 @@ endif()
 # Packaging (CPack)
 # -----------------------------------------------------------------------------
 include(ConfigCPack.cmake)
+if (WITH_LIBBPF)
+	message(STATUS "WITH_LIBBPF is set to ON")
+
+	if (TARGET dumpcap)
+		target_compile_definitions(dumpcap PUBLIC WITH_LIBBPF=1)
+	endif()
+
+	if (TARGET qtui)
+		target_compile_definitions(qtui PUBLIC WITH_LIBBPF=1)
+	endif()
+
+	if (TARGET writecap)
+		target_compile_definitions(writecap PUBLIC WITH_LIBBPF=1)
+	endif()
+
+	if (TARGET capchild)
+		target_compile_definitions(capchild PUBLIC WITH_LIBBPF=1)
+	endif()
+
+	if (TARGET dissectors)
+		target_compile_definitions(dissectors PUBLIC WITH_LIBBPF=1)
+	endif()
+
+else()
+	message(STATUS "WITH_LIBBPF is set to OFF")
+
+	if (TARGET dumpcap)
+		target_compile_definitions(dumpcap PUBLIC WITH_LIBBPF=0)
+	endif()
+
+	if (TARGET qtui)
+		target_compile_definitions(qtui PUBLIC WITH_LIBBPF=0)
+	endif()
+
+	if (TARGET writecap)
+		target_compile_definitions(writecap PUBLIC WITH_LIBBPF=0)
+	endif()
+
+	if (TARGET capchild)
+		target_compile_definitions(capchild PUBLIC WITH_LIBBPF=0)
+	endif()
+
+	if (TARGET dissectors)
+		target_compile_definitions(dissectors PUBLIC WITH_LIBBPF=0)
+	endif()
+
+endif()
 
 #
 # Editor modelines  -  https://www.wireshark.org/tools/modelines.html

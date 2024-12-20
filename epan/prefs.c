@@ -3870,6 +3870,9 @@ prefs_register_modules(void)
     prefs_register_bool_preference(capture_module, "pcap_ng", "Capture in pcapng format",
         "Capture in pcapng format?", &prefs.capture_pcap_ng);
 
+    prefs_register_bool_preference(capture_module, "process_info", "Capture per packet process information",
+    "Capture per packet process information", &prefs.capture_process_info);
+
     prefs_register_bool_preference(capture_module, "real_time_update", "Update packet list in real time during capture",
         "Update packet list in real time during capture?", &prefs.capture_real_time);
 
@@ -4473,6 +4476,7 @@ pre_init_prefs(void)
     prefs.capture_prom_mode             = true;
     prefs.capture_monitor_mode          = false;
     prefs.capture_pcap_ng               = true;
+    prefs.capture_process_info          = false;
     prefs.capture_real_time             = true;
     prefs.capture_update_interval       = DEFAULT_UPDATE_INTERVAL;
     prefs.capture_no_extcap             = false;

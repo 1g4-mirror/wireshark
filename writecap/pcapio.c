@@ -142,7 +142,7 @@ struct epb {
         uint32_t packet_len;
 };
 #define ENHANCED_PACKET_BLOCK_TYPE 0x00000006
-
+#define CUSTOM_OPTION_PROCESS_INFO 0xABCD  // Custom option type for process info
 struct ws_option {
         uint16_t type;
         uint16_t value_length;
@@ -550,7 +550,12 @@ pcapng_write_enhanced_packet_block(FILE* pfile,
                                    const uint8_t *pd,
                                    uint32_t flags,
                                    uint64_t *bytes_written,
-                                   int *err)
+                                   int *err
+#if WITH_LIBBPF
+									,
+                                   struct process_info *pinfo
+#endif
+)
 {
         struct epb epb;
         struct ws_option option;
@@ -571,6 +576,12 @@ pcapng_write_enhanced_packet_block(FILE* pfile,
                 options_length += (uint32_t)(sizeof(struct ws_option) +
                                             sizeof(uint32_t));
         }
+#if WITH_LIBBPF
+        // Add space for process_info option if pinfo is valid
+        if (pinfo != NULL) { // Check if pinfo is valid
+                options_length += (uint32_t)(sizeof(struct ws_option) + sizeof(struct process_info));
+        }
+#endif
         /* If we have options add size of end-of-options */
         if (options_length != 0) {
                 options_length += (uint32_t)sizeof(struct ws_option);
@@ -621,6 +632,18 @@ pcapng_write_enhanced_packet_block(FILE* pfile,
                 if (!write_to_file(pfile, (const uint8_t*)&flags, sizeof(uint32_t), bytes_written, err))
                         return false;
         }
+        // Write process_info option if available
+#if WITH_LIBBPF
+        if (pinfo != NULL) {
+                option.type = CUSTOM_OPTION_PROCESS_INFO;
+                option.value_length = sizeof(struct process_info);
+                // Write the custom option for process_info
+                if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option), bytes_written, err))
+                        return false;
+                if (!write_to_file(pfile, (const uint8_t*)pinfo, sizeof(struct process_info), bytes_written, err))
+                        return false;
+        }
+#endif
         if (options_length != 0) {
                 /* write end of options */
                 option.type = OPT_ENDOFOPT;

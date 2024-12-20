@@ -142,6 +142,7 @@
 #define LONGOPT_PRINT_TIMERS            LONGOPT_BASE_APPLICATION+9
 #define LONGOPT_GLOBAL_PROFILE          LONGOPT_BASE_APPLICATION+10
 #define LONGOPT_COMPRESS                LONGOPT_BASE_APPLICATION+11
+#define LONGOPT_PROCESS_INFO            LONGOPT_BASE_APPLICATION+12
 
 capture_file cfile;
 
@@ -156,6 +157,7 @@ static bool epan_auto_reset;
 
 static uint32_t selected_frame_number;
 
+static bool capture_process_info = false;
 /*
  * The way the packet decode is to be written.
  */
@@ -1063,6 +1065,7 @@ main(int argc, char *argv[])
         {"print-timers", ws_no_argument, NULL, LONGOPT_PRINT_TIMERS},
         {"global-profile", ws_no_argument, NULL, LONGOPT_GLOBAL_PROFILE},
         {"compress", ws_required_argument, NULL, LONGOPT_COMPRESS},
+        {"process-info", ws_no_argument, NULL, LONGOPT_PROCESS_INFO},
         {0, 0, 0, 0}
     };
     bool                 arg_error = false;
@@ -1937,6 +1940,9 @@ main(int argc, char *argv[])
                     goto clean_exit;
                 }
                 break;
+            case LONGOPT_PROCESS_INFO:
+                capture_process_info = true;
+                break;
             default:
             case '?':        /* Bad flag - print usage message */
                 switch(ws_optopt) {
@@ -1989,10 +1995,16 @@ main(int argc, char *argv[])
                 "but \"-Tek, -Tfields, -Tjson or -Tpdml\" was not specified.");
         exit_status = WS_EXIT_INVALID_OPTION;
         goto clean_exit;
-    } else if (WRITE_FIELDS == output_action && 0 == output_fields_num_fields(output_fields)) {
+    } else if (WRITE_FIELDS == output_action && (0 == output_fields_num_fields(output_fields) && !(capture_process_info))) {
         cmdarg_err("\"-Tfields\" was specified, but no fields were "
                 "specified with \"-e\".");
 
+        exit_status = WS_EXIT_INVALID_OPTION;
+        goto clean_exit;
+    }
+    if (capture_process_info && output_action == WRITE_NONE) {
+        cmdarg_err("Capture process information was specified with \"--process_info\", "
+                "but \"-Tek, -Tfields, -Tjson or -Tpdml\" was not specified.");
         exit_status = WS_EXIT_INVALID_OPTION;
         goto clean_exit;
     }
@@ -2257,6 +2269,11 @@ main(int argc, char *argv[])
                     exit_status = WS_EXIT_INVALID_OPTION;
                     goto clean_exit;
                 }
+                if (capture_process_info && !use_pcapng) {
+                    cmdarg_err("Capturing process information is only available with pcapng file format.");
+                    exit_status = WS_EXIT_INVALID_OPTION;
+                    goto clean_exit;
+                }
                 if (global_capture_opts.multi_files_on) {
                     /* Multiple-file mode doesn't work under certain conditions:
                        a) it doesn't work if you're writing to the standard output;
@@ -2369,6 +2386,55 @@ main(int argc, char *argv[])
         goto clean_exit;
     }
 
+    if ((prefs.capture_process_info = capture_process_info) && 0 == output_fields_num_fields(output_fields)) {
+        const char* process_fields[] = {
+            "frame.process_name",
+            "frame.process_pid",
+            "frame.parent_process_name",
+            "frame.parent_process_pid",
+            "frame.grandparent_process_name",
+            "frame.grandparent_process_pid"
+        };
+        const char* default_columns[] = {
+            "frame.number", "frame.time_relative", "frame.protocols",
+            "ip.src", "ip.dst", "ipv6.src",
+            "ipv6.dst", "_ws.col.Protocol", "udp.srcport",
+            "udp.dstport", "tcp.srcport","tcp.dstport",
+            "udp.length", "tcp.len", "frame.len",
+            "_ws.col.Info", "frame.time_delta"
+        };
+        // Add default columns if not already specified
+        for (size_t i = 0; i < sizeof(default_columns) / sizeof(default_columns[0]); i++) {
+            const char* field = default_columns[i];
+            const char* col_field = try_convert_to_column_field(field);
+            if (col_field) {
+                output_fields_add(output_fields, col_field);
+            }
+            else {
+                header_field_info *hfi = proto_registrar_get_byalias(field);
+                if (hfi) {
+                    output_fields_add(output_fields, hfi->abbrev);
+                } else {
+                    output_fields_add(output_fields, field);
+                }
+            }
+        }
+        // Add process info fields
+        for (size_t i = 0; i < sizeof(process_fields) / sizeof(process_fields[0]); i++) {
+            const char* field = process_fields[i];
+            const char* col_field = try_convert_to_column_field(field);
+            if (col_field) {
+                output_fields_add(output_fields, col_field);
+            } else {
+                header_field_info *hfi = proto_registrar_get_byalias(field);
+                if (hfi) {
+                    output_fields_add(output_fields, hfi->abbrev);
+                } else {
+                    output_fields_add(output_fields, field);
+                }
+            }
+        }
+    }
     /* Notify all registered modules that have had any of their preferences
        changed either from one of the preferences file or from the command
        line that their preferences have changed. */

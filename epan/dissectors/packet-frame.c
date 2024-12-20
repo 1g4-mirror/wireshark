@@ -189,6 +189,12 @@ static int hf_frame_bblog_pad_2;
 static int hf_frame_bblog_pad_3;
 static int hf_frame_bblog_payload_len;
 static int hf_comments_text;
+static int hf_frame_process_name = -1;
+static int hf_frame_process_pid = -1;
+static int hf_frame_parent_process_name = -1;
+static int hf_frame_parent_process_pid = -1;
+static int hf_frame_grandparent_process_name = -1;
+static int hf_frame_grandparent_process_pid = -1;
 
 static int ett_frame;
 static int ett_ifname;
@@ -583,6 +589,32 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	tree=parent_tree;
 
 	DISSECTOR_ASSERT(fr_data);
+	/* Add process information if available */
+	if (pinfo->rec && prefs.capture_process_info) {
+		struct process_info *proc_info = &pinfo->rec->process_info;
+
+		if (proc_info->pid != 0) {
+			proto_item *processItem;
+
+			processItem = proto_tree_add_string(parent_tree, hf_frame_process_name, tvb, 0, 0, proc_info->comm);
+			PROTO_ITEM_SET_GENERATED(processItem);
+
+			processItem = proto_tree_add_uint(parent_tree, hf_frame_process_pid, tvb, 0, 0, proc_info->pid);
+			PROTO_ITEM_SET_GENERATED(processItem);
+
+			processItem = proto_tree_add_string(parent_tree, hf_frame_parent_process_name, tvb, 0, 0, proc_info->p_comm);
+			PROTO_ITEM_SET_GENERATED(processItem);
+
+			processItem = proto_tree_add_uint(parent_tree, hf_frame_parent_process_pid, tvb, 0, 0, proc_info->ppid);
+			PROTO_ITEM_SET_GENERATED(processItem);
+
+			processItem = proto_tree_add_string(parent_tree, hf_frame_grandparent_process_name, tvb, 0, 0, proc_info->gp_comm);
+			PROTO_ITEM_SET_GENERATED(processItem);
+
+			processItem = proto_tree_add_uint(parent_tree, hf_frame_grandparent_process_pid, tvb, 0, 0, proc_info->gpid);
+			PROTO_ITEM_SET_GENERATED(processItem);
+		}
+	}
 
 	switch (pinfo->rec->rec_type) {
 
@@ -2239,6 +2271,36 @@ proto_register_frame(void)
 		    FT_UINT32, BASE_DEC, NULL, 0x0,
 		    NULL, HFILL}},
 
+		{ &hf_frame_process_name,
+			{ "Process Name", "frame.process_name",
+			FT_STRING, BASE_NONE, NULL, 0x0,
+			"Name of the process that generated this packet", HFILL }
+		},
+		{ &hf_frame_process_pid,
+			{ "Process ID", "frame.process_pid",
+			FT_UINT32, BASE_DEC, NULL, 0x0,
+			"PID of the process that generated this packet", HFILL }
+		},
+		{ &hf_frame_parent_process_name,
+			{ "Parent Process Name", "frame.parent_process_name",
+			FT_STRING, BASE_NONE, NULL, 0x0,
+			"Name of the parent process", HFILL }
+		},
+		{ &hf_frame_parent_process_pid,
+			{ "Parent Process ID", "frame.parent_process_pid",
+			FT_UINT32, BASE_DEC, NULL, 0x0,
+			"PID of the parent process", HFILL }
+		},
+		{ &hf_frame_grandparent_process_name,
+			{ "Grandparent Process Name", "frame.grandparent_process_name",
+			FT_STRING, BASE_NONE, NULL, 0x0,
+			"Name of the grandparent process", HFILL }
+		},
+		{ &hf_frame_grandparent_process_pid,
+			{ "Grandparent Process ID", "frame.grandparent_process_pid",
+			FT_UINT32, BASE_DEC, NULL, 0x0,
+			"PID of the grandparent process", HFILL }
+		},
 	};
 
 	static hf_register_info hf_encap =
