@@ -87,6 +87,23 @@ if(USE_MSYSTEM)
 endif()
 find_package(Python3 3.6 REQUIRED)
 
+# Strawberry is a web browser away from being its own operating system. Find
+# Perl before finding anything else so that we can avoid building with any of
+# of Strawberry's components.
+find_package(Perl)
+if(WIN32 AND PERL_EXECUTABLE)
+	string(TOLOWER ${PERL_EXECUTABLE} lower_perl)
+	if (${lower_perl} MATCHES "^.:/strawberry/")
+		string(REGEX REPLACE "^(.:/[^/]+).*" "\\1" strawberry_prefix ${PERL_EXECUTABLE})
+		# CMAKE_IGNORE_PREFIX_PATH must be an exact installation prefix.
+		list(APPEND CMAKE_IGNORE_PREFIX_PATH "${strawberry_prefix}/c")
+		message(STATUS "Added ${strawberry_prefix}/c to CMAKE_IGNORE_PREFIX_PATH")
+		unset(lower_perl)
+		unset(strawberry_prefix)
+	endif()
+endif()
+
+
 # Set a default build type if none was specified
 set(_default_build_type "RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -1123,9 +1140,8 @@ if(ENABLE_FUZZER)
 	set(CMAKE_CXX_FLAGS "-fsanitize=fuzzer-no-link ${CMAKE_CXX_FLAGS}")
 endif()
 
-if(ENABLE_ASAN OR ENABLE_TSAN OR ENABLE_UBSAN OR ENABLE_LSAN OR ENABLE_FUZZER)
+if(NOT MSVC)
 	# Disable sanitizers for build-time tools, e.g. lemon
-	# (MSVC doesn't support this flag)
 	check_c_compiler_flag(-fno-sanitize=all C__fno_sanitize_all_VALID)
 	if(C__fno_sanitize_all_VALID)
 		set(NO_SANITIZE_CFLAGS "-fno-sanitize=all")
@@ -1308,7 +1324,6 @@ if (CARES_VERSION VERSION_GREATER_EQUAL "1.28.0")
 	add_compile_definitions(CARES_NO_DEPRECATED)
 endif ()
 find_package(LEX REQUIRED)
-find_package(Perl)
 reset_find_package(PCRE2 PCRE2_DEBUG_LIBRARY)
 find_package(PCRE2 REQUIRED)
 
@@ -2233,6 +2248,7 @@ if (ASCIIDOCTOR_FOUND)
 		${CMAKE_BINARY_DIR}/doc/man_pages/reordercap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/sshdig.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/sshdump.html
+		${CMAKE_BINARY_DIR}/doc/man_pages/stratoshark.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/wifidump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/text2pcap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/tshark.html
@@ -2716,17 +2732,9 @@ add_library(shark_common OBJECT
 	cfile.c
 	extcap_parser.c
 	file_packet_provider.c
-	frame_tvbuff.c
 	sync_pipe_write.c
 )
 add_library(cli_main OBJECT cli_main.c)
-add_library(capture_opts OBJECT capture_opts.c)
-target_include_directories(capture_opts SYSTEM PRIVATE ${PCAP_INCLUDE_DIRS})
-set_target_properties(shark_common cli_main capture_opts
-	PROPERTIES
-	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
-)
-
 
 if(BUILD_wireshark AND QT_FOUND)
 	set(WIRESHARK_SRC
@@ -2736,7 +2744,6 @@ if(BUILD_wireshark AND QT_FOUND)
 		${PLATFORM_UI_SRC}
 	)
 	set(wireshark_FILES
-		$<TARGET_OBJECTS:capture_opts>
 		$<TARGET_OBJECTS:shark_common>
 		${WIRESHARK_SRC}
 		${PLATFORM_UI_RC_FILES}
@@ -2752,7 +2759,6 @@ if(BUILD_stratoshark AND QT_FOUND)
 		${PLATFORM_UI_SRC}
 	)
 	set(stratoshark_FILES
-		$<TARGET_OBJECTS:capture_opts>
 		$<TARGET_OBJECTS:shark_common>
 		${STRATOSHARK_SRC}
 		${PLATFORM_UI_RC_FILES}
@@ -3166,7 +3172,6 @@ if(BUILD_tshark)
 		${WIN_WS2_32_LIBRARY}
 	)
 	set(tshark_FILES
-		$<TARGET_OBJECTS:capture_opts>
 		$<TARGET_OBJECTS:cli_main>
 		$<TARGET_OBJECTS:shark_common>
 		tshark-tap-register.c
@@ -3459,14 +3464,27 @@ if(BUILD_dumpcap AND PCAP_FOUND)
 	list(APPEND CAPUTILS_SRC
 		capture/capture-pcap-util.c
 	)
+	#
+	# We don't link with libiface_monitor or libui because those
+	# are built to be linked against libwsutil as a shared library,
+	# and dumpcap is deliberately not linked against any of
+	# Wireshark's shared libraries, to reduce the amount of code
+	# it uses, and linking against the non-shared libiface_monitor
+	# or libui libraries will fail on Windows.
+	#
+	# Instead, we just include source files for the relevant code
+	# to be built as part of dumpcap, so that they're built with
+	# ENABLE_STATIC defined, and will be able to be built with
+	# the static version of libwsutil.
+	#
 	set(dumpcap_FILES
-		capture_opts.c
 		cli_main.c
 		dumpcap.c
 		ringbuffer.c
 		sync_pipe_write.c
 		capture/iface_monitor.c
 		capture/ws80211_utils.c
+		ui/capture_opts.c
 		${CAPUTILS_SRC}
 	)
 	set_executable_resources(dumpcap "Dumpcap" UNIQUE_RC)

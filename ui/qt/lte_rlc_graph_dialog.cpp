@@ -17,7 +17,6 @@
 
 #include <epan/tvbuff-int.h>
 #include <epan/tvbuff.h>
-#include <frame_tvbuff.h>
 
 #include <ui/qt/utils/tango_colors.h>
 
@@ -253,7 +252,7 @@ void LteRlcGraphDialog::fillGraph()
 
     // N.B. ssDisc is really too slow. TODO: work out how to turn off aliasing, or experiment
     // with ssCustom.  Other styles tried didn't look right.
-    // GTK version was speeded up noticibly by turning down aliasing level...
+    // GTK version was speeded up noticeably by turning down aliasing level...
     base_graph_->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, pkt_point_size_));
     reseg_graph_->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, pkt_point_size_));
     acks_graph_->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, pkt_point_size_));

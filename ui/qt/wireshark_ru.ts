@@ -1913,10 +1913,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Тип</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>Поля</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>Вхождение поля</translation>
     </message>
@@ -1931,6 +1927,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Width</source>
         <translation>Ширина</translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Alignment</source>
@@ -2385,6 +2385,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Apply a read filter %1</source>
         <translation>Примените фильтр чтения %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3057,12 +3061,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Все Файлы (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>Открыть файл</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>Выбрать файл</translation>
+        <source>%1 Select File</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3100,16 +3104,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>Запись фильтра отображения</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>Ввести поле %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>Недопустимый фильтр: </translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6960,6 +6964,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>Display filter as %1</source>
         <translation>Отображение фильтра в виде %1</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -8359,8 +8375,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Справка по полю фильтра</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>Скопировано </translation>
+        <source>Copied %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -8539,34 +8555,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>Средняя пропускная способность (бит/с)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>Время приёма-передачи (мс)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>Длина сегмента (Б)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>Порядковый номер (Б)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>Время (с)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>Размер окна (Б)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>Нераспакованные (выданные) байты (B)</translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[нет файла захвата]</translation>
@@ -9055,6 +9043,34 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>LOAD</source>
         <translation>ЗАГРУЗКА</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">Время приёма-передачи</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">Длина сегмента</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">Номер последовательности</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">Время</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -15326,14 +15342,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>Остановить и продолжить &amp;без сохранения</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Сетевой анализатор Wireshark</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>Захват из %1</translation>
     </message>
     <message>
         <source> before opening another file</source>

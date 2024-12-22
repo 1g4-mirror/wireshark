@@ -276,7 +276,7 @@ get_union_tag_size(char *name)
 		}
 	}
 	FPRINTF(stderr, "ERROR: size of tag for union:%s is not known\n", name);
-	FPRINTF(stderr, "  use the UNION_TAG_SIZE directive to specify it in teh conformance file\n");
+	FPRINTF(stderr, "  use the UNION_TAG_SIZE directive to specify it in the conformance file\n");
 	exit(10);
 }
 
@@ -2626,7 +2626,7 @@ static void parsefunction(int pass)
 			num_pointers++;
 		}
 
-		/* now that we know how many real poitner there were we must
+		/* now that we know how many real pointer there were we must
 		   prepend default pointers to the list so it has the right
 		   length.
 		*/

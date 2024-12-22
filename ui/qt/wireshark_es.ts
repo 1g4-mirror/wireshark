@@ -1879,10 +1879,6 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
         <translation>Tipo</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>Campos</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1896,6 +1892,10 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
     </message>
     <message>
         <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2350,6 +2350,10 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
     </message>
     <message>
         <source>Apply a read filter %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3023,11 +3027,11 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
         <translation type="unfinished">Todos los archivos (</translation>
     </message>
     <message>
-        <source>Open File</source>
+        <source>%1 Open File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
+        <source>%1 Select File</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3066,15 +3070,15 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation type="unfinished">Muestra entrada de filtro</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
+        <source>Invalid field: </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6872,6 +6876,18 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
         <source>Display filter as %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -8252,7 +8268,7 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copied </source>
+        <source>Copied %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8432,34 +8448,6 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation type="unfinished">Intervalo (s)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[no hay archivo de captura]</translation>
@@ -8947,6 +8935,34 @@ Por ejemplo, use 1 hora para tener creado un nuevo archivo cada hora en punto.</
     </message>
     <message>
         <source>LOAD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">Longitud de segmento</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">Intervalo</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15148,14 +15164,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>Capturando desde %1</translation>
     </message>
     <message>
         <source> before opening another file</source>

@@ -13,7 +13,6 @@
 #include "main_application.h"
 #include "main_window.h"
 
-#include "frame_tvbuff.h"
 #include "epan/follow.h"
 #include "epan/prefs.h"
 #include "epan/addr_resolv.h"
@@ -27,9 +26,9 @@
 #include <wsutil/utf8_entities.h>
 #include <wsutil/ws_assert.h>
 
+#include "wsutil/application_flavor.h"
 #include "wsutil/file_util.h"
 #include "wsutil/str_util.h"
-#include "wsutil/filesystem.h"
 
 #include "ws_symbol_export.h"
 
@@ -103,7 +102,7 @@ FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int pro
 
     ui->teStreamContent->installEventFilter(this);
 
-    connect(ui->leFind, SIGNAL(useRegexFind(bool)), this, SLOT(useRegexFind(bool)));
+    connect(ui->leFind, &FindLineEdit::useRegexFind, this, &FollowStreamDialog::useRegexFind);
 
     QComboBox *cbcs = ui->cbCharset;
     cbcs->blockSignals(true);
@@ -192,9 +191,7 @@ void FollowStreamDialog::fillHintLabel(int pkt)
 {
     QString hint;
 
-    bool is_stratoshark = strcmp(get_configuration_namespace(), "Stratoshark") == 0;
-
-    if (is_stratoshark)  {
+    if (application_flavor_is_stratoshark())  {
         if (pkt > 0) {
             hint = tr("Event %1. ").arg(pkt);
         }
@@ -1086,9 +1083,7 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, 
 
     removeTapListeners();
 
-    bool is_stratoshark = strcmp(get_configuration_namespace(), "Stratoshark") == 0;
-
-    if (is_stratoshark)  {
+    if (application_flavor_is_stratoshark())  {
         server_to_client_string =
                 tr("Read activity(%6)")
                 .arg(gchar_free_to_qstring(format_size(

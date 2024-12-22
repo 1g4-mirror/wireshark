@@ -1895,10 +1895,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished">类型</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1912,6 +1908,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2369,12 +2369,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>应用读取过滤器 %1</translation>
     </message>
     <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Current filter: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid filter: </source>
-        <translation type="unfinished">无效的过滤器：</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save this filter</source>
@@ -3037,11 +3041,11 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>所有文件 (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>打开文件</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
+        <source>%1 Select File</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3080,16 +3084,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>显示过滤器条目</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>输入字段 %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>无效的过滤器：</translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6910,6 +6914,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>Display filter as %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -8276,7 +8292,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation type="unfinished">过滤器字段参考</translation>
     </message>
     <message>
-        <source>Copied </source>
+        <source>Copied %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8456,34 +8472,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>平均吞吐量 (比特/秒)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>往返时间 (毫秒)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>段长度 (B)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>序列号 (B)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>时间 (秒)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>窗口大小 (B)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[无捕获文件]</translation>
@@ -8971,6 +8959,34 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>LOAD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">往返时间</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">段长度</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">序列号</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">时间</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15187,14 +15203,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>停止并继续，不保存(&amp;W)</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Wireshark 网络分析器</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>正在捕获 %1</translation>
     </message>
     <message>
         <source> before opening another file</source>

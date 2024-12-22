@@ -14,6 +14,7 @@
 #include <epan/expert.h>
 #include <epan/prefs.h>
 
+#include <wsutil/application_flavor.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/utf8_entities.h>
 
@@ -356,7 +357,7 @@ void MainStatusBar::setProfileName()
 void MainStatusBar::appInitialized()
 {
     setProfileName();
-    connect(qobject_cast<MainWindow *>(mainApp->mainWindow()), &MainWindow::framesSelected, this, &MainStatusBar::selectedFrameChanged);
+    connect(mainApp->mainWindow(), &MainWindow::framesSelected, this, &MainStatusBar::selectedFrameChanged);
 }
 
 void MainStatusBar::selectedFrameChanged(QList<int>)
@@ -369,9 +370,10 @@ void MainStatusBar::showCaptureStatistics()
     QString packets_str;
 
     QList<int> rows;
-    MainWindow * mw = qobject_cast<MainWindow *>(mainApp->mainWindow());
-    if (mw)
+    MainWindow * mw = mainApp->mainWindow();
+    if (mw) {
         rows = mw->selectedRows(true);
+    }
 
 #ifdef HAVE_LIBPCAP
     if (cap_file_) {
@@ -381,7 +383,7 @@ void MainStatusBar::showCaptureStatistics()
         }
         if (cs_count_ > 0) {
             if (prefs.gui_show_selected_packet && rows.count() == 1) {
-                if (is_packet_configuration_namespace()) {
+                if (application_flavor_is_wireshark()) {
                     packets_str.append(tr("Selected Packet: %1 %2 ")
                                        .arg(rows.at(0))
                                        .arg(UTF8_MIDDLE_DOT));
@@ -391,7 +393,7 @@ void MainStatusBar::showCaptureStatistics()
                                            .arg(UTF8_MIDDLE_DOT));
                 }
             }
-            if (is_packet_configuration_namespace()) {
+            if (application_flavor_is_wireshark()) {
                 packets_str.append(tr("Packets: %1")
                                        .arg(cs_count_));
             } else {
@@ -445,7 +447,7 @@ void MainStatusBar::showCaptureStatistics()
         }
     } else if (cs_fixed_ && cs_count_ > 0) {
         /* There shouldn't be any rows without a cap_file_ but this is benign */
-        if (is_packet_configuration_namespace()) {
+        if (application_flavor_is_wireshark()) {
             if (prefs.gui_show_selected_packet && rows.count() == 1) {
                 packets_str.append(tr("Selected Packet: %1 %2 ")
                     .arg(rows.at(0))
@@ -466,7 +468,7 @@ void MainStatusBar::showCaptureStatistics()
 #endif // HAVE_LIBPCAP
 
     if (packets_str.isEmpty()) {
-        if (is_packet_configuration_namespace()) {
+        if (application_flavor_is_wireshark()) {
             packets_str = tr("No Packets");
         } else {
             packets_str = tr("No Events");

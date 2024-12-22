@@ -13,7 +13,8 @@
 #include <ui_about_dialog.h>
 
 #include "main_application.h"
-#include <wsutil/filesystem.h>
+
+#include <wsutil/application_flavor.h>
 
 #include <QDesktopServices>
 #include <QUrl>
@@ -38,6 +39,8 @@
 #include "ui/capture_globals.h"
 
 #include "extcap.h"
+
+#include <ui/qt/main_window.h>
 
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/utils/qt_ui_utils.h>
@@ -268,7 +271,7 @@ FolderListModel::FolderListModel(QObject * parent):
 
 #ifdef Q_OS_MAC
     /* Mac Extras */
-    QString extras_path = mainApp->applicationDirPath() + "/../Resources/Extras";
+    QString extras_path = QStringLiteral("%1/../Resources/Extras").arg(mainApp->applicationDirPath());
     appendRow(QStringList() << tr("macOS Extras") << QDir::cleanPath(extras_path) << tr("Extra macOS packages"));
 
 #endif
@@ -291,7 +294,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
     QFile f_acknowledgements;
     QFile f_license;
 
-    if (!is_packet_configuration_namespace()) {
+    if (application_flavor_is_stratoshark()) {
         setWindowTitle(tr("About Stratoshark"));
         ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->tab_wireshark), tr("Stratoshark"));
         ui->label_title->setText(tr("<h3>System Call and Event Log Analyzer</h3>"));
@@ -471,7 +474,7 @@ void AboutDialog::showEvent(QShowEvent * event)
 
 void AboutDialog::updateWiresharkText()
 {
-    QString vcs_version_info_str = is_packet_configuration_namespace() ? get_ws_vcs_version_info() : get_ss_vcs_version_info();
+    QString vcs_version_info_str = application_flavor_is_wireshark() ? get_ws_vcs_version_info() : get_ss_vcs_version_info();
     QString copyright_info_str = get_copyright_info();
     QString license_info_str = get_license_info();
     QString comp_info_str = gstring_free_to_qbytearray(get_compiled_version_info(gather_wireshark_qt_compiled_info));

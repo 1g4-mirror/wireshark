@@ -1897,10 +1897,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>유형</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>필드</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>필드 출현 횟수</translation>
     </message>
@@ -1915,6 +1911,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Width</source>
         <translation>폭</translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Alignment</source>
@@ -2369,6 +2369,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Apply a read filter %1</source>
         <translation>읽기 필터 적용 %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3041,12 +3045,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>모든 파일 (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>파일 열기</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>파일 선택</translation>
+        <source>%1 Select File</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3084,16 +3088,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>표시 필터 항목</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>필드 입력 %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>잘못된 필터: </translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6914,6 +6918,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>Display filter as %1</source>
         <translation>%1(으)로 표시 필터</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -8293,8 +8309,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>필터 필드 참조</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>복사됨 </translation>
+        <source>Copied %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -8473,34 +8489,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>평균 처리량(비트/초)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>왕복 시간(ms)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>세그먼트 길이(바이트)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>시퀀스 번호(바이트)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>시간(초)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>윈도 크기(바이트)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>ACK되지 않은(대기 중) 바이트(바이트)</translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[캡처 파일 없음]</translation>
@@ -8989,6 +8977,34 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>LOAD</source>
         <translation>부하</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">왕복 시간</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">세그먼트 길이</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">시퀀스 번호</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">시간</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -15250,14 +15266,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>정지하고 저장하지 않고 계속(&amp;W)</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Wireshark 네트워크 분석기</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>%1에서 캡처 중</translation>
     </message>
     <message>
         <source> before opening another file</source>

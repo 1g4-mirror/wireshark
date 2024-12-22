@@ -506,7 +506,7 @@ void WiresharkMainWindow::queuedFilterAction(QString action_filter, FilterAction
         break;
     case FilterAction::ActionWebLookup:
     {
-        QString url = QStringLiteral("https://www.google.com/search?q=") + new_filter;
+        QString url = QStringLiteral("https://www.google.com/search?q=%1").arg(new_filter);
         QDesktopServices::openUrl(QUrl(url));
         break;
     }
@@ -837,7 +837,7 @@ void WiresharkMainWindow::captureFileClosed() {
     main_ui_->statusBar->captureFileClosing();
     mainApp->popStatus(WiresharkApplication::FileStatus);
 
-    setWSWindowTitle();
+    setMainWindowTitle();
     setWindowIcon(mainApp->normalIcon());
     setMenusForSelectedPacket();
     setMenusForSelectedTreeRow();
@@ -2928,8 +2928,8 @@ void WiresharkMainWindow::openPacketDialog(bool from_reference)
 
         connect(packet_dialog, &PacketDialog::showProtocolPreferences,
                 this, &WiresharkMainWindow::showPreferencesDialog);
-        connect(packet_dialog, SIGNAL(editProtocolPreference(preference*, pref_module*)),
-                main_ui_->preferenceEditorFrame, SLOT(editPreference(preference*, pref_module*)));
+        connect(packet_dialog, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+                main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*,module_t*)));
 
         connect(this, &WiresharkMainWindow::closePacketDialogs, packet_dialog, &PacketDialog::close);
         zoomText(); // Emits mainApp->zoomMonospaceFont(QFont)

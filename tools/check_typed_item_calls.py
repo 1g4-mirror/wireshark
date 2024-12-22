@@ -284,7 +284,7 @@ class ProtoTreeAddItemCheck(APICheck):
 
                         enc = m.group(4)
                         hf_name = m.group(1)
-                        if not enc.startswith('ENC_'):
+                        if not enc.startswith('ENC_') and enc.lower().find('endian') == -1:
                             if enc not in { 'encoding', 'enc', 'client_is_le', 'cigi_byte_order', 'endian', 'endianess', 'machine_encoding', 'byte_order', 'bLittleEndian',
                                             'p_mq_parm->mq_str_enc', 'p_mq_parm->mq_int_enc',
                                             'iEnc', 'strid_enc', 'iCod', 'nl_data->encoding',
@@ -299,18 +299,13 @@ class ProtoTreeAddItemCheck(APICheck):
                                             'packet->enc',
                                             'IS_EBCDIC(uCCS) ? ENC_EBCDIC : ENC_ASCII',
                                             'DREP_ENC_INTEGER(hdr->drep)',
-                                            'dhcp_uuid_endian',
                                             'payload_le',
                                             'local_encoding',
-                                            'big_endian',
                                             'hf_data_encoding',
                                             'IS_EBCDIC(eStr) ? ENC_EBCDIC : ENC_ASCII',
-                                            'big_endian ? ENC_BIG_ENDIAN : ENC_LITTLE_ENDIAN',
-                                            '(skip == 1) ? ENC_BIG_ENDIAN : ENC_LITTLE_ENDIAN',
                                             'pdu_info->sbc', 'pdu_info->mbc',
                                             'seq_info->txt_enc | ENC_NA',
                                             'BASE_SHOW_UTF_8_PRINTABLE',
-                                            'dhcp_secs_endian',
                                             'is_mdns ? ENC_UTF_8|ENC_NA : ENC_ASCII|ENC_NA',
                                             'xl_encoding',
                                             'my_frame_data->encoding_client', 'my_frame_data->encoding_results'
@@ -605,6 +600,7 @@ class ValueString:
                 print('Warning:', self.file, ': value_string', self.name, '- value ', value, 'repeated with same string - ', label)
                 warnings_found += 1
 
+            # Same value, different label
             if value in self.parsed_vals and label != self.parsed_vals[value]:
                 print('Warning:', self.file, ': value_string', self.name, '- value ', value, 'repeated with different values - was',
                     self.parsed_vals[value], 'now', label)
@@ -1087,7 +1083,8 @@ class ExpertEntries:
         self.filename = filename
         self.entries = []
         self.summaries = set()  # key is (name, severity)
-        self.reverselookup = {}  # summary -> previous-item
+        self.summary_reverselookup = {}  # summary -> item-name
+        self.filter_reverselookup  = {}  # filter  -> item-name
         self.filters = set()
 
     def AddEntry(self, entry):
@@ -1098,16 +1095,18 @@ class ExpertEntries:
         # If summaries are not unique, can't tell apart from expert window (need to look into frame to see details)
         if (entry.summary, entry.severity) in self.summaries:
             print('Warning:', self.filename, 'Expert summary', '"' + entry.summary + '"',
-                  'has already been seen (now in', entry.name, '- previously in', self.reverselookup[entry.summary], ')')
+                  'has already been seen (now in', entry.name, '- previously in', self.summary_reverselookup[entry.summary], ')')
             warnings_found += 1
         self.summaries.add((entry.summary, entry.severity))
-        self.reverselookup[entry.summary] = entry.name
+        self.summary_reverselookup[entry.summary] = entry.name
 
         # Not sure if anyone ever filters on these, but check if are unique
         if entry.filter in self.filters:
-            print('Warning:', self.filename, 'Expert filter', '"' + entry.filter + '"', 'has already been seen (now in', entry.name+')')
+            print('Warning:', self.filename, 'Expert filter', '"' + entry.filter + '"',
+                  'has already been seen (now in', entry.name, '- previously in', self.filter_reverselookup[entry.filter], ')')
             warnings_found += 1
         self.filters.add(entry.filter)
+        self.filter_reverselookup[entry.filter] = entry.name
 
     def VerifyCall(self, item):
         # TODO: ignore if wasn't declared in self.filename?
@@ -1119,7 +1118,7 @@ class ExpertEntries:
         # None matched...
         if item not in [ 'hf', 'dissect_hf' ]:
             global warnings_found
-            print('Warning:', self.filename, 'Expert info added with', '"' + item + '"', 'was it was not registered (in this file)')
+            print('Warning:', self.filename, 'Expert info added with', '"' + item + '"', 'was not registered (in this file)?')
             warnings_found += 1
 
 
@@ -1540,7 +1539,9 @@ class Item:
                         # These need to have a mask - don't judge for being 0
                         return
 
-                print('Note:', self.filename, self.hf, 'filter=', self.filter, " - mask is all set - if only want value (rather than bits), set 0 instead? :", '"' + mask + '"')
+                # No point in setting all bits if only want decimal number..
+                if self.display == "BASE_DEC":
+                    print('Note:', self.filename, self.hf, 'filter=', self.filter, " - mask is all set - if only want value (rather than bits), set 0 instead? :", '"' + mask + '"')
 
     # An item that appears in a bitmask set, needs to have a non-zero mask.
     def check_mask_if_in_field_array(self, mask, field_arrays):
@@ -2036,9 +2037,9 @@ def checkFile(filename, check_mask=False, mask_exact_width=False, check_label=Fa
         ett_defined =  findDefinedTrees(filename, ett_declared)
         for d in ett_declared:
             if d not in ett_defined:
-                global errors_found
-                print(filename, 'subtree identifier', d, 'is declared but not found in an array for registering')
-                errors_found += 1
+                global warnings_found
+                print('Warning:', filename, 'subtree identifier', d, 'is declared but not found in an array for registering')
+                warnings_found += 1
 
     items_declared = {}
     if check_missing_items:

@@ -34,12 +34,11 @@
 #include "ui/util.h"
 
 #include "wiretap/wtap_opttypes.h"
-#include "wsutil/filesystem.h"
+#include "wsutil/application_flavor.h"
 #include "wsutil/str_util.h"
 #include <wsutil/wslog.h>
 
 #include <epan/color_filters.h>
-#include "frame_tvbuff.h"
 
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/widgets/overlay_scroll_bar.h>
@@ -267,10 +266,9 @@ PacketList::PacketList(QWidget *parent) :
     Q_ASSERT(gbl_cur_packet_list == Q_NULLPTR);
     gbl_cur_packet_list = this;
 
-    connect(packet_list_model_, SIGNAL(goToPacket(int)), this, SLOT(goToPacket(int)));
-    connect(packet_list_model_, SIGNAL(itemHeightChanged(const QModelIndex&)), this, SLOT(updateRowHeights(const QModelIndex&)));
-    connect(mainApp, SIGNAL(addressResolutionChanged()), this, SLOT(redrawVisiblePacketsDontSelectCurrent()));
-    connect(mainApp, SIGNAL(columnDataChanged()), this, SLOT(redrawVisiblePacketsDontSelectCurrent()));
+    connect(packet_list_model_, &PacketListModel::goToPacket, this, [=](int packet) { goToPacket(packet); });
+    connect(mainApp, &MainApplication::addressResolutionChanged, this, &PacketList::redrawVisiblePacketsDontSelectCurrent);
+    connect(mainApp, &MainApplication::columnDataChanged, this, &PacketList::redrawVisiblePacketsDontSelectCurrent);
     connect(mainApp, &MainApplication::preferencesChanged, this, [=]() {
         /* The pref is a uint but QCache maxCost is a signed int (/
          * qsizetype in Qt 6). Note that QAbstractItemModel row numbers
@@ -283,12 +281,10 @@ PacketList::PacketList(QWidget *parent) :
         }
     });
 
-    connect(header(), SIGNAL(sectionResized(int,int,int)),
-            this, SLOT(sectionResized(int,int,int)));
-    connect(header(), SIGNAL(sectionMoved(int,int,int)),
-            this, SLOT(sectionMoved(int,int,int)));
+    connect(header(), &QHeaderView::sectionResized, this, &PacketList::sectionResized);
+    connect(header(), &QHeaderView::sectionMoved, this, &PacketList::sectionMoved);
 
-    connect(verticalScrollBar(), SIGNAL(actionTriggered(int)), this, SLOT(vScrollBarActionTriggered(int)));
+    connect(verticalScrollBar(), &QScrollBar::actionTriggered, this, &PacketList::vScrollBarActionTriggered);
 }
 
 PacketList::~PacketList()
@@ -453,9 +449,9 @@ void PacketList::drawRow (QPainter *painter, const QStyleOptionViewItem &option,
 void PacketList::setProtoTree (ProtoTree *proto_tree) {
     proto_tree_ = proto_tree;
 
-    connect(proto_tree_, SIGNAL(goToPacket(int)), this, SLOT(goToPacket(int)));
-    connect(proto_tree_, SIGNAL(relatedFrame(int,ft_framenum_type_t)),
-            &related_packet_delegate_, SLOT(addRelatedFrame(int,ft_framenum_type_t)));
+    connect(proto_tree_, &ProtoTree::goToPacket, this, [=](int packet) { goToPacket(packet); });
+    connect(proto_tree_, &ProtoTree::relatedFrame,
+            &related_packet_delegate_, &RelatedPacketDelegate::addRelatedFrame);
 }
 
 bool PacketList::uniqueSelectActive()
@@ -669,7 +665,7 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
     ctx_menu->addSeparator();
 
     // Code for custom context menus from Lua's register_packet_menu()
-    MainWindow * mainWindow = qobject_cast<MainWindow *>(mainApp->mainWindow());
+    MainWindow * mainWindow = mainApp->mainWindow();
     // N.B., will only call for a single frame selection,
     if (cap_file_ && cap_file_->edt && cap_file_->edt->tree) {
         finfo_array = proto_all_finfos(cap_file_->edt->tree);
@@ -741,16 +737,16 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
 
     QAction * action = submenu->addAction(tr("Summary as Text"));
     action->setData(CopyAsText);
-    connect(action, SIGNAL(triggered()), this, SLOT(copySummary()));
+    connect(action, &QAction::triggered, this, &PacketList::copySummary);
     action = submenu->addAction(tr("…as CSV"));
     action->setData(CopyAsCSV);
-    connect(action, SIGNAL(triggered()), this, SLOT(copySummary()));
+    connect(action, &QAction::triggered, this, &PacketList::copySummary);
     action = submenu->addAction(tr("…as YAML"));
     action->setData(CopyAsYAML);
-    connect(action, SIGNAL(triggered()), this, SLOT(copySummary()));
+    connect(action, &QAction::triggered, this, &PacketList::copySummary);
     action = submenu->addAction(tr("…as HTML"));
     action->setData(CopyAsHTML);
-    connect(action, SIGNAL(triggered()), this, SLOT(copySummary()));
+    connect(action, &QAction::triggered, this, &PacketList::copySummary);
     submenu->addSeparator();
 
     submenu->addAction(window()->findChild<QAction *>("actionEditCopyAsFilter"));
@@ -761,7 +757,7 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
     copyEntries->setParent(submenu);
     frameData->setParent(submenu);
 
-    if (is_packet_configuration_namespace()) {
+    if (application_flavor_is_wireshark()) {
         /* i.e., Wireshark only */
         ctx_menu->addSeparator();
         QMenu *proto_prefs_menus = new QMenu(ProtocolPreferencesMenu::tr("Protocol Preferences"), ctx_menu);
@@ -786,10 +782,10 @@ void PacketList::contextMenuEvent(QContextMenuEvent *event)
 
                     ProtocolPreferencesMenu *proto_prefs_menu = new ProtocolPreferencesMenu(hfinfo->name, module_name, proto_prefs_menus);
 
-                    connect(proto_prefs_menu, SIGNAL(showProtocolPreferences(QString)),
-                            this, SIGNAL(showProtocolPreferences(QString)));
-                    connect(proto_prefs_menu, SIGNAL(editProtocolPreference(preference*,pref_module*)),
-                            this, SIGNAL(editProtocolPreference(preference*,pref_module*)));
+                    connect(proto_prefs_menu, &ProtocolPreferencesMenu::showProtocolPreferences,
+                            this, &PacketList::showProtocolPreferences);
+                    connect(proto_prefs_menu, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+                            this, SIGNAL(editProtocolPreference(pref_t*,module_t*)));
 
                     proto_prefs_menus->addMenu(proto_prefs_menu);
                     added_proto_prefs << module_name;
@@ -822,7 +818,7 @@ void PacketList::ctxDecodeAsDialog()
     bool create_new = da_action->property("create_new").toBool();
 
     DecodeAsDialog *da_dialog = new DecodeAsDialog(this, cap_file_, create_new);
-    connect(da_dialog, SIGNAL(destroyed(QObject*)), mainApp, SLOT(flushAppSignals()));
+    connect(da_dialog, &DecodeAsDialog::destroyed, mainApp, &MainApplication::flushAppSignals);
     da_dialog->setWindowModality(Qt::ApplicationModal);
     da_dialog->setAttribute(Qt::WA_DeleteOnClose);
     da_dialog->show();
@@ -1468,7 +1464,7 @@ QString PacketList::getFilterFromRowAndColumn(QModelIndex idx)
         col_custom_prime_edt(&edt, &cap_file_->cinfo);
 
         epan_dissect_run(&edt, cap_file_->cd_t, &rec,
-                         frame_tvbuff_new_buffer(&cap_file_->provider, fdata, &buf),
+                         ws_buffer_start_ptr(&buf),
                          fdata, &cap_file_->cinfo);
 
         if (cap_file_->cinfo.columns[column].col_fmt == COL_CUSTOM) {
@@ -1943,11 +1939,9 @@ void PacketList::sectionMoved(int logicalIndex, int oldVisualIndex, int newVisua
     // Undo move to ensure that the logical indices map to the visual indices,
     // otherwise the column order is changed twice (once via the modified
     // col_list, once because of the visual/logical index mismatch).
-    disconnect(header(), SIGNAL(sectionMoved(int,int,int)),
-               this, SLOT(sectionMoved(int,int,int)));
+    disconnect(header(), &QHeaderView::sectionMoved, this, &PacketList::sectionMoved);
     header()->moveSection(newVisualIndex, oldVisualIndex);
-    connect(header(), SIGNAL(sectionMoved(int,int,int)),
-            this, SLOT(sectionMoved(int,int,int)));
+    connect(header(), &QHeaderView::sectionMoved, this, &PacketList::sectionMoved);
 
     // Clear and rebuild our (and the header's) model. There doesn't appear
     // to be another way to reset the logical index.
@@ -1976,27 +1970,6 @@ void PacketList::sectionMoved(int logicalIndex, int oldVisualIndex, int newVisua
     int right_col = MAX(oldVisualIndex, newVisualIndex);
     if (left_col <= sort_idx && sort_idx <= right_col) {
         header()->setSortIndicator(sort_idx, header()->sortIndicatorOrder());
-    }
-}
-
-void PacketList::updateRowHeights(const QModelIndex &ih_index)
-{
-    QStyleOptionViewItem option;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    initViewItemOption(&option);
-#else
-    option = viewOptions();
-#endif
-    int max_height = 0;
-
-    // One of our columns increased the maximum row height. Find out which one.
-    for (int col = 0; col < packet_list_model_->columnCount(); col++) {
-        QSize size_hint = itemDelegate()->sizeHint(option, packet_list_model_->index(ih_index.row(), col));
-        max_height = qMax(max_height, size_hint.height());
-    }
-
-    if (max_height > 0) {
-        packet_list_model_->setMaximumRowHeight(max_height);
     }
 }
 
@@ -2125,15 +2098,14 @@ QString PacketList::createSummaryForAligned(QModelIndex idx, QList<int> align_pa
 
 QString PacketList::createDefaultStyleForHtml()
 {
-    QString style_text;
-    style_text = "<style>";
     QString fontFamily = QString(prefs.gui_font_name).split(",")[0];
     QString fontSize = QString(prefs.gui_font_name).split(",")[1];
-    style_text += "table{font-family:" + fontFamily + ";font-size:" + fontSize + "pt;}";
-    style_text += "th{background-color:#000000;color:#ffffff;text-align:left;}";
-    style_text += "th,td{padding:" + QString::number(fontSize.toInt() / 2) + "pt}";
-    style_text += "</style>";
-    return style_text;
+
+    return QStringLiteral("<style>"
+        "table{font-family:%1;font-size:%2pt;}"
+        "th{background-color:#000000;color:#ffffff;text-align:left;}"
+        "th,td{padding:%3pt}"
+        "</style>").arg(fontFamily, fontSize).arg(fontSize.toInt() / 2);
 }
 
 QString PacketList::createOpeningTagForHtml()

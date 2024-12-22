@@ -21,6 +21,7 @@
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/wslog.h>
 #include <wsutil/str_util.h>
+#include <wsutil/array.h>
 
 /* for dissect_mscldap_string */
 #include "packet-ldap.h"
@@ -6566,7 +6567,7 @@ netlogon_dissect_netr_CryptPassword(tvbuff_t *tvb, int offset,
                           pw_len, pw);
     offset += pw_len;
 
-    offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep,
+    /*offset = */dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep,
                                 hf_netlogon_len, NULL);
 
     return ret_offset;
@@ -7223,7 +7224,6 @@ netlogon_dissect_netrserverauthenticatekerberos_rqst(tvbuff_t *tvb, int offset,
 
     ALIGN_TO_5_BYTES
 
-    dcv = (dcerpc_call_value *)di->call_data;
     offset = dissect_ndr_pointer_cb(
         tvb, offset, pinfo, tree, di, drep,
         dissect_ndr_wchar_cvstring, NDR_POINTER_REF,
@@ -8277,6 +8277,61 @@ netlogon_dissect_netrlogonsamlogonex_reply(tvbuff_t *tvb, int offset,
     return offset;
 }
 
+static int
+netlogon_dissect_netrservertrustpasswordsget_rqst(tvbuff_t *tvb,
+                                             int offset,
+                                             packet_info *pinfo,
+                                             proto_tree *tree,
+                                             dcerpc_info *di,
+                                             uint8_t *drep)
+{
+    offset = netlogon_dissect_LOGONSRV_HANDLE(tvb, offset,
+                                              pinfo, tree, di, drep);
+
+    offset = dissect_ndr_str_pointer_item(tvb, offset, pinfo, tree, di, drep,
+                                          NDR_POINTER_REF, "Acct Name",
+                                          hf_netlogon_acct_name, 0);
+
+    offset = netlogon_dissect_NETLOGON_SECURE_CHANNEL_TYPE(tvb, offset,
+                                                           pinfo, tree, di, drep);
+
+    offset = dissect_ndr_str_pointer_item(tvb, offset, pinfo, tree, di, drep,
+                                          NDR_POINTER_REF, "Computer Name",
+                                          hf_netlogon_computer_name, 0);
+
+    offset = dissect_ndr_pointer(tvb, offset, pinfo, tree, di, drep,
+                                 netlogon_dissect_AUTHENTICATOR, NDR_POINTER_REF,
+                                 "AUTHENTICATOR: credential", -1);
+
+    return offset;
+}
+
+static int
+netlogon_dissect_netrservertrustpasswordsget_reply(tvbuff_t *tvb,
+                                              int offset,
+                                              packet_info *pinfo,
+                                              proto_tree *tree,
+                                              dcerpc_info *di,
+                                              uint8_t *drep)
+{
+    offset = dissect_ndr_pointer(tvb, offset, pinfo, tree, di, drep,
+                                 netlogon_dissect_AUTHENTICATOR, NDR_POINTER_REF,
+                                 "AUTHENTICATOR: return_authenticator", -1);
+
+    offset = dissect_ndr_pointer(tvb, offset, pinfo, tree, di, drep,
+                                 netlogon_dissect_NT_OWF_PASSWORD, NDR_POINTER_REF,
+                                 "NT_OWF_PASSWORD pointer: new_password", -1);
+
+    offset = dissect_ndr_pointer(tvb, offset, pinfo, tree, di, drep,
+                                 netlogon_dissect_NT_OWF_PASSWORD, NDR_POINTER_REF,
+                                 "NT_OWF_PASSWORD pointer: old_password", -1);
+
+    offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep,
+                              hf_netlogon_rc, NULL);
+
+    return offset;
+}
+
 
 static int
 netlogon_dissect_netrservergettrustinfo_rqst(tvbuff_t *tvb,
@@ -8910,7 +8965,8 @@ static const dcerpc_sub_dissector dcerpc_netlogon_dissectors[] = {
       netlogon_dissect_dsrderegisterdnshostrecords_rqst,
       netlogon_dissect_dsrderegisterdnshostrecords_reply },
     { NETLOGON_NETRSERVERTRUSTPASSWORDSGET, "NetrServerTrustPasswordsGet",
-      NULL, NULL },
+      netlogon_dissect_netrservertrustpasswordsget_rqst,
+      netlogon_dissect_netrservertrustpasswordsget_reply },
     { NETLOGON_DSRGETFORESTTRUSTINFORMATION, "DsrGetForestTrustInformation",
       NULL, NULL },
     { NETLOGON_NETRGETFORESTTRUSTINFORMATION, "NetrGetForestTrustInformation",

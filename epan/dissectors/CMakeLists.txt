@@ -90,6 +90,7 @@ set(CLEAN_ASN1_DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cmip.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cmp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cms.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-cosem.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-credssp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-crmf.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-dap.c
@@ -444,6 +445,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-ip.h
 	packet-ipmi.h
 	packet-ipsec.h
+	packet-ipv6.h
 	packet-ipx.h
 	packet-irdma.h
 	packet-isakmp.h
@@ -706,8 +708,10 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/file-png.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-rbm.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-rfc7468.c
+	${CMAKE_CURRENT_SOURCE_DIR}/file-riff.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-rtpdump.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-tiff.c
+	${CMAKE_CURRENT_SOURCE_DIR}/file-ttl.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-2dparityfec.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-3com-njack.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-3com-xns.c
@@ -2116,6 +2120,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x25.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x29.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-x75.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-xcp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xcsl.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xdmcp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-xip.c

@@ -472,6 +472,9 @@ int main(int argc, char *qt_argv[])
     /* Start time in microseconds */
     uint64_t start_time = g_get_monotonic_time();
 
+    /* Set the program name. */
+    g_set_prgname("wireshark");
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     /*
      * See:
@@ -507,7 +510,7 @@ int main(int argc, char *qt_argv[])
     cmdarg_err_init(wireshark_cmdarg_err, wireshark_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init("wireshark", vcmdarg_err);
+    ws_log_init(vcmdarg_err);
     /* For backward compatibility with GLib logging and Wireshark 3.4. */
     ws_log_console_writer_set_use_stdout(true);
 
@@ -576,7 +579,7 @@ int main(int argc, char *qt_argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    /* configuration_init_error = */ configuration_init(argv[0], NULL);
+    /* configuration_init_error = */ configuration_init(argv[0]);
     /* ws_log(NULL, LOG_LEVEL_DEBUG, "progfile_dir: %s", get_progfile_dir()); */
 
 #ifdef _WIN32
@@ -981,7 +984,7 @@ int main(int argc, char *qt_argv[])
     wsApp->setMonospaceFont(prefs.gui_font_name);
 
     /* For update of WindowTitle (When use gui.window_title preference) */
-    main_w->setWSWindowTitle();
+    main_w->setMainWindowTitle();
 
     if (!color_filters_init(&err_msg, color_filter_add_cb)) {
         simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_msg);

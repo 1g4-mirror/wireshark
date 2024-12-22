@@ -66,7 +66,7 @@ MainWindowPreferencesFrame::MainWindowPreferencesFrame(QWidget *parent) :
     QIcon language_icon = QIcon(li_path);
     ui->languageComboBox->setItemIcon(0, language_icon);
 
-    QString globalLanguagesPath(QString(get_datafile_dir()) + "/languages/");
+    QString globalLanguagesPath(QStringLiteral("%1/languages/").arg(get_datafile_dir()));
     QString userLanguagesPath(gchar_free_to_qstring(get_persconffile_path("languages/", false)));
 
     QStringList filenames = QDir(":/i18n/").entryList(QStringList("wireshark_*.qm"));
@@ -131,8 +131,8 @@ void MainWindowPreferencesFrame::updateWidgets()
 
     ui->foStyleSpecifiedLineEdit->setText(prefs_get_string_value(pref_fileopen_dir_, pref_stashed));
 
-    ui->maxFilterLineEdit->setText(QString::number(prefs_get_uint_value_real(pref_recent_df_entries_max_, pref_stashed)));
-    ui->maxRecentLineEdit->setText(QString::number(prefs_get_uint_value_real(pref_recent_files_count_max_, pref_stashed)));
+    ui->maxFilterLineEdit->setText(QString::number(prefs_get_uint_value(pref_recent_df_entries_max_, pref_stashed)));
+    ui->maxRecentLineEdit->setText(QString::number(prefs_get_uint_value(pref_recent_files_count_max_, pref_stashed)));
 
     ui->confirmUnsavedCheckBox->setChecked(prefs_get_bool_value(pref_ask_unsaved_, pref_stashed));
     ui->displayAutoCompleteCheckBox->setChecked(prefs_get_bool_value(pref_autocomplete_filter_, pref_stashed));

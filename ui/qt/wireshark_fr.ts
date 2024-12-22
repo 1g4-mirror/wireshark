@@ -1906,10 +1906,6 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
         <translation>Type</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>Champs</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>Occurrence d&apos;un champ</translation>
     </message>
@@ -1924,6 +1920,10 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
     <message>
         <source>Width</source>
         <translation>Largeur</translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Alignment</source>
@@ -2378,6 +2378,10 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
     <message>
         <source>Apply a read filter %1</source>
         <translation>Appliquer un filtre de lecture %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3048,12 +3052,12 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
         <translation>Tous les Fichiers (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>Ouvrir un fichier</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>Sélectionner un fichier</translation>
+        <source>%1 Select File</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3091,16 +3095,16 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>Entrée du filtre d&apos;affichage</translation>
+        <source>Field entry</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>Saisir un champ %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>Filtre invalide : </translation>
+        <source>Invalid field: </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6937,6 +6941,18 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
         <source>Display filter as %1</source>
         <translation>Filtre d&apos;affichage en %1</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -8326,8 +8342,8 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
         <translation>Référence des champs de filtre</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>Copié</translation>
+        <source>Copied %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -8506,34 +8522,6 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>Débit moyen (bits/s)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>Round Trip Time (ms)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>Longueur des segments (B)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>Numéro de séquence (B)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>Temps (s)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>Taille de fenetres (b)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>Octets non-acquittés (en suspens) (O)</translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[pas de fichier de capture]</translation>
@@ -9022,6 +9010,34 @@ Pas exemple, inquiquez 1 heure pour avoir un nouveau fichier créé toutes les h
     <message>
         <source>LOAD</source>
         <translation>CHARGE</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation type="unfinished">Temps d&apos;Aller-Retour</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation type="unfinished">Longueur de segment</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation type="unfinished">Numéro de Séquence</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation type="unfinished">Temps</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -15287,14 +15303,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>Arrêter et continuer &amp;sans enregistrer</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>L&apos;analyseur de réseau Wireshark</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>Capture en cours de %1</translation>
     </message>
     <message>
         <source> before opening another file</source>

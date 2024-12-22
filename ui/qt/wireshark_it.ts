@@ -1906,10 +1906,6 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Tipo</translation>
     </message>
     <message>
-        <source>Fields</source>
-        <translation>Campi</translation>
-    </message>
-    <message>
         <source>Field Occurrence</source>
         <translation>Occorrenze del campo</translation>
     </message>
@@ -1924,6 +1920,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Width</source>
         <translation>Larghezza</translation>
+    </message>
+    <message>
+        <source>Custom Expression</source>
+        <translation>Espressione personalizzata</translation>
     </message>
     <message>
         <source>Alignment</source>
@@ -2378,6 +2378,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Apply a read filter %1</source>
         <translation>Applica un filtro di lettura %1</translation>
+    </message>
+    <message>
+        <source>Enter a custom column expression %1</source>
+        <translation>Inserisci un&apos;espressione di colonna personalizzata %1</translation>
     </message>
     <message>
         <source>Current filter: %1</source>
@@ -3050,12 +3054,12 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Tutti i file (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>Apri file</translation>
+        <source>%1 Open File</source>
+        <translation>%1 Apri file</translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>Seleziona file</translation>
+        <source>%1 Select File</source>
+        <translation>%1 Seleziona file</translation>
     </message>
 </context>
 <context>
@@ -3093,16 +3097,16 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
 <context>
     <name>FieldFilterEdit</name>
     <message>
-        <source>Display filter entry</source>
-        <translation>Voce del filtro di visualizzazione</translation>
+        <source>Field entry</source>
+        <translation>Nome campo</translation>
     </message>
     <message>
         <source>Enter a field %1</source>
         <translation>Digita un campo %1</translation>
     </message>
     <message>
-        <source>Invalid filter: </source>
-        <translation>Filtro non valido: </translation>
+        <source>Invalid field: </source>
+        <translation>Campo non valido:</translation>
     </message>
 </context>
 <context>
@@ -6938,6 +6942,18 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <source>Display filter as %1</source>
         <translation>Filtro di visualizzazione come %1</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation>L&apos;analizzatore di rete Wireshark</translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation>Analizzatore di chiamate di sistema e registri Stratoshark</translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation>Cattura da %1</translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -7848,11 +7864,11 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copia</translation>
+        <translation>Copia</translation>
     </message>
     <message numerus="yes">
         <source>Copy Row(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Copia riga</numerusform>
             <numerusform>Copia righe</numerusform>
         </translation>
@@ -8327,8 +8343,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Riferimento campo di filtro</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>Copiato</translation>
+        <source>Copied %1</source>
+        <translation>Copiati %1</translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -8507,34 +8523,6 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Average Throughput (bits/s)</source>
-        <translation>Capacità trasmissiva media (bit/s)</translation>
-    </message>
-    <message>
-        <source>Round Trip Time (ms)</source>
-        <translation>Round Trip Time (ms)</translation>
-    </message>
-    <message>
-        <source>Segment Length (B)</source>
-        <translation>Lunghezza del segmento (B)</translation>
-    </message>
-    <message>
-        <source>Sequence Number (B)</source>
-        <translation>Numero di sequenza (B)</translation>
-    </message>
-    <message>
-        <source>Time (s)</source>
-        <translation>Tempo (s)</translation>
-    </message>
-    <message>
-        <source>Window Size (B)</source>
-        <translation>Dimensione della finestra (B)</translation>
-    </message>
-    <message>
-        <source>Unacked (Outstanding) Bytes (B)</source>
-        <translation>Byte senza ack (eccezionali) (B)</translation>
-    </message>
     <message>
         <source>[no capture file]</source>
         <translation>[nessun file di cattura]</translation>
@@ -9024,6 +9012,34 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>LOAD</source>
         <translation>CARICO</translation>
+    </message>
+    <message>
+        <source>Average Throughput</source>
+        <translation>Throughput medio</translation>
+    </message>
+    <message>
+        <source>Round Trip Time</source>
+        <translation>Round Trip Time</translation>
+    </message>
+    <message>
+        <source>Segment Length</source>
+        <translation>Lunghezza segmento</translation>
+    </message>
+    <message>
+        <source>Sequence Number</source>
+        <translation>Numero sequenza</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation>Tempo</translation>
+    </message>
+    <message>
+        <source>Window Size</source>
+        <translation>Dimensione finestra</translation>
+    </message>
+    <message>
+        <source>Unacked (Outstanding) Bytes</source>
+        <translation>Byte senza ack (eccezionali)</translation>
     </message>
 </context>
 <context>
@@ -15286,14 +15302,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>Ferma e continua senza sal&amp;vare</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Wireshark l&apos;analizzatore di rete</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>Cattura da %1</translation>
     </message>
     <message>
         <source> before opening another file</source>

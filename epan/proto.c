@@ -27,9 +27,11 @@
 #include <wsutil/sign_ext.h>
 #include <wsutil/utf8_entities.h>
 #include <wsutil/json_dumper.h>
+#include <wsutil/pint.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
 #include <wsutil/unicode-utils.h>
+#include <wsutil/dtoa.h>
 
 #include <ftypes/ftypes.h>
 
@@ -522,6 +524,7 @@ static const char *reserved_filter_names[] = {
 	"false",
 	"nan",
 	"inf",
+	"infinity",
 	NULL
 };
 
@@ -864,6 +867,10 @@ proto_tree_reset(proto_tree *tree)
 
 	/* Reset track of the number of children */
 	tree_data->count = 0;
+
+	/* Reset our loop checks */
+	tree_data->max_start = 0;
+	tree_data->start_idle_count = 0;
 
 	PROTO_NODE_INIT(tree);
 }
@@ -6247,8 +6254,11 @@ proto_tree_add_eui64_format(proto_tree *tree, int hfindex, tvbuff_t *tvb,
 static void
 proto_tree_set_eui64(field_info *fi, const uint64_t value)
 {
-	fvalue_set_uinteger64(fi->value, value);
+	uint8_t v[FT_EUI64_LEN];
+	phton64(v, value);
+	fvalue_set_bytes_data(fi->value, v, FT_EUI64_LEN);
 }
+
 static void
 proto_tree_set_eui64_tvb(field_info *fi, tvbuff_t *tvb, int start, const unsigned encoding)
 {
@@ -6809,6 +6819,12 @@ get_full_length(header_field_info *hfinfo, tvbuff_t *tvb, const int start,
 	return item_length;
 }
 
+// This was arbitrarily chosen, but if you're adding 50K items to the tree
+// without advancing the offset you should probably take a long, hard look
+// at what you're doing.
+// We *could* make this a configurable option, but I (Gerald) would like to
+// avoid adding yet another nerd knob.
+# define PROTO_TREE_MAX_IDLE 50000
 static field_info *
 new_field_info(proto_tree *tree, header_field_info *hfinfo, tvbuff_t *tvb,
 	       const int start, const int item_length)
@@ -6820,6 +6836,17 @@ new_field_info(proto_tree *tree, header_field_info *hfinfo, tvbuff_t *tvb,
 	fi->hfinfo     = hfinfo;
 	fi->start      = start;
 	fi->start     += (tvb)?tvb_raw_offset(tvb):0;
+	// If our start offset hasn't advanced after adding many items it probably
+	// means we're in a large or infinite loop.
+	if (fi->start > 0) {
+		if (fi->start <= PTREE_DATA(tree)->max_start) {
+			PTREE_DATA(tree)->start_idle_count++;
+			DISSECTOR_ASSERT_HINT(PTREE_DATA(tree)->start_idle_count < PROTO_TREE_MAX_IDLE, fi->hfinfo->abbrev);
+		} else {
+			PTREE_DATA(tree)->max_start = fi->start;
+			PTREE_DATA(tree)->start_idle_count = 0;
+		}
+	}
 	fi->length     = item_length;
 	fi->tree_type  = -1;
 	fi->flags      = 0;
@@ -7182,7 +7209,8 @@ proto_item_fill_display_label(const field_info *finfo, char *display_label_str, 
 			break;
 
 		case FT_EUI64:
-			tmp_str = eui64_to_str(NULL, fvalue_get_uinteger64(finfo->value));
+			set_address (&addr, AT_EUI64, EUI64_ADDR_LEN, fvalue_get_bytes_data(finfo->value));
+			tmp_str = address_to_display(NULL, &addr);
 			label_len = protoo_strlcpy(display_label_str, tmp_str, label_str_size);
 			wmem_free(NULL, tmp_str);
 			break;
@@ -7281,13 +7309,6 @@ proto_item_fill_display_label(const field_info *finfo, char *display_label_str, 
 	return label_len;
 }
 
-/* -------------------------- */
-/* Sets the text for a custom column from proto fields.
- *
- * @param[out] result The "resolved" column text (human readable, uses strings)
- * @param[out] expr The "unresolved" column text (values, display repr)
- * @return The filter (abbrev) for the field (XXX: Only the first if multifield)
- */
 const char *
 proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool display_details,
 		 char *result, char *expr, const int size)
@@ -7298,7 +7319,6 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool displ
 	header_field_info*  hfinfo;
 	const char         *abbrev        = NULL;
 
-	const char *hf_str_val;
 	char *str;
 	col_custom_t *field_idx;
 	int field_id;
@@ -7352,7 +7372,8 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool displ
 					if (offset_e && (offset_e < (size - 1)))
 						expr[offset_e++] = ',';
 					offset_r += protoo_strlcpy(result+offset_r, str, size-offset_r);
-					offset_e += protoo_strlcpy(expr+offset_e, str, size-offset_e);
+					// col_{add,append,set}_* calls ws_label_strcpy
+					offset_e = (int) ws_label_strcpy(expr, size, offset_e, str, 0);
 					g_free(str);
 				}
 				g_ptr_array_unref(fvals);
@@ -7469,6 +7490,7 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool displ
 					expr[offset_e++] = ',';
 
 				if (hfinfo->strings && hfinfo->type != FT_FRAMENUM && FIELD_DISPLAY(hfinfo->display) == BASE_NONE && (FT_IS_INT(hfinfo->type) || FT_IS_UINT(hfinfo->type))) {
+					const char *hf_str_val;
 					/* Integer types with BASE_NONE never get the numeric value. */
 					if (FT_IS_INT32(hfinfo->type)) {
 						hf_str_val = hf_try_val_to_str_const(fvalue_get_sinteger(finfo->value), hfinfo, "Unknown");
@@ -7490,7 +7512,8 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool displ
 					}
 				} else {
 					str = fvalue_to_string_repr(NULL, finfo->value, FTREPR_RAW, finfo->hfinfo->display);
-					offset_e += protoo_strlcpy(expr+offset_e, str, size-offset_e);
+					// col_{add,append,set}_* calls ws_label_strcpy
+					offset_e = (int) ws_label_strcpy(expr, size, offset_e, str, 0);
 					wmem_free(NULL, str);
 				}
 				i++;
@@ -7943,6 +7966,10 @@ proto_tree_create_root(packet_info *pinfo)
 
 	/* Keep track of the number of children */
 	pnode->tree_data->count = 0;
+
+	/* Initialize our loop checks */
+	pnode->tree_data->max_start = 0;
+	pnode->tree_data->start_idle_count = 0;
 
 	return (proto_tree *)pnode;
 }
@@ -9579,55 +9606,6 @@ tmp_fld_check_assert(header_field_info *hfinfo)
 	}
 }
 
-#ifdef ENABLE_CHECK_FILTER
-static enum ftenum
-_ftype_common(enum ftenum type)
-{
-	switch (type) {
-		case FT_INT8:
-		case FT_INT16:
-		case FT_INT24:
-		case FT_INT32:
-			return FT_INT32;
-
-		case FT_CHAR:
-		case FT_UINT8:
-		case FT_UINT16:
-		case FT_UINT24:
-		case FT_UINT32:
-		case FT_IPXNET:
-		case FT_FRAMENUM:
-			return FT_UINT32;
-
-		case FT_UINT64:
-		case FT_EUI64:
-			return FT_UINT64;
-
-		case FT_STRING:
-		case FT_STRINGZ:
-		case FT_UINT_STRING:
-			return FT_STRING;
-
-		case FT_FLOAT:
-		case FT_DOUBLE:
-			return FT_DOUBLE;
-
-		case FT_BYTES:
-		case FT_UINT_BYTES:
-		case FT_ETHER:
-		case FT_OID:
-			return FT_BYTES;
-
-		case FT_ABSOLUTE_TIME:
-		case FT_RELATIVE_TIME:
-			return FT_ABSOLUTE_TIME;
-
-		default:
-			return type;
-	}
-}
-#endif
-
 static void
 register_type_length_mismatch(void)
 {
@@ -9806,7 +9784,7 @@ proto_register_field_init(header_field_info *hfinfo, const int parent)
 			hfinfo->same_name_prev_id = same_name_hfinfo->id;
 #ifdef ENABLE_CHECK_FILTER
 			while (same_name_hfinfo) {
-				if (_ftype_common(hfinfo->type) != _ftype_common(same_name_hfinfo->type))
+				if (!ftype_similar_types(hfinfo->type, same_name_hfinfo->type))
 					ws_warning("'%s' exists multiple times with incompatible types: %s and %s", hfinfo->abbrev, ftype_name(hfinfo->type), ftype_name(same_name_hfinfo->type));
 				same_name_hfinfo = same_name_hfinfo->same_name_next;
 			}
@@ -9974,7 +9952,6 @@ proto_item_fill_label(const field_info *fi, char *label_str, size_t *value_pos)
 	const char	   *str;
 	const uint8_t	   *bytes;
 	uint32_t		    integer;
-	uint64_t		    integer64;
 	const ipv4_addr_and_mask *ipv4;
 	const ipv6_addr_and_prefix *ipv6;
 	const e_guid_t	   *guid;
@@ -10209,11 +10186,13 @@ proto_item_fill_label(const field_info *fi, char *label_str, size_t *value_pos)
 			break;
 
 		case FT_EUI64:
-			integer64 = fvalue_get_uinteger64(fi->value);
-			addr_str = eui64_to_str(NULL, integer64);
-			tmp = (char*)eui64_to_display(NULL, integer64);
-			label_fill_descr(label_str, 0, hfinfo, tmp, addr_str, value_pos);
-			wmem_free(NULL, tmp);
+			bytes = fvalue_get_bytes_data(fi->value);
+			addr.type = AT_EUI64;
+			addr.len  = EUI64_ADDR_LEN;
+			addr.data = bytes;
+
+			addr_str = (char*)address_with_resolution_to_str(NULL, &addr);
+			label_fill(label_str, 0, hfinfo, addr_str, value_pos);
 			wmem_free(NULL, addr_str);
 			break;
 		case FT_STRING:
@@ -10711,7 +10690,6 @@ static size_t
 fill_display_label_float(const field_info *fi, char *label_str)
 {
 	int display;
-	int digits;
 	int n;
 	double value;
 
@@ -10727,12 +10705,11 @@ fill_display_label_float(const field_info *fi, char *label_str)
 
 	switch (display) {
 		case BASE_NONE:
-			if (fi->hfinfo->type == FT_FLOAT)
-				digits = FLT_DIG;
-			else
-				digits = DBL_DIG;
-
-			n = snprintf(label_str, ITEM_LABEL_LENGTH, "%.*g", digits, value);
+			if (fi->hfinfo->type == FT_FLOAT) {
+				n = snprintf(label_str, ITEM_LABEL_LENGTH, "%.*g", FLT_DIG, value);
+			} else {
+				n = (int)strlen(dtoa_g_fmt(label_str, value));
+			}
 			break;
 		case BASE_DEC:
 			n = snprintf(label_str, ITEM_LABEL_LENGTH, "%f", value);
@@ -13940,6 +13917,14 @@ proto_tree_add_checksum(proto_tree *tree, tvbuff_t *tvb, const unsigned offset,
 					incorrect_checksum = false;
 				} else if (flags & PROTO_CHECKSUM_IN_CKSUM) {
 					computed_checksum = in_cksum_shouldbe(checksum, computed_checksum);
+					/* XXX - This can't distinguish between "shouldbe"
+					 * 0x0000 and 0xFFFF unless we know whether there
+					 * were any nonzero bits (other than the checksum).
+					 * Protocols should not use this path if they might
+					 * have an all zero packet.
+					 * Some implementations put the wrong zero; maybe
+					 * we should have a special expert info for that?
+					 */
 				}
 			} else {
 				if (checksum == computed_checksum) {
