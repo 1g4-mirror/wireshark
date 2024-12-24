@@ -673,7 +673,7 @@ static int hf_smb2_fscc_refs_snapshot_query_delta_buffer_reserved;
 static int hf_smb2_flush_reserved2;
 static int hf_smb2_file_id_hash;
 static int hf_smb2_num_matched;
-
+static int hf_smb2_blobs;
 static int ett_smb2;
 static int ett_smb2_olb;
 static int ett_smb2_ea;
@@ -2551,8 +2551,6 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 	smb2_fid_info_t *sfi = NULL;
 	uint8_t buf[8];
 	uint64_t pol_uuid;
-	proto_tree *tag_tree = NULL;
-	proto_item *item = NULL;
 
 	memset(&sfi_key, 0, sizeof(sfi_key));
 	sfi_key.fid_persistent = tvb_get_letoh64(tvb, offset);
@@ -2569,12 +2567,11 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 	switch (mode) {
 	case FID_MODE_OPEN:
 		/* This mode is only for create requests */
-		if (si->saved)
+		if (si->saved) {
 			offset = dissect_nt_guid_hnd(tvb, offset, pinfo, tree, &di, drep, hf_smb2_fid,
 					&policy_hnd, &hnd_item, PIDL_POLHND_OPEN);
-		if (hnd_item)
 			si->saved->hnd_item = hnd_item;
-
+		}
 		if (!pinfo->fd->visited) {
 			sfi = wmem_new(wmem_file_scope(), smb2_fid_info_t);
 			*sfi = sfi_key;
@@ -2589,10 +2586,10 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 			}
 
 			if (si->saved && si->saved->extra_info_type == SMB2_EI_FILENAME) {
-				fid_name = wmem_strdup_printf(wmem_file_scope(), "File: %s",
+				fid_name = wmem_strdup_printf(wmem_file_scope(), ", File: %s",
 						(char *)si->saved->extra_info);
 			} else {
-				fid_name = wmem_strdup_printf(wmem_file_scope(), "File: ");
+				fid_name = wmem_strdup_printf(wmem_file_scope(), ", File: ");
 			}
 			dcerpc_store_polhnd_name(&policy_hnd, pinfo, fid_name);
 
@@ -2617,31 +2614,6 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 				si->eo_file_info=eo_file_info;
 			}
 		}
-		//if (si->saved) {
-		//	si->saved->frame_request = pinfo->fd->num;
-		//	si->saved->frame_req     = pinfo->fd->num;
-		//}
-
-		// THE FOLLOWING WAS AN EFFORT TO DEAL WITH CASE WHERE THE FILE BEING OPENED
-		// IS BLANK WHICH MEANS THE SHARE IS BEING OPENED
-		//else {
-		//	if (si->file && si->file->name) {
-		//		tag_tree = proto_item_add_subtree(hnd_item, ett_smb2_fid_str);
-
-		//		/* If the filename is blank, the filename is the share itself. */
-		//		//if (strcmp(si->file->name, "") == 0)
-		//		//si->file->name = wmem_strdup(pinfo->pool,"<share>");
-
-		//		item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0,
-		//			si->file->name);
-		//		proto_item_set_generated(item);
-		//	}
-		//	if (si->saved && si->saved->fid_hash) {
-		//		item = proto_tree_add_uint_format(tag_tree, hf_smb2_file_id_hash, tvb, 0, 0,
-		//			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		//		proto_item_set_generated(item);
-		//	}
-		//}
 
 		break;
 	case FID_MODE_CLOSE:
@@ -2649,35 +2621,18 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 
 		if (!pinfo->fd->visited) {
 			smb2_fid_info_t *fid = (smb2_fid_info_t *)wmem_map_lookup(si->session->fids, &sfi_key);
-			if (fid) {
-				/* set last frame */
+
+			if (fid)
 				fid->frame_end = pinfo->fd->num;
-			}
-			if (si->saved) {
-				si->saved->frame_res      = pinfo->fd->num;
-				si->saved->frame_response = pinfo->fd->num;
-			}
+			if (si->saved)
+				si->saved->frame_end = pinfo->fd->num;
 		}
+
 		offset = dissect_nt_guid_hnd(tvb, offset, pinfo, tree, &di, drep, hf_smb2_fid, &policy_hnd,
 				&hnd_item, PIDL_POLHND_CLOSE);
 
-		if (si->file && si->file->name && hnd_item) {
+		if (si->saved)
 			si->saved->hnd_item = hnd_item;
-			tag_tree = proto_item_add_subtree(hnd_item, ett_smb2_fid_str);
-			item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
-			proto_item_set_generated(item);
-		} else {
-			if (si->saved->filename)
-				item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0,
-					si->saved->filename);
-				proto_item_set_generated(item);
-		}
-
-		if (si->saved->fid_hash) {
-			item = proto_tree_add_uint_format(tag_tree, hf_smb2_file_id_hash, tvb, 0, 0,
-				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-			proto_item_set_generated(item);
-		}
 		break;
 	case FID_MODE_USE:
 	case FID_MODE_DHNQ:
@@ -2695,9 +2650,8 @@ dissect_smb2_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset
 		}
 		if (si->file->name) {
 			if (hnd_item) {
-				proto_item_append_text(hnd_item, " File: %s", si->file->name);
+				proto_item_append_text(hnd_item, ", File: %s", si->file->name);
 			}
-			col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
 		}
 	}
 
@@ -3704,7 +3658,7 @@ static int
 dissect_smb2_buffercode(proto_tree *parent_tree, tvbuff_t *tvb, int offset, uint16_t *length)
 {
 	proto_tree *tree;
-	proto_item *item;
+	proto_item *item = NULL;
 	uint16_t buffer_code;
 
 	/* dissect the first 2 bytes of the command PDU */
@@ -3853,7 +3807,7 @@ dissect_smb2_share_flags(proto_tree *tree, tvbuff_t *tvb, int offset)
 		&hf_smb2_share_flags_isolated_transport,
 		NULL
 	};
-	proto_item *item;
+	proto_item *item = NULL;
 	uint32_t cp;
 
 	item = proto_tree_add_bitmask(tree, tvb, offset, hf_smb2_share_flags, ett_smb2_share_flags, sf_fields, ENC_LITTLE_ENDIAN);
@@ -4091,7 +4045,7 @@ static void
 dissect_smb2_share_redirect_error(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent_tree, int offset, smb2_info_t *si _U_)
 {
 	proto_tree *tree;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_tree *ips_tree;
 	proto_item *ips_item;
 
@@ -4138,7 +4092,7 @@ static void
 dissect_smb2_STATUS_STOPPED_ON_SYMLINK(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent_tree, int offset, smb2_info_t *si _U_)
 {
 	proto_tree *tree;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	offset_length_buffer_t  s_olb, p_olb;
 
@@ -4185,7 +4139,7 @@ static int
 dissect_smb2_error_context(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *parent_tree, int offset, smb2_info_t *si _U_)
 {
 	proto_tree *tree;
-	proto_item *item;
+	proto_item *item = NULL;
 	tvbuff_t *sub_tvb;
 	uint32_t length;
 	uint32_t id;
@@ -4216,7 +4170,7 @@ dissect_smb2_error_data(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *paren
 			smb2_info_t *si _U_)
 {
 	proto_tree *tree;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	int offset = 0;
 	int i;
@@ -4456,7 +4410,7 @@ dissect_smb2_tree_connect_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 	offset_length_buffer_t olb;
 	const uint8_t *buf;
 	uint16_t      flags;
-	proto_item *item;
+	proto_item *item = NULL;
 	static int * const connect_flags[] = {
 		&hf_smb2_tc_cluster_reconnect,
 		&hf_smb2_tc_redirect_to_owner,
@@ -4671,8 +4625,9 @@ dissect_smb2_notify_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	e_guid_t tag_guid;
 	proto_tree *flags_tree = NULL;
 	proto_item *flags_item = NULL;
-	proto_item *item;
-	proto_tree *tag_tree = NULL;
+	proto_item *item = NULL;
+	proto_tree *fid_tree;
+	proto_tree *which_tree;
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -4696,19 +4651,28 @@ dissect_smb2_notify_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	/* fid */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
 
-	if (si->file && si->file->name && si->saved->hnd_item) {
-		tag_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
-		item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
-		proto_item_set_generated(item);
-		col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
 	}
+
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	}
+
+	/* fid hash */
 	if (si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tag_tree ? tag_tree : tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
 		proto_item_set_generated(item);
 	}
-
-
 
 	/* completion filter */
 	offset = dissect_nt_notify_completion_filter(tvb, tree, offset);
@@ -4780,7 +4744,10 @@ dissect_smb2_notify_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
 {
 	offset_length_buffer_t olb;
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *tag_tree = NULL;
+	proto_item *tag_item = NULL;
+	proto_tree *which_tree = NULL;
 
 	switch (si->status) {
 	/* MS-SMB2 3.3.4.4 says STATUS_NOTIFY_ENUM_DIR is not treated as an error */
@@ -4791,12 +4758,48 @@ dissect_smb2_notify_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
 		if (!continue_dissection) return offset;
 	}
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
+	if (pinfo->fd->visited) {
+		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
+		}
 	}
+
 
 	/* out buffer offset/length */
 	offset = dissect_smb2_olb_length_offset(tvb, offset, &olb, OLB_O_UINT16_S_UINT32, hf_smb2_notify_out_data);
@@ -4828,7 +4831,7 @@ dissect_smb2_find_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 	};
 	e_guid_t tag_guid;
 	proto_tree *fid_tree;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_tree *which_tree = tree;
 
 	/* buffer code */
@@ -4864,9 +4867,11 @@ dissect_smb2_find_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 	}
 
 	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 		proto_item_set_generated(item);
-		col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
         }
 
 	if (si->saved->fid_hash) {
@@ -5640,9 +5645,11 @@ dissect_smb2_find_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 
 	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 			fid_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
-			col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
 			which_tree = fid_tree;
 		}
 		else {
@@ -5663,9 +5670,9 @@ dissect_smb2_find_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 				si->file->frame_beg);
 			proto_item_set_generated(item);
 		} else {
-			if (si->saved && si->saved->frame_request > 0 && si->saved->frame_request < UINT32_MAX)
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
 			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
-				si->saved->frame_request);
+				si->saved->frame_beg);
 			proto_item_set_generated(item);
 		}
 		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
@@ -5674,12 +5681,12 @@ dissect_smb2_find_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 			proto_item_set_generated(item);
 		} else {
 			if (si->saved
-			&& si->saved->frame_res > 0
-			&& si->saved->frame_res < UINT32_MAX
+			&& si->saved->frame_end > 0
+			&& si->saved->frame_end < UINT32_MAX
 			   /* Required if the create response is missing from the capture. */
-			&& si->saved->frame_res != pinfo->fd->num) {
+			&& si->saved->frame_end != pinfo->fd->num) {
 				item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
-						si->saved->frame_res);
+						si->saved->frame_end);
 				proto_item_set_generated(item);
 			}
 		}
@@ -6369,9 +6376,11 @@ dissect_smb2_getinfo_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	uint32_t getinfo_size = 0;
 	uint32_t getinfo_offset = 0;
 	proto_item *offset_item;
-	proto_item *item;
-	proto_tree *tag_tree = NULL;
-	e_guid_t tag_guid;
+	proto_item *item = NULL;
+	proto_tree *fid_tree = NULL;
+	proto_tree *which_tree = NULL;
+	e_guid_t   tag_guid;
+
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -6412,21 +6421,28 @@ dissect_smb2_getinfo_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
 
 	if (si->saved->hnd_item) {
-		tag_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
+	}
 
-		/* If the filename is blank, the filename is the share itself. */
-		//if (strcmp(si->file->name, "") == 0)
-		//	si->file->name = wmem_strdup(pinfo->pool,"<share>");
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	} else if (si->saved && si->saved->filename){
 
-		if (si->file && si->file->name) {
-			item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
-			proto_item_set_generated(item);
-		}
-		if (si->saved->fid_hash && si->saved->hnd_item) {
-			item = proto_tree_add_uint_format(tag_tree ? tag_tree : tree, hf_smb2_file_id_hash, tvb, 0, 0,
+	}
+
+	/* fid hash */
+	if (si->saved->fid_hash) {
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
 				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-			proto_item_set_generated(item);
-		}
+		proto_item_set_generated(item);
 	}
 
 	/* buffer */
@@ -6657,7 +6673,7 @@ dissect_smb2_infolevel(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 
 	/* if we get BUFFER_OVERFLOW there will be truncated data */
 	if (si->status == 0x80000005) {
-		proto_item *item;
+		proto_item *item = NULL;
 		item = proto_tree_add_item(tree, hf_smb2_truncated, tvb, old_offset, 0, ENC_NA);
 		proto_item_set_generated(item);
 	}
@@ -6683,9 +6699,10 @@ dissect_smb2_getinfo_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 {
 	offset_length_buffer_t olb;
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *tag_item = NULL;
 	proto_tree *tag_tree = NULL;
+	proto_tree *which_tree = NULL;
 
 	/* class/infolevel */
 	dissect_smb2_class_infolevel(pinfo, tvb, offset, tree, si);
@@ -6717,31 +6734,48 @@ dissect_smb2_getinfo_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 	/* response data*/
 	dissect_smb2_olb_buffer(pinfo, tree, tvb, &olb, si, dissect_smb2_getinfo_response_data);
 
-	if (pinfo->fd->visited)	{
+	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
-			proto_item_set_generated(tag_item);
-
-			if (si->saved && &si->saved->uuid_fid) {
-				item = proto_tree_add_guid(tag_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
-				proto_item_set_generated(item);
-			}
-			if (si->saved && si->saved->fid_hash) {
-				item = proto_tree_add_uint_format(tag_tree, hf_smb2_file_id_hash, tvb, 0, 0,
-					si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-				proto_item_set_generated(item);
-			}
-			if (si->file && si->file->frame_beg > 0) {
-				item = proto_tree_add_uint(tag_tree, hf_frame_handle_opened, tvb, 0, 0, si->file->frame_beg);
-				proto_item_set_generated(item);
-			}
-			if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
-				item = proto_tree_add_uint(tag_tree, hf_frame_handle_closed, tvb, 0, 0, si->file->frame_end);
-				proto_item_set_generated(item);
-			}
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
 		}
 	}
+
 	return offset;
 }
 
@@ -6750,10 +6784,11 @@ dissect_smb2_close_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 {
 	proto_tree *flags_tree = NULL;
 	proto_item *flags_item = NULL;
-	e_guid_t tag_guid;
-	//proto_tree *which_tree = tree;
-	//proto_tree *fid_tree;
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *fid_tree = NULL;
+	proto_tree *which_tree = NULL;
+	e_guid_t   tag_guid;
+
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -6777,27 +6812,28 @@ dissect_smb2_close_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	/* fid */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_CLOSE);
 
-//	if (si->saved->hnd_item) {
-//		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
-//		which_tree = fid_tree;
-//	}
-	//if (si->file && si->file->name) {
-	//	item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
-	//	proto_item_set_generated(item);
-	//	col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
- //	}
-	if (!si->file) {
-		if (si->saved->fid_hash) {
-			item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-					si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-			proto_item_set_generated(item);
-		}
-		if (si->saved->filename) {
-			item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->saved->filename);
-			proto_item_set_generated(item);
-			col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->saved->filename);
-		}
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
 	}
+
+	/* Filename */
+	if (si->file && si->file->name) {
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	}
+
+	/* fid hash */
+	if (si->saved->fid_hash) {
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+		proto_item_set_generated(item);
+	}
+
+
 	return offset;
 }
 
@@ -6805,9 +6841,10 @@ static int
 dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, smb2_info_t *si)
 {
 	proto_tree *flags_tree = NULL;
-	proto_tree *tag_tree;
 	proto_item *flags_item = NULL;
-	proto_item *item, *tag_item;
+	proto_tree *tag_tree = NULL;
+	proto_item *tag_item = NULL;
+	proto_item *item = NULL;
 	proto_tree *which_tree = NULL;
 	bool continue_dissection;
 
@@ -6857,11 +6894,16 @@ dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 	/* File Attributes */
 	offset = dissect_fscc_file_attr(tvb, tree, offset, NULL);
 
-	if (pinfo->fd->visited)	{
+	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
-			which_tree = tag_tree ? tag_tree : tree;
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
 		}
 		if (si->saved && &si->saved->uuid_fid) {
 			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
@@ -6874,29 +6916,25 @@ dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		}
 		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
 			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
-			si->file->frame_beg);
+				si->file->frame_beg);
 			proto_item_set_generated(item);
 		} else {
-			if (si->saved && si->saved->frame_request > 0 && si->saved->frame_request < UINT32_MAX) {
-				item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
-					si->saved->frame_request);
-				proto_item_set_generated(item);
-			}
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
 		}
 	}
-	if (si->saved) {
-		si->saved->frame_res      = pinfo->fd->num;
-		si->saved->frame_response = pinfo->fd->num;
-	}
-	if (si->file)
-		si->file->frame_end = pinfo->fd->num;
-
-	item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0, pinfo->fd->num);
-	proto_item_set_generated(item);
-
-	/* filename */
-	if (si->file)
-		col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
 
 	return offset;
 }
@@ -6904,7 +6942,10 @@ dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 static int
 dissect_smb2_flush_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, smb2_info_t *si)
 {
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *fid_tree;
+	proto_tree *which_tree;
+	e_guid_t   tag_guid;
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -6917,15 +6958,35 @@ dissect_smb2_flush_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	proto_tree_add_item(tree, hf_smb2_flush_reserved2, tvb, offset, 4, ENC_NA);
 	offset += 4;
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
-	}
+	 /* Save the FID for use in responses and the create request */
+	tvb_get_letohguid(tvb, offset, &tag_guid);
+	si->saved->uuid_fid = tag_guid;
 
 	/* fid */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
+
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
+	}
+
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	}
+
+	/* fid hash */
+	if (si->saved->fid_hash) {
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+		proto_item_set_generated(item);
+	}
 
 	return offset;
 }
@@ -6934,7 +6995,10 @@ static int
 dissect_smb2_flush_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, smb2_info_t *si _U_)
 {
 	bool continue_dissection;
-	proto_item *item;
+	proto_tree *tag_tree = NULL;
+	proto_item *tag_item = NULL;
+	proto_item *item = NULL;
+	proto_tree *which_tree = NULL;
 
 	switch (si->status) {
 	/* buffer code */
@@ -6943,18 +7007,56 @@ dissect_smb2_flush_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		if (!continue_dissection) return offset;
 	}
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
-	}
-
 	/* reserved bytes */
 	proto_tree_add_item(tree, hf_smb2_reserved, tvb, offset, 2, ENC_NA);
 	offset += 2;
 
+	if (pinfo->fd->visited) {
+		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
+		}
+	}
+
 	return offset;
+
+
+
 }
 
 
@@ -6962,7 +7064,10 @@ static int
 dissect_smb2_lock_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, smb2_info_t *si)
 {
 	uint16_t lock_count;
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *fid_tree = NULL;
+	proto_tree *which_tree = NULL;
+	e_guid_t   tag_guid;
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -6984,8 +7089,36 @@ dissect_smb2_lock_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 		proto_item_set_generated(item);
 	}
 
+	/* Save the FID for use in responses and the create request */
+	tvb_get_letohguid(tvb, offset, &tag_guid);
+	si->saved->uuid_fid = tag_guid;
+
 	/* fid */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
+
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
+	}
+
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	}
+
+	/* fid hash */
+	if (si->saved->fid_hash) {
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+		proto_item_set_generated(item);
+}
+
 
 	while (lock_count--) {
 		proto_item *lock_item = NULL;
@@ -7027,7 +7160,10 @@ static int
 dissect_smb2_lock_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, smb2_info_t *si _U_)
 {
 	bool continue_dissection;
-	proto_item *item;
+	proto_tree *tag_tree = NULL;
+	proto_item *tag_item = NULL;
+	proto_tree *which_tree = NULL;
+	proto_item *item = NULL;
 
 	switch (si->status) {
 	/* buffer code */
@@ -7036,16 +7172,53 @@ dissect_smb2_lock_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 		if (!continue_dissection) return offset;
 	}
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
-	}
-
 	/* reserved */
 	proto_tree_add_item(tree, hf_smb2_reserved, tvb, offset, 2, ENC_NA);
 	offset += 2;
+
+	if (pinfo->fd->visited) {
+		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
+		}
+	}
+
+
 
 	return offset;
 }
@@ -7273,7 +7446,7 @@ dissect_file_data_smb2_pipe(tvbuff_t *raw_tvb, packet_info *pinfo, proto_tree *t
 
 	/* it is reassembled but it was reassembled in a different frame */
 	if (pinfo->num != fd_head->reassembled_in) {
-		proto_item *item;
+		proto_item *item = NULL;
 		item = proto_tree_add_uint(top_tree, hf_smb2_pipe_reassembled_in,
 					   tvb, 0, 0, fd_head->reassembled_in);
 		proto_item_set_generated(item);
@@ -7388,7 +7561,7 @@ dissect_smb2_write_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 		&hf_smb2_write_flags_write_unbuffered,
 		NULL
 	};
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_tree *fid_tree;
 	proto_tree *which_tree;
 
@@ -7425,9 +7598,11 @@ dissect_smb2_write_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
 	/* Filename */
 	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 		proto_item_set_generated(item);
-		col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
 	}
 
 	/* fid hash */
@@ -7535,9 +7710,11 @@ dissect_smb2_write_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 
 	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
-			col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
 			which_tree = tag_tree;
 		} else {
 			which_tree = tree;
@@ -7556,9 +7733,9 @@ dissect_smb2_write_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 				si->file->frame_beg);
 			proto_item_set_generated(item);
 		} else {
-			if (si->saved && si->saved->frame_req > 0 && si->saved->frame_req < UINT32_MAX)
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
 			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
-				si->saved->frame_req);
+				si->saved->frame_beg);
 			proto_item_set_generated(item);
 		}
 		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
@@ -7566,9 +7743,9 @@ dissect_smb2_write_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 				si->file->frame_end);
 			proto_item_set_generated(item);
 		} else {
-			if (si->saved && si->saved->frame_res > 0 && si->saved->frame_res < UINT32_MAX)
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
 			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
-				si->saved->frame_res);
+				si->saved->frame_end);
 			proto_item_set_generated(item);
 		}
 	}
@@ -8098,7 +8275,7 @@ dissect_smb2_NETWORK_INTERFACE_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 	int         len      = -1;
 	proto_item *sub_item;
 	proto_tree *sub_tree;
-	proto_item *item;
+	proto_item *item = NULL;
 	uint32_t    capabilities;
 	uint64_t    link_speed;
 	float       val      = 0;
@@ -8910,7 +9087,7 @@ dissect_smb2_ioctl_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	offset_length_buffer_t i_olb;
 	proto_tree *flags_tree = NULL;
 	proto_item *flags_item = NULL;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -8986,7 +9163,7 @@ dissect_smb2_ioctl_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset_length_buffer_t o_olb;
 	offset_length_buffer_t i_olb;
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	switch (si->status) {
 	/* buffer code */
@@ -9072,15 +9249,16 @@ dissect_smb2_read_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 	uint32_t channel;
 	uint32_t len;
 	uint64_t off;
-	e_guid_t tag_guid;
 	static int * const flags[] = {
 	     &hf_smb2_read_flags_unbuffered,
 	     &hf_smb2_read_flags_compressed,
 	     NULL
 	};
-	proto_item *item;
-	proto_tree *tag_tree;
-	proto_tree *which_tree;
+	proto_item *item = NULL;
+	proto_tree *fid_tree = NULL;
+	proto_tree *which_tree = NULL;
+	e_guid_t   tag_guid;
+
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -9113,22 +9291,28 @@ dissect_smb2_read_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 	/* fid */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
 
-	/* Filename */
-	if (si->file && si->file->name) {
-		tag_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
-
-		item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
-		proto_item_set_generated(item);
-		which_tree = tag_tree;
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
 	} else {
 		which_tree = tree;
+	}
 
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+	}
+
+	/* fid hash */
 	if (si->saved->fid_hash) {
 		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
 				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
 		proto_item_set_generated(item);
 	}
-}
 
 	/* minimum count */
 	proto_tree_add_item(tree, hf_smb2_min_count, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -9193,9 +9377,10 @@ dissect_smb2_read_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	offset_length_buffer_t olb;
 	uint32_t data_tvb_len;
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *tag_item = NULL;
 	proto_tree *tag_tree = NULL;
+	proto_tree *which_tree = NULL;
 
 	switch (si->status) {
 	/* buffer code */
@@ -9214,33 +9399,47 @@ dissect_smb2_read_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	offset += 4;
 
 	/* Create a filename subtree and populate it. */
-	if (pinfo->fd->visited)	{
+	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
-			proto_item_set_generated(tag_item);
-
-			if (si->saved && &si->saved->uuid_fid) {
-				item = proto_tree_add_guid(tag_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
-				proto_item_set_generated(item);
-			}
-			if (si->saved && si->saved->fid_hash) {
-				item = proto_tree_add_uint_format(tag_tree, hf_smb2_file_id_hash, tvb, 0, 0,
-					si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-				proto_item_set_generated(item);
-			}
-			if (si->file && si->file->frame_beg > 0) {
-				item = proto_tree_add_uint(tag_tree, hf_frame_handle_opened, tvb, 0, 0, si->file->frame_beg);
-				proto_item_set_generated(item);
-			}
-			if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
-				item = proto_tree_add_uint(tag_tree, hf_frame_handle_closed, tvb, 0, 0, si->file->frame_end);
-				proto_item_set_generated(item);
-			}
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
 		}
 	}
-	if (si->file && si->file->name)
-		 col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s", si->file->name);
 
 	/* reserved */
 	proto_tree_add_item(tree, hf_smb2_reserved, tvb, offset, 4, ENC_NA);
@@ -9379,7 +9578,7 @@ static void
 dissect_smb2_QFid_buffer_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9455,7 +9654,7 @@ dissect_smb2_DH2Q_buffer_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
 		NULL
 	};
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9484,7 +9683,7 @@ static void
 dissect_smb2_DH2Q_buffer_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9504,7 +9703,7 @@ static void
 dissect_smb2_DH2C_buffer_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, smb2_info_t *si)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9558,7 +9757,7 @@ static void
 dissect_smb2_MxAc_buffer_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_tree *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9690,7 +9889,7 @@ static void
 dissect_smb2_APP_INSTANCE_buffer_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9726,7 +9925,7 @@ dissect_smb2_svhdx_open_device_context(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 {
 	int offset = 0;
 	uint32_t version;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 
 	item = proto_tree_get_parent(tree);
@@ -9819,7 +10018,7 @@ static void
 dissect_smb2_app_instance_version_buffer_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 	proto_item *version_sub_tree;
 	uint64_t 	version_high;
@@ -9870,7 +10069,7 @@ static void
 dissect_smb2_posix_buffer_request(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, smb2_info_t *si _U_)
 {
 	int offset = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	item = proto_tree_get_parent(tree);
 	proto_item_append_text(item, ": POSIX Create Context request");
@@ -9883,7 +10082,7 @@ static void
 dissect_smb2_posix_buffer_response(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, smb2_info_t *si _U_)
 {
 	int offset = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 
 	item = proto_tree_get_parent(tree);
 	proto_item_append_text(item, ": POSIX Create Context response");
@@ -9942,7 +10141,7 @@ static void
 dissect_smb2_AAPL_buffer_request(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 	uint32_t    command_code;
 
@@ -10005,7 +10204,7 @@ static void
 dissect_smb2_AAPL_buffer_response(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, smb2_info_t *si _U_)
 {
 	int         offset   = 0;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_item *sub_tree;
 	uint32_t    command_code;
 	uint64_t    server_query_bitmask;
@@ -10277,7 +10476,11 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	/* create options */
 	offset = dissect_nt_create_options(tvb, tree, offset);
 
-	/* fid, fid hash, frame opened, and frame closed */
+	if (si->file)
+		si->file->frame_beg = pinfo->fd->num;
+	if (si->saved)
+		si->saved->frame_beg = pinfo->fd->num;
+
 	if (pinfo->fd->visited) {
 		if (si->saved->uuid_fid.data1 > 0) {
 			tag_item = proto_tree_add_guid(tree, hf_smb2_fid, tvb, 0, 0,
@@ -10292,13 +10495,6 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
 			proto_item_set_generated(item);
 		}
-		if (si->file) {
-			si->file->frame_beg = pinfo->fd->num;
-		}
-		if (si->saved) {
-			si->saved->frame_req = pinfo->fd->num;
-			si->saved->frame_request = pinfo->fd->num;
-		}
 		item = proto_tree_add_uint(tag_tree, hf_frame_handle_opened, tvb, 0, 0, pinfo->fd->num);
 		proto_item_set_generated(item);
 
@@ -10306,20 +10502,14 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 			item = proto_tree_add_uint(tag_tree, hf_frame_handle_closed, tvb, 0, 0,
 				si->file->frame_end);
 			proto_item_set_generated(item);
-		} else if (si->saved && si->saved->frame_res > 0 && si->saved->frame_res < UINT32_MAX) {
+		} else if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX) {
 			item = proto_tree_add_uint(tag_tree, hf_frame_handle_closed, tvb, 0, 0,
-				si->saved->frame_res);
+				si->saved->frame_end);
 			proto_item_set_generated(item);
-		} else {
-			if (si->saved && si->saved->frame_response > 0 && si->saved->frame_response < UINT32_MAX) {
-				item = proto_tree_add_uint(tag_tree, hf_frame_handle_closed, tvb, 0, 0,
-					si->saved->frame_response);
-				proto_item_set_generated(item);
-			}
 		}
 	}
 
-	/* filename  offset/length */
+	/* Blobs offset/length */
 	offset = dissect_smb2_olb_length_offset(tvb, offset, &f_olb, OLB_O_UINT16_S_UINT16, hf_smb2_filename);
 
 	/* extrainfo offset */
@@ -10327,13 +10517,10 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	/* filename string */
 	fname = dissect_smb2_olb_string(pinfo, tag_tree, tvb, &f_olb, OLB_TYPE_UNICODE_STRING);
+	if (strcmp(fname, "") == 0)
+		fname = wmem_strdup(wmem_file_scope(),"<share>");
 
-	/* This is necessary if the create response is missing from the capture file. */
-	if (!tag_tree && fname) {
-		item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, fname);
-	}
-
-	col_append_fstr(pinfo->cinfo, COL_INFO, " File: %s",
+	col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s",
 		format_text(pinfo->pool, fname, strlen(fname)));
 
 	/* save the name if it looks sane */
@@ -10374,7 +10561,7 @@ dissect_smb2_create_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 		NULL
 	};
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
 	proto_tree *tag_tree = NULL;
 	proto_tree *which_tree = tree;
 
@@ -10443,11 +10630,21 @@ dissect_smb2_create_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 	if (si->saved && si->saved->hnd_item && si->file && si->file->name) {
 		tag_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
-
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
 		item = proto_tree_add_string(tag_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
 		which_tree = tag_tree;
+
+	} else if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
 	}
+
 	if (si->saved) {
 		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
 			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
@@ -10455,11 +10652,10 @@ dissect_smb2_create_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	}
 
 	if (si->saved) {
-		si->saved->frame_req     = pinfo->fd->num;
-		si->saved->frame_request = pinfo->fd->num;
+		si->saved->frame_beg = pinfo->fd->num;
 	}
 	if (si->file)
-		si->file->frame_beg      = pinfo->fd->num;
+		si->file->frame_beg  = pinfo->fd->num;
 
 	/* We save this after dissect_smb2_fid just because it would be
 	possible to have this response without having the matching request.
@@ -10498,7 +10694,10 @@ dissect_smb2_setinfo_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 {
 	uint32_t setinfo_size;
 	uint16_t setinfo_offset;
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *fid_tree;
+	proto_tree *which_tree;
+	e_guid_t   tag_guid;
 
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
@@ -10531,15 +10730,34 @@ dissect_smb2_setinfo_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 		offset += 4;
 	}
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
-	}
+	/* Save the FID for use in responses and the create request */
+	tvb_get_letohguid(tvb, offset, &tag_guid);
+	si->saved->uuid_fid = tag_guid;
 
 	/* fid */
 	dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_USE);
+
+	if (si->saved->hnd_item) {
+		fid_tree = proto_item_add_subtree(si->saved->hnd_item, ett_smb2_fid_str);
+		which_tree = fid_tree;
+	} else {
+		which_tree = tree;
+	}
+
+	/* Filename */
+	if (si->file && si->file->name) {
+		if (strcmp(si->file->name, "") == 0)
+			si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+		proto_item_set_generated(item);
+	}
+
+	/* fid hash */
+	if (si->saved->fid_hash) {
+		item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+		proto_item_set_generated(item);
+}
 
 	/* data */
 	if (si->saved)
@@ -10553,17 +10771,56 @@ static int
 dissect_smb2_setinfo_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, smb2_info_t *si)
 {
 	bool continue_dissection;
-	proto_item *item;
+	proto_item *item = NULL;
+	proto_tree *tag_tree = NULL;
+	proto_item *tag_item = NULL;
+	proto_tree *which_tree = NULL;
 
 	/* class/infolevel */
 	dissect_smb2_class_infolevel(pinfo, tvb, offset, tree, si);
 
-	/* fid hash */
-	if (si->saved && si->saved->fid_hash) {
-		item = proto_tree_add_uint_format(tree, hf_smb2_file_id_hash, tvb, 0, 0,
-			si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
-		proto_item_set_generated(item);
+	if (pinfo->fd->visited) {
+		if (si->file && si->file->name) {
+			if (strcmp(si->file->name, "") == 0)
+				si->file->name = wmem_strdup(wmem_file_scope(),"<share>");
+			tag_item = proto_tree_add_string(tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
+			tag_tree = proto_item_add_subtree(tag_item, ett_smb2_fid_str);
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
+			which_tree = tag_tree;
+		} else {
+			which_tree = tree;
+		}
+		if (si->saved && &si->saved->uuid_fid) {
+			item = proto_tree_add_guid(which_tree, hf_smb2_fid, tvb, 0, 0, (e_guid_t *)&si->saved->uuid_fid);
+			proto_item_set_generated(item);
+		}
+		if (si->saved && si->saved->fid_hash) {
+			item = proto_tree_add_uint_format(which_tree, hf_smb2_file_id_hash, tvb, 0, 0,
+				si->saved->fid_hash, "File Id Hash: 0x%04x", si->saved->fid_hash);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_beg > 0 && si->file->frame_beg < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->file->frame_beg);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_beg > 0 && si->saved->frame_beg < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_opened, tvb, 0, 0,
+				si->saved->frame_beg);
+			proto_item_set_generated(item);
+		}
+		if (si->file && si->file->frame_end > 0 && si->file->frame_end < UINT32_MAX) {
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->file->frame_end);
+			proto_item_set_generated(item);
+		} else {
+			if (si->saved && si->saved->frame_end > 0 && si->saved->frame_end < UINT32_MAX)
+			item = proto_tree_add_uint(which_tree, hf_frame_handle_closed, tvb, 0, 0,
+				si->saved->frame_end);
+			proto_item_set_generated(item);
+		}
 	}
+
 
 	/* buffer code */
 	switch (si->status) {
@@ -10673,7 +10930,7 @@ dissect_smb2_break_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	}
 
 	if (buffer_code == OPLOCK_BREAK_LEASE_NOTIFICATION_STRUCTURE_SIZE) {
-		proto_item *item;
+		proto_item *item = NULL;
 
 		/* Lease Break Notification */
 
@@ -11525,7 +11782,7 @@ decrypt_smb_payload(packet_info *pinfo,
 	 * which cannot be used to determine the encryption
 	 * type. Instead the type is decided in the NegProt response,
 	 * within the Encryption Capability context which should only
-	 * have one element. That element is saved in the conversation
+	 * have one element. That element is si->saved in the conversation
 	 * struct (si->conv) and checked here.
 	 *
 	 * If the trace didn't contain NegProt packets, we have to
@@ -12781,6 +13038,11 @@ proto_register_smb2(void)
 		{ &hf_smb2_tree,
 			{ "Tree", "smb2.tree", FT_STRING, BASE_NONE,
 			NULL, 0, "Name of the Tree/Share", HFILL }
+		},
+
+		{ &hf_smb2_blobs,
+			{ "Blobs", "smb2.blobs", FT_STRING, BASE_NONE,
+			NULL, 0, NULL, HFILL }
 		},
 
 		{ &hf_smb2_filename,
