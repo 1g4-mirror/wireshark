@@ -6434,7 +6434,6 @@ dissect_smb2_getinfo_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
 		proto_item_set_generated(item);
 		col_append_fstr(pinfo->cinfo, COL_INFO, ", File: %s", si->file->name);
-	} else if (si->saved && si->saved->filename){
 
 	}
 
