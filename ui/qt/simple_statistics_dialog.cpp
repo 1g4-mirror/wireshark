@@ -1,5 +1,7 @@
 /* simple_statistics_dialog.cpp
  *
+ * (C) 2025 by Tamas Regos <tamas.regos@infostam.com>
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
@@ -57,26 +59,27 @@ enum {
 class SimpleStatisticsTreeWidgetItem : public QTreeWidgetItem
 {
 public:
-    SimpleStatisticsTreeWidgetItem(QTreeWidgetItem *parent, int num_fields, const stat_tap_table_item_type *fields) :
+    SimpleStatisticsTreeWidgetItem(QTreeWidgetItem *parent, int num_fields, const stat_tap_table_item_type *fields, stat_tap_table_item *field) :
         QTreeWidgetItem (parent, simple_row_type_),
         num_fields_(num_fields),
-        fields_(fields)
+        fields_(fields),
+        field_(field)
     {
     }
     void draw() {
         for (int i = 0; i < num_fields_ && i < treeWidget()->columnCount(); i++) {
             switch (fields_[i].type) {
             case TABLE_ITEM_UINT:
-                setText(i, QString::number(fields_[i].value.uint_value));
+                setText(i, QString::asprintf(field_[i].field_format, fields_[i].value.uint_value));
                 break;
             case TABLE_ITEM_INT:
-                setText(i, QString::number(fields_[i].value.int_value));
+                setText(i, QString::asprintf(field_[i].field_format, fields_[i].value.int_value));
                 break;
             case TABLE_ITEM_STRING:
-                setText(i, fields_[i].value.string_value);
+                setText(i, QString::asprintf(field_[i].field_format, fields_[i].value.string_value));
                 break;
             case TABLE_ITEM_FLOAT:
-                setText(i, QString::number(fields_[i].value.float_value, 'f', 6));
+                setText(i, QString::asprintf(field_[i].field_format, fields_[i].value.float_value));
                 break;
             case TABLE_ITEM_ENUM:
                 setText(i, QString::number(fields_[i].value.enum_value));
@@ -141,6 +144,7 @@ public:
 private:
     const int num_fields_;
     const stat_tap_table_item_type *fields_;
+    const stat_tap_table_item *field_;
 };
 
 SimpleStatisticsDialog::SimpleStatisticsDialog(QWidget &parent, CaptureFile &cf, struct _stat_tap_table_ui *stu, const QString filter, int help_topic) :
@@ -203,7 +207,7 @@ void SimpleStatisticsDialog::addMissingRows(struct _stat_data_t *stat_data)
         for (unsigned element = ti->childCount(); element < st_table->num_elements; element++) {
             stat_tap_table_item_type* fields = stat_tap_get_field_data(st_table, element, 0);
             if (stu_->nfields > 0) {
-                SimpleStatisticsTreeWidgetItem *ss_ti = new SimpleStatisticsTreeWidgetItem(ti, st_table->num_fields, fields);
+                SimpleStatisticsTreeWidgetItem *ss_ti = new SimpleStatisticsTreeWidgetItem(ti, st_table->num_fields, fields, stu_->fields);
                 for (int col = 0; col < (int) stu_->nfields; col++) {
                     if (stu_->fields[col].align == TAP_ALIGN_RIGHT) {
                         ss_ti->setTextAlignment(col, Qt::AlignRight);
