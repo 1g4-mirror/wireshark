@@ -135,6 +135,7 @@ The following features are either new or have been significantly updated since v
 
 // === Removed Features and Support
 
+Cmake option ENABLE_STATIC deprecated in favor of BUILD_SHARED_LIBS
 
 // === Removed Dissectors
 
