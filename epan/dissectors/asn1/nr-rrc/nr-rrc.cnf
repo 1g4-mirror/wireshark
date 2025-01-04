@@ -2273,7 +2273,6 @@ VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UN
   mapping->tempDirection = DIRECTION_DOWNLINK;
 %(DEFAULT_BODY)s
 
-
 #.FN_BODY SN-FieldLengthUM  VAL_PTR=&value
   uint32_t value;
 %(DEFAULT_BODY)s
@@ -2299,7 +2298,6 @@ VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UN
     mapping->rlcDlSnLength_present = true;
     mapping->rlcDlSnLength = (value==0) ? 12 : 18;
   }
-
 
 #.FN_BODY DRB-ToAddMod
   nr_drb_rlc_pdcp_mapping_t *mapping = &nr_rrc_get_private_data(actx)->drb_pdcp_mapping;
@@ -2351,7 +2349,6 @@ VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UN
 %(DEFAULT_BODY)s
   mapping->pdcpDlSnLength_present = true;
   mapping->pdcpDlSnLength = (value) ? 18 : 12;
-
 
 #.TYPE_ATTR
 CA-ParametersEUTRA-v1570/dl-1024QAM-TotalWeightedLayers DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_dl_1024QAM_TotalWeightedLayers_fmt)
@@ -2782,3 +2779,88 @@ LCG-DSR-Config-r18/remainingTimeThreshold-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING 
 
 #.FN_HDR MBSMulticastConfiguration-r18
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "MBS Multicast Configuration");
+
+#.FN_BODY DL-CCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_DL_CCCH;
+  tap_rec.message_type = value;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY DL-DCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_DL_DCCH;
+  tap_rec.message_type = value;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY PCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_PCCH;
+  tap_rec.message_type = value;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY UL-CCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_UL_CCCH;
+  tap_rec.message_type = value;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY UL-CCCH1-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_UL_CCCH1;
+  tap_rec.message_type = value;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY UL-DCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_UL_DCCH;
+  tap_rec.message_type = value;
+  tap_rec.choice = 1;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY SCCH-MessageType/c1 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_SCCH;
+  tap_rec.message_type = value;
+  tap_rec.choice = 1;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY UL-DCCH-MessageType/messageClassExtension/c2 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_UL_DCCH;
+  tap_rec.message_type = value;
+  tap_rec.choice = 2;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END
+
+#.FN_BODY SCCH-MessageType/messageClassExtension/c2 VAL_PTR=&value
+  uint32_t value;
+%(DEFAULT_BODY)s
+  static nr_rrc_tap_rec_t tap_rec;
+  tap_rec.pdu_type = NR_RRC_PDU_TYPE_SCCH;
+  tap_rec.message_type = value;
+  tap_rec.choice = 2;
+  tap_queue_packet(nr_rrc_tap, actx->pinfo, &tap_rec);
+#.END

@@ -2786,6 +2786,7 @@ Tamas Regos		<tamas.regos[AT]ericsson.com> {
 }
 
 Tamas Regos		<tamas.regos[AT]infostam.com> {
+	Telephony RRC Statistics
 	GSMTAP Enhancements
 	Simple Statistics Dialog Enhancements
 }

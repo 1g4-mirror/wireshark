@@ -377,6 +377,10 @@ WiresharkMainWindow::WiresharkMainWindow(QWidget *parent) :
             << REGISTER_TELEPHONY_GROUP_3GPP_UU
             << REGISTER_TELEPHONY_GROUP_MTP3
             << REGISTER_TELEPHONY_GROUP_SCTP
+            << REGISTER_TELEPHONY_GROUP_RRC
+            << REGISTER_TELEPHONY_GROUP_RRC_UTRA
+            << REGISTER_TELEPHONY_GROUP_RRC_EUTRA
+            << REGISTER_TELEPHONY_GROUP_RRC_NR
             << REGISTER_TOOLS_GROUP_UNSORTED;
 
     setWindowIcon(mainApp->normalIcon());
@@ -2697,6 +2701,18 @@ void WiresharkMainWindow::addMenuActions(QList<QAction *> &actions, int menu_gro
         case REGISTER_TELEPHONY_GROUP_MTP3:
             main_ui_->menuMTP3->addAction(action);
             break;
+        case REGISTER_TELEPHONY_GROUP_RRC:
+            main_ui_->menuRRC->addAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_UTRA:
+            main_ui_->menuRRCUTRA->addAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_EUTRA:
+            main_ui_->menuRRCEUTRA->addAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_NR:
+            main_ui_->menuRRCNR->addAction(action);
+            break;
         case REGISTER_TELEPHONY_GROUP_SCTP:
             // XXX - There are two SCTP menus, under Analyze and Telephony,
             // that have the same default actions. The default actions from
@@ -2776,6 +2792,18 @@ void WiresharkMainWindow::removeMenuActions(QList<QAction *> &actions, int menu_
         case REGISTER_TELEPHONY_GROUP_MTP3:
             main_ui_->menuMTP3->removeAction(action);
             break;
+        case REGISTER_TELEPHONY_GROUP_RRC:
+            main_ui_->menuRRC->removeAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_UTRA:
+            main_ui_->menuRRCUTRA->removeAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_EUTRA:
+            main_ui_->menuRRCEUTRA->removeAction(action);
+            break;
+        case REGISTER_TELEPHONY_GROUP_RRC_NR:
+            main_ui_->menuRRCNR->removeAction(action);
+            break;
         case REGISTER_TELEPHONY_GROUP_SCTP:
             main_ui_->menuTelephonySCTP->removeAction(action);
             break;
@@ -2819,6 +2847,15 @@ void WiresharkMainWindow::addDynamicMenus()
     }
     if (mainApp->dynamicMenuGroupItems(REGISTER_TELEPHONY_GROUP_MTP3).length() > 0) {
         main_ui_->actionTelephonyMTP3Placeholder->setVisible(false);
+    }
+    if (mainApp->dynamicMenuGroupItems(REGISTER_TELEPHONY_GROUP_RRC_UTRA).length() > 0) {
+        main_ui_->actionTelephonyRRCUTRAPlaceholder->setVisible(false);
+    }
+    if (mainApp->dynamicMenuGroupItems(REGISTER_TELEPHONY_GROUP_RRC_EUTRA).length() > 0) {
+        main_ui_->actionTelephonyRRCEUTRAPlaceholder->setVisible(false);
+    }
+    if (mainApp->dynamicMenuGroupItems(REGISTER_TELEPHONY_GROUP_RRC_NR).length() > 0) {
+        main_ui_->actionTelephonyRRCNRPlaceholder->setVisible(false);
     }
 }
 

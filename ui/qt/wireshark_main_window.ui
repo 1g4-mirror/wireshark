@@ -634,6 +634,32 @@
      </property>
      <addaction name="actionTelephonyOsmuxPacketCounter"/>
     </widget>
+    <widget class="QMenu" name="menuRRC">
+     <property name="title">
+      <string>RRC</string>
+     </property>
+     <widget class="QMenu" name="menuRRCUTRA">
+      <property name="title">
+       <string>UTRA RRC (3G)</string>
+      </property>
+      <addaction name="actionTelephonyRRCUTRAPlaceholder"/>
+     </widget>
+     <widget class="QMenu" name="menuRRCEUTRA">
+      <property name="title">
+       <string>EUTRA RRC (LTE/4G)</string>
+      </property>
+      <addaction name="actionTelephonyRRCEUTRAPlaceholder"/>
+     </widget>
+     <widget class="QMenu" name="menuRRCNR">
+      <property name="title">
+       <string>NR RRC (5G)</string>
+      </property>
+      <addaction name="actionTelephonyRRCNRPlaceholder"/>
+     </widget>
+     <addaction name="menuRRCUTRA"/>
+     <addaction name="menuRRCEUTRA"/>
+     <addaction name="menuRRCNR"/>
+    </widget>
     <addaction name="actionTelephonyVoipCalls"/>
     <addaction name="menuANSI"/>
     <addaction name="menuGSM"/>
@@ -650,6 +676,7 @@
     <addaction name="actionTelephonyF1APMessages"/>
     <addaction name="actionTelephonyNGAPMessages"/>
     <addaction name="actionTelephonyE2APMessages"/>
+    <addaction name="menuRRC"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -2813,6 +2840,30 @@
    </property>
    <property name="text">
     <string>No MTP3 statistics registered</string>
+   </property>
+  </action>
+  <action name="actionTelephonyRRCUTRAPlaceholder">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>No RRC statistics registered</string>
+   </property>
+  </action>
+  <action name="actionTelephonyRRCEUTRAPlaceholder">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>No RRC statistics registered</string>
+   </property>
+  </action>
+  <action name="actionTelephonyRRCNRPlaceholder">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>No RRC statistics registered</string>
    </property>
   </action>
   <action name="actionStatisticsResolvedAddresses">
