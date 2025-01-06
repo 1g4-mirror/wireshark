@@ -9,6 +9,7 @@
  */
 
 #include "ws_compiler_tests.h"
+#include "config.h"
 
 /** Reset symbol export behavior.
  * If you {un}define WS_BUILD_DLL on the fly you'll have to define this
@@ -91,7 +92,7 @@
      * be necessary, e.g. if what's declared is an array whose size is
      * not given in the declaration.
      */
-    #ifdef ENABLE_STATIC
+    #ifndef BUILD_SHARED_LIBS
       /*
        * We're building all-static, so we're not building any DLLs.
        */
@@ -99,7 +100,7 @@
     #elif defined(__GNUC__)
       /* GCC */
       #define WS_DLL_PUBLIC_DEF __attribute__ ((dllimport))
-    #else /* ! ENABLE_STATIC && ! __GNUC__ */
+    #else /* BUILD_SHARED_LIBS && ! __GNUC__ */
       /*
        * Presumably MSVC, and we're not building all-static.
        * Note: actually gcc seems to also support this syntax.
