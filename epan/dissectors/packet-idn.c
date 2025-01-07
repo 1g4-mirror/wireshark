@@ -538,18 +538,18 @@ static void set_laser_sample_values_string(tvbuff_t *tvb, int offset, configurat
 	int l = 0;
 
 	if((config->dic_precision)[2] == 1)
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint16(tvb, offset, 2));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_ntohis(tvb, offset));
 	else
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint8(tvb, offset));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_int8(tvb, offset));
 
 	for(i=1; i<config->sample_size && (l < MAX_BUFFER-100); i++){
 		if((config->dic_precision)[i+1] == 1) {
 			//do nothing
 		}else if((config->dic_precision)[i+2] == 1) {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint16(tvb, offset+i, 2));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_ntohis(tvb, offset+i));
 			i++;
 		}else {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint8(tvb, offset+i));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_int8(tvb, offset+i));
 		}
 	}
 }
@@ -626,10 +626,8 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 	proto_tree *idn_samples_tree;
 	float pps;
 	int sample_count = laser_data_size / config->sample_size;
-	if(minfo->chunk_type == IDNCT_LP_FRAME_CHUNK){
-		pps = (float)sample_count / ((float)minfo->frame_duration / 1000000);
-	}else if(minfo->chunk_type == IDNCT_LP_WAVE_SAMPLE){
-		pps = (float)sample_count / ((float)1000 / (float)1000000);
+	if(minfo->chunk_type == IDNCT_LP_FRAME_CHUNK || IDNCT_LP_WAVE_SAMPLE){
+		pps = (float) (sample_count / (float)(minfo->frame_duration / 1000000));
 	}
 
 	if (config->sample_size == 0) {
@@ -639,7 +637,7 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 
 	int sample_size = laser_data_size/config->sample_size;
 	if (minfo->chunk_type == IDNCT_LP_WAVE_SAMPLE || minfo->chunk_type == IDNCT_LP_FRAME_CHUNK) {
-		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, total %u, with %f pps", sample_count, pps);
+		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, total %u, with %.2f pps", sample_count, pps);
 	}else{
 		idn_samples_tree = proto_tree_add_subtree_format(idn_tree, tvb, offset, laser_data_size, ett_data, NULL, "Laser Samples, total %u, pps not applicable", sample_count);
 	}
