@@ -627,7 +627,7 @@ static int dissect_idn_laser_data(tvbuff_t *tvb, int offset, proto_tree *idn_tre
 	float pps;
 	int sample_count = laser_data_size / config->sample_size;
 	if(minfo->chunk_type == IDNCT_LP_FRAME_CHUNK || IDNCT_LP_WAVE_SAMPLE){
-		pps = (float) (sample_count / (float)(minfo->frame_duration / 1000000));
+		pps = (float) (sample_count / (float)(minfo->frame_duration / 1000000.0));
 	}
 
 	if (config->sample_size == 0) {
