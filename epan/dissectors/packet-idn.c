@@ -730,7 +730,7 @@ static int dissect_idn_frame_chunk_header(tvbuff_t *tvb, int offset, proto_tree 
 	return offset;
 }
 
-static int dissect_idn_wave_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree) {
+static int dissect_idn_wave_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, message_info *minfo) {
 	static int * const wave_sample_chunk_flags[] = {
 		&hf_idn_two_bits_reserved_1,
 		&hf_idn_scm,
@@ -741,6 +741,7 @@ static int dissect_idn_wave_chunk_header(tvbuff_t *tvb, int offset, proto_tree *
 	proto_tree_add_bitmask(chunk_header_tree, tvb, offset, hf_idn_chunk_header_flags, ett_chunk_header_flags, wave_sample_chunk_flags, ENC_BIG_ENDIAN);
 	offset += 1;
 	proto_tree_add_item(chunk_header_tree, hf_idn_duration, tvb, offset, 3, ENC_BIG_ENDIAN);
+	minfo->frame_duration = tvb_get_ntohi24(tvb, offset);
 	offset += 3;
 	return offset;
 }
@@ -748,7 +749,7 @@ static int dissect_idn_wave_chunk_header(tvbuff_t *tvb, int offset, proto_tree *
 static int dissect_idn_chunk_header(tvbuff_t *tvb, int offset, proto_tree *idn_tree, message_info *minfo) {
 	switch(minfo->chunk_type) {
 		case IDNCT_LP_WAVE_SAMPLE:
-			offset = dissect_idn_wave_chunk_header(tvb, offset, idn_tree);
+			offset = dissect_idn_wave_chunk_header(tvb, offset, idn_tree, minfo);
 			break;
 		case IDNCT_LP_FRAME_CHUNK:
 			offset = dissect_idn_frame_chunk_header(tvb, offset, idn_tree, minfo);
