@@ -1387,16 +1387,16 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 	uint16_t sample_count = config->max_samples;
 	uint16_t audio_channels = config->audio_channels;
 	float freq = config->audio_freq;
-	proto_item_append_text(audio_samples_tree, "  %u Samples, %f kHz", sample_count/audio_channels ,freq);
+	proto_item_append_text(audio_samples_tree, "  %u Samples, %.2f kHz", sample_count/audio_channels ,freq);
 	switch (audio_format) {
 		case 0x00:
-			proto_item_append_text(audio_samples_tree, " ,format 0x0(8 Bit Words)");
+			proto_item_append_text(audio_samples_tree, ", format 0x0(8 Bit Words)");
 			break;
 		case 0x01:
-			proto_item_append_text(audio_samples_tree, " ,format 0x1(16 Bit Words)");
+			proto_item_append_text(audio_samples_tree, ", format 0x1(16 Bit Words)");
 			break;
 		case 0x02:
-			proto_item_append_text(audio_samples_tree, " ,format 0x2(24 Bit Words)");
+			proto_item_append_text(audio_samples_tree, ", format 0x2(24 Bit Words)");
 			break;
 	}
 	dissect_idn_formatted_audio_samples(tvb, offset, audio_samples_tree, config);
@@ -2301,7 +2301,7 @@ void proto_register_idn(void) {
 	};
 
 	proto_idn = proto_register_protocol (
-		"Ilda Digital Network Protocol",
+		"ILDA Digital Network Protocol",
 		"IDN",
 		"idn"
 	);
