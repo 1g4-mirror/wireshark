@@ -1,0 +1,3 @@
+SUBDIRS = SPECS
+clean-local:
+	rm -rf BUILD RPMS SOURCES SRPMS

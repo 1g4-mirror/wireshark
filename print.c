@@ -1,483 +1,759 @@
 /* print.c
  * Routines for printing packet analysis trees.
  *
- * Gilbert Ramirez <gram@verdict.uthscsa.edu>
+ * $Id$
+ *
+ * Gilbert Ramirez <gram@alumni.rice.edu>
  *
  * Ethereal - Network traffic analyzer
- * By Gerald Combs <gerald@zing.org>
+ * By Gerald Combs <gerald@ethereal.com>
  * Copyright 1998 Gerald Combs
  *
- * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* With MSVC and a libethereal.dll this file needs to import some variables 
+   in a special way. Therefore _NEED_VAR_IMPORT_ is defined. */  
+#define _NEED_VAR_IMPORT_
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
-#include <gtk/gtk.h>
 #include <stdio.h>
 #include <string.h>
 
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
+#include <epan/epan.h>
+#include <epan/epan_dissect.h>
+#include <epan/tvbuff.h>
+#include <epan/packet.h>
 
-#include "packet.h"
+#include "packet-range.h"
 #include "print.h"
+#include "ps.h"
+#include <epan/charsets.h>
+#include <epan/dissectors/packet-data.h>
+#include <epan/dissectors/packet-frame.h>
 
-static void printer_opts_file_cb(GtkWidget *w, gpointer te);
-static void printer_opts_fs_cancel_cb(GtkWidget *w, gpointer data);
-static void printer_opts_fs_ok_cb(GtkWidget *w, gpointer data);
-static void printer_opts_ok_cb(GtkWidget *w, gpointer data);
-static void printer_opts_close_cb(GtkWidget *w, gpointer win);
-static void printer_opts_toggle_format(GtkWidget *widget, gpointer data);
-static void printer_opts_toggle_dest(GtkWidget *widget, gpointer data);
-static void dumpit (FILE *fh, register const u_char *cp, register u_int length);
-static void dumpit_ps (FILE *fh, register const u_char *cp, register u_int length);
+#define PDML_VERSION "0"
+#define PSML_VERSION "0"
+
+typedef struct {
+	int			level;
+	print_stream_t		*stream;
+	gboolean		success;
+	GSList		 	*src_list;
+	print_dissections_e	print_dissections;
+	gboolean		print_hex_for_data;
+	char_enc		encoding;
+	epan_dissect_t		*edt;
+} print_data;
+
+typedef struct {
+	int			level;
+	FILE			*fh;
+	GSList		 	*src_list;
+	epan_dissect_t		*edt;
+} write_pdml_data;
+
+static void proto_tree_print_node(proto_node *node, gpointer data);
+static void proto_tree_write_node_pdml(proto_node *node, gpointer data);
+static const guint8 *get_field_data(GSList *src_list, field_info *fi);
+static void write_pdml_field_hex_value(write_pdml_data *pdata, field_info *fi);
+static gboolean print_hex_data_buffer(print_stream_t *stream, const guchar *cp,
+    guint length, char_enc encoding);
 static void ps_clean_string(unsigned char *out, const unsigned char *in,
 			int outbuf_size);
+static void print_escaped_xml(FILE *fh, char *unescaped_string);
 
-/* #include "ps.c" */
+static void print_pdml_geninfo(proto_tree *tree, FILE *fh);
 
-pr_opts printer_opts;
-
-void printer_opts_cb(GtkWidget *w, gpointer d)
-{
-	GtkWidget	*propt_w, *main_vb, *button;
-	GtkWidget	*format_hb, *format_lb;
-	GtkWidget	*dest_hb, *dest_lb;
-	GtkWidget	*cmd_hb, *cmd_lb, *cmd_te;
-	GtkWidget	*file_hb, *file_bt, *file_te;
-	GtkWidget	*bbox, *ok_bt, *cancel_bt;
-	GSList		*format_grp, *dest_grp;
-	pr_opts		*temp_pr_opts = g_malloc(sizeof(pr_opts));
-
-	/* Make a working copy of the printer data */
-	memcpy(temp_pr_opts, &printer_opts, sizeof(pr_opts));
-/*	temp_pr_opts->cmd = g_strdup(printer_opts->cmd);
-	temp_pr_opts->file = g_strdup(printer_opts->file);*/
-
-	propt_w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	temp_pr_opts->window = propt_w;
-
-	/* Container for each row of widgets */
-	main_vb = gtk_vbox_new(FALSE, 3);
-	gtk_container_border_width(GTK_CONTAINER(main_vb), 5);
-	gtk_container_add(GTK_CONTAINER(propt_w), main_vb);
-	gtk_widget_show(main_vb);
-
-	/* Output format */
-	format_hb = gtk_hbox_new(FALSE, 1);
-	gtk_container_add(GTK_CONTAINER(main_vb), format_hb);
-	gtk_widget_show(format_hb);
-
-	format_lb = gtk_label_new("Format:");
-	gtk_box_pack_start(GTK_BOX(format_hb), format_lb, FALSE, FALSE, 3);
-	gtk_widget_show(format_lb);
-
-	button = gtk_radio_button_new_with_label(NULL, "Plain Text");
-	if (printer_opts.output_format == 0) {
-		gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(button), TRUE);
-	}
-	format_grp = gtk_radio_button_group(GTK_RADIO_BUTTON(button));
-	gtk_box_pack_start(GTK_BOX(format_hb), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-
-	button = gtk_radio_button_new_with_label(format_grp, "PostScript");
-	if (printer_opts.output_format == 1) {
-		gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(button), TRUE);
-	}
-	gtk_signal_connect(GTK_OBJECT(button), "toggled",
-			GTK_SIGNAL_FUNC(printer_opts_toggle_format),
-			(gpointer)temp_pr_opts);
-	gtk_box_pack_start(GTK_BOX(format_hb), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-
-	/* Output destination */
-	dest_hb = gtk_hbox_new(FALSE, 1);
-	gtk_container_add(GTK_CONTAINER(main_vb), dest_hb);
-	gtk_widget_show(dest_hb);
-
-	dest_lb = gtk_label_new("Print to:");
-	gtk_box_pack_start(GTK_BOX(dest_hb), dest_lb, FALSE, FALSE, 3);
-	gtk_widget_show(dest_lb);
-
-	button = gtk_radio_button_new_with_label(NULL, "Command");
-	if (printer_opts.output_dest == 0) {
-		gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(button), TRUE);
-	}
-	dest_grp = gtk_radio_button_group(GTK_RADIO_BUTTON(button));
-	gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(button), TRUE);
-	gtk_box_pack_start(GTK_BOX(dest_hb), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-
-	button = gtk_radio_button_new_with_label(dest_grp, "File");
-	if (printer_opts.output_dest == 1) {
-		gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(button), TRUE);
-	}
-	gtk_signal_connect(GTK_OBJECT(button), "toggled",
-			GTK_SIGNAL_FUNC(printer_opts_toggle_dest),
-			(gpointer)temp_pr_opts);
-	gtk_box_pack_start(GTK_BOX(dest_hb), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-
-	/* Command text entry */
-	cmd_hb = gtk_hbox_new(FALSE, 1);
-	gtk_container_add(GTK_CONTAINER(main_vb), cmd_hb);
-	gtk_widget_show(cmd_hb);
-
-	cmd_lb = gtk_label_new("Command:");
-	gtk_box_pack_start(GTK_BOX(cmd_hb), cmd_lb, FALSE, FALSE, 3);
-	gtk_widget_show(cmd_lb);
-
-	cmd_te = gtk_entry_new();
-	temp_pr_opts->cmd_te = cmd_te;
-	gtk_entry_set_text(GTK_ENTRY(cmd_te), printer_opts.cmd);
-	gtk_box_pack_start(GTK_BOX(cmd_hb), cmd_te, TRUE, TRUE, 3);
-	gtk_widget_show(cmd_te);
-
-	/* File button and text entry */
-	file_hb = gtk_hbox_new(FALSE, 1);
-	gtk_container_add(GTK_CONTAINER(main_vb), file_hb);
-	gtk_widget_show(file_hb);
-
-	file_bt = gtk_button_new_with_label("File:");
-	gtk_box_pack_start(GTK_BOX(file_hb), file_bt, FALSE, FALSE, 3);
-	gtk_widget_show(file_bt);
-
-	file_te = gtk_entry_new();
-	temp_pr_opts->file_te = file_te;
-	gtk_entry_set_text(GTK_ENTRY(file_te), printer_opts.file);
-	gtk_box_pack_start(GTK_BOX(file_hb), file_te, TRUE, TRUE, 3);
-	gtk_widget_show(file_te);
-
-	gtk_signal_connect_object(GTK_OBJECT(file_bt), "clicked",
-			GTK_SIGNAL_FUNC(printer_opts_file_cb), GTK_OBJECT(file_te));
-
-
-	/* Button row: OK and cancel buttons */
-	bbox = gtk_hbutton_box_new();
-	gtk_button_box_set_layout (GTK_BUTTON_BOX (bbox), GTK_BUTTONBOX_END);
-	gtk_container_add(GTK_CONTAINER(main_vb), bbox);
-	gtk_widget_show(bbox);
-
-	ok_bt = gtk_button_new_with_label ("OK");
-	gtk_signal_connect(GTK_OBJECT(ok_bt), "clicked",
-		GTK_SIGNAL_FUNC(printer_opts_ok_cb), (gpointer)temp_pr_opts);
-	gtk_container_add(GTK_CONTAINER(bbox), ok_bt);
-	gtk_widget_show(ok_bt);
-
-	cancel_bt = gtk_button_new_with_label ("Cancel");
-	gtk_signal_connect_object(GTK_OBJECT(cancel_bt), "clicked",
-		GTK_SIGNAL_FUNC(printer_opts_close_cb), (gpointer)temp_pr_opts);
-	gtk_container_add(GTK_CONTAINER(bbox), cancel_bt);
-	gtk_widget_show(cancel_bt);
-
-	/* Show the completed window */
-	gtk_widget_show(propt_w);
-}
-
-
-static void
-printer_opts_file_cb(GtkWidget *w, gpointer te) {
-  GtkWidget *fs, **w_list;
-
-  w_list = g_malloc(2 * sizeof(GtkWidget *));
-  
-  fs = gtk_file_selection_new ("Ethereal: Print to a File");
-  w_list[0] = fs;
-  w_list[1] = (GtkWidget *) te;
-
-  gtk_signal_connect (GTK_OBJECT (GTK_FILE_SELECTION(fs)->ok_button),
-    "clicked", (GtkSignalFunc) printer_opts_fs_ok_cb, w_list);
-
-  /* Connect the cancel_button to destroy the widget */
-  gtk_signal_connect (GTK_OBJECT (GTK_FILE_SELECTION(fs)->cancel_button),
-    "clicked", (GtkSignalFunc) printer_opts_fs_cancel_cb, w_list);
-
-  gtk_widget_show(fs);
-}
-
-static void
-printer_opts_fs_ok_cb(GtkWidget *w, gpointer data) {
-	GtkWidget **w_list = (GtkWidget **) data;
-	  
-	gtk_entry_set_text(GTK_ENTRY(w_list[1]),
-		gtk_file_selection_get_filename (GTK_FILE_SELECTION(w_list[0])));
-	printer_opts_fs_cancel_cb(w, data);
-}
-
-static void
-printer_opts_fs_cancel_cb(GtkWidget *w, gpointer data) {
-	GtkWidget **w_list = (GtkWidget **) data;
-	  
-	gtk_widget_destroy(w_list[0]);
-	g_free(data);
-} 
-
-static void
-printer_opts_ok_cb(GtkWidget *w, gpointer data)
-{
-	printer_opts.output_format = ((pr_opts*)data)->output_format;
-	printer_opts.output_dest = ((pr_opts*)data)->output_dest;
-
-	free(printer_opts.cmd);
-	printer_opts.cmd =
-		g_strdup(gtk_entry_get_text(GTK_ENTRY(((pr_opts*)data)->cmd_te)));
-
-	free(printer_opts.file);
-	printer_opts.file =
-		g_strdup(gtk_entry_get_text(GTK_ENTRY(((pr_opts*)data)->file_te)));
-
-	gtk_widget_destroy(GTK_WIDGET(((pr_opts*)data)->window));
-	g_free(data);
-}
-
-static void
-printer_opts_close_cb(GtkWidget *w, gpointer data)
-{
-	gtk_widget_destroy(GTK_WIDGET(((pr_opts*)data)->window));
-	g_free(data);
-}
-
-static void
-printer_opts_toggle_format(GtkWidget *widget, gpointer data)
-{
-		if (GTK_TOGGLE_BUTTON (widget)->active) {
-			((pr_opts*)data)->output_format = 1;
-			/* toggle file/cmd */
-		}
-		else {
-			((pr_opts*)data)->output_format = 0;
-			/* toggle file/cmd */
-		}
-}
-
-static void
-printer_opts_toggle_dest(GtkWidget *widget, gpointer data)
-{
-		if (GTK_TOGGLE_BUTTON (widget)->active) {
-			((pr_opts*)data)->output_dest = 1;
-		}
-		else {
-			((pr_opts*)data)->output_dest = 0;
-		}
-}
-
-/* ========================================================== */
-void print_tree(const u_char *pd, frame_data *fd, GtkTree *tree)
+static FILE *
+open_print_dest(int to_file, const char *dest)
 {
 	FILE	*fh;
-	char	*out;
 
 	/* Open the file or command for output */
-	if (printer_opts.output_dest == 0) {
-		out = printer_opts.cmd;
-		fh = popen(printer_opts.cmd, "w");
+	if (to_file)
+		fh = fopen(dest, "w");
+	else
+		fh = popen(dest, "w");
+
+	return fh;
+}
+
+static gboolean
+close_print_dest(int to_file, FILE *fh)
+{
+	/* Close the file or command */
+	if (to_file)
+		return (fclose(fh) == 0);
+	else
+		return (pclose(fh) == 0);
+}
+
+#define MAX_PS_LINE_LENGTH 256
+
+gboolean
+proto_tree_print(print_args_t *print_args, epan_dissect_t *edt,
+    print_stream_t *stream)
+{
+	print_data data;
+
+	/* Create the output */
+	data.level = 0;
+	data.stream = stream;
+	data.success = TRUE;
+	data.src_list = edt->pi.data_src;
+	data.encoding = edt->pi.fd->flags.encoding;
+	data.print_dissections = print_args->print_dissections;
+	/* If we're printing the entire packet in hex, don't
+	   print uninterpreted data fields in hex as well. */
+	data.print_hex_for_data = !print_args->print_hex;
+	data.edt = edt;
+
+	proto_tree_children_foreach(edt->tree, proto_tree_print_node, &data);
+	return data.success;
+}
+
+#define MAX_INDENT	160
+
+/* Print a tree's data, and any child nodes. */
+static
+void proto_tree_print_node(proto_node *node, gpointer data)
+{
+	field_info	*fi = PITEM_FINFO(node);
+	print_data	*pdata = (print_data*) data;
+	const guint8	*pd;
+	gchar		label_str[ITEM_LABEL_LENGTH];
+	gchar		*label_ptr;
+
+	/* Don't print invisible entries. */
+	if (PROTO_ITEM_IS_HIDDEN(node))
+		return;
+
+	/* Give up if we've already gotten an error. */
+	if (!pdata->success)
+		return;
+
+	/* was a free format label produced? */
+	if (fi->rep) {
+		label_ptr = fi->rep->representation;
 	}
-	else {
-		out = printer_opts.file;
-		fh = fopen(printer_opts.file, "w");
+	else { /* no, make a generic label */
+		label_ptr = label_str;
+		proto_item_fill_label(fi, label_str);
 	}
 
-	if (!fh) {
-		g_error("Cannot open %s for output.\n", out);
+	if (!print_line(pdata->stream, pdata->level, label_ptr)) {
+		pdata->success = FALSE;
 		return;
 	}
 
+	/* If it's uninterpreted data, dump it (unless our caller will
+	   be printing the entire packet in hex). */
+	if (fi->hfinfo->id == proto_data && pdata->print_hex_for_data) {
+		/*
+		 * Find the data for this field.
+		 */
+		pd = get_field_data(pdata->src_list, fi);
+		if (pd) {
+			if (!print_hex_data_buffer(pdata->stream, pd,
+			    fi->length, pdata->encoding)) {
+				pdata->success = FALSE;
+				return;
+			}
+		}
+	}
+
+	/* If we're printing all levels, or if this node is one with a
+	   subtree and its subtree is expanded, recurse into the subtree,
+	   if it exists. */
+	g_assert(fi->tree_type >= -1 && fi->tree_type < num_tree_types);
+	if (pdata->print_dissections == print_dissections_expanded ||
+	    (pdata->print_dissections == print_dissections_as_displayed &&
+		fi->tree_type >= 0 && tree_is_expanded[fi->tree_type])) {
+		if (node->first_child != NULL) {
+			pdata->level++;
+			proto_tree_children_foreach(node,
+				proto_tree_print_node, pdata);
+			pdata->level--;
+			if (!pdata->success)
+				return;
+		}
+	}
+}
+
+void
+write_pdml_preamble(FILE *fh)
+{
+	fputs("<?xml version=\"1.0\"?>\n", fh);
+	fputs("<pdml version=\"" PDML_VERSION "\" ", fh);
+	fprintf(fh, "creator=\"%s/%s\">\n", PACKAGE, VERSION);
+}
+
+void
+proto_tree_write_pdml(epan_dissect_t *edt, FILE *fh)
+{
+	write_pdml_data data;
+
 	/* Create the output */
-	if (printer_opts.output_format == 0) {
-		print_tree_text(fh, pd, fd, tree);
+	data.level = 0;
+	data.fh = fh;
+	data.src_list = edt->pi.data_src;
+	data.edt = edt;
+
+	fprintf(fh, "<packet>\n");
+
+	/* Print a "geninfo" protocol as required by PDML */
+	print_pdml_geninfo(edt->tree, fh);
+
+	proto_tree_children_foreach(edt->tree, proto_tree_write_node_pdml,
+	    &data);
+
+	fprintf(fh, "</packet>\n\n");
+}
+
+/* Write out a tree's data, and any child nodes, as PDML */
+static void
+proto_tree_write_node_pdml(proto_node *node, gpointer data)
+{
+	field_info	*fi = PITEM_FINFO(node);
+	write_pdml_data	*pdata = (write_pdml_data*) data;
+	gchar		*label_ptr;
+	gchar		label_str[ITEM_LABEL_LENGTH];
+	char		*dfilter_string;
+	int		chop_len;
+	int		i;
+
+	for (i = -1; i < pdata->level; i++) {
+		fputs("  ", pdata->fh);
 	}
+
+	/* Text label. It's printed as a field with no name. */
+	if (fi->hfinfo->id == hf_text_only) {
+		/* Get the text */
+		if (fi->rep) {
+			label_ptr = fi->rep->representation;
+		}
+		else {
+			label_ptr = "";
+		}
+
+		fputs("<field show=\"", pdata->fh);
+		print_escaped_xml(pdata->fh, label_ptr);
+
+		fprintf(pdata->fh, "\" size=\"%d", fi->length);
+		fprintf(pdata->fh, "\" pos=\"%d", fi->start);
+
+		fputs("\" value=\"", pdata->fh);
+		write_pdml_field_hex_value(pdata, fi);
+
+		if (node->first_child != NULL) {
+			fputs("\">\n", pdata->fh);
+		}
+		else {
+			fputs("\"/>\n", pdata->fh);
+		}
+	}
+	/* Uninterpreted data, i.e., the "Data" protocol, is
+	 * printed as a field instead of a protocol. */
+	else if (fi->hfinfo->id == proto_data) {
+
+		fputs("<field name=\"data\" value=\"", pdata->fh);
+
+		write_pdml_field_hex_value(pdata, fi);
+
+		fputs("\"/>\n", pdata->fh);
+
+	}
+	/* Normal protocols and fields */
 	else {
-		print_ps_preamble(fh);
-		print_tree_ps(fh, pd, fd, tree);
-		print_ps_finale(fh);
+		if (fi->hfinfo->type == FT_PROTOCOL) {
+			fputs("<proto name=\"", pdata->fh);
+		}
+		else {
+			fputs("<field name=\"", pdata->fh);
+		}
+		print_escaped_xml(pdata->fh, fi->hfinfo->abbrev);
+
+#if 0
+	/* PDML spec, see: 
+	 * http://analyzer.polito.it/30alpha/docs/dissectors/PDMLSpec.htm
+	 *
+	 * the show fields contains things in 'human readable' format
+	 * showname: contains only the name of the field
+	 * show: contains only the data of the field
+	 * showdtl: contains additional details of the field data
+	 * showmap: contains mappings of the field data (e.g. the hostname to an IP address)
+	 *
+	 * XXX - the showname shouldn't contain the field data itself 
+	 * (like it's contained in the fi->rep->representation). 
+	 * Unfortunately, we don't have the field data representation for 
+	 * all fields, so this isn't currently possible */
+		fputs("\" showname=\"", pdata->fh);
+		print_escaped_xml(pdata->fh, fi->hfinfo->name);
+#endif
+
+		if (fi->rep) {
+			fputs("\" showname=\"", pdata->fh);
+			print_escaped_xml(pdata->fh, fi->rep->representation);
+		}
+		else {
+			label_ptr = label_str;
+			proto_item_fill_label(fi, label_str);
+			fputs("\" showname=\"", pdata->fh);
+			print_escaped_xml(pdata->fh, label_ptr);
+		}
+
+		if (PROTO_ITEM_IS_HIDDEN(node))
+			fprintf(pdata->fh, "\" hide=\"yes");
+
+		fprintf(pdata->fh, "\" size=\"%d", fi->length);
+		fprintf(pdata->fh, "\" pos=\"%d", fi->start);
+/*		fprintf(pdata->fh, "\" id=\"%d", fi->hfinfo->id);*/
+
+		if (fi->hfinfo->type != FT_PROTOCOL) {
+			/* Field */
+
+			/* XXX - this is a hack until we can just call
+			 * fvalue_to_string_repr() for *all* FT_* types. */
+			dfilter_string = proto_construct_dfilter_string(fi,
+					pdata->edt);
+			if (dfilter_string != NULL) {
+				chop_len = strlen(fi->hfinfo->abbrev) + 4; /* for " == " */
+
+				/* XXX - Remove double-quotes. Again, once we
+				 * can call fvalue_to_string_repr(), we can
+				 * ask it not to produce the version for
+				 * display-filters, and thus, no
+				 * double-quotes. */
+				if (dfilter_string[strlen(dfilter_string)-1] == '"') {
+					dfilter_string[strlen(dfilter_string)-1] = '\0';
+					chop_len++;
+				}
+
+				fputs("\" show=\"", pdata->fh);
+				print_escaped_xml(pdata->fh, &dfilter_string[chop_len]);
+			}
+			if (fi->length > 0) {
+				fputs("\" value=\"", pdata->fh);
+				write_pdml_field_hex_value(pdata, fi);
+			}
+		}
+
+		if (node->first_child != NULL) {
+			fputs("\">\n", pdata->fh);
+		}
+		else if (fi->hfinfo->id == proto_data) {
+			fputs("\">\n", pdata->fh);
+		}
+		else {
+			fputs("\"/>\n", pdata->fh);
+		}
 	}
 
-	/* Close the file or command */
-	if (printer_opts.output_dest == 0) {
-		pclose(fh);
+	/* We always print all levels for PDML. Recurse here. */
+	if (node->first_child != NULL) {
+		pdata->level++;
+		proto_tree_children_foreach(node,
+				proto_tree_write_node_pdml, pdata);
+		pdata->level--;
 	}
-	else {
-		fclose(fh);
+
+	if (node->first_child != NULL) {
+		for (i = -1; i < pdata->level; i++) {
+			fputs("  ", pdata->fh);
+		}
+		if (fi->hfinfo->type == FT_PROTOCOL) {
+			fputs("</proto>\n", pdata->fh);
+		}
+		else {
+			fputs("</field>\n", pdata->fh);
+		}
 	}
 }
 
-/* Print a tree's data in plain text */
-void print_tree_text(FILE *fh, const u_char *pd, frame_data *fd, GtkTree *tree)
+/* Print info for a 'geninfo' pseudo-protocol. This is required by
+ * the PDML spec. The information is contained in Ethereal's 'frame' protocol,
+ * but we produce a 'geninfo' protocol in the PDML to conform to spec.
+ * The 'frame' protocol follows the 'geninfo' protocol in the PDML. */
+static void
+print_pdml_geninfo(proto_tree *tree, FILE *fh)
 {
-	GList		*children, *child, *widgets, *label;
-	GtkWidget	*subtree;
-	int			num_children, i, j;
-	char		*text;
-	int			num_spaces;
-	char		space[41];
-	gint		data_start, data_len;
+	guint32 num, len, caplen;
+	nstime_t *timestamp;
+	GPtrArray *finfo_array;
+	field_info *frame_finfo;
 
-	/* Prepare the tabs for printing, depending on tree level */
-	num_spaces = tree->level * 4;
-	if (num_spaces > 40) {
-		num_spaces = 40;
+	/* Get frame protocol's finfo. */
+	finfo_array = proto_find_finfo(tree, proto_frame);
+	if (g_ptr_array_len(finfo_array) < 1) {
+		return;
 	}
-	for (i = 0; i < num_spaces; i++) {
-		space[i] = ' ';
+	frame_finfo = finfo_array->pdata[0];
+	g_ptr_array_free(finfo_array, FALSE);
+
+	/* frame.number --> geninfo.num */
+	finfo_array = proto_find_finfo(tree, hf_frame_number);
+	if (g_ptr_array_len(finfo_array) < 1) {
+		return;
 	}
-	/* The string is NUL-terminated */
-	space[num_spaces] = 0;
+	num = fvalue_get_integer(&((field_info*)finfo_array->pdata[0])->value);
+	g_ptr_array_free(finfo_array, FALSE);
 
-	/* Get the children of this tree */
-	children = tree->children;
-	num_children = g_list_length(children);
+	/* frame.pkt_len --> geninfo.len */
+	finfo_array = proto_find_finfo(tree, hf_frame_packet_len);
+	if (g_ptr_array_len(finfo_array) < 1) {
+		return;
+	}
+	len = fvalue_get_integer(&((field_info*)finfo_array->pdata[0])->value);
+	g_ptr_array_free(finfo_array, FALSE);
 
-	for (i = 0; i < num_children; i++) {
-		/* Each child of the tree is a widget container */
-		child = g_list_nth(children, i);
-		widgets = gtk_container_children(GTK_CONTAINER(child->data));
+	/* frame.cap_len --> geninfo.caplen */
+	finfo_array = proto_find_finfo(tree, hf_frame_capture_len);
+	if (g_ptr_array_len(finfo_array) < 1) {
+		return;
+	}
+	caplen = fvalue_get_integer(&((field_info*)finfo_array->pdata[0])->value);
+	g_ptr_array_free(finfo_array, FALSE);
 
-		/* And the container holds a label object, which holds text */
-		label = g_list_nth(widgets, 0);
-		gtk_label_get(GTK_LABEL(label->data), &text);
+	/* frame.time --> geninfo.timestamp */
+	finfo_array = proto_find_finfo(tree, hf_frame_arrival_time);
+	if (g_ptr_array_len(finfo_array) < 1) {
+		return;
+	}
+	timestamp = fvalue_get(&((field_info*)finfo_array->pdata[0])->value);
+	g_ptr_array_free(finfo_array, FALSE);
 
-		/* Print the text */
-		fprintf(fh, "%s%s\n", space, text);
+	/* Print geninfo start */
+	fprintf(fh,
+"  <proto name=\"geninfo\" pos=\"0\" showname=\"General information\" size=\"%u\">\n",
+		frame_finfo->length);
 
-		/* Recurse into the subtree, if it exists */
-		subtree = (GTK_TREE_ITEM(child->data))->subtree;
-		if (subtree) {
-				print_tree_text(fh, pd, fd, GTK_TREE(subtree));
+	/* Print geninfo.num */
+	fprintf(fh,
+"    <field name=\"num\" pos=\"0\" show=\"%u\" showname=\"Number\" value=\"%x\" size=\"%u\"/>\n",
+		num, num, frame_finfo->length);
+
+	/* Print geninfo.len */
+	fprintf(fh,
+"    <field name=\"len\" pos=\"0\" show=\"%u\" showname=\"Packet Length\" value=\"%x\" size=\"%u\"/>\n",
+		len, len, frame_finfo->length);
+
+	/* Print geninfo.caplen */
+	fprintf(fh,
+"    <field name=\"caplen\" pos=\"0\" show=\"%u\" showname=\"Captured Length\" value=\"%x\" size=\"%u\"/>\n",
+		caplen, caplen, frame_finfo->length);
+
+	/* Print geninfo.timestamp */
+	fprintf(fh,
+"    <field name=\"timestamp\" pos=\"0\" show=\"%s\" showname=\"Captured Time\" value=\"%d.%09d\" size=\"%u\"/>\n",
+		abs_time_to_str(timestamp), (int) timestamp->secs, timestamp->nsecs, frame_finfo->length);
+
+	/* Print geninfo end */
+	fprintf(fh,
+"  </proto>\n");
+}
+
+void
+write_pdml_finale(FILE *fh)
+{
+	fputs("</pdml>\n", fh);
+}
+
+void
+write_psml_preamble(FILE *fh)
+{
+	fputs("<?xml version=\"1.0\"?>\n", fh);
+	fputs("<psml version=\"" PSML_VERSION "\" ", fh);
+	fprintf(fh, "creator=\"%s/%s\">\n", PACKAGE, VERSION);
+}
+
+void
+proto_tree_write_psml(epan_dissect_t *edt, FILE *fh)
+{
+	gint	i;
+
+	/* if this is the first packet, we have to create the PSML structure output */
+	if(edt->pi.fd->num == 1) {
+	    fprintf(fh, "<structure>\n");
+
+	    for(i=0; i < edt->pi.cinfo->num_cols; i++) {
+		fprintf(fh, "<section>");
+		print_escaped_xml(fh, edt->pi.cinfo->col_title[i]);
+		fprintf(fh, "</section>\n");
+	    }
+
+	    fprintf(fh, "</structure>\n\n");
+	}
+
+	fprintf(fh, "<packet>\n");
+
+	for(i=0; i < edt->pi.cinfo->num_cols; i++) {
+	    fprintf(fh, "<section>");
+	    print_escaped_xml(fh, edt->pi.cinfo->col_data[i]);
+	    fprintf(fh, "</section>\n");
+	}
+
+	fprintf(fh, "</packet>\n\n");
+}
+
+void
+write_psml_finale(FILE *fh)
+{
+	fputs("</psml>\n", fh);
+}
+
+/*
+ * Find the data source for a specified field, and return a pointer
+ * to the data in it. Returns NULL if the data is out of bounds.
+ */
+static const guint8 *
+get_field_data(GSList *src_list, field_info *fi)
+{
+	GSList *src_le;
+	data_source *src;
+	tvbuff_t *src_tvb;
+	gint length, tvbuff_length;
+
+	for (src_le = src_list; src_le != NULL; src_le = src_le->next) {
+		src = src_le->data;
+		src_tvb = src->tvb;
+		if (fi->ds_tvb == src_tvb) {
+			/*
+			 * Found it.
+			 *
+			 * XXX - a field can have a length that runs past
+			 * the end of the tvbuff.  Ideally, that should
+			 * be fixed when adding an item to the protocol
+			 * tree, but checking the length when doing
+			 * that could be expensive.  Until we fix that,
+			 * we'll do the check here.
+			 */
+			tvbuff_length = tvb_length_remaining(src_tvb,
+			    fi->start);
+			if (tvbuff_length < 0) {
+				return NULL;
+			}
+			length = fi->length;
+			if (length > tvbuff_length)
+				length = tvbuff_length;
+			return tvb_get_ptr(src_tvb, fi->start, length);
 		}
-		else if (strcmp("Data", text) == 0) {
-			decode_start_len(GTK_TREE_ITEM(child->data), &data_start, &data_len);
-			dumpit(fh, &pd[data_start], data_len);
+	}
+	g_assert_not_reached();
+	return NULL;	/* not found */
+}
+
+/* Print a string, escaping out certain characters that need to
+ * escaped out for XML. */
+static void
+print_escaped_xml(FILE *fh, char *unescaped_string)
+{
+	unsigned char *p;
+
+	for (p = unescaped_string; *p != '\0'; p++) {
+		switch (*p) {
+			case '&':
+				fputs("&amp;", fh);
+				break;
+			case '<':
+				fputs("&lt;", fh);
+				break;
+			case '>':
+				fputs("&gt;", fh);
+				break;
+			case '"':
+				fputs("&quot;", fh);
+				break;
+			case '\'':
+				fputs("&apos;", fh);
+				break;
+			default:
+				fputc(*p, fh);
 		}
 	}
 }
 
-/* This routine was created by Dan Lasley <DLASLEY@PROMUS.com>, and
-only slightly modified for ethereal by Gilbert Ramirez. */
-static
-void dumpit (FILE *fh, register const u_char *cp, register u_int length)
+static void
+write_pdml_field_hex_value(write_pdml_data *pdata, field_info *fi)
 {
-        register int ad, i, j, k;
-        u_char c;
-        u_char line[60];
-		static u_char binhex[16] = {
-			'0', '1', '2', '3', '4', '5', '6', '7',
-			'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	int i;
+	const guint8 *pd;
 
-        memset (line, ' ', sizeof line);
-        line[sizeof (line)-1] = 0;
-        for (ad=i=j=k=0; i<length; i++) {
-                c = *cp++;
-                line[j++] = binhex[c>>4];
-                line[j++] = binhex[c&0xf];
-                if (i&1) j++;
-                line[42+k++] = c >= ' ' && c < 0x7f ? c : '.';
-                if ((i & 15) == 15) {
-                        fprintf (fh, "\n%4x  %s", ad, line);
-                        /*if (i==15) printf (" %d", length);*/
-                        memset (line, ' ', sizeof line);
-                        line[sizeof (line)-1] = j = k = 0;
-                        ad += 16;
-                }
-        }
+	if (fi->length > tvb_length_remaining(fi->ds_tvb, fi->start)) {
+		fprintf(pdata->fh, "field length invalid!");
+		return;
+	}
 
-        if (line[0] != ' ') fprintf (fh, "\n%4x  %s", ad, line);
-        fprintf(fh, "\n");
-        return;
+	/* Find the data for this field. */
+	pd = get_field_data(pdata->src_list, fi);
 
-}
-
-#define MAX_LINE_LENGTH 256
-
-static
-void dumpit_ps (FILE *fh, register const u_char *cp, register u_int length)
-{
-        register int ad, i, j, k;
-        u_char c;
-        u_char line[60];
-		static u_char binhex[16] = {
-			'0', '1', '2', '3', '4', '5', '6', '7',
-			'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-		u_char psline[MAX_LINE_LENGTH];
-
-        memset (line, ' ', sizeof line);
-        line[sizeof (line)-1] = 0;
-        for (ad=i=j=k=0; i<length; i++) {
-                c = *cp++;
-                line[j++] = binhex[c>>4];
-                line[j++] = binhex[c&0xf];
-                if (i&1) j++;
-                line[42+k++] = c >= ' ' && c < 0x7f ? c : '.';
-                if ((i & 15) == 15) {
-						ps_clean_string(psline, line, MAX_LINE_LENGTH);
-                        fprintf (fh, "(%4x  %s) hexdump\n", ad, psline);
-                        memset (line, ' ', sizeof line);
-                        line[sizeof (line)-1] = j = k = 0;
-                        ad += 16;
-                }
-        }
-
-        if (line[0] != ' ') {
-			ps_clean_string(psline, line, MAX_LINE_LENGTH);
-			fprintf (fh, "(%4x  %s) hexdump\n", ad, psline);
-		}
-        return;
-
-}
-
-/* Print a tree's data in PostScript */
-void print_tree_ps(FILE *fh, const u_char *pd, frame_data *fd, GtkTree *tree)
-{
-	GList		*children, *child, *widgets, *label;
-	GtkWidget	*subtree;
-	int			num_children, i, j;
-	char		*text;
-	gint		data_start, data_len;
-	char		psbuffer[MAX_LINE_LENGTH]; /* static sized buffer! */
-
-	/* Get the children of this tree */
-	children = tree->children;
-	num_children = g_list_length(children);
-
-	for (i = 0; i < num_children; i++) {
-		/* Each child of the tree is a widget container */
-		child = g_list_nth(children, i);
-		widgets = gtk_container_children(GTK_CONTAINER(child->data));
-
-		/* And the container holds a label object, which holds text */
-		label = g_list_nth(widgets, 0);
-		gtk_label_get(GTK_LABEL(label->data), &text);
-
-		/* Print the text */
-		ps_clean_string(psbuffer, text, MAX_LINE_LENGTH);
-		fprintf(fh, "%d (%s) putline\n", tree->level, psbuffer);
-
-		/* Recurse into the subtree, if it exists */
-		subtree = (GTK_TREE_ITEM(child->data))->subtree;
-		if (subtree) {
-				print_tree_ps(fh, pd, fd, GTK_TREE(subtree));
-		}
-		else if (strcmp("Data", text) == 0) {
-			decode_start_len(GTK_TREE_ITEM(child->data), &data_start, &data_len);
-			print_ps_hex(fh);
-			dumpit_ps(fh, &pd[data_start], data_len);
+	if (pd) {
+		/* Print a simple hex dump */
+		for (i = 0 ; i < fi->length; i++) {
+			fprintf(pdata->fh, "%02x", pd[i]);
 		}
 	}
+}
+
+gboolean
+print_hex_data(print_stream_t *stream, epan_dissect_t *edt)
+{
+	gboolean multiple_sources;
+	GSList *src_le;
+	data_source *src;
+	tvbuff_t *tvb;
+	char *name;
+	char *line;
+	const guchar *cp;
+	guint length;
+
+	/*
+	 * Set "multiple_sources" iff this frame has more than one
+	 * data source; if it does, we need to print the name of
+	 * the data source before printing the data from the
+	 * data source.
+	 */
+	multiple_sources = (edt->pi.data_src->next != NULL);
+
+	for (src_le = edt->pi.data_src; src_le != NULL;
+	    src_le = src_le->next) {
+		src = src_le->data;
+		tvb = src->tvb;
+		if (multiple_sources) {
+			name = src->name;
+			print_line(stream, 0, "");
+			line = g_malloc(strlen(name) + 2);	/* <name>:\0 */
+			strcpy(line, name);
+			strcat(line, ":");
+			print_line(stream, 0, line);
+			g_free(line);
+		}
+		length = tvb_length(tvb);
+		cp = tvb_get_ptr(tvb, 0, length);
+		if (!print_hex_data_buffer(stream, cp, length,
+		    edt->pi.fd->flags.encoding))
+			return FALSE;
+	}
+	return TRUE;
+}
+
+/*
+ * This routine is based on a routine created by Dan Lasley
+ * <DLASLEY@PROMUS.com>.
+ *
+ * It was modified for Ethereal by Gilbert Ramirez and others.
+ */
+
+#define MAX_OFFSET_LEN	8	/* max length of hex offset of bytes */
+#define BYTES_PER_LINE	16	/* max byte values printed on a line */
+#define HEX_DUMP_LEN	(BYTES_PER_LINE*3)
+				/* max number of characters hex dump takes -
+				   2 digits plus trailing blank */
+#define DATA_DUMP_LEN	(HEX_DUMP_LEN + 2 + BYTES_PER_LINE)
+				/* number of characters those bytes take;
+				   3 characters per byte of hex dump,
+				   2 blanks separating hex from ASCII,
+				   1 character per byte of ASCII dump */
+#define MAX_LINE_LEN	(MAX_OFFSET_LEN + 2 + DATA_DUMP_LEN)
+				/* number of characters per line;
+				   offset, 2 blanks separating offset
+				   from data dump, data dump */
+
+static gboolean
+print_hex_data_buffer(print_stream_t *stream, const guchar *cp,
+    guint length, char_enc encoding)
+{
+	register unsigned int ad, i, j, k, l;
+	guchar c;
+	guchar line[MAX_LINE_LEN + 1];
+	unsigned int use_digits;
+	static guchar binhex[16] = {
+		'0', '1', '2', '3', '4', '5', '6', '7',
+		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+	if (!print_line(stream, 0, ""))
+		return FALSE;
+
+	/*
+	 * How many of the leading digits of the offset will we supply?
+	 * We always supply at least 4 digits, but if the maximum offset
+	 * won't fit in 4 digits, we use as many digits as will be needed.
+	 */
+	if (((length - 1) & 0xF0000000) != 0)
+		use_digits = 8;	/* need all 8 digits */
+	else if (((length - 1) & 0x0F000000) != 0)
+		use_digits = 7;	/* need 7 digits */
+	else if (((length - 1) & 0x00F00000) != 0)
+		use_digits = 6;	/* need 6 digits */
+	else if (((length - 1) & 0x000F0000) != 0)
+		use_digits = 5;	/* need 5 digits */
+	else
+		use_digits = 4;	/* we'll supply 4 digits */
+
+	ad = 0;
+	i = 0;
+	j = 0;
+	k = 0;
+	while (i < length) {
+		if ((i & 15) == 0) {
+			/*
+			 * Start of a new line.
+			 */
+			j = 0;
+			k = 0;
+			l = use_digits;
+			do {
+				l--;
+				c = (ad >> (l*4)) & 0xF;
+				line[j++] = binhex[c];
+			} while (l != 0);
+			line[j++] = ' ';
+			line[j++] = ' ';
+			memset(line+j, ' ', DATA_DUMP_LEN);
+
+			/*
+			 * Offset in line of ASCII dump.
+			 */
+			k = j + HEX_DUMP_LEN + 2;
+		}
+		c = *cp++;
+		line[j++] = binhex[c>>4];
+		line[j++] = binhex[c&0xf];
+		j++;
+		if (encoding == CHAR_EBCDIC) {
+			c = EBCDIC_to_ASCII1(c);
+		}
+		line[k++] = c >= ' ' && c < 0x7f ? c : '.';
+		i++;
+		if ((i & 15) == 0 || i == length) {
+			/*
+			 * We'll be starting a new line, or
+			 * we're finished printing this buffer;
+			 * dump out the line we've constructed,
+			 * and advance the offset.
+			 */
+			line[k] = '\0';
+			if (!print_line(stream, 0, line))
+				return FALSE;
+			ad += 16;
+		}
+	}
+	return TRUE;
 }
 
 static
@@ -506,4 +782,302 @@ void ps_clean_string(unsigned char *out, const unsigned char *in,
 			break;
 		}
 	}
+}
+
+/* Some formats need stuff at the beginning of the output */
+gboolean
+print_preamble(print_stream_t *self, gchar *filename)
+{
+	return (self->ops->print_preamble)(self, filename);
+}
+
+gboolean
+print_line(print_stream_t *self, int indent, const char *line)
+{
+	return (self->ops->print_line)(self, indent, line);
+}
+
+/* Insert bookmark */
+gboolean
+print_bookmark(print_stream_t *self, const gchar *name, const gchar *title)
+{
+	return (self->ops->print_bookmark)(self, name, title);
+}
+
+gboolean
+new_page(print_stream_t *self)
+{
+	return (self->ops->new_page)(self);
+}
+
+/* Some formats need stuff at the end of the output */
+gboolean
+print_finale(print_stream_t *self)
+{
+	return (self->ops->print_finale)(self);
+}
+
+gboolean
+destroy_print_stream(print_stream_t *self)
+{
+	return (self->ops->destroy)(self);
+}
+
+typedef struct {
+	int to_file;
+	FILE *fh;
+} output_text;
+
+static gboolean
+print_preamble_text(print_stream_t *self _U_, gchar *filename _U_)
+{
+	/* do nothing */
+	return TRUE;	/* always succeeds */
+}
+
+static gboolean
+print_line_text(print_stream_t *self, int indent, const char *line)
+{
+	output_text *output = self->data;
+	char space[MAX_INDENT+1];
+	int i;
+	int num_spaces;
+
+	/* Prepare the tabs for printing, depending on tree level */
+	num_spaces = indent * 4;
+	if (num_spaces > MAX_INDENT) {
+		num_spaces = MAX_INDENT;
+	}
+	for (i = 0; i < num_spaces; i++) {
+		space[i] = ' ';
+	}
+	/* The string is NUL-terminated */
+	space[num_spaces] = '\0';
+
+	fputs(space, output->fh);
+	fputs(line, output->fh);
+	putc('\n', output->fh);
+	return !ferror(output->fh);
+}
+
+static gboolean
+print_bookmark_text(print_stream_t *self _U_, const gchar *name _U_,
+    const gchar *title _U_)
+{
+	/* do nothing */
+	return TRUE;
+}
+
+static gboolean
+new_page_text(print_stream_t *self)
+{
+	output_text *output = self->data;
+
+	fputs("\f", output->fh);
+	return !ferror(output->fh);
+}
+
+static gboolean
+print_finale_text(print_stream_t *self _U_)
+{
+	/* do nothing */
+	return TRUE;	/* always succeeds */
+}
+
+static gboolean
+destroy_text(print_stream_t *self)
+{
+	output_text *output = self->data;
+	gboolean ret;
+
+	ret = close_print_dest(output->to_file, output->fh);
+	g_free(output);
+	g_free(self);
+	return ret;
+}
+
+static const print_stream_ops_t print_text_ops = {
+	print_preamble_text,
+	print_line_text,
+	print_bookmark_text,
+	new_page_text,
+	print_finale_text,
+	destroy_text
+};
+
+print_stream_t *
+print_stream_text_new(int to_file, const char *dest)
+{
+	FILE *fh;
+	print_stream_t *stream;
+	output_text *output;
+
+	fh = open_print_dest(to_file, dest);
+	if (fh == NULL)
+		return NULL;
+
+	output = g_malloc(sizeof *output);
+	output->to_file = to_file;
+	output->fh = fh;
+	stream = g_malloc(sizeof (print_stream_t));
+	stream->ops = &print_text_ops;
+	stream->data = output;
+
+	return stream;
+}
+
+print_stream_t *
+print_stream_text_stdio_new(FILE *fh)
+{
+	print_stream_t *stream;
+	output_text *output;
+
+	output = g_malloc(sizeof *output);
+	output->to_file = TRUE;
+	output->fh = fh;
+	stream = g_malloc(sizeof (print_stream_t));
+	stream->ops = &print_text_ops;
+	stream->data = output;
+
+	return stream;
+}
+
+typedef struct {
+	int to_file;
+	FILE *fh;
+} output_ps;
+
+static gboolean
+print_preamble_ps(print_stream_t *self, gchar *filename)
+{
+	output_ps *output = self->data;
+	char		psbuffer[MAX_PS_LINE_LENGTH]; /* static sized buffer! */
+
+	print_ps_preamble(output->fh);
+
+	fputs("%% Set the font to 10 point\n", output->fh);
+	fputs("/Courier findfont 10 scalefont setfont\n", output->fh);
+	fputs("\n", output->fh);
+	fputs("%% the page title\n", output->fh);
+	ps_clean_string(psbuffer, filename, MAX_PS_LINE_LENGTH);
+	fprintf(output->fh, "/eth_pagetitle (%s - Ethereal) def\n", psbuffer);
+	fputs("\n", output->fh);
+	return !ferror(output->fh);
+}
+
+static gboolean
+print_line_ps(print_stream_t *self, int indent, const char *line)
+{
+	output_ps *output = self->data;
+	char		psbuffer[MAX_PS_LINE_LENGTH]; /* static sized buffer! */
+
+	ps_clean_string(psbuffer, line, MAX_PS_LINE_LENGTH);
+	fprintf(output->fh, "%d (%s) putline\n", indent, psbuffer);
+	return !ferror(output->fh);
+}
+
+static gboolean
+print_bookmark_ps(print_stream_t *self, const gchar *name, const gchar *title)
+{
+	output_ps *output = self->data;
+	char		psbuffer[MAX_PS_LINE_LENGTH]; /* static sized buffer! */
+
+	/*
+	 * See the Adobe "pdfmark reference":
+	 *
+	 *	http://partners.adobe.com/asn/acrobat/docs/pdfmark.pdf
+	 *
+	 * The pdfmark stuff tells code that turns PostScript into PDF
+	 * things that it should do.
+	 *
+	 * The /OUT stuff creates a bookmark that goes to the
+	 * destination with "name" as the name and "title" as the title.
+	 *
+	 * The "/DEST" creates the destination.
+	 */
+	ps_clean_string(psbuffer, title, MAX_PS_LINE_LENGTH);
+	fprintf(output->fh, "[/Dest /%s /Title (%s)   /OUT pdfmark\n", name,
+	    psbuffer);
+	fputs("[/View [/XYZ -4 currentpoint matrix currentmatrix matrix defaultmatrix\n",
+	    output->fh);
+	fputs("matrix invertmatrix matrix concatmatrix transform exch pop 20 add null]\n",
+	    output->fh);
+	fprintf(output->fh, "/Dest /%s /DEST pdfmark\n", name);
+	return !ferror(output->fh);
+}
+
+static gboolean
+new_page_ps(print_stream_t *self)
+{
+	output_ps *output = self->data;
+
+	fputs("formfeed\n", output->fh);
+	return !ferror(output->fh);
+}
+
+static gboolean
+print_finale_ps(print_stream_t *self)
+{
+	output_ps *output = self->data;
+
+	print_ps_finale(output->fh);
+	return !ferror(output->fh);
+}
+
+static gboolean
+destroy_ps(print_stream_t *self)
+{
+	output_ps *output = self->data;
+	gboolean ret;
+
+	ret = close_print_dest(output->to_file, output->fh);
+	g_free(output);
+	g_free(self);
+	return ret;
+}
+
+static const print_stream_ops_t print_ps_ops = {
+	print_preamble_ps,
+	print_line_ps,
+	print_bookmark_ps,
+	new_page_ps,
+	print_finale_ps,
+	destroy_ps
+};
+
+print_stream_t *
+print_stream_ps_new(int to_file, const char *dest)
+{
+	FILE *fh;
+	print_stream_t *stream;
+	output_ps *output;
+
+	fh = open_print_dest(to_file, dest);
+	if (fh == NULL)
+		return NULL;
+
+	output = g_malloc(sizeof *output);
+	output->to_file = to_file;
+	output->fh = fh;
+	stream = g_malloc(sizeof (print_stream_t));
+	stream->ops = &print_ps_ops;
+	stream->data = output;
+
+	return stream;
+}
+
+print_stream_t *
+print_stream_ps_stdio_new(FILE *fh)
+{
+	print_stream_t *stream;
+	output_ps *output;
+
+	output = g_malloc(sizeof *output);
+	output->to_file = TRUE;
+	output->fh = fh;
+	stream = g_malloc(sizeof (print_stream_t));
+	stream->ops = &print_ps_ops;
+	stream->data = output;
+
+	return stream;
 }

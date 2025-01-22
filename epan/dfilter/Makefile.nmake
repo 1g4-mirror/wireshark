@@ -1,0 +1,65 @@
+## Makefile for building ethereal.exe with Microsoft C and nmake
+## Use: $(MAKE) /$(MAKEFLAGS) -f makefile.nmake
+#
+# $Id$
+
+include ..\..\config.nmake
+
+############### no need to modify below this line #########
+
+LEMON=..\..\tools\lemon
+
+CFLAGS=-DHAVE_CONFIG_H /I. /I.. /I..\.. /I$(LEMON) \
+	$(GLIB_CFLAGS) $(PCRE_CFLAGS) /I$(PCAP_DIR)\include -D_U_="" $(LOCAL_CFLAGS)
+
+CVARSDLL=-DWIN32 -DNULL=0 -D_MT -D_DLL
+
+.c.obj::
+   $(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
+
+
+OBJECTS = \
+	dfilter.obj		\
+	dfvm.obj		\
+	drange.obj		\
+	gencode.obj		\
+	glib-util.obj		\
+	grammar.obj		\
+	scanner.obj		\
+	semcheck.obj		\
+	sttype-integer.obj	\
+	sttype-pointer.obj	\
+	sttype-range.obj	\
+	sttype-string.obj	\
+	sttype-test.obj		\
+	syntax-tree.obj
+
+dfilter.lib	: $(OBJECTS)
+	link /lib /out:dfilter.lib $(OBJECTS)
+
+$(OBJECTS): ..\..\config.h
+
+..\..\config.h: ..\..\config.h.win32 ..\..\config.nmake
+	cd ..\..
+	$(MAKE) -f Makefile.nmake config.h
+	cd epan\dfilter
+
+clean:
+	rm -f $(OBJECTS) dfilter.lib $(PDB_FILE)
+
+distclean: clean
+	rm -f scanner.c grammar.c grammar.h grammar.out
+
+scanner.c : scanner.l
+	$(LEX) -Pdf_ -oscanner.c scanner.l
+
+scanner.obj : scanner.c grammar.h
+
+grammar.h : grammar.c
+grammar.c : grammar.lemon $(LEMON)\lemon.exe
+	$(LEMON)\lemon.exe t=$(LEMON)\lempar.c grammar.lemon 
+
+$(LEMON)\lemon.exe:
+	cd ../../tools/lemon
+	$(MAKE) -f makefile.nmake
+	cd ../../epan/dfilter

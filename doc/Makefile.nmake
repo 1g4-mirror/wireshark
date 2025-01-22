@@ -1,0 +1,166 @@
+# Makefile.nmake
+# Nmake file for Ethereal documentation
+#
+# $Id$
+#
+# Ethereal - Network traffic analyzer
+# By Gerald Combs <gerald@ethereal.com>
+# Copyright 1998 Gerald Combs
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+# We include dependencies on ../config.h in order to
+# capture when $(VERSION) changes.
+
+include ../config.nmake
+
+doc: ethereal.html tethereal.html ethereal-filter.html capinfo.html \
+	editcap.html idl2eth.html mergecap.html text2pcap.html
+
+man: ethereal.1 tethereal.1 ethereal-filter.4 capinfo.1 editcap.1 \
+	idl2eth.1 mergecap.1 text2pcap.1
+
+ethereal-tmp.pod: ethereal.pod ../AUTHORS-SHORT-FORMAT
+	copy /B ethereal.pod + ..\AUTHORS-SHORT-FORMAT ethereal-tmp.pod
+
+../AUTHORS-SHORT-FORMAT:
+	cd ..
+	$(MAKE) -f makefile.nmake AUTHORS-SHORT-FORMAT
+	cd doc
+
+ethereal.1: ethereal.pod ../config.h
+	$(POD2MAN)                     \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	ethereal-tmp.pod > ethereal.1
+
+ethereal.html: ethereal-tmp.pod ../config.h
+	$(POD2HTML)                    \
+	--title="The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	ethereal-tmp.pod > ethereal.html
+
+../tethereal.exe:
+	cd ..
+	$(MAKE) -f makefile.nmake tethereal.exe
+	cd doc
+
+tethereal.1: tethereal.pod ../config.h
+	$(POD2MAN)                     \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	tethereal.pod > tethereal.1
+
+tethereal.html: tethereal.pod ../config.h
+	$(POD2HTML)                    \
+	--title="tethereal - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	tethereal.pod > tethereal.html
+
+ethereal-filter.4: ethereal-filter.pod ../config.h
+	$(POD2MAN)                     \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	ethereal-filter.pod > ethereal.4
+
+ethereal-filter.html: ethereal-filter.pod ../config.h
+	$(POD2HTML)                    \
+	--title="ethereal-filter - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	ethereal-filter.pod > ethereal-filter.html
+
+ethereal-filter.pod: ethereal-filter.pod.template  ../tethereal.exe
+	cd ..
+	cp --update --preserve wiretap/wiretap-$(WTAP_VERSION).dll wiretap-$(WTAP_VERSION).dll
+!IFDEF ENABLE_LIBETHEREAL
+	cp --update --preserve epan/libethereal.dll libethereal.dll
+!ENDIF
+	tethereal.exe -G | $(PERL) doc\dfilter2pod.pl doc\ethereal-filter.pod.template > doc\ethereal-filter.pod
+	rm -f libethereal.dll wiretap-$(WTAP_VERSION).dll
+	cd doc
+
+capinfo.1: capinfo.pod ../config.h
+	$(POD2MAN)                      \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	capinfo.pod > capinfo.1
+
+capinfo.html: capinfo.pod ../config.h
+	$(POD2HTML)                     \
+	--title="capinfo - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	capinfo.pod > capinfo.html
+
+
+editcap.1: editcap.pod ../config.h
+	$(POD2MAN)                      \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	editcap.pod > editcap.1
+
+editcap.html: editcap.pod ../config.h
+	$(POD2HTML)                     \
+	--title="editcap - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	editcap.pod > editcap.html
+
+idl2eth.1: idl2eth.pod ../config.h
+	$(POD2MAN)                      \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	idl2eth.pod > idl2eth.1
+
+idl2eth.html: idl2eth.pod ../config.h
+	$(POD2HTML)                     \
+	--title="idl2eth - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	idl2eth.pod > idl2eth.html
+
+mergecap.1: mergecap.pod ../config.h
+	$(POD2MAN)                      \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	mergecap.pod > mergecap.1
+
+mergecap.html: mergecap.pod ../config.h
+	$(POD2HTML)                     \
+	--title="mergecap - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	mergecap.pod > mergecap.html
+
+text2pcap.1: text2pcap.pod ../config.h
+	$(POD2MAN)                      \
+	--center="The Ethereal Network Analyzer" \
+	--release=$(VERSION)			 \
+	text2pcap.pod > text2pcap.1
+
+text2pcap.html: text2pcap.pod ../config.h
+	$(POD2HTML)                     \
+	--title="text2pcap - The Ethereal Network Analyzer $(VERSION)" \
+	--noindex                                 \
+	text2pcap.pod > text2pcap.html
+
+clean:
+	rm -f ethereal.html ethereal.1 ethereal-tmp.pod
+	rm -f tethereal.html tethereal.1
+	rm -f ethereal-filter.html ethereal-filter.4 ethereal-filter.pod
+	rm -f capinfo.html capinfo.1
+	rm -f editcap.html editcap.1
+	rm -f idl2eth.html idl2eth.1
+	rm -f mergecap.html mergecap.1
+	rm -f text2pcap.html text2pcap.1
+	rm -f pod2htm*
+
+distclean: clean

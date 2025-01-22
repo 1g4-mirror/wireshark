@@ -1,0 +1,55 @@
+# x509.cnf
+# X509 conformation file
+
+# $Id$
+
+#.MODULE_IMPORT
+InformationFramework x509if
+CertificateExtensions x509ce
+SelectedAttributeTypes x509sat
+
+#.INCLUDE ../x509ce/x509ce_exp.cnf
+#.INCLUDE ../x509if/x509if_exp.cnf
+#.INCLUDE ../x509sat/x509sat_exp.cnf
+
+#.EXPORTS
+
+AttributeCertificate
+AttributeCertificateAssertion
+AttributeCertificationPath
+Certificate
+Certificates
+CertificateList
+CertificateSerialNumber
+CertificationPath
+SubjectPublicKeyInfo
+
+#.PDU
+AttributeCertificate
+Certificate
+CertificateList
+CertificatePair
+
+#.NO_EMIT
+
+AlgorithmIdentifier
+Extension
+
+#.TYPE_RENAME
+AttributeCertificateInfo/subject	InfoSubject
+AttributeCertificateAssertion/subject	AssertionSubject
+
+#.FIELD_RENAME
+AttributeCertificateInfo/issuer		issuerName	
+AttributeCertificateInfo/subject info_subject
+AttributeCertificateAssertion/subject assertion_subject
+
+AttributeCertificateAssertion/issuer assertionIssuer
+
+AttributeCertificateInfo/subject/subjectName      infoSubjectName
+AttributeCertificateAssertion/subject/subjectName assertionSubjectName
+IssuerSerial/issuer			issuerName	
+CertificateList/signedCertificateList/revokedCertificates/_item/userCertificate		revokedUserCertificate
+#.END
+
+

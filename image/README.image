@@ -1,0 +1,57 @@
+This directory contains a set of images and icons for the Ethereal suite of
+applications.  Of particular note for people creating packages for
+distribution are the files ethereal.ico, hi??-app-ethereal.png, and
+lo??-app-ethereal.png.
+
+File descriptions:
+
+File				Description
+
+clist_ascend.xpm		Packet list sort ascending and descending
+clist_descend.xpm		indicators
+
+dn_arrow.xpm			Up and down arrows (originally intended for
+up_arrow.xpm			filter dialogs - not currently used)
+
+eexcl3d64.xpm			3D Exclamation point icon (originally intended 
+				for warning and error dialogs - not currently used)
+
+eicon3d16.xpm			3D Ethereal logo in various sizes with
+eicon3d32.xpm			transparent background, high color
+eicon3d48.xpm
+eicon3d64.xpm
+
+elogo3d48x48.png		3D Ethereal logo on a white background
+
+Ethereal.icns			Mac OS X icon file
+
+ethereal.ico			Windows icon file with 16 and 32 pixel
+				3D logo icons, high and low color
+				
+ethereal48x48-trans.png		Old (flat, black & white) logo icon with
+				transparent background
+ethereal48x48.png		Old (flat, black & white) logo icon with
+				white background
+
+hi16-app-ethereal.png		KDE Icon Factory Styleguide-compliant
+hi32-app-ethereal.png		(http://www.kde.org/artist/introduction.html)
+hi48-app-ethereal.png		icons
+lo16-app-ethereal.png 
+lo32-app-ethereal.png
+lo48-app-ethereal.png
+
+icon-ethereal.xpm		Old icons used in warning, error, and
+icon-excl.xpm			informational dialogs
+
+ethereal.rc.in			MSVC++ resource templates
+editcap.rc.in
+mergecap.rc.in
+tethereal.rc.in
+text2pcap.rc.in
+
+stock_dialog_error_48.xpm		GTK2 default icons for simple_dialog, from:
+stock_dialog_info_48.xpm		"ftp://ftp.gtk.org/pub/gtk/v2.0/gtk+-2.0.6.tar.bz2"
+stock_dialog_question_48.xpm	in the zip directory "gtk+-2.0.6/gtk/stock-icons"
+stock_dialog_warning_48.xpm
+
+win32-toolbar.bmp		Native Windows toolbar

@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+<dialog
+  id="capture-dialog"
+  title="Capture Options"
+  xmlns:ethereal="http://www.ethereal.com/development.html"
+  >
+
+  <vbox>
+    <groupbox class="bottom_spacing">
+      <caption>Capture</caption>
+      <hbox class="bottom_spacing">
+        <description>Interface:</description>
+        <menulist
+          editable="True"
+          id="capture-dialog.interface-combo"
+          flex="1"
+          onchange="capture_prep_interface_changed"
+        />
+      </hbox>
+      <description
+        id="capture-dialog.ip-address"
+        class="bottom_spacing"
+      >
+        IP address:
+      </description>
+      <hbox class="bottom_spacing">
+        <description id="capture-dialog.link-layer-desc">Link-layer header type:</description>
+	<menulist id="capture-dialog.link-layer" class="left-spacing" />
+        <description class="left-spacing">Buffer size:</description>
+        <ethereal:spinner id="capture-dialog.buffer-size" />
+        <description class="left-spacing">megabyte(s)</description>
+      </hbox>
+      <checkbox
+        id="capture-dialog.promiscuous"
+        label="Capture packets in promiscuous mode"
+        class="bottom_spacing"
+      />
+      <hbox class="bottom_spacing">
+        <checkbox
+          id="capture-dialog.packet-size-cb"
+          label="Limit each packet to"
+          oncommand="capture_dialog_limit_packet_size"
+        />
+        <ethereal:spinner id="capture-dialog.packet-size-spinner" />
+        <description>bytes</description>
+      </hbox>
+      <hbox>
+        <button
+          label="Capture Filter:"
+          oncommand="capture_prep_filter"
+        />
+        <textbox id="capture-dialog.capture-filter" flex="1" />
+      </hbox>
+    </groupbox>
+
+    <hbox class="bottom_spacing">
+      <vbox>
+        <groupbox class="bottom_spacing">
+          <caption>Capture File(s)</caption>
+          <hbox class="bottom_spacing">
+	    <description>File:</description>
+            <textbox id="capture-dialog.save-file" flex="1" />
+            <button
+              label="..."
+              oncommand="capture_prep_file"
+             />
+          </hbox>
+          <checkbox
+            id="capture-dialog.use-multiple-files"
+            label="Use multiple files"
+            oncommand="capture_dialog_adjust_sensitivity"
+            class="bottom_spacing"
+          />
+          <grid>
+            <columns>
+              <column/>
+              <column/>
+              <column/>
+            </columns>
+
+            <rows>
+              <row>
+                <checkbox
+                  id="capture-dialog.next-file-every-size-cb"
+                  label="Next file every"
+                  oncommand="capture_dialog_adjust_sensitivity"
+                  class="bottom_spacing"
+                />
+                <ethereal:spinner
+                  id="capture-dialog.next-file-every-size-spinner"
+                  class="bottom_spacing"
+                />
+                <menulist
+                  id="capture-dialog.next-file-every-size-ml"
+                  class="lb_spacing"
+                >
+                  <menupopup>
+                    <menuitem label="byte(s)" />
+                    <menuitem label="kilobyte(s)" />
+                    <menuitem label="megabyte(s)" selected="true" />
+                    <menuitem label="gigabyte(s)" />
+                  </menupopup>
+                </menulist>
+              </row>
+              <row>
+                <checkbox
+                  id="capture-dialog.next-file-every-time-cb"
+                  label="Next file every"
+                  oncommand="capture_dialog_adjust_sensitivity"
+                  class="bottom_spacing"
+                />
+                <ethereal:spinner
+                  id="capture-dialog.next-file-every-time-spinner"
+                  class="bottom_spacing"
+                />
+                <menulist
+                  id="capture-dialog.next-file-every-time-ml"
+                  class="lb_spacing"
+                >
+                  <menupopup>
+                    <menuitem label="second(s)" />
+                    <menuitem label="minute(s)" selected="true" />
+                    <menuitem label="hour(s)" />
+                    <menuitem label="day(s)" />
+                  </menupopup>
+                </menulist>
+              </row>
+              <row>
+                <checkbox
+                  id="capture-dialog.ring-buffer-with-cb"
+                  label="Ring buffer with"
+                  oncommand="capture_dialog_adjust_sensitivity"
+                  class="bottom_spacing"
+                />
+                <ethereal:spinner
+                  id="capture-dialog.ring-buffer-with-spinner"
+                  class="bottom_spacing"
+                />
+                <description
+                  id="capture-dialog.ring-buffer-with-descr"
+                  class="lb_spacing"
+                >
+                  Files
+                </description>
+              </row>
+              <row>
+                <checkbox
+                  id="capture-dialog.stop-capture-after-cb"
+                  label="Stop capture after"
+                  oncommand="capture_dialog_adjust_sensitivity"
+                />
+                <ethereal:spinner
+                  id="capture-dialog.stop-capture-after-spinner"
+                />
+                <description
+                  id="capture-dialog.stop-capture-after-descr"
+                  class="left_spacing"
+                >
+                  File(s)
+                </description>
+              </row>
+            </rows>
+          </grid>
+        </groupbox>
+        <groupbox>
+          <caption>Stop Capture ...</caption>
+          <hbox>
+            <checkbox
+              id="capture-dialog.stop-after-packets-cb"
+              label="... after"
+              oncommand="capture_dialog_adjust_sensitivity"
+              class="bottom_spacing"
+            />
+            <ethereal:spinner
+              id="capture-dialog.stop-after-packets-spinner"
+              class="bottom_spacing"
+            />
+            <description
+              id="capture-dialog.stop-after-packets-descr"
+              class="lb_spacing"
+            >
+              File(s)
+            </description>
+          </hbox>
+          <hbox>
+            <checkbox
+              id="capture-dialog.stop-after-size-cb"
+              label="... after"
+              oncommand="capture_dialog_adjust_sensitivity"
+              class="bottom_spacing"
+            />
+            <ethereal:spinner
+              id="capture-dialog.stop-after-size-spinner"
+              class="bottom_spacing"
+            />
+            <menulist
+              id="capture-dialog.stop-after-size-ml"
+              class="lb_spacing"
+            >
+              <menupopup>
+                <menuitem label="byte(s)" />
+                <menuitem label="kilobyte(s)" />
+                <menuitem label="megabyte(s)" selected="true" />
+                <menuitem label="gigabyte(s)" />
+              </menupopup>
+            </menulist>
+          </hbox>
+          <hbox>
+            <checkbox
+              id="capture-dialog.stop-after-time-cb"
+              label="... after"
+              oncommand="capture_dialog_adjust_sensitivity"
+            />
+            <ethereal:spinner
+              id="capture-dialog.stop-after-time-spinner"
+            />
+            <menulist
+              id="capture-dialog.stop-after-time-ml"
+              class="left_spacing"
+            >
+              <menupopup>
+                <menuitem label="second(s)" />
+                <menuitem label="minute(s)" selected="true" />
+                <menuitem label="hour(s)" />
+                <menuitem label="day(s)" />
+              </menupopup>
+            </menulist>
+          </hbox>
+        </groupbox>
+      </vbox>
+
+      <vbox class="left_spacing">
+        <groupbox flex="1" class="bottom_spacing">
+          <caption>Display Options</caption>
+          <checkbox
+            id="capture-dialog.update-real-time"
+            label="Update list of packets in real time"
+            oncommand="capture_dialog_adjust_sensitivity"
+          />
+          <checkbox
+            id="capture-dialog.auto-scroll-live"
+            label="Automatic scrolling in live capture"
+          />
+          <checkbox
+            id="capture-dialog.show_info"
+            label="Hide capture info window"
+          />
+        </groupbox>
+        <groupbox flex="1">
+          <caption>Name Resolution</caption>
+          <checkbox
+            id="capture-mac-resolution"
+            label="Enable MAC name resolution"
+          />
+          <checkbox
+            id="capture-network-resolution"
+            label="Enable network name resolution"
+          />
+          <checkbox
+            id="capture-transport-resolution"
+            label="Enable transport name resolution"
+          />
+        </groupbox>
+      </vbox>
+    </hbox>
+
+    <hbox>
+      <button
+        id="capture-help"
+        label="Help"
+        oncommand="capture_dialog_help"
+       />
+      <spacer flex="1" />
+      <button
+        id="capture-ok"
+        label="OK"
+        default="True"
+        oncommand="capture_dialog_start_capture"
+       />
+
+      <button
+        id="capture-cancel"
+        label="Cancel"
+        oncommand="capture_dialog_hide"
+        class="left_spacing"
+       />
+    </hbox>
+  </vbox>
+</dialog>

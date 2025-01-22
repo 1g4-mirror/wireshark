@@ -1,0 +1,21 @@
+# x509sat.cnf
+# X509SAT conformation file
+
+# $Id$
+
+#.MODULE_IMPORT
+InformationFramework x509if
+
+#.EXPORTS
+
+UniqueIdentifier
+
+#.NO_EMIT
+
+#.TYPE_RENAME
+
+#.FIELD_RENAME
+
+#.END
+
+

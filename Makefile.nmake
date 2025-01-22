@@ -1,0 +1,532 @@
+## Makefile for building ethereal.exe with Microsoft C and nmake
+## Use: $(MAKE) /$(MAKEFLAGS) -f makefile.nmake
+#
+# $Id$
+
+include config.nmake
+include <win32.mak>
+
+############### no need to modify below this line #########
+
+CC = cl
+LINK= link
+
+LDFLAGS = /NOLOGO /INCREMENTAL:no /MACHINE:I386 $(LOCAL_LDFLAGS)
+
+CFLAGS=-DHAVE_CONFIG_H $(LOCAL_CFLAGS) $(GLIB_CFLAGS) /I. /Iwiretap \
+	$(ZLIB_CFLAGS) /I$(PCAP_DIR)\include \
+	/I$(NET_SNMP_DIR)\include /I$(NET_SNMP_DIR)\win32 \
+	$(ADNS_CFLAGS) $(PCRE_CFLAGS) -D_U_=""
+
+CVARSDLL=-DWIN32 -DNULL=0 -D_MT -D_DLL
+
+.c.obj::
+	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
+
+PLATFORM_SRC = capture-wpcap.c
+
+include Makefile.common
+
+include epan\Makefile.common
+
+BUILT_SOURCES =	$(BUILT_SOURCES) \
+	svnversion.h
+
+DISSECTOR_SUPPORT_SRC = $(DISSECTOR_SUPPORT_SRC:../=)
+DISSECTOR_SUPPORT_OBJECTS = $(DISSECTOR_SUPPORT_SRC:.c=.obj)
+#DISSECTOR_SUPPORT_OBJECTS = $(DISSECTOR_SUPPORT_OBJECTS:../=)
+
+ethereal_OBJECTS = $(ethereal_SOURCES:.c=.obj)
+tethereal_OBJECTS = $(tethereal_SOURCES:.c=.obj)
+wethereal_OBJECTS = $(wethereal_SOURCES:.c=.obj)
+dftest_OBJECTS = $(dftest_SOURCES:.c=.obj)
+
+randpkt_OBJECTS = $(randpkt_SOURCES:.c=.obj)
+
+EXTRA_OBJECTS = \
+#	snprintf.obj	\
+#	strerror.obj	\
+	mkstemp.obj	\
+	strptime.obj
+
+ethereal_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib shell32.lib \
+	$(NET_SNMP_DIR)\win32\lib\release\netsnmp.lib \
+!IFDEF ENABLE_LIBETHEREAL
+	epan\libethereal.lib \
+!ELSE
+	epan\dissectors\dissectors.lib \
+	epan\ethereal.lib \
+	epan\dfilter\dfilter.lib epan\ftypes\ftypes.lib \
+	$(ADNS_LIBS) \
+	$(PCRE_LIBS) \
+	$(ZLIB_LIBS)
+!ENDIF
+#	$(PCAP_DIR)\lib\wpcap.lib
+
+tethereal_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib \
+	$(GLIB_LIBS) \
+	$(NET_SNMP_DIR)\win32\lib\release\netsnmp.lib \
+!IFDEF ENABLE_LIBETHEREAL
+	epan\libethereal.lib \
+!ELSE
+	epan\dissectors\dissectors.lib \
+	epan\ethereal.lib \
+	epan\dfilter\dfilter.lib epan\ftypes\ftypes.lib \
+	$(ADNS_LIBS) \
+	$(PCRE_LIBS) \
+	$(ZLIB_LIBS)
+!ENDIF
+
+wethereal_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib comctl32.lib \
+	$(GLIB_LIBS) \
+	$(NET_SNMP_DIR)\win32\lib\release\netsnmp.lib \
+!IFDEF ENABLE_LIBETHEREAL
+	epan\libethereal.lib \
+!ELSE
+	epan\dissectors\dissectors.lib \
+	epan\ethereal.lib \
+	epan\dfilter\dfilter.lib epan\ftypes\ftypes.lib \
+	$(ADNS_LIBS) \
+	$(PCRE_LIBS) \
+	$(ZLIB_LIBS)
+!ENDIF
+
+capinfo_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib \
+	$(GLIB_LIBS)
+
+editcap_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib \
+	$(GLIB_LIBS)
+
+mergecap_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib \
+	$(GLIB_LIBS)
+
+dftest_LIBS=  wiretap\wiretap-$(WTAP_VERSION).lib \
+	wsock32.lib user32.lib \
+	$(GLIB_LIBS) \
+	$(NET_SNMP_DIR)\win32\lib\release\netsnmp.lib \
+!IFDEF ENABLE_LIBETHEREAL
+	epan\libethereal.lib \
+!ELSE
+	epan\dissectors\dissectors.lib \
+	epan\ethereal.lib \
+	epan\dfilter\dfilter.lib epan\ftypes\ftypes.lib \
+	$(ADNS_LIBS) \
+	$(PCRE_LIBS) \
+	$(ZLIB_LIBS)	
+!ENDIF
+
+randpkt_LIBS= wiretap\wiretap-$(WTAP_VERSION).lib \
+	user32.lib \
+	$(GLIB_LIBS) \
+	$(NET_SNMP_DIR)\win32\lib\release\netsnmp.lib
+
+EXECUTABLES=ethereal.exe ethereal-gtk2.exe tethereal.exe wethereal.exe \
+	capinfo.exe editcap.exe mergecap.exe text2pcap.exe
+
+RESOURCES=image\ethereal.res image\libethereal.res image\tethereal.res \
+	image\capinfo.res image\editcap.res image\mergecap.res \
+	image\text2pcap.res image\wiretap.res
+
+wethereal_RESOURCES=xulender\win32-c-sdk\win32-main.res
+
+all: config.h tools image wiretap epan $(EXECUTABLES) $(RESOURCES) doc
+
+packaging: all
+	cd packaging
+	cd nsis
+	nmake -f makefile.nmake
+	cd ..
+	cd ..
+
+separate_packaging: all
+	cd packaging
+	cd nsis
+!IFDEF GTK1_DIR
+	nmake -f makefile.nmake GTK1_ONLY="USE"
+!ENDIF
+!IFDEF GTK2_DIR
+	nmake -f makefile.nmake GTK2_ONLY="USE"
+!ENDIF
+	cd ..
+	cd ..
+
+$(RESOURCES): image
+
+$(wethereal_RESOURCES): xulender\win32-c-sdk
+
+wiretap\wiretap-$(WTAP_VERSION).lib: wiretap
+
+xulender\win32-c-sdk\win32-c-sdk.lib: xulender\win32-c-sdk
+
+!IFNDEF GTK1_DIR
+ethereal.exe	: 
+!ELSE
+ethereal.exe	: config.h svnversion.h $(ethereal_OBJECTS) epan gtk image\ethereal.res wiretap\wiretap-$(WTAP_VERSION).lib gtk\libui.lib plugins
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:ethereal.exe $(guiflags) $(guilibsdll) $(LDFLAGS) /SUBSYSTEM:windows $(ethereal_LIBS) $(GTK1_LIBS) gtk\libui.lib $(ethereal_OBJECTS) image\ethereal.res
+<<
+!ENDIF
+
+!IFNDEF GTK2_DIR
+ethereal-gtk2.exe	: 
+!ELSE
+ethereal-gtk2.exe	: config.h svnversion.h $(ethereal_OBJECTS) epan gtk2 image\ethereal.res wiretap\wiretap-$(WTAP_VERSION).lib gtk2.tmp\libui.lib plugins
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:ethereal-gtk2.exe $(guiflags) $(guilibsdll) $(LDFLAGS) /SUBSYSTEM:windows $(ethereal_LIBS) $(GTK2_LIBS) gtk2.tmp\libui.lib $(ethereal_OBJECTS) image\ethereal.res
+<<
+!ENDIF
+
+tethereal.exe	: config.h svnversion.h $(tethereal_OBJECTS) epan image\tethereal.res wiretap\wiretap-$(WTAP_VERSION).lib plugins
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:tethereal.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console $(tethereal_LIBS) $(tethereal_OBJECTS) image\tethereal.res
+<<
+
+wethereal.exe	: config.h svnversion.h $(wethereal_OBJECTS) $(EXTRA_OBJECTS) epan xulender\win32-c-sdk $(wethereal_RESOURCES) wiretap\wiretap-$(WTAP_VERSION).lib xulender\win32-c-sdk\win32-c-sdk.lib plugins
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:wethereal.exe $(guiflags) $(guilibsdll) $(LDFLAGS) /SUBSYSTEM:windows $(wethereal_LIBS) xulender\win32-c-sdk\win32-c-sdk.lib $(wethereal_OBJECTS) $(EXTRA_OBJECTS) $(wethereal_RESOURCES)
+<<
+
+capinfo.exe	: config.h capinfo.obj getopt.obj wiretap\wiretap-$(WTAP_VERSION).lib image\capinfo.res
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:capinfo.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console capinfo.obj getopt.obj $(capinfo_LIBS) image\capinfo.res
+<<
+
+editcap.exe	: config.h editcap.obj getopt.obj wiretap\wiretap-$(WTAP_VERSION).lib image\editcap.res
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:editcap.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console editcap.obj getopt.obj $(editcap_LIBS) image\editcap.res
+<<
+
+mergecap.exe	: config.h svnversion.h mergecap.obj merge.obj getopt.obj wiretap\wiretap-$(WTAP_VERSION).lib image\mergecap.res
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:mergecap.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console mergecap.obj merge.obj getopt.obj $(mergecap_LIBS) image\mergecap.res
+<<
+
+text2pcap.exe	: config.h text2pcap.obj text2pcap-scanner.obj getopt.obj strptime.obj image\text2pcap.res
+	@echo Linking $@
+	$(LINK) @<<
+		/OUT:text2pcap.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console text2pcap.obj text2pcap-scanner.obj getopt.obj strptime.obj image\text2pcap.res
+<<
+
+dftest.exe	: $(dftest_OBJECTS) epan
+	$(LINK) @<<
+		/OUT:dftest.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console $(dftest_LIBS) $(dftest_OBJECTS)
+<<
+
+randpkt.exe	: $(randpkt_OBJECTS)
+	$(LINK) @<<
+		/OUT:randpkt.exe $(conflags) $(conlibsdll) $(LDFLAGS) /SUBSYSTEM:console $(randpkt_LIBS) $(randpkt_OBJECTS)
+<<
+
+config.h	: config.h.win32 config.nmake
+	sed -e s/@VERSION@/$(VERSION)/ \
+	    -e "s/@HAVE_GNU_ADNS@/$(ADNS_CONFIG)/" \
+	    -e "s/@HAVE_PCRE@/$(PCRE_CONFIG)/" \
+	    -e "s/@HAVE_NETTLE@/$(NETTLE_CONFIG)/" \
+	    -e "s/@HAVE_LIBZ@/$(ZLIB_CONFIG)/" \
+	    -e "s/@HAVE_LIBPCAP@/$(WINPCAP_CONFIG)/" \
+	    -e "s/@HAVE_PCAP_FINDALLDEVS@/$(PCAP_FINDALLDEVS_CONFIG)/" \
+	    -e "s/@HAVE_PCAP_DATALINK_NAME_TO_VAL@/$(PCAP_DATALINK_NAME_TO_VAL_CONFIG)/" \
+	    -e "s/@HAVE_PCAP_DATALINK_VAL_TO_NAME@/$(PCAP_DATALINK_VAL_TO_NAME_CONFIG)/" \
+	    -e "s/@HAVE_LIBETHEREALDLL@/$(LIBETHEREAL_CONFIG)/" \
+	    -e "s/@WPCAP_CONSTIFIED@/$(WPCAP_CONSTIFIED_CONFIG)/" \
+	    < config.h.win32 > $@
+
+ps.c	: rdps.exe print.ps
+	rdps print.ps ps.c
+
+
+#
+# Build the version string
+#
+svnversion.h:
+	$(PERL) make-version.pl
+
+#
+# Build the short version of the authors file for the about dialog
+#
+AUTHORS-SHORT: AUTHORS make-authors-short.pl
+	$(PERL) perlnoutf.pl make-authors-short.pl < AUTHORS > AUTHORS-SHORT
+
+#
+# Build the short version of the authors file with formatting codes for
+# the man page
+#
+AUTHORS-SHORT-FORMAT: AUTHORS-SHORT make-authors-format.pl
+    $(PERL) perlnoutf.pl make-authors-format.pl < AUTHORS-SHORT > AUTHORS-SHORT-FORMAT
+
+#
+# Build "tethereal-tap-register.c", which contains a function 
+# "register_all_tap_listeners()"
+# that calls the register routines for all tehtereal tap listeners.
+#
+# We do this by grepping through sources.
+#
+# Formatting conventions:  The name of the tap_listener_register_* 
+# routines must start in column zero, or must be preceded only by 
+# "void " starting in column zero, and must not be inside #if.
+#
+# The first argument is the name of the file to write.
+# The second argument is the directory in which the source files live.
+# All subsequent arguments are the files to scan.
+#
+tethereal-tap-register.c: $(TETHEREAL_TAP_SRC) make-tapreg-dotc
+	@echo Making tethereal-tap-register.c
+	@$(SH) make-tapreg-dotc tethereal-tap-register.c . $(TETHEREAL_TAP_SRC)
+
+text2pcap-scanner.c : text2pcap-scanner.l
+	$(LEX) -otext2pcap-scanner.c text2pcap-scanner.l
+
+gtk2_distclean:
+	rm -f gtk2.tmp/*.*
+	if exist gtk2.tmp rmdir gtk2.tmp
+
+clean: gtk2_distclean
+	rm -f $(ethereal_OBJECTS) $(tethereal_OBJECTS) $(EXTRA_OBJECTS) \
+		$(EXECUTABLES) $(PDB_FILE) \
+		capinfo.obj editcap.obj mergecap.obj text2pcap.obj getopt.obj\
+		text2pcap-scanner.obj text2pcap-scanner.c rdps.obj \
+		rdps.pdb rdps.exe rdps.ilk config.h ps.c AUTHORS-SHORT \
+		AUTHORS-SHORT-FORMAT \
+		dftest.obj dftest.exe randpkt.obj randpkt.ext doxygen.cfg \
+		$(RESOURCES)
+	cd wiretap
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../gtk
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../epan
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../plugins
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../tools
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../image
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../doc
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../help
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../packaging/nsis
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../../xulender/win32-c-sdk
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../..
+
+# Call distclean only, if you would like to remove ALL generated files.
+# Be sure to have python and perl installed to regenerate them.
+distclean: clean gtk2_distclean
+	rm -f $(BUILT_SOURCES) \
+		tethereal-tap-register.c 
+	cd wiretap
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../gtk
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../epan
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../plugins
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../tools
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../image
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../doc
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../help
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../packaging/nsis
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../../xulender/win32-c-sdk
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../..
+
+tools::
+	cd tools
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+image::
+	cd image
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+wiretap::
+	cd wiretap
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+gtk:: help config.h svnversion.h AUTHORS-SHORT doxygen
+	cd gtk
+	$(MAKE) /$(MAKEFLAGS) /f Makefile.nmake GTK_CFLAGS="$(GTK1_CFLAGS)" GTK_LIBS="$(GTK1_LIBS)" libui.lib
+	cd ..
+
+# copy all required files to gtk2.tmp (but only when newer than existing) and compile in that dir
+gtk2:: help config.h svnversion.h AUTHORS-SHORT
+	if not exist gtk2.tmp mkdir gtk2.tmp
+	cd gtk
+	cp --update --preserve Makefile.* *.c *.h ..\gtk2.tmp
+	cd ..\gtk2.tmp
+	$(MAKE) /$(MAKEFLAGS) /f Makefile.nmake GTK_CFLAGS="$(GTK2_CFLAGS)" GTK_LIBS="$(GTK2_LIBS)" libui.lib
+	cd ..
+
+epan:: $(DISSECTOR_SUPPORT_OBJECTS) $(EXTRA_OBJECTS) $(RESOURCES) $(BUILT_SOURCES) doxygen
+	cd epan
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+plugins::
+	cd plugins
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+# XXX - Go to ui instead of leapfrogging over it.
+xulender/win32-c-sdk::
+	cd xulender/win32-c-sdk
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ../..
+
+doc::
+	cd doc
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+help::
+	cd help
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+doxygen.cfg: config.nmake doxygen.cfg.in
+	sed -e s/@VERSION@/$(VERSION)/ \
+	    < doxygen.cfg.in > $@
+
+doxygen-run:
+!IFDEF DOXYGEN
+	$(DOXYGEN) doxygen.cfg
+!ENDIF
+
+doxygen: doxygen.cfg doxygen-run
+
+REQUIRED_TOOLS=\
+	$(SH)	\
+	$(YACC)	\
+	$(LEX)	\
+	grep	\
+	$(PERL)	\
+	$(PYTHON)	\
+	sed	\
+	unzip	\
+	wget
+
+verify_tools:
+	@$(SH) tools\win32-setup.sh --appverify $(REQUIRED_TOOLS)
+
+# Download and install all the required libraries into ETHEREAL_LIBS.
+# If you used this setup target before, consider doing a clean_setup.
+setup: verify_tools
+!IF "$(GTK2_INST_VERSION)" == "2.4"
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		glib gtk2.4/glib-2.4.7.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		glib gtk2.4/glib-dev-2.4.7.zip
+!ELSE
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		glib glib-2.2.3-20040116.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		glib glib-dev-2.2.3-20040116.zip
+!ENDIF
+!IFDEF GTK1_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk+ gtk+-1.3.0-20030717.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk+ gtk+-dev-1.3.0-20030115.zip
+!ENDIF
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		libiconv-1.9.1.bin.woe32 libiconv-1.9.1.bin.woe32.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gettext-runtime-0.13.1 gettext-runtime-0.13.1.zip
+!IFDEF NET_SNMP_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		. net-snmp-5.1.2.zip
+!ENDIF
+!IFDEF PCAP_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		. wpdpack_3_0.zip
+!ENDIF
+!IFDEF ADNS_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		. adns-1.0-win32-04.zip
+!ENDIF
+!IFDEF PCRE_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		. pcre-4.4.zip
+!ENDIF
+!IFDEF ZLIB_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		zlib121-dll zlib121-dll.zip
+!ENDIF
+!IFDEF GTK2_DIR
+!IF "$(GTK2_INST_VERSION)" == "2.4"
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/gtk+-2.4.10-20041001.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/gtk+-dev-2.4.10.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/atk-1.6.0.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/atk-dev-1.6.0.zip
+!ELSE
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/gtk+-2.2.4-20040124.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/gtk+-dev-2.2.4-20040124.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/atk-1.4.0.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/atk-dev-1.4.0.zip
+!ENDIF
+!IF "$(PANGO_INST_VERSION)" == "1.4"
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/pango-1.4.1.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2.4/pango-dev-1.4.1.zip
+!ELSE
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/pango-1.2.5-20040124.zip
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk2 gtk2/pango-dev-1.2.5-20040124.zip
+!ENDIF
+!ENDIF
+!IFDEF GTK_WIMP_DIR
+	@$(SH) tools\win32-setup.sh --download "$(ETHEREAL_LIBS)" \
+		gtk-wimp gtk-wimp/gtk-wimp-0.6.2-bin.zip
+!ENDIF
+	@echo.
+	@echo Ethereal is ready to build.
+
+# Cleanup files installed by the setup target. It will not remove the 
+# downloaded zip files.
+clean_setup:
+    rm -r -f $(ETHEREAL_LIBS)/glib
+    rm -r -f $(ETHEREAL_LIBS)/gtk+
+    rm -r -f $(ETHEREAL_LIBS)/libiconv-1.9.1.bin.woe32
+    rm -r -f $(ETHEREAL_LIBS)/gettext-runtime-0.13.1
+    rm -r -f $(ETHEREAL_LIBS)/zlib121-dll
+    rm -r -f $(ETHEREAL_LIBS)/gtk2
+    rm -r -f $(ETHEREAL_LIBS)/gtk-wimp
+
+update_plugin_api: config.h
+	cd plugins
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake xyzzy
+	cd ..
+

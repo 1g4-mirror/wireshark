@@ -1,0 +1,220 @@
+
+=head1 NAME
+
+mergecap - Merges two capture files into one
+
+=head1 SYNOPSYS
+
+B<mergecap>
+S<[ B<-hva> ]>
+S<[ B<-s> I<snaplen> ]>
+S<[ B<-F> I<file format> ]>
+S<[ B<-T> I<encapsulation type> ]>
+S<B<-w> I<outfile>|->
+I<infile>
+I<...>
+
+=head1 DESCRIPTION
+
+B<Mergecap> is a program that combines multiple saved capture files into
+a single output file specified by the B<-w> argument.  B<Mergecap> knows
+how to read B<libpcap> capture files, including those of B<tcpdump>,
+B<Ethereal>, and other tools that write captures in that format.  
+
+B<Mergecap> can read / import the following file formats:
+
+=over 4
+
+=item *
+libpcap/WinPcap, tcpdump and various other tools using tcpdump's capture format
+
+=item *
+B<snoop> and B<atmsnoop>
+
+=item *
+Shomiti/Finisar B<Surveyor> captures
+
+=item *
+Novell B<LANalyzer> captures
+
+=item *
+Microsoft B<Network Monitor> captures
+
+=item *
+AIX's B<iptrace> captures
+
+=item *
+Cinco Networks B<NetXRay> captures
+
+=item *
+Network Associates Windows-based B<Sniffer> captures
+
+=item *
+Network General/Network Associates DOS-based B<Sniffer> (compressed or uncompressed) captures
+
+=item *
+AG Group/WildPackets B<EtherPeek>/B<TokenPeek>/B<AiroPeek>/B<EtherHelp>/B<PacketGrabber> captures
+
+=item *
+B<RADCOM>'s WAN/LAN analyzer captures
+
+=item *
+Network Instruments B<Observer> version 9 captures
+
+=item *
+B<Lucent/Ascend> router debug output
+
+=item *
+files from HP-UX's B<nettl>
+
+=item *
+B<Toshiba's> ISDN routers dump output
+
+=item *
+the output from B<i4btrace> from the ISDN4BSD project
+
+=item *
+traces from the B<EyeSDN> USB S0.
+
+=item *
+the output in B<IPLog> format from the Cisco Secure Intrusion Detection System
+
+=item *
+B<pppd logs> (pppdump format)
+
+=item *
+the output from VMS's B<TCPIPtrace>/B<TCPtrace>/B<UCX$TRACE> utilities
+
+=item *
+the text output from the B<DBS Etherwatch> VMS utility
+
+=item *
+Visual Networks' B<Visual UpTime> traffic capture
+
+=item *
+the output from B<CoSine> L2 debug
+
+=item *
+the output from Accellent's B<5Views> LAN agents
+
+=item *
+Endace Measurement Systems' ERF format captures 
+
+=item *
+Linux Bluez Bluetooth stack B<hcidump -w> traces
+
+=back
+
+There is no need to tell B<Mergecap> what type of
+file you are reading; it will determine the file type by itself. 
+B<Mergecap> is also capable of reading any of these file formats if they
+are compressed using gzip.  B<Mergecap> recognizes this directly from
+the file; the '.gz' extension is not required for this purpose.
+
+By default, it writes the capture file in B<libpcap> format, and writes
+all of the packets in both input capture files to the output file.  The
+B<-F> flag can be used to specify the format in which to write the
+capture file; it can write the file in B<libpcap> format (standard
+B<libpcap> format, a modified format used by some patched versions of
+B<libpcap>, the format used by Red Hat Linux 6.1, or the format used by
+SuSE Linux 6.3), B<snoop> format, uncompressed B<Sniffer> format,
+Microsoft B<Network Monitor> 1.x format, the format used by
+Windows-based versions of the B<Sniffer> software, and the format used
+by Visual Networks' software.
+
+Packets from the input files are merged in chronological order based on
+each frame's timestamp, unless the B<-a> flag is specified.  B<Mergecap>
+assumes that frames within a single capture file are already stored in
+chronological order.  When the B<-a> flag is specified, packets are
+copied directly from each input file to the output file, independent of
+each frame's timestamp.
+
+If the B<-s> flag is used to specify a snapshot length, frames in the
+input file with more captured data than the specified snapshot length
+will have only the amount of data specified by the snapshot length
+written to the output file.  This may be useful if the program that is
+to read the output file cannot handle packets larger than a certain size
+(for example, the versions of snoop in Solaris 2.5.1 and Solaris 2.6
+appear to reject Ethernet frames larger than the standard Ethernet MTU,
+making them incapable of handling gigabit Ethernet captures if jumbo
+frames were used).
+
+The output file frame encapsulation type is set to the type of the input
+files, if all input files have the same type.  If not all of the input
+files have the same frame encapsulation type, the output file type is
+set to WTAP_ENCAP_PER_PACKET.  Note that some capture file formats, most
+notably B<libpcap>, do not currently support WTAP_ENCAP_PER_PACKET.
+This combination will cause the output file creation to fail.
+
+If the B<-T> flag is used to specify a frame encapsulation type, the
+encapsulation type of the output capture file will be forced to the
+specified type, rather than being the type appropriate to the
+encapsulation type of the input capture files.  Note that this merely
+forces the encapsulation type of the output file to be the specified
+type; the packet headers of the packets will not be translated from the
+encapsulation type of the input capture file to the specified
+encapsulation type (for example, it will not translate an Ethernet
+capture to an FDDI capture if an Ethernet capture is read and 'B<-T
+fddi>' is specified).
+
+=head1 OPTIONS
+
+=over 4
+
+=item -w
+
+Sets the output filename. If the name is 'B<->', stdout will be used.
+
+=item -F
+
+Sets the file format of the output capture file.
+
+=item -T
+
+Sets the packet encapsulation type of the output capture file.
+
+=item -a
+
+Causes the frame timestamps to be ignored, writing all packets from the
+first input file followed by all packets from the second input file.  By
+default, when B<-a> is not specified, the contents of the input files
+are merged in chronological order based on each frame's timestamp.
+Note: when merging, B<mergecap> assumes that packets within a capture
+file are already in chronological order.
+
+=item -v
+
+Causes B<mergecap> to print a number of messages while it's working.
+
+=item -s
+
+Sets the snapshot length to use when writing the data.
+
+=item -h
+
+Prints the version and options and exits.
+
+=back
+
+=head1 SEE ALSO
+
+I<tcpdump(8)>, I<pcap(3)>, I<ethereal(1)>, I<editcap(1)>
+
+=head1 NOTES
+
+B<Mergecap> is based heavily upon B<editcap> by Richard Sharpe
+<sharpe[AT]ns.aus.com> and Guy Harris <guy[AT]alum.mit.edu>.
+
+B<Mergecap> is part of the B<Ethereal> distribution.  The latest version
+of B<Ethereal> can be found at B<http://www.ethereal.com>.
+
+=head1 AUTHORS
+
+  Original Author
+  -------- ------
+  Scott Renfro             <scott[AT]renfro.org>
+
+
+  Contributors
+  ------------
+  Bill Guyton              <guyton[AT]bguyton.com>

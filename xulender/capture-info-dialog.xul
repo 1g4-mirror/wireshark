@@ -1,0 +1,266 @@
+<?xml version="1.0"?>
+<dialog
+  id="capture-info-dialog"
+  title="Ethereal: Capture"
+  >
+
+  <vbox id="debug-element">
+    <groupbox orient="vertical" class="bottom_spacing">
+      <caption>Captured Packets</caption>
+
+      <hbox class="bottom_spacing">
+        <description>Total: </description>
+        <description id="capture-count-total" flex="1">0</description>
+      </hbox>
+
+      <hbox class="bottom_spacing">
+        <description>Running: </description>
+        <description id="capture-run-time" flex="1">Unknown</description>
+      </hbox>
+
+      <grid> <!-- Protocol-specific counts -->
+        <columns>
+          <column/>           <!-- Protocol name -->
+          <column/>           <!-- Count -->
+          <column flex="1" /> <!-- Progress meter -->
+          <column/>           <!-- Percentage -->
+        </columns>
+
+        <rows>
+          <row>
+            <description flex="1" class="bottom_spacing">SCTP: </description>
+            <description 
+              id="capture-sctp-count" 
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0000
+            </description>
+            <progressmeter id="capture-sctp-progress" class="lb_spacing"/>
+            <description
+              id="capture-sctp-percent"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              000.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">TCP: </description>
+            <description
+              id="capture-tcp-count"
+              flex="1"
+              style="text-align: right;"
+            >
+              0
+            </description>
+            <progressmeter id="capture-tcp-progress" class="lb_spacing"/>
+            <description
+              id="capture-tcp-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">UDP: </description>
+            <description
+              id="capture-udp-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-udp-progress" class="lb_spacing"/>
+            <description
+              id="capture-udp-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">ICMP: </description>
+            <description
+              id="capture-icmp-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-icmp-progress" class="lb_spacing"/>
+            <description
+              id="capture-icmp-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">ARP: </description>
+            <description
+              id="capture-arp-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-arp-progress" class="lb_spacing"/>
+            <description
+              id="capture-arp-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">OSPF: </description>
+            <description
+              id="capture-ospf-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-ospf-progress" class="lb_spacing"/>
+            <description
+              id="capture-ospf-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">GRE: </description>
+            <description
+              id="capture-gre-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-gre-progress" class="lb_spacing"/>
+            <description
+              id="capture-gre-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">NetBIOS: </description>
+            <description
+              id="capture-netbios-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-netbios-progress" class="lb_spacing"/>
+            <description
+              id="capture-netbios-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">IPX: </description>
+            <description
+              id="capture-ipx-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-ipx-progress" class="lb_spacing"/>
+            <description
+              id="capture-ipx-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">VINES: </description>
+            <description
+              id="capture-vines-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-vines-progress" class="lb_spacing"/>
+            <description
+              id="capture-vines-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+          <row>
+            <description class="bottom_spacing">Other: </description>
+            <description
+              id="capture-other-count"
+              flex="1"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0
+            </description>
+            <progressmeter id="capture-other-progress" class="lb_spacing"/>
+            <description
+              id="capture-other-percent"
+              style="text-align: right;"
+              class="lb_spacing"
+            >
+              0.0%
+            </description>
+          </row>
+
+        </rows>
+      </grid>
+    </groupbox>
+
+    <hbox>
+      <spacer flex="1" />
+      <button
+        id="capture-info-stop"
+        label="Stop"
+        default="True"
+        oncommand="capture_info_dialog_stop_capture"
+       />
+      <spacer flex="1" />
+    </hbox>
+
+  </vbox>
+</dialog>

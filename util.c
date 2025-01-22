@@ -1,21 +1,22 @@
 /* util.c
  * Utility routines
  *
+ * $Id$
+ *
  * Ethereal - Network traffic analyzer
- * By Gerald Combs <gerald@zing.org>
+ * By Gerald Combs <gerald@ethereal.com>
  * Copyright 1998 Gerald Combs
  *
- * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,99 +28,285 @@
 
 #include <glib.h>
 
-#include <gtk/gtk.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
 
-#include <strings.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#ifdef NEED_SNPRINTF_H
+# include "snprintf.h"
+#endif
+
+#ifdef NEED_MKSTEMP
+#include "mkstemp.h"
+#endif
+
+#ifdef HAVE_IO_H
+#include <io.h>
+#ifndef __MINGW32__
+typedef int mode_t;	/* for win32 */
+#endif /* __MINGW32__ */
+#endif /* HAVE_IO_H */
+
+#include <epan/addr_resolv.h>
+
+/*
+ * This has to come after the include of <pcap.h>, as the include of
+ * <pcap.h> might cause <winsock2.h> to be included, and if we've
+ * already included <winsock.h> as a result of including <windows.h>,
+ * we get a bunch of redefinitions.
+ */
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
 
 #include "util.h"
 
-const gchar *bm_key = "button mask";
-
-/* Simple dialog function - Displays a dialog box with the supplied message
- * text.
- * 
- * Args:
- * type     : One of ESD_TYPE_*.  Currently ignored.
- * btn_mask : The address of a gint.  The value passed in determines if
- *            the 'Cancel' button is displayed.  The button pressed by the 
- *            user is passed back.
- * message  : The text displayed in the dialog.
- *
- * To do:
- * - Switch to variable args
+/*
+ * Collect command-line arguments as a string consisting of the arguments,
+ * separated by spaces.
  */
-void
-simple_dialog(gint type, gint *btn_mask, gchar *message) {
-  GtkWidget   *win, *main_vb, *top_hb, *type_pm, *msg_label,
-              *bbox, *ok_btn, *cancel_btn;
-  GdkPixmap   *pixmap;
-  GdkBitmap   *mask;
-  GtkStyle    *style;
-  GdkColormap *cmap;
-  
-  /* Main window */
-  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_container_border_width(GTK_CONTAINER(win), 7);
-  gtk_window_set_title(GTK_WINDOW(win), "Ethereal: Warning");
-  gtk_object_set_data(GTK_OBJECT(win), bm_key, btn_mask);
+char *
+get_args_as_string(int argc, char **argv, int optind)
+{
+	int len;
+	int i;
+	char *argstring;
 
-  /* Container for our rows */
-  main_vb = gtk_vbox_new(FALSE, 5);
-  gtk_container_border_width(GTK_CONTAINER(main_vb), 5);
-  gtk_container_add(GTK_CONTAINER(win), main_vb);
-  gtk_widget_show(main_vb);
+	/*
+	 * Find out how long the string will be.
+	 */
+	len = 0;
+	for (i = optind; i < argc; i++) {
+		len += strlen(argv[i]);
+		len++;	/* space, or '\0' if this is the last argument */
+	}
 
-  /* Top row: Icon and message text */
-  top_hb = gtk_hbox_new(FALSE, 5);
-  gtk_container_add(GTK_CONTAINER(main_vb), top_hb);
-  gtk_widget_show(top_hb);
-  
-  style = gtk_widget_get_style(win);
-  cmap  = gdk_colormap_get_system();
-  pixmap = gdk_pixmap_colormap_create_from_xpm_d(NULL, cmap,  &mask,
-    &style->bg[GTK_STATE_NORMAL], icon_excl_xpm);
-  type_pm = gtk_pixmap_new(pixmap, mask);
-  gtk_container_add(GTK_CONTAINER(top_hb), type_pm);
-  gtk_widget_show(type_pm);
+	/*
+	 * Allocate the buffer for the string.
+	 */
+	argstring = g_malloc(len);
 
-  msg_label = gtk_label_new(message);
-  gtk_label_set_justify(GTK_LABEL(msg_label), GTK_JUSTIFY_FILL);
-  gtk_container_add(GTK_CONTAINER(top_hb), msg_label);
-  gtk_widget_show(msg_label);
-  
-  /* Button row */
-  bbox = gtk_hbutton_box_new();
-  gtk_button_box_set_layout (GTK_BUTTON_BOX (bbox), GTK_BUTTONBOX_END);
-  gtk_container_add(GTK_CONTAINER(main_vb), bbox);
-  gtk_widget_show(bbox);
-
-  ok_btn = gtk_button_new_with_label ("OK");
-  gtk_signal_connect_object(GTK_OBJECT(ok_btn), "clicked",
-    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT (win)); 
-  gtk_container_add(GTK_CONTAINER(bbox), ok_btn);
-  GTK_WIDGET_SET_FLAGS(ok_btn, GTK_CAN_DEFAULT);
-  gtk_widget_grab_default(ok_btn);
-  gtk_widget_show(ok_btn);
-
-  if (btn_mask && *btn_mask == ESD_BTN_CANCEL) {
-    cancel_btn = gtk_button_new_with_label("Cancel");
-    gtk_signal_connect(GTK_OBJECT(cancel_btn), "clicked",
-      GTK_SIGNAL_FUNC(simple_dialog_cancel_cb), (gpointer) win);
-    gtk_container_add(GTK_CONTAINER(bbox), cancel_btn);
-    gtk_widget_show(cancel_btn);
-  }
-
-  if (btn_mask)
-    *btn_mask = ESD_BTN_OK;
-
-  gtk_widget_show(win);
+	/*
+	 * Now construct the string.
+	 */
+	strcpy(argstring, "");
+	i = optind;
+	for (;;) {
+		strcat(argstring, argv[i]);
+		i++;
+		if (i == argc)
+			break;
+		strcat(argstring, " ");
+	}
+	return argstring;
 }
 
+static char *
+setup_tmpdir(char *dir)
+{
+	int len = strlen(dir);
+	char *newdir;
+
+	/* Append path separator if necessary */
+	if (dir[len - 1] == G_DIR_SEPARATOR) {
+		newdir = dir;
+	}
+	else {
+		newdir = g_malloc(len + 2);
+		strcpy(newdir, dir);
+		strcat(newdir, G_DIR_SEPARATOR_S);
+	}
+	return newdir;
+}
+
+static int
+try_tempfile(char *namebuf, int namebuflen, const char *dir, const char *pfx)
+{
+	static const char suffix[] = "XXXXXXXXXX";
+	int namelen = strlen(dir) + strlen(pfx) + sizeof suffix;
+	mode_t old_umask;
+	int tmp_fd;
+
+	if (namebuflen < namelen) {
+		/* Stick in a truncated name, so that if this error is
+		   reported with the file name, you at least get
+		   something. */
+		snprintf(namebuf, namebuflen, "%s%s%s", dir, pfx, suffix);
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+	strcpy(namebuf, dir);
+	strcat(namebuf, pfx);
+	strcat(namebuf, suffix);
+
+	/* The Single UNIX Specification doesn't say that "mkstemp()"
+	   creates the temporary file with mode rw-------, so we
+	   won't assume that all UNIXes will do so; instead, we set
+	   the umask to 0077 to take away all group and other
+	   permissions, attempt to create the file, and then put
+	   the umask back. */
+	old_umask = umask(0077);
+	tmp_fd = mkstemp(namebuf);
+	umask(old_umask);
+	return tmp_fd;
+}
+
+static char *tmpdir = NULL;
+#ifdef _WIN32
+static char *temp = NULL;
+#endif
+static char *E_tmpdir;
+
+#ifndef P_tmpdir
+#define P_tmpdir "/var/tmp"
+#endif
+
+int
+create_tempfile(char *namebuf, int namebuflen, const char *pfx)
+{
+	char *dir;
+	int fd;
+	static gboolean initialized;
+
+	if (!initialized) {
+		if ((dir = getenv("TMPDIR")) != NULL)
+			tmpdir = setup_tmpdir(dir);
+#ifdef _WIN32
+		if ((dir = getenv("TEMP")) != NULL)
+			temp = setup_tmpdir(dir);
+#endif
+
+		E_tmpdir = setup_tmpdir(P_tmpdir);
+		initialized = TRUE;
+	}
+
+	if (tmpdir != NULL) {
+		fd = try_tempfile(namebuf, namebuflen, tmpdir, pfx);
+		if (fd != -1)
+			return fd;
+	}
+
+#ifdef _WIN32
+	if (temp != NULL) {
+		fd = try_tempfile(namebuf, namebuflen, temp, pfx);
+		if (fd != -1)
+			return fd;
+	}
+#endif
+
+	fd = try_tempfile(namebuf, namebuflen, E_tmpdir, pfx);
+	if (fd != -1)
+		return fd;
+
+	return try_tempfile(namebuf, namebuflen, G_DIR_SEPARATOR_S "tmp", pfx);
+}
+
+/* Compute the difference between two seconds/microseconds time stamps. */
 void
-simple_dialog_cancel_cb(GtkWidget *w, gpointer win) {
-  gint *btn_mask = (gint *) gtk_object_get_data(win, bm_key);
-  
-  if (btn_mask)
-    *btn_mask = ESD_BTN_CANCEL;
-  gtk_widget_destroy(GTK_WIDGET(win));
+compute_timestamp_diff(gint *diffsec, gint *diffusec,
+	guint32 sec1, guint32 usec1, guint32 sec2, guint32 usec2)
+{
+  if (sec1 == sec2) {
+    /* The seconds part of the first time is the same as the seconds
+       part of the second time, so if the microseconds part of the first
+       time is less than the microseconds part of the second time, the
+       first time is before the second time.  The microseconds part of
+       the delta should just be the difference between the microseconds
+       part of the first time and the microseconds part of the second
+       time; don't adjust the seconds part of the delta, as it's OK if
+       the microseconds part is negative. */
+
+    *diffsec = sec1 - sec2;
+    *diffusec = usec1 - usec2;
+  } else if (sec1 <= sec2) {
+    /* The seconds part of the first time is less than the seconds part
+       of the second time, so the first time is before the second time.
+
+       Both the "seconds" and "microseconds" value of the delta
+       should have the same sign, so if the difference between the
+       microseconds values would be *positive*, subtract 1,000,000
+       from it, and add one to the seconds value. */
+    *diffsec = sec1 - sec2;
+    if (usec2 >= usec1) {
+      *diffusec = usec1 - usec2;
+    } else {
+      *diffusec = (usec1 - 1000000) - usec2;
+      (*diffsec)++;
+    }
+  } else {
+    /* Oh, good, we're not caught in a chronosynclastic infindibulum. */
+    *diffsec = sec1 - sec2;
+    if (usec2 <= usec1) {
+      *diffusec = usec1 - usec2;
+    } else {
+      *diffusec = (usec1 + 1000000) - usec2;
+      (*diffsec)--;
+    }
+  }
+}
+
+/* Try to figure out if we're remotely connected, e.g. via ssh or
+   Terminal Server, and create a capture filter that matches aspects of the
+   connection.  We match the following environment variables:
+
+   SSH_CONNECTION (ssh): <remote IP> <remote port> <local IP> <local port>
+   SSH_CLIENT (ssh): <remote IP> <remote port> <local port>
+   REMOTEHOST (tcsh, others?): <remote name>
+   DISPLAY (x11): [remote name]:<display num>
+   CLIENTNAME (terminal server): <remote name>
+ */
+
+gchar *get_conn_cfilter(void) {
+	static GString *filter_str = NULL;
+	gchar *env, **tokens;
+
+	if (filter_str == NULL) {
+		filter_str = g_string_new("");
+	}
+	if ((env = getenv("SSH_CONNECTION")) != NULL) {
+		tokens = g_strsplit(env, " ", 4);
+		if (tokens[3]) {
+			g_string_sprintf(filter_str, "not (tcp port %s and %s host %s "
+							 "and tcp port %s and %s host %s)", tokens[1], host_ip_af(tokens[0]), tokens[0],
+				tokens[3], host_ip_af(tokens[2]), tokens[2]);
+			return filter_str->str;
+		}
+	} else if ((env = getenv("SSH_CLIENT")) != NULL) {
+		tokens = g_strsplit(env, " ", 3);
+		g_string_sprintf(filter_str, "not (tcp port %s and %s host %s "
+			"and tcp port %s)", tokens[1], host_ip_af(tokens[0]), tokens[0], tokens[2]);
+		return filter_str->str;
+	} else if ((env = getenv("REMOTEHOST")) != NULL) {
+		if (strcasecmp(env, "localhost") == 0 || strcmp(env, "127.0.0.1") == 0) {
+			return "";
+		}
+		g_string_sprintf(filter_str, "not %s host %s", host_ip_af(env), env);
+		return filter_str->str;
+	} else if ((env = getenv("DISPLAY")) != NULL) {
+		tokens = g_strsplit(env, ":", 2);
+		if (tokens[0] && tokens[0][0] != 0) {
+			if (strcasecmp(tokens[0], "localhost") == 0 ||
+					strcmp(tokens[0], "127.0.0.1") == 0) {
+				return "";
+			}
+			g_string_sprintf(filter_str, "not %s host %s",
+				host_ip_af(tokens[0]), tokens[0]);
+			return filter_str->str;
+		}
+	} else if ((env = getenv("CLIENTNAME")) != NULL) {
+		if (g_strcasecmp("console", env) != 0) {
+			g_string_sprintf(filter_str, "not %s host %s", host_ip_af(env), env);
+			return filter_str->str;
+		}
+	}
+	return "";
 }

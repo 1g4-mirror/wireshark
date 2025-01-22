@@ -1,0 +1,63 @@
+#
+# $Id$
+#
+
+include ..\config.nmake
+include <win32.mak>
+
+############### no need to modify below this line #########
+
+include Makefile.common
+
+CFLAGS=-DHAVE_CONFIG_H $(GLIB_CFLAGS) $(ZLIB_CFLAGS) /I$(PCAP_DIR)/include \
+	-D_U_="" $(LOCAL_CFLAGS)
+
+CVARSDLL=-DWIN32 -DNULL=0 -D_MT -D_DLL
+
+.c.obj::
+	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
+
+OBJECTS=$(NONGENERATED_C_FILES:.c=.obj) $(GENERATED_C_FILES:.c=.obj)
+
+wiretap_LIBS = \
+	$(GLIB_LIBS)	\
+	$(ZLIB_LIBS)
+
+all: wiretap-$(WTAP_VERSION).dll
+
+wiretap-$(WTAP_VERSION).lib: wiretap-$(WTAP_VERSION).dll
+wiretap-$(WTAP_VERSION).exp: wiretap-$(WTAP_VERSION).dll
+
+wiretap-$(WTAP_VERSION).dll : $(OBJECTS) wtap.def ..\image\wiretap.res
+	$(link) $(dlllflags) $(conlibsdll) \
+		$(LOCAL_LDFLAGS) \
+		/DEF:wtap.def /OUT:wiretap-$(WTAP_VERSION).dll \
+		/IMPLIB:wiretap-$(WTAP_VERSION).lib \
+		..\image\wiretap.res \
+		$(OBJECTS) $(wiretap_LIBS)
+
+$(OBJECTS): config.h
+
+ascend-grammar.c ascend-grammar.h : ascend-grammar.y
+	$(YACC) $(YACC_OPTS) -d -p ascend ascend-grammar.y -o ascend-grammar.c
+
+ascend-scanner.obj : ascend-scanner.c ascend-grammar.h
+
+ascend-scanner.c : ascend-scanner.l
+	$(LEX) -Pascend -oascend-scanner.c ascend-scanner.l
+
+
+config.h	: config.h.win32 ..\config.nmake
+	sed -e s/@VERSION@/$(WTAP_VERSION)/ \
+	    -e "s/@HAVE_LIBZ@/$(ZLIB_CONFIG)/" \
+	    < config.h.win32 > $@
+
+clean :
+	rm -f $(OBJECTS) \
+		wiretap-$(WTAP_VERSION).lib \
+		wiretap-$(WTAP_VERSION).exp \
+		wiretap-$(WTAP_VERSION).dll \
+		$(PDB_FILE)
+
+distclean: clean
+	rm -f config.h ascend-grammar.c ascend-grammar.h ascend-scanner.c

@@ -1,0 +1,42 @@
+#
+# $Id$
+#
+
+include ..\..\config.nmake
+
+############### no need to modify below this line #########
+
+CFLAGS=/DHAVE_CONFIG_H /I../.. /I../../wiretap $(GLIB_CFLAGS) \
+	/I$(PCAP_DIR)\include -D_U_="" $(LOCAL_CFLAGS)
+
+LDFLAGS = /NOLOGO /INCREMENTAL:no /MACHINE:I386 $(LOCAL_LDFLAGS)
+
+!IFDEF LINK_PLUGINS_WITH_LIBETHEREAL
+LINK_PLUGIN_WITH=..\..\epan\libethereal.lib
+CFLAGS=/DHAVE_WIN32_LIBETHEREAL_LIB /D_NEED_VAR_IMPORT_ $(CFLAGS)
+!ELSE
+LINK_PLUGIN_WITH=..\plugin_api.obj
+!ENDIF
+
+OBJECTS=packet-intrngreq.obj packet-type29ucd.obj \
+	packet-docsis.obj packet-bpkmattr.obj \
+	packet-dsarsp.obj packet-macmgmt.obj \
+	packet-rngrsp.obj packet-bpkmreq.obj \
+	packet-dscack.obj packet-map.obj \
+	packet-tlv.obj packet-bpkmrsp.obj \
+	packet-dscreq.obj packet-regack.obj \
+	packet-uccreq.obj packet-dscrsp.obj \
+	packet-regreq.obj packet-uccrsp.obj \
+	packet-dsaack.obj packet-dsdreq.obj \
+	packet-regrsp.obj packet-ucd.obj \
+	packet-dsareq.obj packet-dsdrsp.obj \
+	packet-rngreq.obj packet-vendor.obj
+
+docsis.dll docsis.exp docsis.lib : $(OBJECTS) $(LINK_PLUGIN_WITH) 
+	link -dll /out:docsis.dll $(LDFLAGS) $(OBJECTS) $(LINK_PLUGIN_WITH)  \
+	$(GLIB_LIBS)
+
+clean:
+	rm -f $(OBJECTS) docsis.dll docsis.exp docsis.lib *.pdb
+
+distclean: clean

@@ -1,20 +1,21 @@
 /* rdps.c
  *
+ * $Id$
+ * 
  * Ethereal - Network traffic analyzer
- * By Gerald Combs <gerald@zing.org>
+ * By Gerald Combs <gerald@ethereal.com>
  * Copyright 1998 Gerald Combs
  *
- * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,9 +23,8 @@
 
 /* takes the file listed as the first argument and creates the file listed
 as the second argument. It takes a PostScript file and creates a C program
-with 3 functions:
+with 2 functions:
 	print_ps_preamble()
-	print_ps_hex()
 	print_ps_finale()
 
 */
@@ -42,7 +42,7 @@ with 3 functions:
 void start_code(FILE *fd, char *func);
 void write_code(FILE *fd, char *string);
 void end_code(FILE *fd);
-void ps_clean_string(unsigned char *out, const unsigned char *in,
+void ps_clean_string(char *out, const char *in,
 			int outbuf_size);
 
 enum ps_state { null, preamble, hex, finale };
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 
 	fprintf(output, "/* Created by rdps.c. Do not edit! */\n\n"
           "#include <stdio.h>\n\n"
-          "#include <ps.h>\n\n");
+          "#include \"ps.h\"\n\n");
 
 	while (fgets(buf, BUFFER_SIZE - 1, input)) {
 
@@ -79,11 +79,6 @@ int main(int argc, char **argv)
 			if (strcmp(buf, "% ---- ethereal preamble start ---- %\n") == 0) {
 				state = preamble;
 				start_code(output, "preamble");
-				continue;
-			}
-			else if (strcmp(buf, "% ---- ethereal hex start ---- %\n") == 0) {
-				state = hex;
-				start_code(output, "hex");
 				continue;
 			}
 			else if (strcmp(buf, "% ---- ethereal finale start ---- %\n") == 0) {
@@ -148,7 +143,7 @@ void end_code(FILE *fd)
 	fprintf(fd, "}\n\n\n");
 }
 
-void ps_clean_string(unsigned char *out, const unsigned char *in,
+void ps_clean_string(char *out, const char *in,
 			int outbuf_size)
 {
 	int rd, wr;

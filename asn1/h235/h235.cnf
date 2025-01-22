@@ -1,0 +1,62 @@
+# h235.cnf
+# H235-SECURITY-MESSAGES conformation file
+# 2004  Tomas Kukosa
+
+# $Id$
+
+#.EXPORTS
+
+SIGNEDxxx
+ENCRYPTEDxxx
+HASHEDxxx
+TimeStamp
+ClearToken
+CryptoToken
+AuthenticationMechanism
+
+#.OMIT_ASSIGNMENT
+
+ECGDSASignature
+PwdCertToken
+KeySignedMaterial
+H235CertificateSignature
+ReturnSig
+KeySyncMaterial
+ 
+#.FIELD_RENAME
+
+TypedCertificate/certificate           certificatedata
+SIGNEDxxx/signature                    signaturedata
+CryptoToken/cryptoHashedToken/token    hashedToken
+CryptoToken/cryptoSignedToken/token    signedToken
+CryptoToken/cryptoEncryptedToken/token encryptedToken
+
+#.END
+
+#.TYPE_ATTR
+TimeStamp  TYPE = FT_ABSOLUTE_TIME  DISPLAY = BASE_NONE
+#.END
+
+#.FIELD_ATTR
+NonStandardParameter/data  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+#.END
+
+#.FN_HDR SIGNEDxxx
+  proto_tree_add_item_hidden(tree, proto_h235, tvb, offset, 0, FALSE);
+#.END
+#.FN_HDR ENCRYPTEDxxx
+  proto_tree_add_item_hidden(tree, proto_h235, tvb, offset, 0, FALSE);
+#.END
+#.FN_HDR HASHEDxxx
+  proto_tree_add_item_hidden(tree, proto_h235, tvb, offset, 0, FALSE);
+#.END
+
+#.FN_HDR ClearToken
+  proto_tree_add_item_hidden(tree, proto_h235, tvb, offset, 0, FALSE);
+#.END
+
+#.FN_HDR CryptoToken
+  proto_tree_add_item_hidden(tree, proto_h235, tvb, offset, 0, FALSE);
+#.END
+
+

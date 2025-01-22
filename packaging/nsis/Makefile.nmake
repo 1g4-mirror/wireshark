@@ -1,0 +1,146 @@
+#
+# $Id$
+#
+# NSIS is a free packager/installer/uninstaller program for Win32.
+# It was originally written for the Winamp package, but various
+# freeware and non-freeware packages are using it, too.
+#
+# http://www.nullsoft.com/free/nsis/
+
+include ../../config.nmake
+
+UNIX2DOS=$(PERL) ../../tools/unix2dos.pl
+
+!IFDEF GTK1_ONLY
+# define installer name and undefine GTK2_DIR to get a separate 
+# installer for ethereal GTK1 version
+DEST=ethereal-gtk1
+!IFDEF GTK2_DIR
+!UNDEF GTK2_DIR
+!ENDIF
+!ENDIF
+
+
+!IFDEF GTK2_ONLY
+# define installer name and undefine GTK1_DIR to get a separate 
+# installer for ethereal GTK2 version
+DEST=ethereal-gtk2
+!IFDEF GTK1_DIR
+!UNDEF GTK1_DIR
+!ENDIF
+!ENDIF
+
+!IFNDEF DEST
+# define installer name for combined GTK1 and GTK2 installer package
+DEST=ethereal
+!ENDIF
+
+EXE=../../tethereal.exe ../../editcap.exe \
+!IFDEF GTK1_DIR
+	../../ethereal.exe \
+!ENDIF
+!IFDEF GTK2_DIR
+	../../ethereal-gtk2.exe \
+!ENDIF
+	../../text2pcap.exe ../../mergecap.exe ../../capinfo.exe
+DLL=../../wiretap/wiretap-$(WTAP_VERSION).dll
+DOC=../../doc/ethereal.html		\
+	../../doc/tethereal.html	\
+	../../doc/ethereal-filter.html	\
+	../../doc/editcap.html 		\
+	../../doc/text2pcap.html 	\
+	../../doc/mergecap.html 	\
+	../../doc/capinfo.html 	\
+	../../FAQ			\
+	../../README			\
+	../../README.win32
+DOC_dos=NEWS.txt
+GPL=../../COPYING
+HELP=../../help/toc \
+	../../help/overview.txt \
+	../../help/capture_filters.txt \
+	../../help/display_filters.txt \
+	../../help/faq.txt
+
+PLUGINS=../../plugins/acn/acn.dll \
+	../../plugins/artnet/artnet.dll \
+	../../plugins/asn1/asn1.dll \
+	../../plugins/ciscosm/ciscosm.dll \
+	../../plugins/docsis/docsis.dll \
+	../../plugins/enttec/enttec.dll \
+	../../plugins/giop/coseventcomm.dll \
+	../../plugins/giop/cosnaming.dll \
+	../../plugins/gryphon/gryphon.dll \
+	../../plugins/irda/irda.dll \
+	../../plugins/lwres/lwres.dll \
+	../../plugins/megaco/megaco.dll \
+	../../plugins/mgcp/mgcp.dll \
+	../../plugins/opsi/opsi.dll \
+	../../plugins/pcli/pcli.dll \
+	../../plugins/rdm/rdm.dll \
+	../../plugins/rlm/rlm.dll \
+	../../plugins/rtnet/rtnet.dll \
+	../../plugins/rudp/rudp.dll \
+	../../plugins/v5ua/v5ua.dll
+
+DELIVERABLES=$(EXE) $(DLL) $(DOC) $(DOC_dos) $(GPL) $(HELP) $(PLUGINS)
+
+all: NEWS.txt $(DEST)-setup-$(VERSION).exe
+
+NEWS.txt: ../../NEWS
+	$(UNIX2DOS) < ../../NEWS > NEWS.txt
+
+$(DEST)-setup-$(VERSION).exe : ethereal.nsi $(DELIVERABLES) Makefile.nmake
+	$(MAKENSIS) \
+	/DDEST=$(DEST) \
+!IF "$(MAKENSIS_MODERN_UI)" != ""
+	/DMAKENSIS_MODERN_UI=$(MAKENSIS_MODERN_UI) \
+!ENDIF
+!IF "$(ENABLE_LIBETHEREAL)" != ""
+	/DENABLE_LIBETHEREAL=$(ENABLE_LIBETHEREAL) \
+!ENDIF
+!IFDEF GTK1_DIR
+	/DGTK1_DIR=$(GTK1_DIR) \
+!ENDIF
+!IFDEF GTK2_DIR
+	/DGTK2_DIR=$(GTK2_DIR) \
+	/DGTK2_INST_VERSION=$(GTK2_INST_VERSION) \
+	/DPANGO_INST_VERSION=$(PANGO_INST_VERSION) \
+!ENDIF	
+!IFDEF GTK_WIMP_DIR
+	/DGTK_WIMP_DIR=$(GTK_WIMP_DIR) \
+!ENDIF	
+	/DGLIB_DIR=$(GLIB_DIR) \
+	/DICONV_DIR=$(ICONV_DIR) \
+	/DGETTEXT_DIR=$(GETTEXT_DIR) \
+	/DVERSION=$(VERSION) \
+	/DWTAP_VERSION=$(WTAP_VERSION) \
+	/DNET_SNMP_DIR=$(NET_SNMP_DIR) \
+!IF "$(ADNS_DIR)" != ""
+	/DADNS_DIR=$(ADNS_DIR) \
+!ENDIF
+!IF "$(PCRE_DIR)" != ""
+	/DPCRE_DIR=$(PCRE_DIR) \
+!ENDIF
+!IF "$(ZLIB_DIR)" != ""
+	/DZLIB_DIR=$(ZLIB_DIR) \
+!ENDIF
+	ethereal.nsi
+
+clean:
+	rm -f ethereal-setup-$(VERSION).exe
+	rm -f ethereal-gtk1-setup-$(VERSION).exe
+	rm -f ethereal-gtk2-setup-$(VERSION).exe
+	rm -f NEWS.txt
+
+distclean: clean
+
+$(DOC):
+	cd ../../doc
+	$(MAKE) -f makefile.nmake
+	cd ../packaging/nsis
+
+$(EXE) $(DLL):
+	cd ../..
+	$(MAKE) -f makefile.nmake
+	cd packaging/nsis

@@ -1,70 +1,571 @@
 
 =head1 NAME
 
-Ethereal - Interactively browse network traffic
+ethereal - Interactively browse network traffic
 
 =head1 SYNOPSYS
 
 B<ethereal>
-S<[ B<-v> ]>
+S<[ B<-a> capture autostop condition ] ...>
+S<[ B<-b> number of ring buffer files [:duration] ]>
 S<[ B<-B> byte view height ]>
 S<[ B<-c> count ]>
+S<[ B<-f> capture filter expression ]>
+S<[ B<-h> ]>
 S<[ B<-i> interface ]> 
+S<[ B<-k> ]>
+S<[ B<-l> ]>
+S<[ B<-L> ]>
+S<[ B<-m> font ]>
+S<[ B<-n> ]>
+S<[ B<-N> resolving flags ] >
+S<[ B<-o> preference setting ] ...>
+S<[ B<-p> ]>
 S<[ B<-P> packet list height ]>
+S<[ B<-Q> ]>
 S<[ B<-r> infile ]>
+S<[ B<-R> display filter expression ]>
+S<[ B<-S> ]>
 S<[ B<-s> snaplen ]>
-S<[ B<-T> tree view height ]>
+S<[ B<-T> details view height ]>
+S<[ B<-t> time stamp format ]>
+S<[ B<-v> ]>
 S<[ B<-w> savefile]>
+S<[ B<-y> link type ]>
+S<[ B<-z> statistics-string ]>
+S<[ infile ]>
 
 =head1 DESCRIPTION
 
-B<Ethereal> is a network protocol analyzer based on the B<GTK+> GUI toolkit.  It lets
-you interactively browse packet data from a live network or from a B<pcap>
-/ B<tcpdump()> formatted capture file.
+B<Ethereal> is a GUI network protocol analyzer.  It lets you
+interactively browse packet data from a live network or from a
+previously saved capture file.  B<Ethereal>'s native capture file format
+is B<libpcap> format, which is also the format used by B<tcpdump> and
+various other tools.
+
+B<Ethereal> can read / import the following file formats:
+
+=over 4
+
+=item *
+libpcap, tcpdump and various other tools using tcpdump's capture format
+
+=item *
+B<snoop> and B<atmsnoop>
+
+=item *
+Shomiti/Finisar B<Surveyor> captures
+
+=item *
+Novell B<LANalyzer> captures
+
+=item *
+Microsoft B<Network Monitor> captures
+
+=item *
+AIX's B<iptrace> captures
+
+=item *
+Cinco Networks B<NetXRay> captures
+
+=item *
+Network Associates Windows-based B<Sniffer> captures
+
+=item *
+Network General/Network Associates DOS-based B<Sniffer> (compressed or uncompressed) captures
+
+=item *
+AG Group/WildPackets B<EtherPeek>/B<TokenPeek>/B<AiroPeek>/B<EtherHelp>/B<PacketGrabber> captures
+
+=item *
+B<RADCOM>'s WAN/LAN analyzer captures
+
+=item *
+Network Instruments B<Observer> version 9 captures
+
+=item *
+B<Lucent/Ascend> router debug output
+
+=item *
+files from HP-UX's B<nettl>
+
+=item *
+B<Toshiba's> ISDN routers dump output
+
+=item *
+the output from B<i4btrace> from the ISDN4BSD project
+
+=item *
+traces from the B<EyeSDN> USB S0.
+
+=item *
+the output in B<IPLog> format from the Cisco Secure Intrusion Detection System
+
+=item *
+B<pppd logs> (pppdump format)
+
+=item *
+the output from VMS's B<TCPIPtrace>/B<TCPtrace>/B<UCX$TRACE> utilities
+
+=item *
+the text output from the B<DBS Etherwatch> VMS utility
+
+=item *
+Visual Networks' B<Visual UpTime> traffic capture
+
+=item *
+the output from B<CoSine> L2 debug
+
+=item *
+the output from Accellent's B<5Views> LAN agents
+
+=item *
+Endace Measurement Systems' ERF format captures 
+
+=item *
+Linux Bluez Bluetooth stack B<hcidump -w> traces
+
+=back 4
+
+There is no need to tell B<Ethereal> what type of
+file you are reading; it will determine the file type by itself. 
+B<Ethereal> is also capable of reading any of these file formats if they
+are compressed using gzip.  B<Ethereal> recognizes this directly from
+the file; the '.gz' extension is not required for this purpose.
+
+Like other protocol analyzers, B<Ethereal>'s main window shows 3 views
+of a packet.  It shows a summary line, briefly describing what the
+packet is.  A packet details display is shown, allowing you to drill
+down to exact protocol or field that you interested in.  Finally, a hex
+dump shows you exactly what the packet looks like when it goes over the
+wire.
+
+In addition, B<Ethereal> has some features that make it unique.  It can
+assemble all the packets in a TCP conversation and show you the ASCII
+(or EBCDIC, or hex) data in that conversation.  Display filters in
+B<Ethereal> are very powerful; more fields are filterable in B<Ethereal>
+than in other protocol analyzers, and the syntax you can use to create
+your filters is richer.  As B<Ethereal> progresses, expect more and more
+protocol fields to be allowed in display filters.
+
+Packet capturing is performed with the pcap library.  The capture filter
+syntax follows the rules of the pcap library.  This syntax is different
+from the display filter syntax.
+
+Compressed file support uses (and therefore requires) the zlib library. 
+If the zlib library is not present, B<Ethereal> will compile, but will
+be unable to read compressed files.
+
+The pathname of a capture file to be read can be specified with the
+B<-r> option or can be specified as a command-line argument.
 
 =head1 OPTIONS
 
 =over 4
 
+Most users will want to start B<Ethereal> without options and configure
+it from the menus instead. Those users may just skip this section.
+
+=item -a
+
+Specify a criterion that specifies when B<Ethereal> is to stop writing
+to a capture file.  The criterion is of the form I<test>B<:>I<value>,
+where I<test> is one of:
+
+=for man .RS
+
+=for html <P><DL>
+
+=item duration
+
+Stop writing to a capture file after I<value> seconds have elapsed.
+
+=item filesize
+
+Stop writing to a capture file after it reaches a size of I<value>
+kilobytes (where a kilobyte is 1000 bytes, not 1024 bytes).
+
+=for man .RE
+
+=for html </DL>
+
+=item -b
+
+If a maximum capture file size was specified, cause B<Ethereal> to run
+in "ring buffer" mode, with the specified number of files.  In "ring
+buffer" mode, B<Ethereal> will write to several capture files. 
+Their name is based on the number of the file and on the creation date 
+and time.
+
+When the first capture file fills up, B<Ethereal> will switch to writing
+to the next file, until it fills up the last file, at which point it'll
+discard the data in the first file (unless 0 is specified, in which case,
+the number of files is unlimited) and start writing to that file and so on.
+
+If the optional duration is specified, B<Ethereal> will switch also 
+to the next file when the specified number of seconds has elapsed even
+if the current file is not completely fills up.
+
 =item -B
 
-Sets the initial height of the byte view (bottom) pane
+Set the initial height of the byte view (bottom) pane.
 
 =item -c
 
-The default number of packets to read when capturing live data.
+Set the default number of packets to read when capturing live
+data.
+
+=item -f
+
+Set the capture filter expression.
+
+=item -h
+
+Print the version and options and exit.
 
 =item -i
 
-The name of the interface to use for live packet capture.  It should match
-one of the names listed in "B<netstat -i>" or "B<ifconfig -a>".
+Set the name of the network interface or pipe to use for live packet
+capture.
+
+Network interface names should match one of the names listed in
+"B<tethereal -D>".  If you're using Unix, "B<netstat -i>" or "B<ifconfig
+-a>" might also work to list interface names, although not all versions
+of Unix support the B<-a> flag to B<ifconfig>.
+
+Pipe names should be either the name of a FIFO (named pipe) or ``-'' to
+read data from the standard input.  Data read from pipes must be in
+standard libpcap format.
+
+=item -k
+
+Start the capture session immediately.  If the B<-i> flag was
+specified, the capture uses the specified interface.  Otherwise,
+B<Ethereal> searches the list of interfaces, choosing the first
+non-loopback interface if there are any non-loopback interfaces, and
+choosing the first loopback interface if there are no non-loopback
+interfaces; if there are no interfaces, B<Ethereal> reports an error and
+doesn't start the capture.
+
+=item -l
+
+Turn on automatic scrolling if the packet display is being updated
+automatically as packets arrive during a capture (as specified by the
+B<-S> flag).
+
+=item -L
+
+List the data link types supported by the interface and exit.
+
+=item -m
+
+Set the name of the font used by B<Ethereal> for most text.  B<Ethereal>
+will construct the name of the bold font used for the data in the byte
+view pane that corresponds to the field selected in the packet details
+pane from the name of the main text font.
+
+=item -n
+
+Disable network object name resolution (such as hostname, TCP and UDP port
+names).
+
+=item -N
+
+Turn on name resolving for particular types of addresses and port
+numbers, with name resolving for other types of addresses and port
+numbers turned off; the argument is a string that may contain the
+letters B<m> to enable MAC address resolution, B<n> to enable network
+address resolution, and B<t> to enable transport-layer port number
+resolution.  This overrides B<-n> if both B<-N> and B<-n> are present.
+The letter B<C> enables concurrent (asynchronous) DNS lookups.
+
+=item -o
+
+Set a preference value, overriding the default value and any value read
+from a preference file.  The argument to the flag is a string of the
+form I<prefname>B<:>I<value>, where I<prefname> is the name of the
+preference (which is the same name that would appear in the preference
+file), and I<value> is the value to which it should be set.
+
+=item -p
+
+I<Don't> put the interface into promiscuous mode.  Note that the
+interface might be in promiscuous mode for some other reason; hence,
+B<-p> cannot be used to ensure that the only traffic that is captured is
+traffic sent to or from the machine on which B<Ethereal> is running,
+broadcast traffic, and multicast traffic to addresses received by that
+machine.
 
 =item -P
 
-Sets the initial height of the packet list (top) pane
+Set the initial height of the packet list (top) pane.
+
+=item -Q
+
+Cause B<Ethereal> to exit after the end of capture session (useful in
+batch mode with B<-c> option for instance); this option requires the
+B<-i> and B<-w> parameters.
 
 =item -r
 
-Read packet data from I<file>.  Currently, B<Ethereal> only understands
-B<pcap> / B<tcpdump> formatted files.
+Read packet data from I<infile>.
+
+=item -R
+
+When reading a capture file specified with the B<-r> flag, causes the
+specified filter (which uses the syntax of display filters, rather than
+that of capture filters) to be applied to all packets read from the
+capture file; packets not matching the filter are discarded.
+
+=item -S
+
+Perform the live packet capture in a separate process, and automatically
+update the packet display as packets are seen.
 
 =item -s
 
-The default snapshot length to use when capturing live data.  No more than
-I<snaplen> bytes of each network packet will be read into memory, or saved
-to disk.
+Set the default snapshot length to use when capturing live data. 
+No more than I<snaplen> bytes of each network packet will be read into
+memory, or saved to disk.
 
 =item -T
 
-Sets the initial height of the tree view (top) pane
+Set the initial height of the packet details (middle) pane.
+
+=item -t
+
+Set the format of the packet timestamp displayed in the packet list
+window.  The format can be one of 'r' (relative), 'a' (absolute), 'ad'
+(absolute with date), or 'd' (delta).  The relative time is the time
+elapsed between the first packet and the current packet.  The absolute
+time is the actual time the packet was captured, with no date displayed;
+the absolute date and time is the actual time and date the packet was
+captured.  The delta time is the time since the previous packet was
+captured.  The default is relative.
 
 =item -v
 
-Prints the version and exits.
+Print the version and exit.
 
 =item -w
 
-Sets the default capture file name.
+Set the default capture file name.
+
+=item -y
+
+If a capture is started from the command line with B<-k>, set the data
+link type to use while capturing packets.  The values reported by B<-L>
+are the values that can be used.
+
+=item -z
+
+Get B<Ethereal> to collect various types of statistics and display the result
+in a window that updates in semi-real time.
+Currently implemented statistics are:
+
+B<-z> dcerpc,srt,I<uuid>,I<major>.I<minor>[,I<filter>]
+
+Collect call/reply SRT (Service Response Time) data for DCERPC interface I<uuid>, 
+version I<major>.I<minor>.
+Data collected is number of calls for each procedure, MinSRT, MaxSRT 
+and AvgSRT. 
+Example: use B<-z dcerpc,srt,12345778-1234-abcd-ef00-0123456789ac,1.0> to collect data for CIFS SAMR Interface.  
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z dcerpc,srt,12345778-1234-abcd-ef00-0123456789ac,1.0,ip.addr==1.2.3.4> to collect SAMR
+SRT statistics for a specific host.
+
+B<-z> io,stat
+
+Collect packet/bytes statistics for the capture in intervals of 1 seconds.
+This option will open a window with up to 5 color-coded graphs where
+number-of-packets-per-second or number-of-bytes-per-second statistics
+can be calculated and displayed.
+
+This option can be used multiple times on the command line. 
+
+This graph window can also be opened from the Analyze:Statistics:Traffic:IO-Stat
+menu item.
+
+
+B<-z> rpc,srt,I<program>,I<version>[,<filter>]
+
+Collect call/reply SRT (Service Response Time) data for I<program>/I<version>.  Data collected
+is number of calls for each procedure, MinSRT, MaxSRT and AvgSRT. 
+Example: use B<-z rpc,srt,100003,3> to collect data for NFS v3.  This
+option can be used multiple times on the command line. 
+
+If the optional filter string is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z rpc,srt,100003,3,nfs.fh.hash==0x12345678> to collect NFS v3
+SRT statistics for a specific file.
+
+B<-z> rpc,programs
+
+Collect call/reply RTT data for all known ONC-RPC programs/versions.  
+Data collected is number of calls for each protocol/version, MinRTT, 
+MaxRTT and AvgRTT. 
+
+B<-z> smb,srt[,I<filter>]
+
+Collect call/reply SRT (Service Response Time) data for SMB.  Data collected
+is number of calls for each SMB command, MinSRT, MaxSRT and AvgSRT. 
+Example: use B<-z smb,srt>.
+
+The data will be presented as separate tables for all normal SMB commands,
+all Transaction2 commands and all NT Transaction commands.
+Only those commands that are seen in the capture will have its stats
+displayed.
+Only the first command in a xAndX command chain will be used in the
+calculation.  So for common SessionSetupAndX + TreeConnectAndX chains,
+only the SessionSetupAndX call will be used in the statistics.
+This is a flaw that might be fixed in the future.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "smb,srt,ip.addr==1.2.3.4"> to only collect stats for
+SMB packets echanged by the host at IP address 1.2.3.4 .
+
+B<-z> fc,srt[,I<filter>]
+
+Collect call/reply SRT (Service Response Time) data for FC.  Data collected
+is number of calls for each Fibre Channel command, MinSRT, MaxSRT and AvgSRT. 
+Example: use B<-z fc,srt>.
+The Service Response Time is calculated as the time delta between the
+First packet of the exchange and the Last packet of the exchange.
+
+The data will be presented as separate tables for all normal FC commands,
+Only those commands that are seen in the capture will have its stats
+displayed.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "fc,srt,fc.id==01.02.03"> to only collect stats for
+FC packets echanged by the host at FC address 01.02.03 .
+
+B<-z> ldap,srt[,I<filter>]
+
+Collect call/reply SRT (Service Response Time) data for LDAP.  Data collected
+is number of calls for each implemented LDAP command, MinSRT, MaxSRT and AvgSRT. 
+Example: use B<-z ldap,srt>.
+The Service Response Time is calculated as the time delta between the
+Request and the Response.
+
+The data will be presented as separate tables for all implemented LDAP commands,
+Only those commands that are seen in the capture will have its stats
+displayed.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "ldap,srt,ip.addr==10.1.1.1"> to only collect stats for
+LDAP packets echanged by the host at IP address 10.1.1.1 .
+
+The only LDAP command that are currently implemented and the stats will be available for are:
+BIND
+SEARCH
+MODIFY
+ADD
+DELETE
+MODRDN
+COMPARE
+EXTENDED
+
+
+B<-z> mgcp,srt[I<,filter>]
+
+Collect requests/response SRT (Service Response Time) data for MGCP. 
+This is similar to B<-z smb,srt>). Data collected is number of calls
+for each known MGCP Type, Minimum SRT, Maximum SRT and Average SRT.
+Example: use B<-z mgcp,srt>.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "mgcp,srt,ip.addr==1.2.3.4"> to only collect stats for
+MGCP packets exchanged by the host at IP address 1.2.3.4 .
+
+B<-z> conv,I<type>[,I<filter>]
+
+Create a table that lists all conversations that could be seen in the
+capture.  I<type> specifies for which type of conversation we want to
+generate the statistics; currently the supported ones are
+
+  "eth"   Ethernet
+  "fc"    Fibre Channel addresses
+  "fddi"  FDDI addresses
+  "ip"    IP addresses
+  "ipx"   IPX addresses
+  "tcp"   TCP/IP socket pairs   Both IPv4 and IPv6 are supported
+  "tr"    TokenRing
+  "udp"   UDP/IP socket pairs   Both IPv4 and IPv6 are supported
+
+If the optional filter string is specified, only those packets that match the
+filter will be used in the calculations.
+
+The table is presented with one line for each conversation and displays
+number of packets/bytes in each direction as well as total number of
+packets/bytes.  By default, the table is sorted according to total number
+of packets.
+
+These tables can also be generated at runtime by selecting the appropriate
+conversation type from the menu "Tools/Statistics/Conversation List/".
+
+B<-z> h225,counter[I<,filter>]
+
+Count ITU-T H.225 messages and their reasons. In the first column you get a 
+list of H.225 messages and H.225 message reasons, which occur in the current
+capture file. The number of occurences of each message or reason is displayed 
+in the second column.
+
+Example: use B<-z h225,counter>.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "h225,counter,ip.addr==1.2.3.4"> to only collect stats for
+H.225 packets exchanged by the host at IP address 1.2.3.4 .
+
+
+B<-z> h225,srt[I<,filter>]
+
+Collect requests/response SRT (Service Response Time) data for ITU-T H.225 RAS. 
+Data collected is number of calls of each ITU-T H.225 RAS Message Type,
+Minimum SRT, Maximum SRT, Average SRT, Minimum in Packet, and Maximum in Packet. 
+You will also get the number of Open Requests (Unresponded Requests), 
+Discarded Responses (Responses without matching request) and Duplicate Messages.
+Example: use B<-z h225,srt>.
+
+This option can be used multiple times on the command line. 
+
+If the optional filterstring is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "h225,srt,ip.addr==1.2.3.4"> to only collect stats for
+ITU-T H.225 RAS packets exchanged by the host at IP address 1.2.3.4 .
+
+B<-z> sip,stat[I<,filter>]
+
+This option will activate a counter for SIP messages. You will get the number 
+of occurences of each SIP Method and of each SIP Status-Code. Additionally you 
+also get the number of resent SIP Messages (only for SIP over UDP).  
+
+Example: use B<-z sip,stat>.
+
+This option can be used multiple times on the command line. 
+
+If the optional filter string is provided, the stats will only be calculated
+on those calls that match that filter.
+Example: use B<-z "sip,stat,ip.addr==1.2.3.4"> to only collect stats for
+SIP packets exchanged by the host at IP address 1.2.3.4 .
 
 =back
 
@@ -74,31 +575,663 @@ Sets the default capture file name.
 
 =over 4
 
-=item File:Open, File:Close
+=item File:Open
 
-Open or close a capture file.
+=item File:Open Recent
 
-=item File:Print Packet
+=item File:Close
 
-Print a description of each protocol header found in the packet, followed
-by the packet data itself.  Printing options can be set with the
-I<Edit:Menu Options> menu item.
+Open or close a capture file.  The I<File:Open> dialog box
+allows a filter to be specified; when the capture file is read, the
+filter is applied to all packets read from the file, and packets not
+matching the filter are discarded. The I<File:Open Recent> is a submenu 
+and will show a list of previously opened files.
+
+=item File:Save
+
+=item File:Save As
+
+Save the current capture, or the packets currently displayed from that
+capture, to a file.  Check boxes let you select whether to save all
+packets, or just those that have passed the current display filter and/or
+those that are currently marked, and an option menu lets you select (from 
+a list of file formats in which at particular capture, or the packets 
+currently displayed from that capture, can be saved), a file format in 
+which to save it.
+
+=item File:Export
+
+Export captured data into an external format. Note: the data cannot be 
+imported back into Ethereal, so be sure to keep the capture file.
+
+=item File:Print
+
+Print packet data from the current capture. You can select the range of 
+packets to be printed (which packets are printed), and the output format of 
+each packet (how each packet is printed). The output format will be similar 
+to the displayed values, so a summary line, the packet details view, and/or 
+the hex dump of the packet can be printed. 
+
+Printing options can be set with the I<Edit:Preferences> menu item, or in the 
+dialog box popped up by this menu item.
 
 =item File:Quit
 
-Exits the application.
+Exit the application.
 
-=item Edit:Printer Options
+=item Edit:Find Packet
 
-Sets the packet printing options (see L<"Printer Options"> below).
+Search forward or backward, starting with the currently selected packet
+(or the most recently selected packet, if no packet is selected).  Search
+criteria can be a display filter expression, a string of hexadecimal 
+digits, or a text string.
 
-=item Tools:Capture
+When searching for a text string, you can search the packet data, or you
+can search the text in the Info column in the packet list pane or in the
+packet details pane.
 
-Initiates a live packet capture (see L<"Capture Preferences"> below).
+Hexadecimal digits can be separated by colons, periods, or dashes.
+Text string searches can be ASCII or Unicode (or both), and may be
+case insensitive.
 
-=item Tools:Filter
+=item Edit:Find Next
 
-Sets the filter preferences (see L<"Filters"> below).
+=item Edit:Find Previous
+
+Search forward / backward for a packet matching the filter from the previous 
+search, starting with the currently selected packet (or the most recently 
+selected packet, if no packet is selected).
+
+=item Edit:Time Reference:Set Time Reference
+
+Set (or unset if currently set) the selected packet as a Time Reference packet.
+When a packet is set as a Time Reference packet, the timestamps in the packet
+list pane will be replaced with the string "*REF*".
+The relative time timestamp in later packets will then be calculated relative
+to the timestamp of this Time Reference packet and not the first packet in 
+the capture.
+
+Packets that have been selected as Time Reference packets will always be
+displayed in the packet list pane.  Display filters will not affect or
+hide these packets.
+
+If there is a column displayed for "Culmulative Bytes" this counter will 
+be reset at every Time Reference packet.
+
+=item Edit:Time Reference:Find Next
+
+=item Edit:Time Reference:Find Previous
+
+Search forward / backward for a time referenced packet.
+
+=item Edit:Mark Packet
+
+Mark (or unmark if currently marked) the selected packet.  The field
+"frame.marked" is set for packets that are marked, so that, for example,
+a display filters can be used to display only marked packets, and so that
+the L<Edit:Find Packet|/item_edit_3afind_packet> dialog can be used to find the next or previous
+marked packet.
+
+=item Edit:Mark All Packets
+
+=item Edit:Unmark All Packets
+
+Mark / Unmark all packets that are currently displayed.
+
+=item Edit:Preferences
+
+Set the packet printing, column display, TCP stream coloring, and GUI
+options (see L<Preferences|/item_preferences> dialog below).
+
+=item View:Main Toolbar
+
+=item View:Filter Toolbar
+
+=item View:Statusbar
+
+Show or hide the main window controls.
+
+=item View:Packet List
+
+=item View:Packet Details
+
+=item View:Packet Bytes
+
+Show or hide the main window panes.
+
+=item View:Time Display Format
+
+Set the format of the packet timestamp displayed in the packet list window 
+to relative, absolute, absolute date and time, or delta.
+
+=item View:Name Resolution
+
+Enable or disable translation of addresses to names in the display.
+
+=item View:Auto Scroll in Live Capture
+
+Enable or disable the automatic scrolling of the
+packet list while a live capture is in progress.
+
+=item View:Zoom In
+
+=item View:Zoom Out
+
+Zoom into / out of the main window data (by changing the font size).
+
+=item View:Normal Size
+
+Reset the zoom factor of zoom in / zoom out back to normal font size.
+
+=item View:Collapse All
+
+=item View:Expand All
+
+Collapse / Expand all branches of the packet details.
+
+=item View:Expand Tree
+
+Expands the currently selected item in the packet details.
+
+=item View:Coloring Rules
+
+Change the foreground and background colors of the packet information in
+the list of packets, based upon display filters.  The list of display
+filters is applied to each packet sequentially.  After the first display
+filter matches a packet, any additional display filters in the list are
+ignored.  Therefore, if you are filtering on the existence of protocols,
+you should list the higher-level protocols first, and the lower-level
+protocols last.
+
+=over
+
+=item How Colorization Works
+
+Packets are colored according to a list of color filters. Each filter
+consists of a name, a filter expression and a coloration. A packet is
+colored according to the first filter that it matches, Color filter
+expressions use exactly the same syntax as display filter expressions.
+
+When Ethereal starts, the color filters are loaded from:
+
+=over
+
+1. The user's personal color filters file or, if that does not exist,
+
+2. The global color filters file.
+
+=back
+
+If neither of these exist then the packets will not be colored.
+
+=back
+
+=item View:Show Packet In New Window
+
+Create a new window containing a packet details view and a hex dump
+window of the currently selected packet; this window will continue to
+display that packet's details and data even if another packet is
+selected.
+
+=item View:Reload
+
+Reload a capture file.  Same as I<File:Close> and I<File:Open> the same 
+file again.
+
+=item Go:Go To Packet
+
+Go to a particular numbered packet.
+
+=item Go:Go To Corresponding Packet
+
+If a field in the packet details pane containing a packet number is
+selected, go to the packet number specified by that field.  (This works
+only if the dissector that put that entry into the packet details put it
+into the details as a filterable field rather than just as text.) This
+can be used, for example, to go to the packet for the request
+corresponding to a reply, or the reply corresponding to a request, if
+that packet number has been put into the packet details.
+
+=item Go:First Packet
+
+=item Go:Last Packet
+
+Go to the first / last packet in the capture.
+
+=item Capture:Start
+
+Initiate a live packet capture (see L<Capture Options|/item_capture_options> dialog below).  A
+temporary file will be created to hold the capture.  The location of the
+file can be chosen by setting your TMPDIR environment variable before
+starting B<Ethereal>.  Otherwise, the default TMPDIR location is
+system-dependent, but is likely either F</var/tmp> or F</tmp>.
+
+=item Capture:Stop
+
+In a capture that updates the packet display as packets arrive (so that
+Ethereal responds to user input other than pressing the "Stop" button in
+the capture packet statistics dialog box), stop the capture.
+
+=item Capture:Capture Filters
+
+Edit the saved list of capture filters, allowing filters to be added,
+changed, or deleted.
+
+=item Analyze:Display Filters
+
+Edit the saved list of display filters, allowing filters to be added,
+changed, or deleted.
+
+=item Analyze:Apply as Filter
+
+Create a display filter, or add to the display filter strip at the
+bottom, a display filter based on the data currently highlighted in the
+packe details, and apply the filter.
+
+If that data is a field that can be tested in a display filter
+expression, the display filter will test that field; otherwise, the
+display filter will be based on absolute offset within the packet, and
+so could be unreliable if the packet contains protocols with
+variable-length headers, such as a source-routed token-ring packet.
+
+The B<Selected> option creates a display filter that tests for a match
+of the data; the B<Not Selected> option creates a display filter that
+tests for a non-match of the data.  The B<And Selected>, B<Or Selected>,
+B<And Not Selected>, and B<Or Not Selected> options add to the end of
+the display filter in the strip at the bottom an AND or OR operator
+followed by the new display filter expression.
+
+=item Analyze:Prepare a Filter
+
+Create a display filter, or add to the display filter strip at the
+bottom, a display filter based on the data currently highlighted in the
+packet details, but don't apply the filter.
+
+=item Analyze:Enabled Protocols
+
+Allow protocol dissection to be enabled or disabled for a specific
+protocol.  Individual protocols can be enabled or disabled by clicking
+on them in the list or by highlighting them and pressing the space bar.
+The entire list can be enabled, disabled, or inverted using the buttons
+below the list.
+
+When a protocol is disabled, dissection in a particular packet stops
+when that protocol is reached, and Ethereal moves on to the next packet.
+Any higher-layer protocols that would otherwise have been processed will
+not be displayed.  For example, disabling TCP will prevent the dissection
+and display of TCP, HTTP, SMTP, Telnet, and any other protocol exclusively
+dependent on TCP.
+
+The list of protocols can be saved, so that Ethereal will start up with
+the protocols in that list disabled.
+
+=item Analyze:Decode As
+
+If you have a packet selected, present a dialog allowing you to change
+which dissectors are used to decode this packet.  The dialog has one
+panel each for the link layer, network layer and transport layer
+protocol/port numbers, and will allow each of these to be changed
+independently.  For example, if the selected packet is a TCP packet to
+port 12345, using this dialog you can instruct Ethereal to decode all
+packets to or from that TCP port as HTTP packets.
+
+=item Analyze:User Specified Decodes
+
+Create a new window showing whether any protocol ID to dissector
+mappings have been changed by the user.  This window also allows the
+user to reset all decodes to their default values.
+
+=item Analyze:Follow TCP Stream
+
+If you have a TCP packet selected, display the contents of the data
+stream for the TCP connection to which that packet belongs, as text, in
+a separate window, and leave the list of packets in a filtered state,
+with only those packets that are part of that TCP connection being
+displayed.  You can revert to your old view by pressing ENTER in the
+display filter text box, thereby invoking your old display filter (or
+resetting it back to no display filter).
+
+The window in which the data stream is displayed lets you select:
+
+=over 8
+
+=item *
+
+whether to display the entire conversation, or one or the other side of
+it;
+
+=item *
+
+whether the data being displayed is to be treated as ASCII or EBCDIC
+text or as raw hex data;
+
+=back 4
+
+and lets you print what's currently being displayed, using the same
+print options that are used for the I<File:Print Packet> menu item, or
+save it as text to a file.
+
+=item Statistics:Summary
+
+Show summary information about the capture, including elapsed time,
+packet counts, byte counts, and the like.  If a display filter is in
+effect, summary information will be shown about the capture and about
+the packets currently being displayed.
+
+=item Statistics:Protocol Hierarchy
+
+Show the number of packets, and the number of bytes in those packets,
+for each protocol in the trace.  It organizes the protocols in the same
+hierarchy in which they were found in the trace.  Besides counting the
+packets in which the protocol exists, a count is also made for packets
+in which the protocol is the last protocol in the stack.  These
+last-protocol counts show you how many packets (and the byte count
+associated with those packets) B<ended> in a particular protocol.  In
+the table, they are listed under "End Packets" and "End Bytes".
+
+=item Statistics:IO Graphs
+
+Open a window where up to 5 graphs in different colors can be displayed
+to indicate number of packets or number of bytes per second for all packets
+matching the specified filter.
+By default only one graph will be displayed showing number of packets per second.
+
+The top part of the window contains the graphs and scales for the X and
+Y axis.  If the graph is too long to fit inside the window there is a
+horizontal scrollbar below the drawing area that can scroll the graphs
+to the left or the right.  The horizontal axis displays the time into
+the capture and the vertical axis will display the measured quantity at
+that time.
+
+Below the drawing area and the scrollbar are the controls.  On the
+bottom left there will be five similar sets of controls to control each
+induvidual graph such as "Display:<button>" which button will toggle
+that individual graph on/off.  If <button> is ticked, the graph will be
+displayed.  "Color:<color>" which is just a button to show which color
+will be used to draw that graph (color is only available in Gtk2
+version) and finally "Filter:<filter-text>" which can be used to specify
+a display filter for that particular graph.
+
+If filter-text is empty then all packets will be used to calculate the
+quantity for that graph.  If filter-text is specified only those packets
+that match that display filter will be considered in the calculation of
+quantity.
+
+To the right of the 5 graph controls there are four menus to control
+global aspects of the draw area and graphs.  The "Unit:" menu is used to
+control what to measure; "packets/tick", "bytes/tick" or "advanced..."
+
+packets/tick will measure the number of packets matching the (if
+specified) display filter for the graph in each measurement interval. 
+
+bytes/tick will measure the total number of bytes in all packets matching
+the (if specified) display filter for the graph in each measurement
+interval.
+
+advanced... see below
+
+"Tick interval:" specifies what measurement intervals to use.  The
+default is 1 second and means that the data will be counted over 1
+second intervals. 
+
+"Pixels per tick:" specifies how many pixels wide each measurement
+interval will be in the drawing area.  The default is 5 pixels per tick. 
+
+"Y-scale:" controls the max value for the y-axis.  Default value is
+"auto" which means that B<Ethereal> will try to adjust the maxvalue
+automatically.
+
+"advanced..." If Unit:advanced...  is selected the window will display
+two more controls for each of the five graphs.  One control will be a
+menu where the type of calculation can be selected from
+SUM,COUNT,MAX,MIN,AVG and LOAD, and one control, textbox, where the name of a
+single display filter field can be specified.
+
+The following restrictions apply to type and field combinations:
+
+SUM: available for all types of integers and will calculate the SUM of
+all occurences of this field in the measurement interval.  Note that
+some field can occur multiple times in the same packet and then all
+instances will be summed up.  Example: 'tcp.len' which will count the
+amount of payload data transferred across TCP in each interval.
+
+COUNT: available for all field types. This will COUNT the number of times
+certain field occurs in each interval. Note that some fields
+may occur multiple times in each packet and if that is the case
+then each instance will be counted independently and COUNT
+will be greater than the number of packets.
+
+MAX: available for all integer and relative time fields. This will calculate
+the max seen integer/time value seen for the field during the interval.
+Example: 'smb.time' which will plot the maximum SMB response time.
+
+MIN: available for all integer and relative time fields. This will calculate
+the min seen integer/time value seen for the field during the interval.
+Example: 'smb.time' which will plot the minimum SMB response time.
+
+AVG: available for all integer and relative time fields.This will
+calculate the average seen integer/time value seen for the field during
+the interval.  Example: 'smb.time' which will plot the average SMB
+response time.
+
+LOAD: available only for relative time fields (response times).
+
+Example of advanced:
+Display how NFS response time MAX/MIN/AVG changes over time:
+
+Set first graph to:
+
+   filter:nfs&&rpc.time
+   Calc:MAX rpc.time
+
+Set second graph to
+
+   filter:nfs&&rpc.time
+   Calc:AVG rpc.time
+
+Set third graph to
+
+   filter:nfs&&rpc.time
+   Calc:MIN rpc.time
+
+Example of advanced:
+Display how the average packet size from host a.b.c.d changes over time.
+
+Set first graph to
+
+   filter:ip.addr==a.b.c.d&&frame.pkt_len
+   Calc:AVG frame.pkt_len
+
+LOAD:
+The LOAD io-stat type is very different from anything you have ever seen 
+before! While the response times themself as plotted by MIN,MAX,AVG are 
+indications on the Server load (which affects the Server response time),  
+the LOAD measurement measures the Client LOAD.
+What this measures is how much workload the client generates, 
+i.e. how fast will the client issue new commands when the previous ones 
+completed.
+i.e. the level of concurrency the client can maintain.
+The higher the number, the more and faster is the client issuing new
+commands. When the LOAD goes down, it may be due to client load making
+the client slower in issuing new commands (there may be other reasons as
+well, maybe the client just doesn't have any commands it wants to issue
+right then).
+
+Load is measured in concurrency/number of overlapping i/o and the value
+1000 means there is a constant load of one i/o.
+
+In each tick interval the amount of overlap is measured.
+See the graph below containing three commands:
+Below the graph are the LOAD values for each interval that would be calculated.
+
+  |     |     |     |     |     |     |     |     |
+  |     |     |     |     |     |     |     |     |
+  |     |  o=====*  |     |     |     |     |     |
+  |     |     |     |     |     |     |     |     |
+  |  o========*     | o============*  |     |     |
+  |     |     |     |     |     |     |     |     |
+  --------------------------------------------------> Time
+   500   1500   500  750   1000   500    0     0
+
+=item Statistics:Conversation List
+
+This option will open a new window that displays a list of all
+conversations between two endpoints.  The list has one row for each
+unique conversation and displays total number of packets/bytes seen as
+well as number of packets/bytes in each direction.
+
+By default the list is sorted according to the number of packets but by
+clicking on the column header; it is possible to re-sort the list in
+ascending or descending order by any column.
+
+By first selecting a conversation by clicking on it and then using the 
+right mouse button (on those platforms that have a right
+mouse button) ethereal will display a popup menu offering several different 
+filter operations to apply to the capture.
+
+These statistics windows can also be invoked from the Ethereal command
+line using the B<-z conv> argument. 
+
+=item Statistics:Service Response Time:DCE-RPC
+
+Open a window to display Service Response Time statistics for an 
+arbitrary DCE-RPC program
+interface and display B<Procedure>, B<Number of Calls>, B<Minimum SRT>,
+B<Maximum SRT> and B<Average SRT> for all procedures for that
+program/version.  These windows opened will update in semi-real time to
+reflect changes when doing live captures or when reading new capture
+files into B<Ethereal>.
+
+This dialog will also allow an optional filter string to be used.
+If an optional filter string is used only such DCE-RPC request/response pairs 
+that match that filter will be used to calculate the statistics. If no filter 
+string is specified all request/response pairs will be used.
+
+=item Statistics:Service Response Time:Fibre Channel
+
+Open a window to display Service Response Time statistics for Fibre Channel
+and display B<FC Type>, B<Number of Calls>, B<Minimum SRT>,
+B<Maximum SRT> and B<Average SRT> for all FC types.
+These windows opened will update in semi-real time to
+reflect changes when doing live captures or when reading new capture
+files into B<Ethereal>.
+The Service Response Time is calculated as the time delta between the
+First packet of the exchange and the Last packet of the exchange.
+
+This dialog will also allow an optional filter string to be used.
+If an optional filter string is used only such FC first/last exchange pairs 
+that match that filter will be used to calculate the statistics. If no filter 
+string is specified all request/response pairs will be used.
+
+=item Statistics:Service Response Time:ONC-RPC
+
+Open a window to display statistics for an arbitrary ONC-RPC program interface
+and display B<Procedure>, B<Number of Calls>, B<Minimum SRT>, B<Maximum SRT> and B<Average SRT> for all procedures for that program/version.
+These windows opened will update in semi-real time to reflect changes when
+doing live captures or when reading new capture files into B<Ethereal>.
+
+This dialog will also allow an optional filter string to be used.
+If an optional filter string is used only such ONC-RPC request/response pairs 
+that match that filter will be used to calculate the statistics. If no filter 
+string is specified all request/response pairs will be used.
+
+By first selecting a conversation by clicking on it and then using the 
+right mouse button (on those platforms that have a right
+mouse button) ethereal will display a popup menu offering several different 
+filter operations to apply to the capture.
+
+=item Statistics:Service Response Time:SMB
+
+Collect call/reply SRT (Service Response Time) data for SMB.  Data collected
+is number of calls for each SMB command, MinSRT, MaxSRT and AvgSRT. 
+
+The data will be presented as separate tables for all normal SMB commands,
+all Transaction2 commands and all NT Transaction commands.
+Only those commands that are seen in the capture will have its stats
+displayed.
+Only the first command in a xAndX command chain will be used in the
+calculation.  So for common SessionSetupAndX + TreeConnectAndX chains,
+only the SessionSetupAndX call will be used in the statistics.
+This is a flaw that might be fixed in the future.
+
+You can apply an optional filter string in a dialog box, before starting
+the calculation. The stats will only be calculated 
+on those calls matching that filter.
+
+By first selecting a conversation by clicking on it and then using the 
+right mouse button (on those platforms that have a right
+mouse button) ethereal will display a popup menu offering several different 
+filter operations to apply to the capture.
+
+=item Statistics:Service Response Time:MGCP
+
+Collect requests/response SRT (Service Response Time) data for MGCP. 
+Data collected is B<number of calls> for each known MGCP Type, 
+B<Minimum SRT>, B<Maximum SRT>, B<Average SRT>, B<Minimum in Packet>, and B<Maximum in Packet>. 
+These windows opened will update in semi-real time to reflect changes when
+doing live captures or when reading new capture files into B<Ethereal>.
+
+You can apply an optional filter string in a dialog box, before starting
+the calculation. The statistics will only be calculated 
+on those calls matching that filter.
+
+=item Statistics:Service Response Time:ITU-T H.225 RAS
+
+Collect requests/response SRT (Service Response Time) data for ITU-T H.225 RAS. 
+Data collected is B<number of calls> for each known ITU-T H.225 RAS Message Type,
+B<Minimum SRT>, B<Maximum SRT>, B<Average SRT>, B<Minimum in Packet>, and B<Maximum in Packet>.
+You will also get the number of B<Open Requests> (Unresponded Requests), 
+B<Discarded Responses> (Responses without matching request) and Duplicate Messages.
+These windows opened will update in semi-real time to reflect changes when
+doing live captures or when reading new capture files into B<Ethereal>.
+
+You can apply an optional filter string in a dialog box, before starting
+the calculation. The statistics will only be calculated 
+on those calls matching that filter.
+
+=item Statistics:ITU-T H.225
+
+Count ITU-T H.225 messages and their reasons. In the first column you get a 
+list of H.225 messages and H.225 message reasons, which occur in the current
+capture file. The number of occurences of each message or reason will be displayed 
+in the second column.
+This window opened will update in semi-real time to reflect changes when
+doing live captures or when reading new capture files into B<Ethereal>.
+
+You can apply an optional filter string in a dialog box, before starting
+the counter. The statistics will only be calculated 
+on those calls matching that filter.
+
+=item Statistics:SIP
+
+Activate a counter for SIP messages. You will get the number of occurences of each
+SIP Method and of each SIP Status-Code. Additionally you also get the number of
+resent SIP Messages (only for SIP over UDP).  
+
+This window opened will update in semi-real time to reflect changes when
+doing live captures or when reading new capture files into B<Ethereal>.
+
+You can apply an optional filter string in a dialog box, before starting
+the counter. The statistics will only be calculated 
+on those calls matching that filter.
+
+=item Statistics:ONC-RPC Programs
+
+This dialog will open a window showing aggregated RTT statistics for all
+ONC-RPC Programs/versions that exist in the capture file.
+
+=item Help:Contents
+
+Some help texts.
+
+=item Help:Supported Protocols
+
+List of supported protocols and display filter protocol fields.
+
+=item Help:About Ethereal
+
+See various information about Ethereal (see L<About|/item_about> dialog below), like the 
+version, the folders used, the available plugins, ...
 
 =back
 
@@ -108,126 +1241,704 @@ Sets the filter preferences (see L<"Filters"> below).
 
 =item Main Window
 
-The main window is split into three sections.  You can resize each section
-using a "thumb" at the right end of each divider line.  An informational
-message is also displayed at the bottom of the main window.
+The main window contains the usual things like the menu, some toolbars, the 
+main area and a statusbar. The main area is split into three panes, you can 
+resize each pane using a "thumb" at the right end of each divider line.
 
-The top section contains the list of network packets that you can scroll
-through and select.  The packet number, source and destination addresses,
-protocol, and description are printed for each packet.  An effort is made
-to display information as high up the protocol stack as possible, e.g. IP
-addresses are displayed for IP packets, but the MAC layer address is
-displayed for unknown packet types.
+The main window is much more flexible than before. The layout of the main
+window can be customized by the I<Layout> page in the dialog box popped
+up by I<Edit:Preferences>, the following will describe the layout with the 
+default settings.
 
-The middle section contains a I<protocol tree> for the currently-selected
-packet.  The tree displays each field and its value in each protocol header
-in the stack.
+=over 6
 
-The bottom section contains a hex dump of the actual packet data. 
-Selecting a field in the I<protocol tree> highlights the appropriate bytes
-in this section.
+=item Main Toolbar
 
-=item Printer Options
+Some menu items are available for quick access here. There is no way to 
+customize the items in the toolbar, however the toolbar can be hidden by 
+I<View:Main Toolbar>.
 
-The I<Printer Options> dialog lets you select the output format of packets
-printed using the I<File:Print Packet> menu item.
+=item Filter Toolbar
 
-The radio buttons at the top of the dialog allow you choose between 
-printing the packets as text or PostScript, and sending the output
-directly to a command or saving it to a file.  The I<Command:> text entry
-box is the command to send files to (usually B<lpr>), and the I<File:>
-entry box lets you enter the name of the file you wish to save to. 
-Additinally, you can select the I<File:> button to browse the file system
-for a particular save file.
+A display filter can be entered into the filter toolbar. 
+A filter for HTTP, HTTPS, and DNS traffic might look like this:
 
-=item Capture Preferences
+  tcp.port == 80 || tcp.port == 443 || tcp.port == 53
 
-The I<Capture Preferences> dialog lets you specify various parameters for
-capturing live packet data.
+Selecting the I<Filter:> button lets you choose from a list of named
+filters that you can optionally save.  Pressing the Return or Enter
+keys, or selecting the I<Apply> button, will cause the filter to be
+applied to the current list of packets.  Selecting the I<Reset> button
+clears the display filter so that all packets are displayed (again).
 
-The I<Interface:> entry box lets you specify the interface from which to
-capture packet data.  The I<Count:> entry specifies the number of packets
-to capture.  Entering 0 will capture packets indefinitely.  The I<File:>
-entry specifies the file to save to, as in the I<Printer Options> dialog
-above.  You can choose to open the file after capture, and you can also
-specify the maximum number of bytes to capture per packet with the
-I<Capture length> entry.
+There is no way to customize the items in the toolbar, however the toolbar 
+can be hidden by I<View:Filter Toolbar>.
 
-=item Filters
+=item Packet List Pane
 
-The I<Filters> dialog lets you create and modify filters, and set the
-default filter to use when capturing data or opening a capture file.
+The top pane contains the list of network packets that you can scroll
+through and select.  By default, the packet number, packet timestamp,
+source and destination addresses, protocol, and description are
+displayed for each packet; the I<Columns> page in the dialog box popped
+up by I<Edit:Preferences> lets you change this (although, unfortunately,
+you currently have to save the preferences, and exit and restart
+Ethereal, for those changes to take effect).
 
-The I<Filter name> entry specifies a descriptive name for a filter, e.g.
-B<Web and DNS traffic>.  The I<Filter string> entry is the text that
-actually describes the filtering action to take.  It must have the same
-format as B<tcpdump> filter strings, since both programs use the same
-underlying library.  A filter for HTTP, HTTPS, and DNS traffic might look
-like this:
+If you click on the heading for a column, the display will be sorted by
+that column; clicking on the heading again will reverse the sort order
+for that column.
 
-  tcp port 80 or tcp port 443 or port 53
+An effort is made to display information as high up the protocol stack
+as possible, e.g. IP addresses are displayed for IP packets, but the
+MAC layer address is displayed for unknown packet types.
 
-The dialog buttons perform the following actions:
+The right mouse button can be used to pop up a menu of operations.
 
-=over 8
+The middle mouse button can be used to mark a packet.
+
+=item Packet Details Pane
+
+The middle pane contains a display of the details of the
+currently-selected packet.  The display shows each field and its value
+in each protocol header in the stack.  The right mouse button can be
+used to pop up a menu of operations.
+
+=item Packet Bytes Pane
+
+The lowest pane contains a hex and ASCII dump of the actual packet data. 
+Selecting a field in the packet details highlights the corresponding
+bytes in this section.
+
+The right mouse button can be used to pop up a menu of operations.
+
+=item Statusbar
+
+The statusbar is divided into two parts, on the left some context dependant 
+things are shown, like information about the loaded file, on the right the 
+number of packets are displayed: P = Packets captured/loaded, D = Displayed 
+in packet list (after filtering), M = Marked by user.
+
+The statusbar can be hidden by I<View:Statusbar>.
+
+=back
+
+=item Preferences
+
+The I<Preferences> dialog lets you control various personal preferences
+for the behavior of B<Ethereal>.
+
+=over 6
+
+=item User Interface Preferences
+
+The I<User Interface> page is used to modify small aspects of the GUI to
+your own personal taste:
+
+=over 6
+
+=item Scrollbars
+
+The vertical scrollbars in the three panes can be set to be either on
+the left or the right. 
+
+=item Selection Bars
+
+The selection bar in the packet list and packet details can have either
+a "browse" or "select" behavior.  If the selection bar has a "browse"
+behavior, the arrow keys will move an outline of the selection bar,
+allowing you to browse the rest of the list or details without changing
+the selection until you press the space bar.  If the selection bar has a
+"select" behavior, the arrow keys will move the selection bar and change
+the selection to the new item in the packet list or packet details.
+
+=item Tree Line Style
+
+Trees can be drawn with no lines, solid lines, or dotted lines between
+items, or can be drawn with "tab" headings.
+
+=item Tree Expander Style
+
+The expander item that can be clicked to show or hide items under a tree
+item can be omitted (note that this will prevent you from changing
+whether those items are shown or hidden!), or can be drawn as squares,
+triangles, or circles.
+
+=item Hex Display
+
+The highlight method in the hex dump display for the selected protocol
+item can be set to use either inverse video, or bold characters.
+
+=item Save Window Position
+
+If this item is selected, the position of the main Ethereal window will
+be saved when Ethereal exits, and used when Ethereal is started again.
+
+=item Save Window Size
+
+If this item is selected, the size of the main Ethereal window will
+be saved when Ethereal exits, and used when Ethereal is started again.
+
+=item File Open Dialog Behavior
+
+This item allows the user to select how Ethereal handles the listing
+of the "File Open" Dialog when opening trace files.  "Remember Last
+Directory" causes Ethereal to automatically position the dialog in the
+directory of the most recently opened file, even between launches of Ethereal.
+"Always Open in Directory" allows the user to define a persistent directory
+that the dialog will always default to.
+
+=item Directory
+
+Allows the user to specify a persistent File Open directory.  Trailing
+slashes or backslashes will automatically be added.
+
+=back
+
+=item Layout Preferences
+
+The I<Layout> page lets you specify the general layout of the main window.
+You can choose from six different layouts and fill the three panes with the 
+contents you like.
+
+=item Column Preferences
+
+The I<Columns> page lets you specify the number, title, and format
+of each column in the packet list.
+
+The I<Column title> entry is used to specify the title of the column
+displayed at the top of the packet list.  The type of data that the column
+displays can be specified using the I<Column format> option menu.
+The row of buttons on the left perform the following actions:
+
+=over 6
 
 =item New
 
-If there is text in the two entry boxes, it creates a new associated list
-item.
-
-=item Change
-
-Modifies the currently selected list item to match what's in the entry
-boxes.
-
-=item Copy
-
-Makes a copy of the currently selected list item.
+Adds a new column to the list.
 
 =item Delete
 
 Deletes the currently selected list item.
 
+=item Up / Down
+
+Moves the selected list item up or down one position.
+
+=back
+
+=item Font Preferences
+
+The I<Font> page lets you select the font to be used for most text.
+
+=item Color Preferences
+
+The I<Colors> page can be used to change the color of the text
+displayed in the TCP stream window and for marked packets. To change a color,
+simply select an attribute from the "Set:" menu and use the color selector to 
+get the desired color.  The new text colors are displayed as a sample text.
+
+=item Capture Preferences
+
+The I<Capture> page lets you specify various parameters for capturing
+live packet data; these are used the first time a capture is started.
+
+The I<Interface:> combo box lets you specify the interface from which to
+capture packet data, or the name of a FIFO from which to get the packet
+data.
+
+The I<Data link type:> option menu lets you, for some interfaces, select
+the data link header you want to see on the packets you capture.  For
+example, in some OSes and with some versions of libpcap, you can choose,
+on an 802.11 interface, whether the packets should appear as Ethernet
+packets (with a fake Ethernet header) or as 802.11 packets.
+
+The I<Limit each packet to ... bytes> check box lets you set the
+snapshot length to use when capturing live data; turn on the check box,
+and then set the number of bytes to use as the snapshot length.
+
+The I<Filter:> text entry lets you set a capture filter expression to be
+used when capturing.
+
+If any of the environment variables SSH_CONNECTION, SSH_CLIENT,
+REMOTEHOST, DISPLAY, or CLIENTNAME are set, Ethereal will create a
+default capture filter that excludes traffic from the hosts and ports
+defined in those variables.
+
+The I<Capture packets in promiscuous mode> check box lets you specify
+whether to put the interface in promiscuous mode when capturing.
+
+The I<Update list of packets in real time> check box lets you specify
+that the display should be updated as packets are seen.
+
+The I<Automatic scrolling in live capture> check box lets you specify
+whether, in an "Update list of packets in real time" capture, the packet
+list pane should automatically scroll to show the most recently captured
+packets.
+
+=item Printing Preferences
+
+The radio buttons at the top of the I<Printing> page allow you choose
+between printing packets with the I<File:Print Packet> menu item as text
+or PostScript, and sending the output directly to a command or saving it
+to a file.  The I<Command:> text entry box, on UNIX-compatible systems,
+is the command to send files to (usually B<lpr>), and the I<File:> entry
+box lets you enter the name of the file you wish to save to. 
+Additionally, you can select the I<File:> button to browse the file
+system for a particular save file.
+
+=item Protocol Preferences
+
+There are also pages for various protocols that Ethereal dissects,
+controlling the way Ethereal handles those protocols.
+
+=back
+
+=item Edit Capture Filter List
+
+=item Edit Display Filter List
+
+=item Capture Filter
+
+=item Display Filter
+
+=item Read Filter
+
+=item Search Filter
+
+The I<Edit Capture Filter List> dialog lets you create, modify, and
+delete capture filters, and the I<Edit Display Filter List> dialog lets
+you create, modify, and delete display filters.
+
+The I<Capture Filter> dialog lets you do all of the editing operations
+listed, and also lets you choose or construct a filter to be used when
+capturing packets.
+
+The I<Display Filter> dialog lets you do all of the editing operations
+listed, and also lets you choose or construct a filter to be used to
+filter the current capture being viewed.
+
+The I<Read Filter> dialog lets you do all of the editing operations
+listed, and also lets you choose or construct a filter to be used to
+as a read filter for a capture file you open.
+
+The I<Search Filter> dialog lets you do all of the editing operations
+listed, and also lets you choose or construct a filter expression to be
+used in a find operation.
+
+In all of those dialogs, the I<Filter name> entry specifies a
+descriptive name for a filter, e.g.  B<Web and DNS traffic>.  The
+I<Filter string> entry is the text that actually describes the filtering
+action to take, as described above.The dialog buttons perform the
+following actions:
+
+=over 6
+
+=item New
+
+If there is text in the two entry boxes, creates a new associated list
+item.
+
+=item Edit
+
+Modifies the currently selected list item to match what's in the entry
+boxes.
+
+=item Delete
+
+Deletes the currently selected list item.
+
+=item Add Expression...
+
+For display filter expressions, pops up a dialog box to allow you to
+construct a filter expression to test a particular field; it offers
+lists of field names, and, when appropriate, lists from which to select
+tests to perform on the field and values with which to compare it.  In
+that dialog box, the OK button will cause the filter expression you
+constructed to be entered into the I<Filter string> entry at the current
+cursor position.
+
 =item OK
 
-Sets the currently selected list item as the active filter.  If  nothing
-is selected, turns filtering off.
+In the I<Capture Filter> dialog, closes the dialog box and makes the
+filter in the I<Filter string> entry the filter in the I<Capture
+Preferences> dialog.  In the I<Display Filter> dialog, closes the dialog
+box and makes the filter in the I<Filter string> entry the current
+display filter, and applies it to the current capture.  In the I<Read
+Filter> dialog, closes the dialog box and makes the filter in the
+I<Filter string> entry the filter in the I<Open Capture File> dialog. 
+In the I<Search Filter> dialog, closes the dialog box and makes the
+filter in the I<Filter string> entry the filter in the I<Find Packet>
+dialog.
+
+=item Apply
+
+Makes the filter in the I<Filter string> entry the current display
+filter, and applies it to the current capture.
 
 =item Save
 
-Saves the current filter list in F<$HOME/.ethereal/filters>.
+Saves the current filter list in F<$HOME/.ethereal/cfilters> on
+UNIX-compatible systems, and F<%APPDATA%\Ethereal\cfilters> (or, if
+%APPDATA% isn't defined,
+F<%USERPROFILE%\Application Data\Ethereal\cfilters>)
+on Windows systems, if the list of filters being edited is the list of
+capture filters, or in F<$HOME/.ethereal/dfilters> on UNIX-compatible
+systems, and F<%APPDATA%\Ethereal\dfilters> (or, if %APPDATA% isn't
+defined, F<%USERPROFILE%\Application Data\Ethereal\dfilters>) on Windows
+systems, if the list of filters being edited is the list of display
+filters.
 
-=item Cancel
+=item Close
 
-Closes the dialog without making any changes.
+Closes the dialog without doing anything with the filter in the I<Filter
+string> entry.
+
+=back
+
+=item The Color Filters Dialog
+
+This dialog displays a list of color filters and allows it to be
+modified.
+
+=over
+
+=item THE FILTER LIST
+
+Single rows may be selected by clicking. Multiple rows may be selected
+by using the ctrl and shift keys in combination with the mouse button.
+
+=item NEW
+
+Adds a new filter at the bottom of the list and opens the Edit Color
+Filter dialog box. You will have to alter the filter expression at
+least before the filter will be accepted. The format of color filter
+expressions is identical to that of display filters. The new filter is
+selected, so it may immediately be moved up and down, deleted or edited.
+To avoid confusion all filters are unselected before the new filter is
+created.
+
+=item EDIT
+
+Opens the Edit Color Filter dialog box for the selected filter. (If this
+button is disabled you may have more than one filter selected, making it
+ambiguous which is to be edited.)
+
+=item DELETE
+
+Deletes the selected color filter(s).
+
+=item EXPORT
+
+Allows you to choose a file in which to save the current list of color
+filters. You may also choose to save only the selected filters. A
+button is provided to save the filters in the global color filters file
+(you must have sufficient permissions to write this file, of course).
+
+=item IMPORT
+
+Allows you to choose a file containing color filters which are then
+added to the bottom of the current list. All the added filters are
+selected, so they may be moved to the correct position in the list as a
+group. To avoid confusion, all filters are unselected before the new
+filters are imported. A button is provided to load the filters from the
+global color filters file.
+
+=item CLEAR
+
+Deletes your personal color filters file, reloads the global
+color filters file, if any, and closes the dialog.
+
+=item UP
+
+Moves the selected filter(s) up the list, making it more likely that
+they will be used to color packets.
+
+=item DOWN
+
+Moves the selected filter(s) down the list, making it less likely that
+they will be used to color packets.
+
+=item OK
+
+Closes the dialog and uses the color filters as they stand.
+
+=item APPLY
+
+Colors the packets according to the current list of color filters, but
+does not close the dialog.
+
+=item SAVE
+
+Saves the current list of color filters in your personal color filters
+file. Unless you do this they will not be used the next time you start
+Ethereal.
+
+=item CLOSE
+
+Closes the dialog without changing the coloration of the packets. Note
+that changes you have made to the current list of color filters are not
+undone.
+
+=back
+
+=item Capture Options
+
+The I<Capture Options> dialog lets you specify various parameters for
+capturing live packet data.
+
+The I<Interface:> field lets you specify the interface from which to
+capture packet data or a command from which to get the packet data via a
+pipe.
+
+The I<Link layer header type:> field lets you specify the interfaces link
+layer header type. This field is usually disabled, as most interface have 
+only one header type.
+
+The I<Capture packets in promiscuous mode> check box lets you specify
+whether the interface should be put into promiscuous mode when
+capturing.
+
+The I<Limit each packet to ... bytes> check box and field lets you
+specify a maximum number of bytes per packet to capture and save; if the
+check box is not checked, the limit will be 65535 bytes.
+
+The I<Capture Filter:> entry lets you specify the capture filter using a
+tcpdump-style filter string as described above.
+
+The I<File:> entry lets you specify the file into which captured packets
+should be saved, as in the I<Printer Options> dialog above.  If not
+specified, the captured packets will be saved in a temporary file; you
+can save those packets to a file with the I<File:Save As> menu item.
+
+The I<Use multiple files> check box lets you specify that the capture
+should be done in "multiple files" mode. This option is disabled, if the 
+I<Update list of packets in real time> option is checked.
+
+The I<Next file every ...  megabyte(s)> check box and fields lets
+you specify that a switch to a next file should be done
+if the specified filesize is reached. You can also select the appriate 
+unit, but beware that the filesize has a maximum of 2 GB.
+The check box is forced to be checked, as "multiple files" mode requires a 
+file size to be specified.
+
+The I<Next file every ... minute(s)> check box and fields lets 
+you specify that the switch to a next file should be done after the specified
+time has elapsed, even if the specified capture size is not reached.
+
+The I<Ring buffer with ... files> field lets you specify the number 
+of files of a ring buffer. This feature will capture into to the first file
+again, after the specified amount of files were used.
+
+The I<Stop capture after ... files> field lets you specify the number 
+of capture files used, until the capture is stopped.
+
+The I<Stop capture after ... packet(s)> check box and field let
+you specify that Ethereal should stop capturing after having captured
+some number of packets; if the check box is not checked, Ethereal will
+not stop capturing at some fixed number of captured packets.
+
+The I<Stop capture after ... megabyte(s)> check box and field lets 
+you specify that Ethereal should stop capturing after the file to which 
+captured packets are being saved grows as large as or larger than some 
+specified number of megabytes. If the check box is not checked, Ethereal 
+will not stop capturing at some capture file size (although the operating 
+system on which Ethereal is running, or the available disk space, may still 
+limit the maximum size of a capture file). This option is disabled, if 
+"multiple files" mode is used, 
+
+The I<Stop capture after ...  second(s)> check box and field let you
+specify that Ethereal should stop capturing after it has been capturing
+for some number of seconds; if the check box is not checked, Ethereal
+will not stop capturing after some fixed time has elapsed.
+
+The I<Update list of packets in real time> check box lets you specify
+whether the display should be updated as packets are captured and, if
+you specify that, the I<Automatic scrolling in live capture> check box
+lets you specify the packet list pane should automatically scroll to
+show the most recently captured packets as new packets arrive.
+
+The I<Enable MAC name resolution>, I<Enable network name resolution> and
+I<Enable transport name resolution> check boxes let you specify whether
+MAC addresses, network addresses, and transport-layer port numbers
+should be translated to names.
+
+=item About
+
+The I<About> dialog lets you view various information about Ethereal.
+
+=item About:Ethereal
+
+The I<Ethereal> page lets you view general information about Ethereal, 
+like the installed version, licensing information and such.
+
+=item About:Authors
+
+The I<Authors> page shows the author and all contributors.
+
+=item About:Folders
+
+The I<Folders> page lets you view the directory names where Ethereal is
+searching it's various configuration and other files.
+
+=item About:Plugins
+
+The I<Plugins> page lets you view the dissector plugin modules
+available on your system.
+
+The I<Plugins List> shows the name and version of each dissector plugin
+module found on your system.  The plugins are searched in the following
+directories: the F<lib/ethereal/plugins/$VERSION> directory under the
+main installation directory (for example,
+F</usr/local/lib/ethereal/plugins/$VERSION>),
+F</usr/lib/ethereal/plugins/$VERSION>,
+F</usr/local/lib/ethereal/plugins/$VERSION>, and
+F<$HOME/.ethereal/plugins> on UNIX-compatible systems, and in the
+F<plugins\$VERSION> directory under the main installation directory (for
+example, F<C:\Program Files\Ethereal\plugins\$VERSION>) and
+F<%APPDATA%\Ethereal\plugins\$VERSION> (or, if %APPDATA% isn't defined,
+F<%USERPROFILE%\Application Data\Ethereal\plugins\$VERSION>) on Windows
+systems; $VERSION is the version number of the plugin interface, which
+is typically the version number of Ethereal.  Note that a dissector
+plugin module may support more than one protocol; there is not
+necessarily a one-to-one correspondence between dissector plugin modules
+and protocols.  Protocols supported by a dissector plugin module are
+enabled and disabled using the I<Edit:Protocols> dialog box, just as
+protocols built into Ethereal are.
+
+=back
+
+=head1 CAPTURE FILTER SYNTAX
+
+See the tcpdump(8) manual page.
+
+=head1 DISPLAY FILTER SYNTAX
+
+For a complete table of protocol and protocol fields that are filterable
+in B<Ethereal> see ethereal-filter(4).
+
+=head1 FILES
+
+The F<ethereal.conf> file, which is installed in the F<etc> directory
+under the main installation directory (for example, F</usr/local/etc>)
+on UNIX-compatible systems, and in the main installation directory (for
+example, F<C:\Program Files\Ethereal>) on Windows systems, and the
+personal preferences file, which is F<$HOME/.ethereal/preferences> on
+UNIX-compatible systems and F<%APPDATA%\Ethereal\preferences> (or, if
+%APPDATA% isn't defined,
+F<%USERPROFILE%\Application Data\Ethereal\preferences>) on
+Windows systems, contain system-wide and personal preference settings,
+respectively.  The file contains preference settings of the form
+I<prefname>B<:>I<value>, one per line, where I<prefname> is the name of
+the preference (which is the same name that would appear in the
+preference file), and I<value> is the value to which it should be set;
+white space is allowed between B<:> and I<value>.  A preference setting
+can be continued on subsequent lines by indenting the continuation lines
+with white space.  A B<#> character starts a comment that runs to the
+end of the line.
+
+The system-wide preference file is read first, if it exists, overriding
+B<Ethereal>'s default values; the personal preferences file is then
+read, if it exists, overriding default values and values read from the
+system-wide preference file.
+
+Note that whenever the preferences are saved by using the I<Save> button
+in the I<Edit:Preferences> dialog box, your personal preferences file
+will be overwritten with the new settings, destroying any comments that
+were in the file.
+
+The disabled protocols file, which is F<$HOME/.ethereal/disabled_protos>
+on UNIX-compatible systems and F<%APPDATA%\Ethereal\disabled_protos>
+(or, if %APPDATA% isn't defined, F<%USERPROFILE%\Application
+Data\Ethereal\disabled_protos>) on Windows systems, contain a list of
+protocols that have been disabled, so that their dissectors are never
+called.  The file contains protocol names, one per line, where the
+protocol name is the same name that would be used in a display filter
+for the protocol.  A B<#> character starts a comment that runs to the
+end of the line.
+
+Note that whenever the disabled protocols list is saved by using the
+I<Save> button in the I<Edit:Protocols> dialog box, your disabled
+protocols file will be overwritten with the new settings, destroying any
+comments that were in the file.
+
+The F<ethers> file, which is found in the F</etc> directory on
+UNIX-compatible systems, and in the main installation directory (for
+example, F<C:\Program Files\Ethereal>) on Windows systems, is consulted
+to correlate 6-byte hardware addresses to names.  If an address is not
+found in the F<ethers> file, the F<$HOME/.ethereal/ethers> file on
+UNIX-compatible systems, and the F<%APPDATA%\Ethereal\ethers> file (or, if
+%APPDATA% isn't defined, the
+F<%USERPROFILE%\Application Data\Ethereal\ethers> file) on Windows
+systems is consulted next.  Each line contains one hardware
+address and name, separated by whitespace.  The digits of the hardware
+address are separated by either a colon (:), a dash (-), or a period
+(.).  The following three lines are valid lines of an ethers file:
+
+  ff:ff:ff:ff:ff:ff          Broadcast
+  c0-00-ff-ff-ff-ff          TR_broadcast
+  00.00.00.00.00.00          Zero_broadcast
+
+The F<manuf> file, which is installed in the F<etc> directory under the
+main installation directory (for example, F</usr/local/etc>) on
+UNIX-compatible systems, and in the main installation directory (for
+example, F<C:\Program Files\Ethereal>) on Windows systems, matches the
+3-byte vendor portion of a 6-byte hardware address with the
+manufacturer's name; it can also contain well-known MAC addresses and
+address ranges specified with a netmask.  The format of the file is the
+same as the F<ethers> file, except that entries of the form
+
+  00:00:0C      Cisco
+
+can be provided, with the 3-byte OUI and the name for a vendor, and
+entries of the form
+
+  00-00-0C-07-AC/40     All-HSRP-routers
+
+can be specified, with a MAC address and a mask indicating how many bits
+of the address must match.  Trailing zero bytes can be omitted from
+address ranges.  That entry, for example, will match addresses from
+00-00-0C-07-AC-00 through 00-00-0C-07-AC-FF.  The mask need not be a
+multiple of 8.
+
+The F<ipxnets> file, which is found in the F</etc> directory on
+UNIX-compatible systems, and in the main installation directory (for
+example, F<C:\Program Files\Ethereal>) on Windows systems, correlates
+4-byte IPX network numbers to names.  If a network number is not found
+in the F<ipxnets> file, the F<$HOME/.ethereal/ipxnets> file on
+UNIX-compatible systems, and the F<%APPDATA%\Ethereal\ipxnets> file (or,
+if %APPDATA% isn't defined, the
+F<%USERPROFILE%\Application Data\Ethereal\ipxnets> file)
+on Windows systems, is consulted next.  The format is the same as the
+F<ethers> file, except that each address if four bytes instead of six. 
+Additionally, the address can be represented a single hexadecimal
+number, as is more common in the IPX world, rather than four hex octets. 
+For example, these four lines are valid lines of an ipxnets file.
+
+  C0.A8.2C.00              HR
+  c0-a8-1c-00              CEO
+  00:00:BE:EF              IT_Server1
+  110f                     FileServer3
+
+The global color filters file, F<colorfilters>, which is installed in
+the F<etc> directory under the main installation directory (for example,
+F</usr/local/etc>) on UNIX-compatible systems, and in the main
+installation directory (for example, F<C:\Program Files\Ethereal>) on
+Windows systems, and the personal color filters file, which is
+F<$HOME/.ethereal/colorfilters> on UNIX-compatible systems and
+F<%APPDATA%\Ethereal\colorfilters> (or, if %APPDATA% isn't defined,
+F<%USERPROFILE%\Application Data\Ethereal\color filters>) on Windows
+systems, contain system-wide and personal color filters,
+respectively.
 
 =head1 SEE ALSO
 
-L<tcpdump(1)>, L<pcap(3)>
+I<ethereal-filter(4)> I<tethereal(1)>, I<editcap(1)>, I<tcpdump(8)>, I<pcap(3)>
 
 =head1 NOTES
 
-The latest version of B<ethereal> can be found at
-B<http://ethereal.zing.org>.
+The latest version of B<Ethereal> can be found at
+B<http://www.ethereal.com>.
 
 =head1 AUTHORS
 
-  Original Author
-  -------- ------
-  Gerald Combs  <gerald@zing.org>
 
-
-  Contributors
-  ------------
-  Gilbert Ramirez Jr.  <gram@verdict.uthscsa.edu>
-  Hannes R. Boehm      <hannes@boehm.org>
-  Mike Hall            <mlh@io.com>
-  cpg                  <cpg@rocketmail.com>
-
-
-Theo de Raadt <deraadt@cvs.openbsd.org> was kind enough to give his
-permission to use his version of snprintf.c.
-
-Dan Lasley <dlasley@promus.com> gave permission for his dumpit() hex-dump
-routine to be used.

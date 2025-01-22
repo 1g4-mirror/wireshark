@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<dialog
+  id="coloring-rules-dialog"
+  title="Ethereal: Coloring Rules"
+  >
+
+  <vbox>
+    <hbox class="bottom_spacing">
+      <vbox>
+        <groupbox flex="1" class="left_spacing">
+          <caption>Edit</caption>
+	  <button
+	    label="New"
+	    id="coloring-rules.edit.new"
+	    oncommand="coloring_rules_new"
+            class="bottom_spacing"
+	  />
+	  <spacer flex="1" />
+	  <button
+	    label="Edit..."
+	    id="coloring-rules.edit.edit"
+	    oncommand="coloring_rules_edit"
+            class="bottom_spacing"
+	  />
+	  <spacer flex="1" />
+	  <button 
+	    label="Delete"
+	    id="coloring-rules.edit.delete"
+	    oncommand="coloring_rules_delete"
+	  />
+	</groupbox>
+        <groupbox flex="1">
+          <caption>Manage</caption>
+	  <button 
+	    label="Export..."
+	    id="coloring-rules.manage.export"
+	    oncommand="coloring_rules_export"
+            class="bottom_spacing"
+	  />
+	  <spacer flex="1" />
+	  <button 
+	    label="Import..."
+	    id="coloring-rules.manage.import"
+	    oncommand="coloring_rules_import"
+            class="bottom_spacing"
+	  />
+	  <spacer flex="1" />
+	  <button 
+	    label="Clear"
+	    id="coloring-rules.manage.clear"
+	    oncommand="coloring_rules_clear"
+	  />
+	</groupbox>
+      </vbox>
+      <groupbox flex="1" class="left_spacing">
+	<caption>Filter</caption>
+	<description>
+	  [ List is processed in order until a match is found ]
+	</description>
+	<listbox
+	  id="coloring-rules.filter.filterlist"
+	  flex="1"
+	  onselect="coloring_rules_list_select"
+	>
+	  <listhead>
+	    <listheader label="Name" />
+	    <listheader label="String" />
+	  </listhead>
+	</listbox>
+      </groupbox>
+      <groupbox class="left_spacing">
+	<caption>Order</caption>
+	<spacer flex="1" />
+	<button 
+	  label="Up"
+	  id="coloring-rules.order.up"
+	  oncommand="coloring_rules_up"
+	/>
+	<spacer flex="2" />
+	<button 
+	  label="Down"
+	  id="coloring-rules.order.down"
+	  oncommand="coloring_rules_down"
+	/>
+	<spacer flex="1" />
+      </groupbox>
+    </hbox>
+    <hbox>
+      <spacer flex="1" />
+      <button
+        id="coloring-rules.ok"
+        label="OK"
+        default="True"
+        oncommand="coloring_rules_ok"
+       />
+      <button
+        id="coloring-rules.apply"
+        label="Apply"
+        oncommand="coloring_rules_apply"
+        class="left_spacing"
+       />
+      <button
+        id="coloring-rules.save"
+        label="Save"
+        oncommand="coloring_rules_save"
+        class="left_spacing"
+       />
+      <button
+        id="coloring-rules.close"
+        label="Close"
+        oncommand="coloring_rules_close"
+        class="left_spacing"
+       />
+    </hbox>
+  </vbox>
+</dialog>

@@ -1,0 +1,130 @@
+# Makefile.common
+#     Contains the stuff from Makefile.am and Makefile.nmake that is
+#     a) common to both files and
+#     b) portable between both files
+#
+# $Id$
+#
+# Ethereal - Network traffic analyzer
+# By Gerald Combs <gerald@ethereal.com>
+# Copyright 1998 Gerald Combs
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+
+#
+# ethclist.obj is not in here because it is currently gtk+-1.2-only
+# code, while the DLL for GTK+ on Windows is gtk+-1.3 or gtk+-2.x.
+#
+ETHEREAL_GTK_SRC = \
+	about_dlg.c	\
+	capture_dlg.c	\
+	capture_if_dlg.c	\
+	capture_info_dlg.c	\
+	capture_prefs.c	\
+	cfilter_combo_utils.c	\
+	color_dlg.c	\
+	color_utils.c	\
+	colors.c	\
+	column_prefs.c	\
+	conversations_table.c	\
+	decode_as_dlg.c	\
+	decode_as_dcerpc.c	\
+	dfilter_expr_dlg.c	\
+	dlg_utils.c	\
+	ethereal-tap-register.c	\
+	file_dlg.c	\
+	filter_dlg.c	\
+	find_dlg.c	\
+	follow_dlg.c	\
+	font_utils.c	\
+	goto_dlg.c	\
+	gtk_stat_util.c	\
+	gui_prefs.c	\
+	h323_analysis.c	\
+	h323_conversations.c	\
+	help_dlg.c	\
+	hostlist_table.c \
+	layout_prefs.c	\
+	main.c 	\
+	menu.c 	\
+	nameres_prefs.c	\
+	packet_list.c	\
+	packet_win.c	\
+	plugins_dlg.c	\
+	prefs_dlg.c	\
+	print_dlg.c	\
+	print_prefs.c	\
+	progress_dlg.c	\
+	proto_dlg.c	\
+	proto_draw.c	\
+	proto_hier_stats_dlg.c	\
+	range_utils.c \
+	rtp_stream.c	\
+	service_response_time_table.c	\
+	simple_dialog.c	\
+	stream_prefs.c	\
+	summary_dlg.c	\
+	supported_protos_dlg.c	\
+	tap_dfilter_dlg.c	\
+	text_page.c	\
+	toolbar.c	\
+	ui_util.c \
+	webbrowser.c
+
+
+ETHEREAL_TAP_SRC = \
+	ansi_a_stat.c	\
+	ansi_map_stat.c	\
+	bootp_stat.c	\
+	conversations_eth.c	\
+	conversations_fc.c	\
+	conversations_fddi.c	\
+	conversations_ip.c	\
+	conversations_ipx.c	\
+	conversations_tcpip.c	\
+	conversations_tr.c	\
+	conversations_udpip.c	\
+	dcerpc_stat.c	\
+	fc_stat.c	\
+	gsm_a_stat.c	\
+	gsm_map_stat.c	\
+	gsm_map_summary.c	\
+	h225_counter.c	\
+	h225_ras_srt.c	\
+	h323_conversations_dlg.c	\
+	hostlist_eth.c \
+	hostlist_fc.c \
+	hostlist_fddi.c \
+	hostlist_ip.c \
+	hostlist_ipx.c \
+	hostlist_tcpip.c \
+	hostlist_tr.c \
+	hostlist_udpip.c \
+	http_stat.c	\
+	io_stat.c	\
+	isup_stat.c	\
+	ldap_stat.c	\
+	mgcp_stat.c	\
+	mtp3_stat.c	\
+	mtp3_summary.c	\
+	rpc_progs.c	\
+	rpc_stat.c	\
+	rtp_analysis.c	\
+	rtp_stream_dlg.c	\
+	sip_stat.c	\
+	smb_stat.c	\
+	tcp_graph.c	\
+	wsp_stat.c

@@ -1,182 +1,211 @@
-Basic Installation
-==================
+Installation
+============
 
-   These are generic installation instructions.
+These are installation instructions for Unix and Unix-like systems
+that can run the "configure" script in this same directory. These
+are not the installation instructions for Windows systems; see
+README.win32 for those instructions.
 
-   The `configure' shell script attempts to guess correct values for
-various system-dependent variables used during compilation.  It uses
-those values to create a `Makefile' in each directory of the package.
-It may also create one or more `.h' files containing system-dependent
-definitions.  Finally, it creates a shell script `config.status' that
-you can run in the future to recreate the current configuration, a file
-`config.cache' that saves the results of its tests to speed up
-reconfiguring, and a file `config.log' containing compiler output
-(useful mainly for debugging `configure').
+0. This is alpha software.  Beware.
 
-   If you need to do unusual things to compile the package, please try
-to figure out how `configure' could check whether to do them, and mail
-diffs or instructions to the address given in the `README' so they can
-be considered for the next release.  If at some point `config.cache'
-contains results you don't want to keep, you may remove or edit it.
+1. If you wish to build Ethereal, make sure you have GTK+ and GLIB
+    installed. Try running 'gtk-config --version' and
+    'glib-config --version' to see if you have them installed.
+    Ethereal needs versions 1.2.0 or above of both these packages.
+    If you need to install or re-install GTK+ or GLIB, you can find
+    the packages at:
 
-   The file `configure.in' is used to create `configure' by a program
-called `autoconf'.  You only need `configure.in' if you want to change
-it or regenerate `configure' using a newer version of `autoconf'.
+        http://www.gtk.org
 
-The simplest way to compile this package is:
+    If you installed GTK+ from a binary package, you may have to
+    install a "development" package; there may be separate "user's"
+    and "developer's" packages, with the former not including
+    header files and the like.  For example, Red Hat users will
+    need to install a "gtk-devel" .rpm.
 
-  1. `cd' to the directory containing the package's source code and type
-     `./configure' to configure the package for your system.  If you're
-     using `csh' on an old version of System V, you might need to type
-     `sh ./configure' instead to prevent `csh' from trying to execute
-     `configure' itself.
+    Note also that Ethereal configuration defaults to using GTK+ and
+    GLib 2.x; you need to configure with --disable-gtk2 to use GTK+
+    1.2[.x].
 
-     Running `configure' takes awhile.  While running, it prints some
-     messages telling which features it is checking for.
+2. If you wish to build Tethereal, the line-mode version of Ethereal,
+    make sure you have GLIB installed.  See note #1 above for instructions
+    on checking if you have GLIB installed. You can download GLIB from
+    the same site as GTK.
 
-  2. Type `make' to compile the package.
+3. If you want to capture packets, make sure you have libpcap
+    installed.  The latest "official" version can be found at
 
-  3. Optionally, type `make check' to run any self-tests that come with
-     the package.
+    http://www.tcpdump.org .
 
-  4. Type `make install' to install the programs and any data files and
-     documentation.
+    If you've downloaded the 0.5.2 version, make sure you install
+    the headers ('make install-incl') when you install the library.
+    The CVS snapshots will install the headers if you do 'make
+    install', and have no 'install-incl' target.
 
-  5. You can remove the program binaries and object files from the
-     source code directory by typing `make clean'.  To also remove the
-     files that `configure' created (so you can compile the package for
-     a different kind of computer), type `make distclean'.  There is
-     also a `make maintainer-clean' target, but that is intended mainly
-     for the package's developers.  If you use it, you may have to get
-     all sorts of other programs in order to regenerate files that came
-     with the distribution.
+    If you installed libpcap from a binary package, you may have to
+    install a "development" package; for example, there's
+    apparently a "libpcap0" Debian package, but it just includes a
+    shared library, a copyright notice, changelog files, and a
+    README file - you also need to install a "libpcap-dev" package
+    to get header files, a non-shared library, and the man page.
+    Similarly, Red Hat 5.x users will need to install a "libpcap-devel"
+    .rpm to go along with the "libpcap" .rpm.
 
-Compilers and Options
-=====================
+4. Run './configure' in the Ethereal distribution directory.
+    Running './configure --help' displays a list of options.
+    The file 'INSTALL.configure' contains general instructions for
+    using 'configure' and 'make'. Ethereal has some non-generic configure 
+    options:
 
-   Some systems require unusual options for compilation or linking that
-the `configure' script does not know about.  You can give `configure'
-initial values for variables by setting them in the environment.  Using
-a Bourne-compatible shell, you can do that on the command line like
-this:
-     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+    --sysconfdir=DIR
+        Ethereal installs a support file (manuf) in ${PREFIX}/etc by
+        default, where ${PREFIX} comes from --prefix=DIR. If you do not
+        specify any --prefix option, ${PREFIX} is "/usr/local".
+        You can change the location of the manuf file with the --sysconfdir
+        option.
 
-Or on systems that have the `env' program, you can do it like this:
-     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+    --disable-usr-local
+        By default 'configure' will look in /usr/local/{include,lib} for
+        additional header files and libraries. Using this switch keeps
+        'configure' from looking there
 
-Compiling For Multiple Architectures
-====================================
+    --disable-ethereal
+        By default, if 'configure' finds the GTK+ libraries, the Makefile
+        build Ethereal, the GUI packet analyzer. You can disable the
+        build of the GUI version of Ethereal with this switch.
 
-   You can compile the package for more than one kind of computer at the
-same time, by placing the object files for each architecture in their
-own directory.  To do this, you must use a version of `make' that
-supports the `VPATH' variable, such as GNU `make'.  `cd' to the
-directory where you want the object files and executables to go and run
-the `configure' script.  `configure' automatically checks for the
-source code in the directory that `configure' is in and in `..'.
+    --disable-gtk2
+        Build Glib/Gtk+ 1.2[.x]-based ethereal.
 
-   If you have to use a `make' that does not supports the `VPATH'
-variable, you have to compile the package for one architecture at a time
-in the source code directory.  After you have installed the package for
-one architecture, use `make distclean' before reconfiguring for another
-architecture.
+    --disable-tethereal
+        By default the line-mode packet analyzer, Tethereal, is built.
+        Use this switch to avoid building it.
 
-Installation Names
-==================
+    --disable-editcap
+        By default the capture-file editing program is built.
+        Use this switch to avoid building it.
 
-   By default, `make install' will install the package's files in
-`/usr/local/bin', `/usr/local/man', etc.  You can specify an
-installation prefix other than `/usr/local' by giving `configure' the
-option `--prefix=PATH'.
+    --disable-mergecap
+        By default the capture-file merging program is built.
+        Use this switch to avoid building it.
 
-   You can specify separate installation prefixes for
-architecture-specific files and architecture-independent files.  If you
-give `configure' the option `--exec-prefix=PATH', the package will use
-PATH as the prefix for installing programs and libraries.
-Documentation and other data files will still use the regular prefix.
+    --disable-text2pcap
+        By default the hex-dump-to-capture file conversion program
+        is built. Use this switch to avoid building it.
 
-   In addition, if you use an unusual directory layout you can give
-options like `--bindir=PATH' to specify different values for particular
-kinds of files.  Run `configure --help' for a list of the directories
-you can set and what kinds of files go in them.
+    --disable-idl2eth
+        By default the IDL-to-ethereal-dissector-source-code converter
+        is built. Use this switch to avoid building it.
 
-   If the package supports it, you can cause programs to be installed
-with an extra prefix or suffix on their names by giving `configure' the
-option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+    --enable-dftest
+        By default the display-filter-compiler test program is not built.
+        Use this switch to build it.
 
-Optional Features
-=================
+    --enable-randpkt
+        By default the program which creates random packet-capture files
+        is not built. Use this switch to build it.
 
-   Some packages pay attention to `--enable-FEATURE' options to
-`configure', where FEATURE indicates an optional part of the package.
-They may also pay attention to `--with-PACKAGE' options, where PACKAGE
-is something like `gnu-as' or `x' (for the X Window System).  The
-`README' should mention any `--enable-' and `--with-' options that the
-package recognizes.
+    --without-pcap
+        If you choose to build a packet analyzer that can analyze
+        capture files but cannot capture packets on its own, but you
+        *do* have libpcap installed, or if you are trying to build
+        Ethereal on a system that doesn't have libpcap installed (in
+        which case you have no choice but to build a version that can
+        analyze capture files but cannot capture packets on its own),
+        use --without-pcap to avoid using libpcap.
 
-   For packages that use the X Window System, `configure' can usually
-find the X include and library files automatically, but if it doesn't,
-you can use the `configure' options `--x-includes=DIR' and
-`--x-libraries=DIR' to specify their locations.
+    --with-pcap=DIR
+        Use this to tell Ethereal where you have libpcap installed, if
+        it is installed in a non-standard location.
 
-Specifying the System Type
-==========================
+    --without-zlib
+        By default, if 'configure' finds zlib (a.k.a, libz), the
+        wiretap library will be built so that it can read compressed
+        capture files. If you have zlib but do not wish to build
+        it into the wiretap library, used by Ethereal, Tethereal, and
+        the capture-file utilities that come in this package, use
+        this switch.
 
-   There may be some features `configure' can not figure out
-automatically, but needs to determine by the type of host the package
-will run on.  Usually `configure' can figure that out, but if it prints
-a message saying it can not guess the host type, give it the
-`--host=TYPE' option.  TYPE can either be a short name for the system
-type, such as `sun4', or a canonical name with three fields:
-     CPU-COMPANY-SYSTEM
+    --with-zlib=DIR
+        Use this to tell Ethereal where you have zlib installed, if it
+        is installed in a non-standard location.
 
-See the file `config.sub' for the possible values of each field.  If
-`config.sub' isn't included in this package, then this package doesn't
-need to know the host type.
+    --disable-ipv6
+        If 'configure' finds support for IPv6 name resolution on
+        your system, the packet analyzers will make use of it.
+        To avoid using IPv6 name resolution if you have the support for it,
+        use this switch.
 
-   If you are building compiler tools for cross-compiling, you can also
-use the `--target=TYPE' option to select the type of system they will
-produce code for and the `--build=TYPE' option to select the type of
-system on which you are compiling the package.
+    --enable-setuid-install
+        Use this switch to install the packet analyzers as setuid.
+        Installating Ethereal and Tethereal as setuid 'root' is
+        dangerous. Repeat: IT'S DANGEROUS. Don't do it.
 
-Sharing Defaults
-================
+    --with-ssl=DIR
+        If your SNMP library needs the SSL library, and your
+        SSL library is installed in a non-standard location,
+        you can specify where your SSL library is with this switch.
 
-   If you want to set default values for `configure' scripts to share,
-you can create a site shell script called `config.site' that gives
-default values for variables like `CC', `cache_file', and `prefix'.
-`configure' looks for `PREFIX/share/config.site' if it exists, then
-`PREFIX/etc/config.site' if it exists.  Or, you can set the
-`CONFIG_SITE' environment variable to the location of the site script.
-A warning: not all `configure' scripts look for a site script.
+    --without-net-snmp
+        If 'configure' finds a supported version of the NET SNMP library
+        on your system,  the SNMP dissector will be enhanced to use
+        routines from that SNMP library. Use this switch to avoid
+        using the NET SNMP library even if you have it installed.
 
-Operation Controls
-==================
+    --with-net-snmp=PATH
+        Tell the 'configure' script where your net-snmp-config shell script 
+        that comes with the net-snmp package is located, if not in a standard 
+        location.
 
-   `configure' recognizes the following options to control how it
-operates.
+    --without-ucd-snmp
+        If 'configure' finds a supported version of the UCD SNMP library
+        on your system,  the SNMP dissector will be enhanced to use
+        routines from that SNMP library. Use this switch to avoid
+        using the UCD SNMP library even if you have it installed.
 
-`--cache-file=FILE'
-     Use and save the results of the tests in FILE instead of
-     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
-     debugging `configure'.
+    --with-ucd-snmp=DIR
+        Tell the 'configure' script where your UCD SNMP library
+        is located, if not in a standard location.
 
-`--help'
-     Print a summary of the options to `configure', and exit.
+    --without-plugins
+        By default, if your system can support run-time loadable modules,
+        the packet analyzers are build with support for plugins.
+        Use this switcht to build packet analyzers without plugin support.
 
-`--quiet'
-`--silent'
-`-q'
-     Do not print messages saying which checks are being made.  To
-     suppress all normal output, redirect it to `/dev/null' (any error
-     messages will still be shown).
+    --with-plugins=DIR
+        By default, plugins are installed in
+        ${LIBDIR}/ethereal/plugins/${VERSION}
 
-`--srcdir=DIR'
-     Look for the package's source code in directory DIR.  Usually
-     `configure' can determine that directory automatically.
+        ${LIBDIR} can be set with --libdir, or defaults to ${EPREFIX/lib}
+        ${EPREFIX} can be set with --exec-prefix, or defaults to ${PREFIX}
+        ${VERSION} is the Etherael version.
 
-`--version'
-     Print the version of Autoconf used to generate the `configure'
-     script, and exit.
+        Use this switch to change the location where plugins
+        are installed.
 
-`configure' also accepts some other, not widely useful, options.
+5. After running './configure', you will see a summary of some
+    of the options you chose. Ensure that the summary reflects
+    what you want. If it doesn't, re-run './configure' with new options.
+
+6. Run 'make'.  Hopefully, you won't run into any problems.
+
+7. Run './ethereal' or './tethereal', and make sure things are working.
+    You must have root privileges in order to capture live data.
+
+8. Run 'make install'.  If you wish to install the man page, run
+    'make install-man'.  If you're running a system that supports
+    the Apt, RPM, or System V Release 4 packaging systems, you can
+    run one of
+
+    make debian-package	# Builds a binary package using dpkg
+    make rpm-package	# Builds a binary package using rpm
+    make srpm-package	# Builds a source package using rpm
+    make svr4-package	# Builds a source package using pkgmk
+    make solaris-package	# Same as "make svr4-package"
+
+    to make an installable package for your system.
+
+If you have trouble with the build or installation process, you can
+find assistance on the ethereal-users and ethereal-dev mailing lists.
+See http://www.ethereal.com/lists/ for details.
+

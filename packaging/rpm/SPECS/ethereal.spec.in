@@ -1,0 +1,70 @@
+# Note that this is NOT a relocatable package
+%define ver      @VERSION@
+%define rel      1
+%define prefix   /usr
+
+Summary:	Network traffic analyzer
+Name:		ethereal
+Version:	%ver
+Release:	%rel
+Copyright:	GPL
+Group:		Networking/Utilities
+Source:		ethereal-%{PACKAGE_VERSION}.tar.gz
+URL:		http://www.ethereal.com/
+BuildRoot:	/tmp/ethereal-%{PACKAGE_VERSION}-root
+Packager:	FastJack <fastjack@i-s-o.net>
+Requires:	gtk2
+Requires:	libpcap
+
+%description
+Ethereal is a network traffic analyzer for Unix-ish operating systems.
+
+%prep
+%setup
+CFLAGS="$RPM_OPT_FLAGS" ./configure --prefix=%prefix
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make DESTDIR=$RPM_BUILD_ROOT install
+mkdir -p $RPM_BUILD_ROOT%prefix/X11R6/bin $RPM_BUILD_ROOT%prefix/X11R6/man/man1
+mv $RPM_BUILD_ROOT%prefix/bin/ethereal $RPM_BUILD_ROOT%prefix/X11R6/bin/ethereal
+mv $RPM_BUILD_ROOT%prefix/man/man1/ethereal.1* $RPM_BUILD_ROOT%prefix/X11R6/man/man1/
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-, root, root)
+%doc AUTHORS COPYING ChangeLog FAQ INSTALL NEWS README*
+%prefix/X11R6/bin/*
+%prefix/X11R6/man/*/*
+%prefix/bin/*
+%prefix/lib/*
+%prefix/share/ethereal/*
+%prefix/share/ethereal/*/*
+%prefix/man/*/*
+
+%changelog
+* Tue Jul 20 2004 Joerg Mayer
+- Redo install and files section to actually work with normal bulids
+
+* Sat Feb 07 2004 Joerg Mayer
+- in case there are shared libs: include them
+
+* Tue Aug 24 1999 Gilbert Ramirez
+- changed to ethereal.spec.in so that 'configure' can update
+  the version automatically
+
+* Tue Aug 03 1999 Gilbert Ramirez <gram@xiexie.org>
+- updated to 0.7.0 and changed gtk+ requirement
+
+* Sun Jan 01 1999 Gerald Combs <gerald@zing.org>
+- updated to 0.5.1
+
+* Fri Nov 20 1998 FastJack <fastjack@i-s-o.net>
+- updated to 0.5.0
+
+* Sun Nov 15 1998 FastJack <fastjack@i-s-o.net>
+- created .spec file
+

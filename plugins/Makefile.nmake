@@ -1,0 +1,203 @@
+#
+# $Id$
+#
+
+include ..\config.nmake
+
+############### no need to modify below this line #########
+
+CFLAGS=/DHAVE_CONFIG_H /I.. /I../wiretap /I. $(GLIB_CFLAGS) \
+	/I$(PCAP_DIR)\include -D_U_="" $(LOCAL_CFLAGS)
+
+OBJECTS=plugin_api.obj 
+
+all: $(OBJECTS) acn artnet asn1 ciscosm docsis enttec giop gryphon irda lwres megaco mgcp opsi pcli rdm rlm rtnet rudp v5ua
+
+Xplugin_api.c: plugin_gen.py plugin_api_list.c
+	@echo **** Plugin api may be out of date, please generate new files:
+	@echo **** nmake -f Makefile.nmake xyzzy
+	@echo.
+
+plugin_api.obj: plugin_api.c Xplugin_api.c
+
+xyzzy: plugin_gen.py plugin_api_list.c
+	gcc -aux-info xyzzy -DHAVE_CONFIG_H $(GCC_GLIB_CFLAGS) -I.. -c plugin_api_list.c
+	$(PYTHON) plugin_gen.py xyzzy
+
+acn:: 
+	cd acn
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+artnet:: 
+	cd artnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+asn1:: 
+	cd asn1
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+ciscosm:: 
+	cd ciscosm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+docsis::
+	cd docsis
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd .. 
+
+enttec::
+	cd enttec
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd .. 
+
+giop::
+	cd giop
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd .. 
+
+gryphon::
+	cd gryphon
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+irda::
+	cd irda
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+lwres::
+	cd lwres
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+megaco::
+	cd megaco
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd .. 
+
+mgcp::
+	cd mgcp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd .. 
+opsi::
+	cd opsi
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+pcli:: 
+	cd pcli
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+rdm:: 
+	cd rdm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+rlm:: 
+	cd rlm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+rtnet:: 
+	cd rtnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+rudp:: 
+	cd rudp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+v5ua:: 
+	cd v5ua
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+clean:
+	rm -f plugin_api.obj $(PDB_FILE)
+	cd acn
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../artnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../asn1
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../ciscosm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../docsis
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../enttec
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../giop
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../gryphon
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../irda
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../lwres
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../megaco
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../mgcp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../opsi
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../pcli
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../rdm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../rlm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../rtnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../rudp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ../v5ua
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ..
+
+distclean: clean
+	cd acn
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../artnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../asn1
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../ciscosm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../docsis
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../enttec
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../giop
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../gryphon
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../irda
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../lwres
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../megaco
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../mgcp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../opsi
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../pcli
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../rdm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../rlm
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../rtnet
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../rudp
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ../v5ua
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ..
+

@@ -1,0 +1,221 @@
+# Makefile.common
+#     Contains the stuff from Makefile.am and Makefile.nmake that is
+#     a) common to both files and
+#     b) portable between both files
+#
+# $Id$
+#
+# Ethereal - Network traffic analyzer
+# By Gerald Combs <gerald@ethereal.com>
+# Copyright 1998 Gerald Combs
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+# Header files for dissector helpers
+# XXX - these should be moved to epan/dissectors
+DISSECTOR_SUPPORT_INCLUDES =	\
+	aftypes.h	\
+	arcnet_pids.h	\
+	asn1.h	\
+	bridged_pids.h	\
+	chdlctypes.h	\
+	etypes.h	\
+	follow.h	\
+	format-oid.h	\
+	greproto.h	\
+	h225-persistentdata.h	\
+	iax2_codec_type.h	\
+	ip_opts.h	\
+	isprint.h	\
+	lapd_sapi.h	\
+	llcsaps.h	\
+	nlpid.h	\
+	oui.h	\
+	ppptypes.h	\
+	ptvcursor.h	\
+	reassemble.h	\
+	rpc_defrag.h	\
+	rtp_pt.h	\
+	sctpppids.h	\
+	smb.h	\
+	x264_prt_id.h	\
+	xmlstub.h
+
+# "BUILT_SOURCES" are built before any "make all" or "make check" targets.
+BUILT_SOURCES =		\
+	svnversion.h \
+	ps.c
+
+# sources common for ethereal and tethereal
+ETHEREAL_COMMON_SRC =	\
+	$(PLATFORM_SRC) \
+	capture_stop_conditions.c	\
+	cfile.c	\
+	clopts_common.c	\
+	conditions.c	\
+	disabled_protos.c	\
+	packet-range.c	\
+	pcap-util.c	\
+	print.c	\
+	ps.c	\
+	ringbuffer.c	\
+	timestats.c	\
+	util.c	\
+	version_info.c
+
+# corresponding headers
+ETHEREAL_COMMON_INCLUDES =	\
+	$(DISSECTOR_SUPPORT_INCLUDES)	\
+	svnversion.h		\
+	capture_stop_conditions.h	\
+	cfile.h	\
+	clopts_common.h	\
+	color.h	\
+	conditions.h	\
+	disabled_protos.h	\
+	file.h	\
+	packet-range.h	\
+	pcap-util.h	\
+	pcap-util-int.h	\
+	print.h	\
+	ps.h	\
+	register.h	\
+	ringbuffer.h	\
+	timestats.h	\
+	util.h	\
+	version_info.h
+
+# sources for Tethereal taps
+TETHEREAL_TAP_SRC =	\
+	tap-ansi_astat.c	\
+	tap-bootpstat.c	\
+	tap-dcerpcstat.c	\
+	tap-gsm_astat.c	\
+	tap-h225counter.c	\
+	tap-h225rassrt.c	\
+	tap-httpstat.c	\
+	tap-iostat.c	\
+	tap-iousers.c	\
+	tap-mgcpstat.c	\
+	tap-protocolinfo.c	\
+	tap-protohierstat.c	\
+	tap-rpcstat.c	\
+	tap-rpcprogs.c	\
+	tap-sipstat.c \
+	tap-smbsids.c	\
+	tap-smbstat.c	\
+	tap-wspstat.c
+
+# helpers alraedy available on some platforms (and on others not)
+EXTRA_ethereal_SOURCES =	\
+	snprintf.c	\
+	strerror.c	\
+	strcasecmp.c	\
+	strncasecmp.c	\
+	mkstemp.c	\
+	strptime.c
+
+# corresponding headers
+EXTRA_ethereal_INCLUDES =	\
+	snprintf.h	\
+	snprintf-imp.h	\
+	strerror.h	\
+	mkstemp.h	\
+	strptime.h
+
+# ethereal specifics
+ethereal_SOURCES =	\
+	$(ETHEREAL_COMMON_SRC)	\
+	alert_box.c	\
+	capture.c	\
+	capture_combo_utils.c	\
+	color_filters.c	\
+	file.c	\
+	filters.c	\
+	g711.c \
+	merge.c	\
+	prefs-recent.c	\
+	proto_hier_stats.c	\
+	summary.c
+
+# corresponding headers
+ethereal_INCLUDES =	\
+	alert_box.h	\
+	capture.h	\
+	capture_combo_utils.h	\
+	color_filters.h	\
+	filters.h	\
+	g711.h	\
+	globals.h	\
+	menu.h	\
+	merge.h	\
+	progress_dlg.h	\
+	proto_hier_stats.h	\
+	simple_dialog.h	\
+	statusbar.h	\
+	summary.h	\
+	tap_dfilter_dlg.h	\
+	ui_util.h
+
+# tethereal specifics
+tethereal_SOURCES =	\
+	$(ETHEREAL_COMMON_SRC)	\
+	$(TETHEREAL_TAP_SRC)	\
+	tethereal-tap-register.c	\
+	tethereal.c
+
+# wethereal specifics
+wethereal_SOURCES =	\
+	$(ETHEREAL_COMMON_SRC) \
+	alert_box.c	\
+	capture.c	\
+	capture_combo_utils.c	\
+	color_filters.c	\
+	file.c		\
+	filters.c	\
+	merge.c		\
+	prefs-recent.c
+
+# text2pcap specifics
+text2pcap_SOURCES = \
+	text2pcap.c \
+	text2pcap-scanner.l
+
+# mergecap specifics
+mergecap_SOURCES = \
+	mergecap.c \
+	merge.c \
+	svnversion.h
+
+# editcap specifics
+editcap_SOURCES = \
+	editcap.c
+
+# dftest specifics
+dftest_SOURCES =	\
+	dftest.c	\
+	util.c
+
+# randpkt specifics
+randpkt_SOURCES = \
+	randpkt.c
+
+# this target needed for distribution only
+noinst_HEADERS =	\
+	$(DISSECTOR_SUPPORT_INCLUDES) \
+	$(ETHEREAL_COMMON_INCLUDES) \
+	$(ethereal_INCLUDES) \
+	$(EXTRA_ethereal_INCLUDES)
+

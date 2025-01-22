@@ -1,0 +1,24 @@
+# x509if.cnf
+# X509IF conformation file
+
+# $Id$
+
+#.MODULE_IMPORT
+
+#.EXPORTS
+
+AttributeType
+Name
+RelativeDistinguishedName
+
+#.NO_EMIT
+
+AttributeTypeAndDistinguishedValue
+
+#.TYPE_RENAME
+
+#.FIELD_RENAME
+
+#.END
+
+

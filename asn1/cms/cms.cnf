@@ -1,0 +1,29 @@
+# CMS.cnf
+# CMS conformation file
+
+# $Id$
+
+#.MODULE_IMPORT
+AuthenticationFramework x509af
+InformationFramework x509if
+
+#.INCLUDE ../x509af/x509af_exp.cnf
+#.INCLUDE ../x509if/x509if_exp.cnf
+
+#.EXPORTS
+SignedData
+Countersignature
+IssuerAndSerialNumber
+
+#.NO_EMIT
+OtherKeyAttribute
+
+#.TYPE_RENAME
+
+#.FIELD_RENAME
+SignerInfo/signature	signatureValue
+RecipientEncryptedKey/rid	rekRid
+
+#.END
+
+
