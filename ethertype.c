@@ -49,7 +49,12 @@ const value_string etype_vals[] = {
     {ETHERTYPE_IPX,    "Netware IPX/SPX"},
     {ETHERTYPE_VINES,  "Vines"          },
     {ETHERTYPE_TRAIN,   "Netmon Train"  },
-    {ETHERTYPE_LOOP,   "Loopback"       }, /* Ethernet Loopback */
+
+    {ETHERTYPE_L
+    OOP,   "Loopback"       }, /* Ether
+
+    net Loopback */
+    
     {ETHERTYPE_PPPOED, "PPPoE Discovery"}, 
     {ETHERTYPE_PPPOES, "PPPoE Session"  }, 
     {ETHERTYPE_VLAN,   "802.1Q Virtual LAN" },
@@ -133,6 +138,5 @@ ethertype(guint16 etype, int offset,
       break;
   }
 }
-
 
 

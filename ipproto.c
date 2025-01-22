@@ -37,6 +37,7 @@
 # include <netdb.h>
 #endif
 
+
 #ifdef NEED_SNPRINTF_H
 # ifdef HAVE_STDARG_H
 #  include <stdarg.h>
@@ -57,7 +58,12 @@
 #include "packet-ip.h"
 #include "packet-ipv6.h"
 
-static const value_string ipproto_val[] = {
+static
+
+ const value_string ipproto_val[] = {
+
+
+
     { IP_PROTO_ICMP,	"ICMP" },
     { IP_PROTO_IGMP,	"IGMP" },
     { IP_PROTO_TCP,	"TCP" },
@@ -97,6 +103,8 @@ static const value_string ipproto_val[] = {
     { 0,		NULL },
 };
 
+
+
 const char *ipprotostr(int proto) {
     static char buf[128];
     const char *s;
@@ -119,7 +127,13 @@ const char *ipprotostr(int proto) {
 
     s = "Unknown";
 
+
 ok:
     snprintf(buf, sizeof(buf), "%s", s);
     return buf;
 }
+
+
+
+
+
