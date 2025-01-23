@@ -550,15 +550,15 @@ dissect_socketcan_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, un
 
         if (canxl_flags & CANXL_XLF) {
             /* CAN XL: check for min/max data length */
-            if ((tvb_reported_length(tvb) >= 13) && (tvb_reported_length(tvb) <= 2060))
+            if (tvb_reported_length(tvb) >= 13 && tvb_reported_length(tvb) <= 2060)
                 can_packet_type = PACKET_TYPE_CAN_XL;
         } else {
             /* CAN CC/FD */
-            if ((tvb_reported_length(tvb) == 72) || (canfd_flags & CANFD_FDF)) {
+            if (tvb_reported_length(tvb) == 72 || (canfd_flags & CANFD_FDF)) {
                 /* CAN FD: check for min/max data length */
-                if ((tvb_reported_length(tvb) >= 8) && (tvb_reported_length(tvb) <= 72))
+                if (tvb_reported_length(tvb) >= 8 && tvb_reported_length(tvb) <= 72)
                     can_packet_type = PACKET_TYPE_CAN_FD;
-            } else if ((tvb_reported_length(tvb) >= 8) && (tvb_reported_length(tvb) <= 16))
+            } else if (tvb_reported_length(tvb) >= 8 && tvb_reported_length(tvb) <= 16)
                 can_packet_type = PACKET_TYPE_CAN;
         }
     }
