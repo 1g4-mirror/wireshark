@@ -88,6 +88,7 @@ void proto_reg_handoff_icmpv6(void);
  * RFC 8781: Discovering PREF64 in Router Advertisements
  * RFC 8505: Registration Extensions for IPv6 over Low-Power Wireless Personal Area Network (6LoWPAN) Neighbor Discovery
  * RFC 8801: Discovering Provisioning Domain Names and Data
+ * RFC 9009: Efficient Route Invalidation
  * http://www.iana.org/assignments/icmpv6-parameters (last updated 2016-02-24)
  */
 
@@ -494,6 +495,7 @@ static int hf_icmpv6_rpl_opt_target_prefix_length;
 static int hf_icmpv6_rpl_opt_target_prefix;
 static int hf_icmpv6_rpl_opt_transit_flag;
 static int hf_icmpv6_rpl_opt_transit_flag_e;
+static int hf_icmpv6_rpl_opt_transit_flag_i;
 static int hf_icmpv6_rpl_opt_transit_flag_rsv;
 static int hf_icmpv6_rpl_opt_transit_pathseq;
 static int hf_icmpv6_rpl_opt_transit_pathctl;
@@ -1257,7 +1259,8 @@ static const value_string icmpv6_option_cert_type_vals[] = {
 #define RPL_OPT_CONFIG_FLAG_PCS         0x07
 #define RPL_OPT_CONFIG_FLAG_RESERVED    0xF0
 #define RPL_OPT_TRANSIT_FLAG_E          0x80
-#define RPL_OPT_TRANSIT_FLAG_RSV        0x7F
+#define RPL_OPT_TRANSIT_FLAG_I          0x40
+#define RPL_OPT_TRANSIT_FLAG_RSV        0x3F
 #define RPL_OPT_TRANSIT_PATHCTL_PC1     0xC0
 #define RPL_OPT_TRANSIT_PATHCTL_PC2     0x30
 #define RPL_OPT_TRANSIT_PATHCTL_PC3     0x0C
@@ -3169,6 +3172,7 @@ dissect_icmpv6_rpl_opt(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
             case RPL_OPT_TRANSIT: {
                 static int * const rpl_transit_flags[] = {
                     &hf_icmpv6_rpl_opt_transit_flag_e,
+                    &hf_icmpv6_rpl_opt_transit_flag_i,
                     &hf_icmpv6_rpl_opt_transit_flag_rsv,
                     NULL
                 };
@@ -6169,6 +6173,9 @@ proto_register_icmpv6(void)
          { &hf_icmpv6_rpl_opt_transit_flag_e,
            { "External", "icmpv6.rpl.opt.transit.flag.e", FT_BOOLEAN, 8, TFS(&tfs_set_notset), RPL_OPT_TRANSIT_FLAG_E,
              "Indicate that the parent router redistributes external targets into the RPL network", HFILL }},
+         { &hf_icmpv6_rpl_opt_transit_flag_i,
+           { "InvalidatePreviousRoute", "icmpv6.rpl.opt.transit.flag.i", FT_BOOLEAN, 8, TFS(&tfs_set_notset), RPL_OPT_TRANSIT_FLAG_I,
+             "Indicate to the common ancestor that it wishes to invalidate any previous route between the two paths", HFILL }},   
          { &hf_icmpv6_rpl_opt_transit_flag_rsv,
            { "Reserved", "icmpv6.rpl.opt.transit.flag.rsv", FT_UINT8, BASE_DEC, NULL, RPL_OPT_TRANSIT_FLAG_RSV,
              "Must be Zero", HFILL }},
