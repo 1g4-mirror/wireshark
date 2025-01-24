@@ -381,7 +381,7 @@ static int hf_icmpv6_ni_reply_ipv4_address;
 /* RFC 4884: Extended ICMP */
 static int hf_icmpv6_length;
 
-/* RPL: RFC 6550/6997/9009 : Routing and Discovery of P2P Routes in Low-Power and Lossy Networks. Efficient route invalidation*/
+/* RPL: RFC 6550/6997/9009 : Routing and Discovery of P2P Routes in Low-Power and Lossy Networks. Efficient route invalidation. */
 static int hf_icmpv6_rpl_dis_flag;
 static int hf_icmpv6_rpl_dio_instance;
 static int hf_icmpv6_rpl_dio_version;
