@@ -408,7 +408,7 @@ static int hf_icmpv6_rpl_daoack_sequence;
 static int hf_icmpv6_rpl_daoack_status;
 static int hf_icmpv6_rpl_daoack_dodagid;
 static int hf_icmpv6_rpl_dco_instance;
-static int hf_icmpv6_rpl_dco_flag;
+static int hf_icmpv6_rpl_dco_flags;
 static int hf_icmpv6_rpl_dco_flag_k;
 static int hf_icmpv6_rpl_dco_flag_d;
 static int hf_icmpv6_rpl_dco_flag_rsv;
@@ -3685,7 +3685,7 @@ dissect_rpl_control(tvbuff_t *tvb, int rpl_offset, packet_info *pinfo _U_, proto
             rpl_offset += 1;
 
             /* Flags */
-            proto_tree_add_bitmask(icmp6_tree, tvb, rpl_offset, hf_icmpv6_rpl_dco_flag,
+            proto_tree_add_bitmask(icmp6_tree, tvb, rpl_offset, hf_icmpv6_rpl_dco_flags,
                                 ett_icmpv6_flag_rpl_dco, rpl_dco_flags, ENC_BIG_ENDIAN);
             flags = tvb_get_uint8(tvb, rpl_offset);
             rpl_offset += 1;
@@ -6020,8 +6020,8 @@ proto_register_icmpv6(void)
         { &hf_icmpv6_rpl_dco_instance,
            { "RPLInstanceID", "icmpv6.rpl.dco.instance", FT_UINT8, BASE_DEC, NULL, 0x0,
              "Indicating the topology instance associated with the DODAG as learned from the DIO", HFILL }},
-        { &hf_icmpv6_rpl_dco_flag,
-           { "Flags", "icmpv6.rpl.dco.flag", FT_UINT8, BASE_HEX, NULL, 0x0,
+        { &hf_icmpv6_rpl_dco_flags,
+           { "Flags", "icmpv6.rpl.dco.flags", FT_UINT8, BASE_HEX, NULL, 0x0,
              NULL, HFILL }},
         { &hf_icmpv6_rpl_dco_flag_k,
            { "DCO-ACK Request (K)", "icmpv6.rpl.dco.flag.k", FT_BOOLEAN, 8, NULL, RPL_DCO_FLAG_K,
