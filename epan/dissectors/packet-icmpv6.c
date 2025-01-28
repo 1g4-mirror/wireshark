@@ -1216,7 +1216,7 @@ static const value_string icmpv6_option_cert_type_vals[] = {
 #define ICMP6_RPL_DAO           0x02   /* Destination Advertisement Object */
 #define ICMP6_RPL_DAOACK        0x03   /* Destination Advertisement Object Ack */
 #define ICMP6_RPL_DCO           0x07   /* Destination Cleanup Object */
-#define ICMP6_RPL_DCOACK        0x08   /* Destination Cleanup Object Acknowledgement */ 
+#define ICMP6_RPL_DCOACK        0x08   /* Destination Cleanup Object Acknowledgement */
 #define ICMP6_RPL_P2P_DRO       0x04   /* P2P Discovery Reply Object */
 #define ICMP6_RPL_P2P_DROACK    0x05   /* P2P Discovery Reply Object Acknowledgement */
 #define ICMP6_RPL_SDIS          0x80   /* Secure DODAG Information Solicitation */
@@ -3670,7 +3670,7 @@ dissect_rpl_control(tvbuff_t *tvb, int rpl_offset, packet_info *pinfo _U_, proto
             break;
         }
         case ICMP6_RPL_DCO: /* Destination Cleanup Object (7) */
-        
+
         {
             uint8_t flags;
             static int * const rpl_dco_flags[] = {
@@ -3709,7 +3709,7 @@ dissect_rpl_control(tvbuff_t *tvb, int rpl_offset, packet_info *pinfo _U_, proto
             break;
         }
         case ICMP6_RPL_DCOACK: /* Destination Advertisement Object Acknowledgment (8) */
-       
+
         {
             uint8_t flags;
             static int * const rpl_dcoack_flags[] = {
@@ -5989,7 +5989,7 @@ proto_register_icmpv6(void)
              "Indicates that the DODAGID field is present", HFILL }},
         { &hf_icmpv6_rpl_dao_flag_rsv,
            { "Reserved", "icmpv6.rpl.dao.flag.rsv", FT_UINT8, BASE_DEC, NULL, RPL_DAO_FLAG_RESERVED,
-             "Must be zero", HFILL }},        
+             "Must be zero", HFILL }},
         { &hf_icmpv6_rpl_dao_sequence,
            { "DAO Sequence", "icmpv6.rpl.dao.sequence", FT_UINT8, BASE_DEC, NULL, 0x0,
              "Incremented at each unique DAO message from a node and echoed in the DAO-ACK message", HFILL }},
@@ -6061,7 +6061,7 @@ proto_register_icmpv6(void)
              "Indicates the completion", HFILL }},
         { &hf_icmpv6_rpl_dcoack_dodagid,
            { "DODAGID", "icmpv6.rpl.dcoack.dodagid", FT_IPv6, BASE_NONE, NULL, 0x0,
-             "IPv6 address integer set by a DODAG root which uniquely identifies a DODAG", HFILL }},     
+             "IPv6 address integer set by a DODAG root which uniquely identifies a DODAG", HFILL }},
         { &hf_icmpv6_rpl_cc_instance,
            { "RPLInstanceID", "icmpv6.rpl.cc.instance", FT_UINT8, BASE_DEC, NULL, 0x0,
              "Indicating the topology instance associated with the DODAG, as learned from the DIO", HFILL }},
@@ -6328,7 +6328,7 @@ proto_register_icmpv6(void)
              "Indicate that the parent router redistributes external targets into the RPL network", HFILL }},
          { &hf_icmpv6_rpl_opt_transit_flag_i,
            { "InvalidatePreviousRoute", "icmpv6.rpl.opt.transit.flag.i", FT_BOOLEAN, 8, TFS(&tfs_set_notset), RPL_OPT_TRANSIT_FLAG_I,
-             "Indicate to the common ancestor that it wishes to invalidate any previous route between the two paths", HFILL }},   
+             "Indicate to the common ancestor that it wishes to invalidate any previous route between the two paths", HFILL }},
          { &hf_icmpv6_rpl_opt_transit_flag_rsv,
            { "Reserved", "icmpv6.rpl.opt.transit.flag.rsv", FT_UINT8, BASE_DEC, NULL, RPL_OPT_TRANSIT_FLAG_RSV,
              "Must be Zero", HFILL }},
