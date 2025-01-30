@@ -27,6 +27,7 @@ void proto_register_ogg(void);
 void proto_reg_handoff_ogg(void);
 
 static dissector_handle_t ogg_handle;
+static dissector_handle_t data_handle;
 
 static int proto_ogg;
 
@@ -45,8 +46,33 @@ static int hf_type_flags_eos;
 
 static int ett_ogg;
 static int ett_ogg_type;
+static int ett_ogg_seg;
 
 static expert_field ei_ogg_missing_magic;
+
+static unsigned
+dissect_ogg_segment_table(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset, uint8_t n_segs)
+{
+    uint8_t i;
+    proto_tree *subtree;
+    uint8_t seg_sizes[256];
+
+    for (i = 0; i < n_segs; i++)
+        seg_sizes[i] = tvb_get_uint8(tvb, offset + i);
+
+    offset += n_segs;
+
+    for (i = 0; i < n_segs; i++) {
+        tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, seg_sizes[i]);
+        subtree = proto_tree_add_subtree_format(tree, tvb, offset, seg_sizes[i], ett_ogg_seg,
+                                      NULL, "Segment %d", i + 1);
+        call_dissector(data_handle, next_tvb, pinfo, subtree);
+
+        offset += seg_sizes[i];
+    }
+
+    return offset;
+}
 
 static unsigned
 find_ogg_page(tvbuff_t *tvb, unsigned offset, size_t len)
@@ -69,9 +95,9 @@ find_ogg_page(tvbuff_t *tvb, unsigned offset, size_t len)
 }
 
 static int
-dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
+dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset)
 {
-    uint8_t flags;
+    uint8_t n_segs, flags;
     proto_item *ti, *ti_tree;
     proto_tree *ogg_tree, *subtree;
 
@@ -101,8 +127,11 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
             tvb, offset + 22, 4, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(ogg_tree, hf_n_segs,
             tvb, offset + 26, 1, ENC_LITTLE_ENDIAN);
+    n_segs = tvb_get_uint8(tvb, offset + 26);
 
     offset += OGG_HDR_LEN;
+    if (n_segs > 0)
+        offset = dissect_ogg_segment_table(tvb, tree, pinfo, offset, n_segs);
 
     proto_item_set_end(ti_tree, tvb, offset);
 
@@ -123,7 +152,7 @@ dissect_ogg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Ogg");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    offset = dissect_ogg_page(tvb, tree, offset);
+    offset = dissect_ogg_page(tvb, tree, pinfo, offset);
 
     return offset;
 }
@@ -230,6 +259,8 @@ proto_register_ogg(void)
 void
 proto_reg_handoff_ogg(void)
 {
+    data_handle = find_dissector("data");
+
     dissector_add_string("media_type", "audio/ogg", ogg_handle);
     dissector_add_string("media_type", "video/ogg", ogg_handle);
     dissector_add_string("media_type", "application/ogg", ogg_handle);
