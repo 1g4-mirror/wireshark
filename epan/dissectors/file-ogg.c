@@ -31,6 +31,7 @@ static dissector_handle_t data_handle;
 
 static int proto_ogg;
 
+static int hf_page;
 static int hf_magic;
 static int hf_version;
 static int hf_type;
@@ -45,6 +46,7 @@ static int hf_type_flags_bos;
 static int hf_type_flags_eos;
 
 static int ett_ogg;
+static int ett_ogg_page;
 static int ett_ogg_type;
 static int ett_ogg_seg;
 
@@ -101,8 +103,8 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned o
     proto_item *ti, *ti_tree;
     proto_tree *ogg_tree, *subtree;
 
-    ti_tree = proto_tree_add_item(tree, proto_ogg, tvb, offset, -1, ENC_NA);
-    ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg);
+    ti_tree = proto_tree_add_item(tree, hf_page, tvb, offset, -1, ENC_NA);
+    ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg_page);
 
     proto_tree_add_item(ogg_tree, hf_magic,
             tvb, offset, 4, ENC_ASCII|ENC_NA);
@@ -131,7 +133,7 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned o
 
     offset += OGG_HDR_LEN;
     if (n_segs > 0)
-        offset = dissect_ogg_segment_table(tvb, tree, pinfo, offset, n_segs);
+        offset = dissect_ogg_segment_table(tvb, ogg_tree, pinfo, offset, n_segs);
 
     proto_item_set_end(ti_tree, tvb, offset);
 
@@ -141,22 +143,28 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned o
 static int
 dissect_ogg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    size_t len = tvb_reported_length(tvb);
     unsigned offset = 0;
+    proto_item *ti_tree;
+    proto_tree *ogg_tree;
+    size_t len = tvb_reported_length(tvb);
 
     offset = find_ogg_page(tvb, offset, len);
 
     if (offset > len - OGG_HDR_LEN - 1)
         return 0;
 
+    ti_tree = proto_tree_add_item(tree, proto_ogg, tvb, offset, -1, ENC_NA);
+    ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg);
+
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Ogg");
     col_clear(pinfo->cinfo, COL_INFO);
 
     while (offset < len - OGG_HDR_LEN) {
-        offset = dissect_ogg_page(tvb, tree, pinfo, offset);
+        offset = dissect_ogg_page(tvb, ogg_tree, pinfo, offset);
         offset = find_ogg_page(tvb, offset, len);
     }
 
+    proto_item_set_end(ti_tree, tvb, offset);
     return offset;
 }
 
@@ -170,6 +178,11 @@ void
 proto_register_ogg(void)
 {
     static hf_register_info hf[] = {
+        { &hf_page,
+            { "Ogg Page", "ogg.page",
+              FT_NONE, BASE_NONE, NULL, 0x00,
+              "Ogg Stream Page", HFILL }
+        },
         { &hf_magic,
             { "Capture Pattern", "ogg.magic",
               FT_STRING, BASE_NONE, NULL, 0x00,
