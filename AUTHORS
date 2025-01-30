@@ -3758,6 +3758,10 @@ Mattia Cazzola		<mattiac[AT]alinet.it> {
 	Provided a patch to the hex dump display routine.
 }
 
+Bence Csókás		<bence98[AT]sch.bme.hu> {
+	Ogg dissector
+}
+
 and by:
 
 Georgi Guninski		<guninski[AT]guninski.com>
