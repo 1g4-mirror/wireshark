@@ -152,7 +152,10 @@ dissect_ogg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Ogg");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    offset = dissect_ogg_page(tvb, tree, pinfo, offset);
+    while (offset < len - OGG_HDR_LEN) {
+        offset = dissect_ogg_page(tvb, tree, pinfo, offset);
+        offset = find_ogg_page(tvb, offset, len);
+    }
 
     return offset;
 }
