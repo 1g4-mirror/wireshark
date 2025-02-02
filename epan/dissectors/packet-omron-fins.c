@@ -3561,7 +3561,7 @@ proto_register_omron_fins(void)
         { "Memory Area Code", "omron.memory.area.read", FT_UINT8, BASE_HEX, VALS(memory_area_code_cv), 0x0, NULL, HFILL }},
 
         { &hf_omron_response_code,
-        { "Response code", "omron.response.code", FT_UINT16, BASE_HEX, VALS(response_codes), 0x0, NULL, HFILL }},
+        { "Response code", "omron.response.code", FT_UINT16, BASE_HEX, VALS(response_codes),  0x7F3F, NULL, HFILL }},
 
         { &hf_omron_command_data,
         { "Command Data", "omron.command.data", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
