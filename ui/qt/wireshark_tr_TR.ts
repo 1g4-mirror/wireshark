@@ -1373,6 +1373,10 @@
         <translation>pcap</translation>
     </message>
     <message>
+        <source>Compression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instead of using a single capture file, multiple files will be created.&lt;/p&gt;&lt;p&gt;The generated file names will contain an incrementing number and the start time of the capture.&lt;/p&gt;&lt;p&gt;NOTE: If enabled, at least one of the new-file criteria MUST be selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tek bir yakalama dosyası kullanmak yerine, birden çok dosya oluşturulacaktır.&lt;/p&gt;&lt;p&gt;Oluşturulan dosya adları, artan bir sayı ve yakalamanın başlangıç zamanını içerecektir. .&lt;/p&gt;&lt;p&gt;NOT: Etkinleştirilirse, yeni dosya ölçütlerinden en az biri SEÇİLMELİDİR.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -1443,16 +1447,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Tüm 802.11 arayüzlerinde monitör modunu etkinleştirin</translation>
     </message>
     <message>
-        <source>compression</source>
-        <translation>sıkıştırma</translation>
-    </message>
-    <message>
         <source>None</source>
         <translation>Yok</translation>
     </message>
     <message>
         <source>gzip</source>
         <translation>gzip</translation>
+    </message>
+    <message>
+        <source>LZ4</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File infix pattern</source>
@@ -3045,12 +3049,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Tüm Dosyalar (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>Dosyayı Aç</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>Dosya Seçin</translation>
+        <source>%1 Select File</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4937,10 +4941,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Paket biçimi düzenli ifadesi</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifieing data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;Required is only a data group, also supported are time, dir and seqno.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;İçe aktarılacak verileri tanımlayan adlandırılmış gruplarla dosyada tek bir paket yakalayan Perl uyumlu normal ifade. Bağlantılar ^ ve $ ayrıca yeni satırlardan önce/sonra eşleşir &lt;/p&gt;&lt;p&gt;Zorunlu yalnızca bir veri grubudur, ayrıca zaman, dizin ve sıra numarası da desteklenir.&lt;/p&gt;&lt;p&gt;Düzenli ifade işaretleri: DUPNAMES, MULTILINE ve NOEMPTY&lt;/p&gt;&lt;p&gt; p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
         <source>This is regexHintLabel, it will be set to default_regex_hint</source>
         <translation>Bu normal ifade İpucu Etiketidir, varsayılan_normal_ifade_ipucuna ayarlanacaktır</translation>
     </message>
@@ -5019,6 +5019,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>None</source>
         <translation>Yok</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to treat multiple byte groups as being in little-endian byte order, instead of the default, network (big-endian) order.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Little-endian:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifying data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;The only required group is data, but time, dir and seqno are also supported.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;small&gt;&lt;i&gt;recommended regex:&lt;/small&gt;&lt;/i&gt;</source>
@@ -5189,8 +5201,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Desteklenen alanlar data, dir, time, seqno</translation>
     </message>
     <message>
-        <source>Missing capturing group data (use (?</source>
-        <translation>Eksik yakalama grubu verileri (kullanın (?</translation>
+        <source>Missing capturing group data (use (?&lt;data&gt;(...)) )</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Import From Hex Dump</source>
@@ -5264,12 +5276,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Harici yakalama arayüzleri devre dışı bırakıldı.</translation>
     </message>
     <message>
+        <source>&lt;p&gt;Local interfaces are unavailable because WinPcap is installed but is no longer supported.&lt;/p&gt;&lt;p&gt;You can fix this by uninstalling WinPcap and installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Local interfaces are unavailable because no packet capture driver is installed.&lt;/p&gt;&lt;p&gt;You can fix this by installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Paket yakalama sürücüsü yüklü olmadığı için yerel arabirimler kullanılamıyor.&lt;/p&gt;&lt;p&gt;Bu sorunu &lt;a href=&quot;https://npcap.com/&quot;&gt;Nccap&lt;/a&gt;.yükleyerek düzeltebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed or &lt;pre&gt;net start npf&lt;/pre&gt; if you have WinPcap installed. Both commands must be run as Administrator.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Paket yakalama sürücüsü yüklenmediğinden yerel arayüzler kullanılamıyor.&lt;/p&gt;&lt;p&gt;Npcap veya &lt;pre&gt;net kuruluysa &lt;pre&gt;net start npcap&lt;/pre&gt;&apos;i çalıştırarak bunu düzeltebilirsiniz. WinPcap kuruluysa npf&lt;/pre&gt;&apos;yi başlatın. Her iki komut da Yönetici olarak çalıştırılmalıdır.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed. The command must be run as Administrator.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;You don&apos;t have permission to capture on local interfaces.&lt;/p&gt;&lt;p&gt;You can fix this by &lt;a href=&quot;file://%1&quot;&gt;installing ChmodBPF&lt;/a&gt;.&lt;/p&gt;</source>
@@ -6918,6 +6934,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>Display filter as %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -7537,6 +7565,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Generate hexdumps for secondary data sources like reassembled or decrypted buffers in addition to the frame&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Çerçeveye ek olarak yeniden birleştirilmiş veya şifresi çözülmüş arabellekler gibi ikincil veri kaynakları için onaltılık dökümler oluşturun&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Include timestamp preamble</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include each frame timestamp immediately before its hex dump, using the current time display format.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8297,8 +8333,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Filtre Alanı Referansı</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>Kopyalandı </translation>
+        <source>Copied %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -11963,6 +11999,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>yakınlaştırır</translation>
     </message>
     <message>
+        <source>Sampling Method</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select which packets and how the RTT sampling is done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Display Round Trip Time vs Sequence Number</source>
         <translation>Gidiş-Dönüş Süresini Sıra Numarasına Karşı Görüntüleme</translation>
     </message>
@@ -12257,6 +12301,38 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>4</source>
         <translation>4</translation>
+    </message>
+    <message>
+        <source>All Data Packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All Data Packets w/ SACK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets w/ SACK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Packets matching RTT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from RTT packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Packets matching Karn RTT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from Karn RTT packets</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom In X Axis</source>
@@ -14699,24 +14775,12 @@ a:üzerine gelin{
         <translation>Paket sürelerini önceki görüntülenen paketten bu yana geçen saniye olarak göster.</translation>
     </message>
     <message>
-        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456)</source>
-        <translation>UTC Tarihi ve Günün Saati (1970-01-01 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC date and time of day.</source>
         <translation>Paket saatlerini UTC tarihi ve günün saati olarak göster.</translation>
     </message>
     <message>
-        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456)</source>
-        <translation>UTC Yılı, Yılın Günü ve Günün Saati (1970/001 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC year, day of the year and time of day.</source>
         <translation>Paket sürelerini UTC yılı, yılın günü ve günün saati olarak gösterin.</translation>
-    </message>
-    <message>
-        <source>UTC Time of Day (01:02:03.123456)</source>
-        <translation>UTC Günün Saati (01:02:03.123456)</translation>
     </message>
     <message>
         <source>Show packet times as the UTC time of day.</source>
@@ -14967,6 +15031,18 @@ a:üzerine gelin{
     <message>
         <source>&amp;Unmark All Displayed</source>
         <translation>&amp;Tüm Görüntülenenlerin İşaretini Kaldır</translation>
+    </message>
+    <message>
+        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTC Time of Day (01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>All VoIP Calls</source>
@@ -15254,14 +15330,6 @@ a:üzerine gelin{
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>Durdur ve Devam Et &amp;Kaydetmeden</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Wireshark Ağ Çözümleyicisi</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>%1&apos;den yakalama</translation>
     </message>
     <message>
         <source> before opening another file</source>

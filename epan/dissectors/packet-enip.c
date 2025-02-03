@@ -4,8 +4,8 @@
  *
  * This dissector includes items from:
  *    CIP Volume 1: Common Industrial Protocol, Edition 3.34
- *    CIP Volume 2: EtherNet/IP Adaptation of CIP, Edition 1.30
- *    CIP Volume 8: CIP Security, Edition 1.17
+ *    CIP Volume 2: EtherNet/IP Adaptation of CIP, Edition 1.34
+ *    CIP Volume 8: CIP Security, Edition 1.18
  *
  * Copyright 2003-2004
  * Magnus Hansson <mah@hms.se>
@@ -114,7 +114,6 @@ static int hf_enip_lir_vendor;
 static int hf_enip_lir_devtype;
 static int hf_enip_lir_prodcode;
 static int hf_enip_lir_revision;
-static int hf_enip_lir_status;
 static int hf_enip_lir_serial;
 static int hf_enip_lir_namelen;
 static int hf_enip_lir_name;
@@ -286,13 +285,15 @@ static int hf_elink_hc_icount_out_octets;
 static int hf_elink_hc_icount_out_ucast;
 static int hf_elink_hc_icount_out_mcast;
 static int hf_elink_hc_icount_out_broadcast;
-
+static int hf_elink_ethernet_errors;
+static int hf_elink_link_down_counter;
 static int hf_elink_hc_mcount_stats_align_errors;
 static int hf_elink_hc_mcount_stats_fcs_errors;
 static int hf_elink_hc_mcount_stats_internal_mac_transmit_errors;
 static int hf_elink_hc_mcount_stats_frame_too_long;
 static int hf_elink_hc_mcount_stats_internal_mac_receive_errors;
 static int hf_elink_hc_mcount_stats_symbol_errors;
+static int hf_cip_mac_address;
 
 static int hf_qos_8021q_enable;
 static int hf_qos_dscp_ptp_event;
@@ -362,9 +363,17 @@ static int hf_eip_security_num_active_certs;
 static int hf_eip_security_num_trusted_auths;
 static int hf_eip_security_num_trusted_identities;
 static int hf_eip_security_num_crl;
+static int hf_eip_security_apply_behavior_flags;
+static int hf_eip_security_close_delay;
+static int hf_eip_security_check_subject_alternative_name;
+static int hf_eip_security_dtls_timeout;
+static int hf_eip_security_pull_model_enable;
+static int hf_eip_security_pull_model_status;
 static int hf_eip_cert_name;
 static int hf_eip_cert_state;
 static int hf_eip_cert_encoding;
+static int hf_eip_cert_encoding_flags;
+static int hf_eip_cert_subject_distinguished_name;
 static int hf_eip_cert_device_cert_status;
 static int hf_eip_cert_ca_cert_status;
 static int hf_eip_cert_capflags_push;
@@ -386,6 +395,12 @@ static int hf_ingress_egress_apply_behav_reserved;
 static int hf_ingress_egress_apply_behavior;
 static int hf_ingress_egress_ins_num;
 static int hf_ingress_egress_ins;
+static int hf_ingress_egress_max_buffer_size_for_rules;
+static int hf_prp_lre_enable;
+static int hf_prp_node_type;
+static int hf_prp_node_name;
+static int hf_prp_version_name;
+static int hf_prp_hsr_nodes_tables_count;
 
 /* Initialize the subtree pointers */
 static int ett_enip;
@@ -2150,6 +2165,26 @@ dissect_eip_security_trusted_identities(packet_info *pinfo, proto_tree *tree, pr
       &ei_mal_eip_security_trusted_identities, hf_eip_security_num_trusted_identities, ett_eip_security_trusted_identities);
 }
 
+/// Ethernet/IP Security - Services
+static int dissect_eip_security_apply_config(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int data_len;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_eip_security_apply_behavior_flags, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_eip_security_close_delay, tvb, offset + 2, 2, ENC_LITTLE_ENDIAN);
+
+      data_len = 4;
+   }
+   else
+   {
+      data_len = 0;
+   }
+
+   return data_len;
+}
+
 static int
 dissect_eip_cert_cap_flags(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
                                    int offset, int total_len)
@@ -2224,7 +2259,57 @@ dissect_eip_cert_ca_cert(packet_info *pinfo, proto_tree *tree, proto_item *item,
    return path_size + 1;
 }
 
-static int dissect_certificate_management_object_verify_certificate(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+/// Certificate Management Object - Services
+static int dissect_eip_cert_create(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset, bool request)
+{
+   int data_len;
+
+   if (request)
+   {
+      data_len = dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_name, CIP_SHORT_STRING_TYPE);
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_cip_instance16, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      data_len = 2;
+   }
+
+   return data_len;
+}
+
+static int dissect_eip_cert_create_csr(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset, bool request)
+{
+   int data_len;
+
+   if (request)
+   {
+      int starting_offset = offset;
+
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+
+      if (tvb_reported_length_remaining(tvb, offset) > 0)
+      {
+         offset += dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_eip_cert_subject_distinguished_name, CIP_SHORT_STRING_TYPE);
+      }
+
+      data_len = offset - starting_offset;
+   }
+   else
+   {
+      data_len = dissect_padded_epath_len_usint(pinfo, tree, item, tvb, offset, tvb_reported_length_remaining(tvb, offset));
+   }
+
+   return data_len;
+}
+
+static int dissect_eip_cert_verify_certificate(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
 {
    if (request)
    {
@@ -2391,6 +2476,14 @@ static int dissect_tcpip_set_port_admin_state(packet_info *pinfo, proto_tree *tr
    }
 }
 
+int dissect_cip_mac_address(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb,
+    int offset, int total_len _U_)
+{
+    proto_tree_add_item(tree, hf_cip_mac_address, tvb, offset, 6, ENC_NA);
+
+    return 6;
+}
+
 const attribute_info_t enip_attribute_vals[] = {
 
     /* TCP/IP Object (class attributes) */
@@ -2441,6 +2534,8 @@ const attribute_info_t enip_attribute_vals[] = {
    {0xF6, false, 11, 10, "Interface Capability",     cip_dissector_func,   NULL, dissect_elink_interface_capability},
    {0xF6, false, 12, 11, "HC Interface Counters",    cip_dissector_func,   NULL, dissect_elink_hc_interface_counters},
    {0xF6, false, 13, 12, "HC Media Counters",        cip_dissector_func,   NULL, dissect_elink_hc_media_counters},
+   {0xF6, false, 14, 13, "Ethernet Errors",          cip_udint,            &hf_elink_ethernet_errors,   NULL},
+   {0xF6, false, 15, 14, "Link_Down Counter",        cip_udint,            &hf_elink_link_down_counter, NULL},
 
     /* QoS Object (class attributes) */
    {0x48, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -2489,6 +2584,16 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x47, false, 15, -1, "Active Gateway Address",          cip_dissector_func, NULL, dissect_dlr_active_gateway_address},
    {0x47, false, 16, -1, "Active Gateway Precedence",       cip_usint, &hf_dlr_active_gateway_precedence, NULL},
 
+   // PRP/HSR Protocol
+   {0x56, CIP_ATTR_INSTANCE, 1, 0, "LRE Enable", cip_bool, &hf_prp_lre_enable, NULL},
+   {0x56, CIP_ATTR_INSTANCE, 2, 1, "Node Type", cip_uint, &hf_prp_node_type, NULL},
+   {0x56, CIP_ATTR_INSTANCE, 3, 2, "Node Name", cip_short_string, &hf_prp_node_name, NULL },
+   {0x56, CIP_ATTR_INSTANCE, 4, 3, "Version Name", cip_short_string, &hf_prp_version_name, NULL },
+   {0x56, CIP_ATTR_INSTANCE, 5, 4, "LRE MAC Address", cip_dissector_func, NULL, dissect_cip_mac_address},
+
+   // PRP/HSR Nodes Table
+   {0x57, CIP_ATTR_INSTANCE, 1, 0, "PRP/HSR Nodes Table(s) Count", cip_udint, &hf_prp_hsr_nodes_tables_count, NULL},
+
    /* CIP Security Object (instance attributes) */
    {0x5D, CIP_ATTR_INSTANCE, 1, 0, "State", cip_usint, &hf_cip_security_state, NULL},
    {0x5D, CIP_ATTR_INSTANCE, 2, 1, "Security Profiles", cip_dissector_func, NULL, dissect_cip_security_profiles },
@@ -2506,6 +2611,10 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x5E, false, 10, 9, "Send Certificate Chain", cip_bool, &hf_eip_security_send_cert_chain, NULL},
    {0x5E, false, 11, 10, "Check Expiration", cip_bool, &hf_eip_security_check_expiration, NULL},
    {0x5E, false, 12, 11, "Trusted Identities", cip_dissector_func, NULL, dissect_eip_security_trusted_identities},
+   {0x5E, false, 13, 12, "Pull Model Enable", cip_bool, &hf_eip_security_pull_model_enable, NULL},
+   {0x5E, false, 14, 13, "Pull Model Status", cip_uint, &hf_eip_security_pull_model_status, NULL },
+   {0x5E, false, 15, 14, "DTLS Timeout", cip_uint, &hf_eip_security_dtls_timeout, NULL},
+   {0x5E, false, 17, 15, "Check Subject Alternative Name", cip_bool, &hf_eip_security_check_subject_alternative_name, NULL },
 
     /* Certificate Management Object (class attributes) */
    {0x5F, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -2517,6 +2626,7 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x5F, true, 7, 3, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
    {0x5F, true, 8, 4, "Capability Flags", cip_dissector_func,   NULL, dissect_eip_cert_cap_flags },
    {0x5F, true, 9, 5, "Certificate List", cip_dissector_func,   NULL, dissect_eip_cert_cert_list },
+   {0x5F, true, 10, 6, "Certificate Encodings Flag", cip_dword, &hf_eip_cert_encoding_flags, NULL },
 
    /* Certificate Management Object (instance attributes) */
    {0x5F, false, 1, 0, "Name", cip_short_string, &hf_eip_cert_name, NULL},
@@ -2535,6 +2645,8 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x63, true, 7,  4, CLASS_ATTRIBUTE_7_NAME,              cip_uint, &hf_attr_class_num_inst_attr, NULL},
    {0x63, true, 8,  5, "Ingress Rules TCP Ports Supported", cip_dissector_func, NULL, dissect_ingress_tcp_udp_ports_supported},
    {0x63, true, 9,  6, "Ingress Rules UDP Ports Supported", cip_dissector_func, NULL, dissect_ingress_tcp_udp_ports_supported},
+   {0x63, true, 10, 7, "Max Buffer Size for Rules",         cip_udint, &hf_ingress_egress_max_buffer_size_for_rules, NULL},
+   {0x63, true, 11, 8, "Rules Change Count",                cip_udint, &hf_ingress_egress_rules_change_count, NULL},
 
    /* Ingress Egress Object (instance attributes) */
    {0x63, false, 1, 0, "Ingress Rules", cip_dissector_func, NULL, dissect_ingress_egress_rules},
@@ -2553,10 +2665,13 @@ static cip_service_info_t enip_obj_spec_service_table[] = {
     // EtherNet/IP Security
     { 0x5E, 0x4B, "Begin_Config", NULL },
     { 0x5E, 0x4C, "Kick_Timer", NULL },
+    { 0x5E, 0x4D, "Apply_Config", dissect_eip_security_apply_config },
     { 0x5E, 0x4E, "Abort_Config", NULL },
 
     // Certificate Management
-    { 0x5F, 0x4C, "Verify_Certificate", dissect_certificate_management_object_verify_certificate },
+    { 0x5F, 0x8, "Create", dissect_eip_cert_create },
+    { 0x5F, 0x4B, "Create CSR", dissect_eip_cert_create_csr },
+    { 0x5F, 0x4C, "Verify_Certificate", dissect_eip_cert_verify_certificate },
 
     // Ingress Egress Object
     { 0x63, 0x4B, "Set_Rules", dissect_ingress_egress_set_rules },
@@ -2613,7 +2728,7 @@ static void dissect_item_list_identity(packet_info* pinfo, tvbuff_t* tvb, int of
    proto_tree_add_item(item_tree, hf_enip_lir_revision, tvb, offset + 24, 2, ENC_BIG_ENDIAN);
 
    /* Status */
-   proto_tree_add_item(item_tree, hf_enip_lir_status, tvb, offset + 26, 2, ENC_LITTLE_ENDIAN);
+   dissect_cip_id_status(pinfo, item_tree, NULL, tvb, offset + 26, 2);
 
    /* Serial Number */
    proto_tree_add_item(item_tree, hf_enip_lir_serial, tvb, offset + 28, 4, ENC_LITTLE_ENDIAN);
@@ -3815,11 +3930,6 @@ proto_register_enip(void)
           FT_UINT16, BASE_CUSTOM, CF_FUNC(enip_fmt_lir_revision), 0,
           "ListIdentity Reply: Revision", HFILL }},
 
-      { &hf_enip_lir_status,
-        { "Status", "enip.lir.status",
-          FT_UINT16, BASE_HEX, NULL, 0,
-          "ListIdentity Reply: Status", HFILL }},
-
       { &hf_enip_lir_serial,
         { "Serial Number", "enip.lir.serial",
           FT_UINT32, BASE_HEX, NULL, 0,
@@ -3837,7 +3947,7 @@ proto_register_enip(void)
 
       { &hf_enip_lir_state,
         { "State", "enip.lir.state",
-          FT_UINT8, BASE_HEX, NULL, 0,
+          FT_UINT8, BASE_HEX, VALS(cip_id_state_vals), 0,
           "ListIdentity Reply: State", HFILL }},
 
       { &hf_enip_security_profiles,
@@ -3929,6 +4039,14 @@ proto_register_enip(void)
         { "Instance Number", "cip.ingress_egress.instance",
           FT_UINT16, BASE_DEC, NULL, 0,
           NULL, HFILL } },
+
+      { &hf_ingress_egress_max_buffer_size_for_rules, { "Max Buffer Size for Rules", "cip.ingress_egress.max_buffer_size_for_rules", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
+
+      { &hf_prp_lre_enable, { "LRE Enable", "cip.prp.lre_enable", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0, NULL, HFILL } },
+      { &hf_prp_node_type, { "Node Type", "cip.prp.node_type", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_prp_node_name, { "Node Name", "cip.prp.node_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_prp_version_name, { "Version Name", "cip.prp.version_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_prp_hsr_nodes_tables_count, { "PRP/HSR Nodes Table(s) Count", "cip.prp.prp_hsr_nodes_table_count", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL } },
 
       { &hf_enip_iana_port_state_flags,
         { "IANA Port State", "enip.iana_port_state_flags",
@@ -4613,6 +4731,10 @@ proto_register_enip(void)
           FT_UINT64, BASE_DEC, NULL, 0,
           NULL, HFILL } },
 
+      { &hf_elink_ethernet_errors, { "Ethernet Errors", "cip.elink.ethernet_errors", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_elink_link_down_counter, { "Link_Down Counter", "cip.elink.link_down_counter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_cip_mac_address, { "MAC Address", "cip.mac_address", FT_ETHER, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+
       { &hf_qos_8021q_enable,
         { "802.1Q Tag Enable", "cip.qos.8021q_enable",
           FT_BOOLEAN, 8, TFS(&tfs_enabled_disabled), 0x1,
@@ -4938,6 +5060,13 @@ proto_register_enip(void)
           FT_UINT8, BASE_DEC, NULL, 0,
           NULL, HFILL }},
 
+      { &hf_eip_security_apply_behavior_flags, { "Apply Behavior Flags", "cip.eip_security.apply_behavior_flags", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_eip_security_check_subject_alternative_name, { "Check Subject Alternative Name", "cip.eip_security.check_subject_alternative_name", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0, NULL, HFILL } },
+      { &hf_eip_security_close_delay, { "Close Delay", "cip.eip_security.close_delay", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0, NULL, HFILL } },
+      { &hf_eip_security_dtls_timeout, { "DTLS Timeout", "cip.eip_security.dtls_timeout", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0, NULL, HFILL } },
+      { &hf_eip_security_pull_model_enable, { "Pull Model Enable", "cip.eip_security.pull_model_enable", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0, NULL, HFILL } },
+      { &hf_eip_security_pull_model_status, { "Pull Model Status", "cip.eip_security.pull_model_status", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+
       { &hf_eip_cert_name,
         { "Name", "cip.eip_cert.name",
           FT_STRING, BASE_NONE, NULL, 0,
@@ -4952,6 +5081,9 @@ proto_register_enip(void)
         { "Certificate Encoding", "cip.eip_cert.encoding",
           FT_UINT8, BASE_DEC, NULL, 0,
           NULL, HFILL } },
+
+      { &hf_eip_cert_encoding_flags, { "Certificate Encodings Flag", "cip.eip_cert.encoding_flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_eip_cert_subject_distinguished_name, { "Subject Distinguished Name", "cip.eip_cert.subject_distinguished_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 
       { &hf_eip_cert_device_cert_status,
         { "Certificate Status", "cip.eip_cert.device_cert.status",

@@ -23,7 +23,6 @@
 #include <QDesktopServices>
 #include <QTabWidget>
 
-#include "ringbuffer.h"
 #include "ui/capture_ui_utils.h"
 #include "ui/capture_globals.h"
 #include "ui/iface_lists.h"
@@ -330,7 +329,7 @@ void ExtcapOptionsDialog::updateWidgets()
                     QPushButton *button = new QPushButton(defaultValueIcon_,"");
                     button->setToolTip(tr("Restore default value of the item"));
                     layout->addWidget(button, counter, 2, Qt::AlignVCenter);
-                    connect(button, SIGNAL(clicked()), argument, SLOT(setDefaultValue()));
+                    connect(button, &QPushButton::clicked, argument, &ExtcapArgument::setDefaultValue);
                 }
             }
 

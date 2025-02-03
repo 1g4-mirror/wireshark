@@ -657,7 +657,11 @@ int main(int argc, char *qt_argv[])
     // https://doc.qt.io/qt-5/highdpi.html
     // https://bugreports.qt.io/browse/QTBUG-53022 - The device pixel ratio is pretty much bogus on Windows.
     // https://bugreports.qt.io/browse/QTBUG-55510 - Windows have wrong size
-#if defined(Q_OS_WIN)
+    //
+    // Deprecated in Qt6, which is Per-Monitor DPI Aware V2 by default.
+    //    warning: 'Qt::AA_EnableHighDpiScaling' is deprecated: High-DPI scaling is always enabled.
+    //    This attribute no longer has any effect.
+#if defined(Q_OS_WIN) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
@@ -715,8 +719,8 @@ int main(int argc, char *qt_argv[])
     GLibMainloopOnQEventLoop::setup(main_w);
     // We may not need a queued connection here but it would seem to make sense
     // to force the issue.
-    main_w->connect(&ss_app, SIGNAL(openCaptureFile(QString,QString,unsigned int)),
-            main_w, SLOT(openCaptureFile(QString,QString,unsigned int)));
+    main_w->connect(&ss_app, SIGNAL(openCaptureFile(QString,QString,uint)),
+            main_w, SLOT(openCaptureFile(QString,QString,uint)));
     main_w->connect(&ss_app, &StratosharkApplication::openCaptureOptions,
             main_w, &StratosharkMainWindow::showCaptureOptionsDialog);
 
@@ -979,7 +983,7 @@ int main(int argc, char *qt_argv[])
     ssApp->setMonospaceFont(prefs.gui_font_name);
 
     /* For update of WindowTitle (When use gui.window_title preference) */
-    main_w->setWSWindowTitle();
+    main_w->setMainWindowTitle();
 
     if (!color_filters_init(&err_msg, color_filter_add_cb)) {
         simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_msg);

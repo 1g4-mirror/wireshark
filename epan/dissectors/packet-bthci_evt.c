@@ -1680,8 +1680,11 @@ static void ref_power_level(char *buf, int8_t value) {
         snprintf(buf, ITEM_LABEL_LENGTH, "Not Available");
 }
 
-static void convert_time_unit_0p5_ns(char *buf, uint16_t value) {
-    snprintf(buf, ITEM_LABEL_LENGTH, "%g ns (%u)", 0.5 * value, value);
+static void convert_time_unit_0p5_ns(char *buf, int16_t value) {
+    if (value != (int16_t)0x8000)
+        snprintf(buf, ITEM_LABEL_LENGTH, "%g ns (%i)", 0.5 * value, value);
+    else
+        snprintf(buf, ITEM_LABEL_LENGTH, "Not Available");
 }
 
 static void sint12_convert(char *buf, uint16_t value) {
@@ -3103,8 +3106,9 @@ dissect_bthci_evt_cs_result_steps(tvbuff_t *tvb, int offset, packet_info *pinfo 
         offset = dissect_bthci_evt_cs_mode2_step(tvb, offset, pinfo, step_tree, step_data_length);
     }
     else {
+        int mode1_step_data_offset = offset;
         offset = dissect_bthci_evt_cs_mode1_step(tvb, offset, pinfo, step_tree, initiator, sounding_seq);
-        offset = dissect_bthci_evt_cs_mode2_step(tvb, offset, pinfo, step_tree, step_data_length);
+        offset = dissect_bthci_evt_cs_mode2_step(tvb, offset, pinfo, step_tree, step_data_length - (offset - mode1_step_data_offset));
     }
     return offset;
 }
@@ -11643,12 +11647,12 @@ proto_register_bthci_evt(void)
         },
         { &hf_bthci_evt_toa_tod_initiator,
           { "ToA-ToD Time, Initiator", "bthci_evt.toa_tod_initiator",
-            FT_UINT16, BASE_CUSTOM, CF_FUNC(convert_time_unit_0p5_ns), 0x0,
+            FT_INT16, BASE_CUSTOM, CF_FUNC(convert_time_unit_0p5_ns), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_evt_tod_toa_reflector,
           { "ToD-ToA Time, Reflector", "bthci_evt.tod_toa_reflector",
-            FT_UINT16, BASE_CUSTOM, CF_FUNC(convert_time_unit_0p5_ns), 0x0,
+            FT_INT16, BASE_CUSTOM, CF_FUNC(convert_time_unit_0p5_ns), 0x0,
             NULL, HFILL }
         },
         { &hf_bthci_evt_pct1,
