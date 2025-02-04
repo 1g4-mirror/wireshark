@@ -27,7 +27,9 @@ void proto_register_ogg(void);
 void proto_reg_handoff_ogg(void);
 
 static dissector_handle_t ogg_handle;
-static dissector_handle_t data_handle;
+
+/** Ogg payload dissectors, e.g. Vorbis, Theora, Opus */
+static heur_dissector_list_t ogg_pl_dissectors;
 
 static int proto_ogg;
 
@@ -58,6 +60,7 @@ dissect_ogg_segment_table(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, u
     uint8_t i;
     proto_tree *subtree;
     uint8_t seg_sizes[256];
+    heur_dtbl_entry_t *hdtbl_e;
 
     for (i = 0; i < n_segs; i++)
         seg_sizes[i] = tvb_get_uint8(tvb, offset + i);
@@ -68,7 +71,8 @@ dissect_ogg_segment_table(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, u
         tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, seg_sizes[i]);
         subtree = proto_tree_add_subtree_format(tree, tvb, offset, seg_sizes[i], ett_ogg_seg,
                                       NULL, "Segment %d", i + 1);
-        call_dissector(data_handle, next_tvb, pinfo, subtree);
+        if (!dissector_try_heuristic(ogg_pl_dissectors, next_tvb, pinfo, subtree, &hdtbl_e, NULL))
+            call_data_dissector(next_tvb, pinfo, subtree);
 
         offset += seg_sizes[i];
     }
@@ -270,13 +274,13 @@ proto_register_ogg(void)
     expert_register_field_array(expert_ogg, ei, array_length(ei));
 
     ogg_handle = register_dissector("ogg", dissect_ogg, proto_ogg);
+
+    ogg_pl_dissectors = register_heur_dissector_list_with_description("ogg_payload", "Ogg-encapsulated codecs", proto_ogg);
 }
 
 void
 proto_reg_handoff_ogg(void)
 {
-    data_handle = find_dissector("data");
-
     dissector_add_string("media_type", "audio/ogg", ogg_handle);
     dissector_add_string("media_type", "video/ogg", ogg_handle);
     dissector_add_string("media_type", "application/ogg", ogg_handle);
