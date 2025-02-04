@@ -1275,7 +1275,7 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 		case 0x02:
 			max_samples /= 3;
 			break;
-	}
+	}max_samples /= channels;
 	config->max_samples = max_samples;
 	freq = (float)max_samples / (float)duration;
 	freq *= 1000;
@@ -1287,37 +1287,22 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	return offset;
 }
 
-static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config) {
+static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_tree, configuration_info *config, int byte_len) {
 	  uint16_t max_samples = config->max_samples;
     uint8_t channels = config->audio_channels;
 		uint8_t audio_format = config->audio_format;
 		int count_sample_groups = 1;
-		int byte_len; //length of samples
     char values[MAX_BUFFER];
 		char group_numbers[MAX_BUFFER];
-
-		switch (audio_format) {
-			case 0x0:
-				byte_len = 1;
-				break;
-			case 0x1:
-				byte_len = 2;
-				break;
-			case 0x2:
-				byte_len = 3;
-				break;
-			default:
-				proto_item_append_text(idn_tree, " ERROR: unknown format");
-				return offset;
-		}
-
-		if(max_samples * byte_len > tvb_reported_length_remaining(tvb, offset)){
+		printf("max samples: %d\n",max_samples );
+		printf("remaining: %d\n",tvb_reported_length_remaining(tvb, offset) );
+		if(max_samples * byte_len *channels != tvb_reported_length_remaining(tvb, offset)){
 			proto_item_append_text(idn_tree, " WARNING: length not matching captured bytes");
-			max_samples = tvb_reported_length_remaining(tvb, offset) / byte_len;
+			max_samples = tvb_reported_length_remaining(tvb, offset) / byte_len /channels;
 		}
 
-  while (tvb_reported_length_remaining(tvb, offset) >= 10*channels*byte_len) {
-		sprintf(group_numbers, "Sample %4d-%4d", count_sample_groups, count_sample_groups+9);
+  while (max_samples >= 10) {
+		sprintf(group_numbers, "Sample %4d - %4d", count_sample_groups, count_sample_groups+9);
 		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
 
 
@@ -1341,19 +1326,21 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 
 
 			}offset += byte_len;
+
 			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+j, values);
-			max_samples -= 10;
-			count_sample_groups += 10;
+			max_samples--;
 		}
+		count_sample_groups += 10;
   }
 
-	if (tvb_reported_length_remaining(tvb, offset) > 0) {
-		printf("%d remaining\n",tvb_reported_length_remaining(tvb, offset) );
-		sprintf(group_numbers, "Sample %4d-%4d", count_sample_groups, count_sample_groups + tvb_reported_length_remaining(tvb, offset)/byte_len/channels);
+	if (max_samples > 0) {
+		sprintf(group_numbers, "Sample %4d - %4d", count_sample_groups, count_sample_groups + max_samples-1);
 		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
-		int remainder = 1;
-		while (tvb_reported_length_remaining(tvb, offset) > channels * byte_len) {
+		int remainder = 0;
+		printf("remaining -2  %d\n",max_samples );
+		while (max_samples > 0) {
 			int l = 0;
+			max_samples--;
 				for(int i=0; i<(int)channels; i++){
 					switch (audio_format) {
 						case 0x0:
@@ -1385,9 +1372,25 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 	proto_item *audio_samples_tree = proto_tree_add_subtree(idn_tree, tvb, offset, 4, ett_audio_samples, NULL, "Audio Samples");
 	uint8_t audio_format = config->audio_format;
 	uint16_t sample_count = config->max_samples;
-	uint16_t audio_channels = config->audio_channels;
 	float freq = config->audio_freq;
-	proto_item_append_text(audio_samples_tree, "  %u Samples, %.2f kHz", sample_count/audio_channels ,freq);
+	int byte_len;
+
+	switch (audio_format) {
+		case 0x0:
+			byte_len = 1;
+			break;
+		case 0x1:
+			byte_len = 2;
+			break;
+		case 0x2:
+			byte_len = 3;
+			break;
+		default:
+			proto_item_append_text(idn_tree, " ERROR: unknown format");
+			return offset;
+	}
+
+	proto_item_append_text(audio_samples_tree, "  %u Samples, %.2f kHz", sample_count ,freq);
 	switch (audio_format) {
 		case 0x00:
 			proto_item_append_text(audio_samples_tree, ", format 0x0(8 Bit Words)");
@@ -1399,7 +1402,7 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 			proto_item_append_text(audio_samples_tree, ", format 0x2(24 Bit Words)");
 			break;
 	}
-	dissect_idn_formatted_audio_samples(tvb, offset, audio_samples_tree, config);
+	dissect_idn_formatted_audio_samples(tvb, offset, audio_samples_tree, config, byte_len);
 	return offset;
 }
 
