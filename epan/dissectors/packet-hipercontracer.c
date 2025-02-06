@@ -19,7 +19,8 @@
 #include <epan/ipproto.h>
 #include <epan/sctpppids.h>
 #include <epan/stat_tap_ui.h>
-
+#include <epan/asn1.h>
+#include "packet-kerberos.h"
 
 void proto_register_hipercontracer(void);
 void proto_reg_handoff_hipercontracer(void);
@@ -103,6 +104,17 @@ heur_dissect_hipercontracer(tvbuff_t *message_tvb, packet_info *pinfo, proto_tre
   if ( (sendTimeStamp < UINT64_C(1451602800000000000)) ||
        (sendTimeStamp > UINT64_C(4102441199999999999)) )
     return false;
+
+  /*
+   * Don't dissect krb5 mmessages
+   */
+  if (length > 20 &&
+      magic > 16 &&
+      magic < (10*1024*1024) &&
+      kerberis_is_asn1_pdu(message_tvb, 4))
+  {
+    return false;
+  }
 
   col_append_sep_fstr(pinfo->cinfo, COL_PROTOCOL, NULL, "HiPerConTracer");
 
