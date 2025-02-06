@@ -56,6 +56,9 @@ typedef struct _kerberos_callbacks {
 bool
 kerberos_is_win2k_pkinit(asn1_ctx_t *actx);
 
+bool
+kerberis_is_asn1_pdu(tvbuff_t *tvb, int offset);
+
 int
 dissect_kerberos_main(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool do_col_info, kerberos_callbacks *cb);
 

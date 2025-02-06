@@ -8975,6 +8975,56 @@ dissect_kerberos_KERB_TICKET_LOGON(tvbuff_t *tvb, int offset, asn1_ctx_t *actx, 
 	return offset;
 }
 
+bool
+kerberis_is_asn1_pdu(tvbuff_t *tvb, int offset)
+{
+	/*
+	 * All krb5 packets start with a TAG class that is BER_CLASS_APP
+	 * and a tag value that is either of the values below:
+	 */
+	int8_t tmp_class;
+	bool tmp_pc;
+	int32_t tmp_tag;
+	const unsigned length = tvb_reported_length_remaining(tvb, offset);
+
+	if (length > (10*1024*1024)) {
+		return false;
+	}
+	if (length < 16) {
+		return false;
+	}
+
+	get_ber_identifier(tvb, offset, &tmp_class, &tmp_pc, &tmp_tag);
+	if (tmp_class != BER_CLASS_APP) {
+		return false;
+	}
+
+	switch (tmp_tag) {
+	case KRB5_MSG_TICKET:
+	case KRB5_MSG_AUTHENTICATOR:
+	case KRB5_MSG_ENC_TICKET_PART:
+	case KRB5_MSG_AS_REQ:
+	case KRB5_MSG_AS_REP:
+	case KRB5_MSG_TGS_REQ:
+	case KRB5_MSG_TGS_REP:
+	case KRB5_MSG_AP_REQ:
+	case KRB5_MSG_AP_REP:
+	case KRB5_MSG_ENC_AS_REP_PART:
+	case KRB5_MSG_ENC_TGS_REP_PART:
+	case KRB5_MSG_ENC_AP_REP_PART:
+	case KRB5_MSG_ENC_KRB_PRIV_PART:
+	case KRB5_MSG_ENC_KRB_CRED_PART:
+	case KRB5_MSG_SAFE:
+	case KRB5_MSG_PRIV:
+	case KRB5_MSG_ERROR:
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
 static int
 dissect_kerberos_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     bool dci, bool do_col_protocol, bool have_rm,
@@ -9001,6 +9051,9 @@ dissect_kerberos_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		if (krb_reclen > 10 * 1024 * 1024) {
 			return (-1);
 		}
+		if (!kerberis_is_asn1_pdu(tvb, offset+4)) {
+			return -1;
+		}
 
 		if (do_col_protocol) {
 			col_set_str(pinfo->cinfo, COL_PROTOCOL, "KRB5");
@@ -9020,36 +9073,10 @@ dissect_kerberos_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		 * If it doesn't look like kerberos, return 0 and let someone else have
 		 * a go at it.
 		 */
-		int8_t tmp_class;
-		bool tmp_pc;
-		int32_t tmp_tag;
-
-		get_ber_identifier(tvb, offset, &tmp_class, &tmp_pc, &tmp_tag);
-		if(tmp_class!=BER_CLASS_APP){
+		if (!kerberis_is_asn1_pdu(tvb, offset)) {
 			return 0;
 		}
-		switch(tmp_tag){
-			case KRB5_MSG_TICKET:
-			case KRB5_MSG_AUTHENTICATOR:
-			case KRB5_MSG_ENC_TICKET_PART:
-			case KRB5_MSG_AS_REQ:
-			case KRB5_MSG_AS_REP:
-			case KRB5_MSG_TGS_REQ:
-			case KRB5_MSG_TGS_REP:
-			case KRB5_MSG_AP_REQ:
-			case KRB5_MSG_AP_REP:
-			case KRB5_MSG_ENC_AS_REP_PART:
-			case KRB5_MSG_ENC_TGS_REP_PART:
-			case KRB5_MSG_ENC_AP_REP_PART:
-			case KRB5_MSG_ENC_KRB_PRIV_PART:
-			case KRB5_MSG_ENC_KRB_CRED_PART:
-			case KRB5_MSG_SAFE:
-			case KRB5_MSG_PRIV:
-			case KRB5_MSG_ERROR:
-				break;
-			default:
-				return 0;
-		}
+
 		if (do_col_protocol) {
 			col_set_str(pinfo->cinfo, COL_PROTOCOL, "KRB5");
 		}
