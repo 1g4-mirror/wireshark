@@ -4023,7 +4023,7 @@ dissect_smb2_session_setup_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 	if (!pinfo->fd->visited) {
 		idx = 0;
 		while ((ntlmssph = (const ntlmssp_header_t *)fetch_tapped_data(ntlmssp_tap_id, idx++)) != NULL) {
-			if (ntlmssph && ntlmssph->type == NTLMSSP_AUTH) {
+			if (ntlmssph->type == NTLMSSP_AUTH) {
 				si->session = smb2_get_session(si->conv, si->sesid, pinfo, si);
 				si->session->acct_name = wmem_strdup(wmem_file_scope(), ntlmssph->acct_name);
 				si->session->domain_name = wmem_strdup(wmem_file_scope(), ntlmssph->domain_name);
@@ -6818,6 +6818,13 @@ dissect_smb2_close_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 		which_tree = tree;
 	}
 
+	if (si->file && si->file->delete_on_close) {
+		if (si->file->is_dir)
+			col_append_str(pinfo->cinfo, COL_INFO, ", (delete dir)");
+		else
+			col_append_str(pinfo->cinfo, COL_INFO, ", (delete file)");
+	}
+
 	/* Filename */
 	if (si->file && si->file->name) {
 		item = proto_tree_add_string(which_tree, hf_smb2_filename, tvb, 0, 0, si->file->name);
@@ -6892,6 +6899,13 @@ dissect_smb2_close_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 
 	/* File Attributes */
 	offset = dissect_fscc_file_attr(tvb, tree, offset, NULL);
+
+	if (si->file && si->file->delete_on_close) {
+		if (si->file->is_dir)
+			col_append_str(pinfo->cinfo, COL_INFO, ", (dir was deleted)");
+		else
+			col_append_str(pinfo->cinfo, COL_INFO, ", (file was deleted)");
+	}
 
 	if (pinfo->fd->visited) {
 		if (si->file && si->file->name) {
@@ -10463,6 +10477,12 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	offset = dissect_smb_access_mask(tvb, tree, offset);
 
 	/* File Attributes */
+	if (si->file) {
+		if (tvb_get_letohl(tvb, offset) & 0x10)
+			si->file->is_dir = TRUE;
+		else
+			si->file->is_dir = FALSE;
+	}
 	offset = dissect_fscc_file_attr(tvb, tree, offset, NULL);
 
 	/* share access */
@@ -10474,6 +10494,12 @@ dissect_smb2_create_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	/* create options */
 	offset = dissect_nt_create_options(tvb, tree, offset);
+
+	if (tvb_get_letohl(tvb, offset-4) & 0x1000) {
+		col_append_str(pinfo->cinfo, COL_INFO, ", (delete on close)");
+		if (si->file)
+			si->file->delete_on_close = TRUE;
+	}
 
 	if (si->file)
 		si->file->frame_beg = pinfo->fd->num;
@@ -10623,6 +10649,9 @@ dissect_smb2_create_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	tvb_get_letohguid(tvb, offset, &tag_guid);
 	if (si->saved)
 		si->saved->uuid_fid = tag_guid;
+
+	if (si->file && si->file->delete_on_close)
+		col_append_str(pinfo->cinfo, COL_INFO, ", (delete on close)");
 
 	/* Display the GUID subtree */
 	offset = dissect_smb2_fid(tvb, pinfo, tree, offset, si, FID_MODE_OPEN);
@@ -11047,6 +11076,7 @@ dissect_smb2_server_to_client_notification(tvbuff_t *tvb, packet_info *pinfo, pr
 }
 
 /* names here are just until we find better names for these functions */
+/* decode_smb2_name can be used to access this safely */
 static const value_string smb2_cmd_vals[] = {
 	{ 0x00, "Negotiate Protocol" },
 	{ 0x01, "Session Setup" },
@@ -11617,7 +11647,7 @@ static const smb2_function smb2_dissector[256] = {
 #define SMB3_AES128CCM_NONCE	11
 #define SMB3_AES128GCM_NONCE	12
 
-static bool is_decrypted_header_ok(uint8_t *p, size_t size)
+static bool is_decrypted_header_ok(const uint8_t *p, size_t size)
 {
 	if (size < 4)
 		return false;
@@ -12526,6 +12556,10 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, bool fi
 		if (si->flags & SMB2_FLAGS_RESPONSE) {
 			si->status = tvb_get_letohl(tvb, offset);
 			proto_tree_add_item(header_tree, hf_smb2_nt_status, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+			if (si->status) {
+				proto_item_append_text(item, ", %s",
+					val_to_str_ext(si->status, &NT_errors_ext, "Unknown (0x%08X)"));
+			}
 			offset += 4;
 		} else {
 			si->status = 0;
@@ -12538,6 +12572,9 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, bool fi
 		/* opcode */
 		si->opcode = tvb_get_letohs(tvb, offset);
 		proto_tree_add_item(header_tree, hf_smb2_cmd, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+		proto_item_append_text(item, ", %s %s",
+			decode_smb2_name(si->opcode),
+			si->flags & SMB2_FLAGS_RESPONSE ? "Response" : "Request");
 		offset += 2;
 
 		/* credits */
@@ -12576,6 +12613,7 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, bool fi
 		si->msg_id = tvb_get_letoh64(tvb, offset);
 		ssi_key.msg_id = si->msg_id;
 		proto_tree_add_item(header_tree, hf_smb2_msg_id, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+		proto_item_append_text(item,  "MessageId %" PRIu64, (uint64_t)si->msg_id);
 		offset += 8;
 
 		/* Tree ID and Session ID */
