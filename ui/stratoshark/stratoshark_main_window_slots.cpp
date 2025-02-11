@@ -795,7 +795,7 @@ void StratosharkMainWindow::captureFileClosed() {
     main_ui_->statusBar->captureFileClosing();
     mainApp->popStatus(WiresharkApplication::FileStatus);
 
-    setWSWindowTitle();
+    setMainWindowTitle();
     setWindowIcon(mainApp->normalIcon());
     setMenusForSelectedPacket();
     setMenusForSelectedTreeRow();
@@ -2629,8 +2629,8 @@ void StratosharkMainWindow::openPacketDialog(bool from_reference)
 
         connect(packet_dialog, &PacketDialog::showProtocolPreferences,
                 this, &StratosharkMainWindow::showPreferencesDialog);
-        connect(packet_dialog, SIGNAL(editProtocolPreference(pref_t*, module_t*)),
-                main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*, module_t*)));
+        connect(packet_dialog, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+                main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*,module_t*)));
 
         connect(this, &StratosharkMainWindow::closePacketDialogs, packet_dialog, &PacketDialog::close);
         zoomText(); // Emits mainApp->zoomMonospaceFont(QFont)
@@ -3219,6 +3219,7 @@ void StratosharkMainWindow::connectHelpMenuActions()
     connect(main_ui_->actionHelpDownloads, &QAction::triggered, this, [=]() { mainApp->helpTopicAction(ONLINEPAGE_DOWNLOAD); });
     connect(main_ui_->actionHelpWiki, &QAction::triggered, this, [=]() { mainApp->helpTopicAction(ONLINEPAGE_WIKI); });
     connect(main_ui_->actionHelpSampleCaptures, &QAction::triggered, this, [=]() { mainApp->helpTopicAction(ONLINEPAGE_SAMPLE_FILES); });
+    connect(main_ui_->actionHelpReleaseNotes, &QAction::triggered, this, [=]() { mainApp->helpTopicAction(LOCALPAGE_STRATOSHARK_RELEASE_NOTES); });
 }
 
 #ifdef HAVE_SOFTWARE_UPDATE

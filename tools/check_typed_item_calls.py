@@ -625,7 +625,7 @@ class ValueString:
                             break
 
                     if not excepted and len(label)>2:
-                        print('Warning:', self.file, ': value_string', self.name, '- label ', label, 'repeated')
+                        print('Warning:', self.file, ': value_string', self.name, '- label', label, 'repeated, value now', value)
                         warnings_found += 1
                 else:
                     self.seen_labels.add(label)
@@ -1053,7 +1053,10 @@ class ExpertEntry:
 
         global errors_found, warnings_found
 
-        # Some immediate checks
+        # Remove any line breaks
+        summary = re.sub(re.compile(r'\"\s*\n\s*\"' ) ,'' , summary)
+
+        # Some immediate checks (already covered by other scripts)
         if group not in valid_groups:
             print('Error:', filename, 'Expert group', group, 'is not in', valid_groups)
             errors_found += 1
@@ -1069,6 +1072,11 @@ class ExpertEntry:
         if summary.endswith(' '):
             print('Warning:', filename, 'Expert info summary', '"' + summary + '"', 'for', name, 'ends with space')
             warnings_found += 1
+        if summary.find('  ') != -1:
+            print('Warning:', filename, 'Expert info summary', '"' + summary + '"', 'for', name, 'has a double space')
+            warnings_found += 1
+
+
 
         # The summary field is shown in the expert window without substituting args..
         if summary.find('%') != -1:
@@ -1083,7 +1091,8 @@ class ExpertEntries:
         self.filename = filename
         self.entries = []
         self.summaries = set()  # key is (name, severity)
-        self.reverselookup = {}  # summary -> previous-item
+        self.summary_reverselookup = {}  # summary -> item-name
+        self.filter_reverselookup  = {}  # filter  -> item-name
         self.filters = set()
 
     def AddEntry(self, entry):
@@ -1092,18 +1101,21 @@ class ExpertEntries:
         global errors_found, warnings_found
 
         # If summaries are not unique, can't tell apart from expert window (need to look into frame to see details)
+        # TODO: summary strings will never be seen if all calls to that item use expert_add_info_format()
         if (entry.summary, entry.severity) in self.summaries:
             print('Warning:', self.filename, 'Expert summary', '"' + entry.summary + '"',
-                  'has already been seen (now in', entry.name, '- previously in', self.reverselookup[entry.summary], ')')
+                  'has already been seen (now in', entry.name, '- previously in', self.summary_reverselookup[entry.summary], ')')
             warnings_found += 1
         self.summaries.add((entry.summary, entry.severity))
-        self.reverselookup[entry.summary] = entry.name
+        self.summary_reverselookup[entry.summary] = entry.name
 
         # Not sure if anyone ever filters on these, but check if are unique
         if entry.filter in self.filters:
-            print('Warning:', self.filename, 'Expert filter', '"' + entry.filter + '"', 'has already been seen (now in', entry.name+')')
+            print('Warning:', self.filename, 'Expert filter', '"' + entry.filter + '"',
+                  'has already been seen (now in', entry.name, '- previously in', self.filter_reverselookup[entry.filter], ')')
             warnings_found += 1
         self.filters.add(entry.filter)
+        self.filter_reverselookup[entry.filter] = entry.name
 
     def VerifyCall(self, item):
         # TODO: ignore if wasn't declared in self.filename?
@@ -1115,7 +1127,7 @@ class ExpertEntries:
         # None matched...
         if item not in [ 'hf', 'dissect_hf' ]:
             global warnings_found
-            print('Warning:', self.filename, 'Expert info added with', '"' + item + '"', 'was it was not registered (in this file)')
+            print('Warning:', self.filename, 'Expert info added with', '"' + item + '"', 'was not registered (in this file)?')
             warnings_found += 1
 
 
@@ -1217,6 +1229,16 @@ class Item:
         #    self.item_type == 'FT_UINT32' and self.mask_value == 0x0):
         #    print('Warning: ' + self.filename, self.hf, 'filter "' + self.filter + '", label "' + label + '"', 'item type is', self.item_type, '- could be FT_FRANENUM?')
         #    warnings_found += 1
+
+        if item_type == 'FT_IPv4':
+            if label.endswith('6') or filter.endswith('6'):
+                print('Warning: ' + filename, hf, 'filter ' + filter + 'label', label, 'but is a v4 field')
+                warnings_found += 1
+        if item_type == 'FT_IPv6':
+            if label.endswith('4') or filter.endswith('4'):
+                print('Warning: ' + filename, hf, 'filter ' + filter + 'label', label, 'but is a v6 field')
+                warnings_found += 1
+
 
 
     def __str__(self):
@@ -1770,8 +1792,8 @@ apiChecks.append(ProtoTreeAddItemCheck(True)) # for ptvcursor_add()
 
 
 def removeComments(code_string):
-    code_string = re.sub(re.compile(r"/\*.*?\*/",re.DOTALL ) ,"" , code_string) # C-style comment
-    code_string = re.sub(re.compile(r"//.*?\n" ) ,"" , code_string)             # C++-style comment
+    code_string = re.sub(re.compile(r"/\*.*?\*/",re.DOTALL ) ,"" , code_string)     # C-style comment
+    code_string = re.sub(re.compile(r"(?<!http:)//.*?\n" ) ,"" , code_string)       # C++-style comment
     code_string = re.sub(re.compile(r"#if 0.*?#endif",re.DOTALL ) ,"" , code_string) # Ignored region
 
     return code_string

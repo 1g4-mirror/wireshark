@@ -186,7 +186,7 @@ def features(cmd_tshark, make_env):
         have_nghttp3='+nghttp3' in tshark_v,
         have_kerberos='+Kerberos' in tshark_v,
         have_gnutls='+GnuTLS' in tshark_v,
-        have_pkcs11='PKCS #11' in tshark_v,
+        have_pkcs11='PKCS#11' in tshark_v,
         have_brotli='+brotli' in tshark_v,
         have_zstd='+Zstandard' in tshark_v,
         have_plugins='Plugins: supported' in tshark_v,
@@ -245,6 +245,7 @@ def make_env():
     def make_env_real(home=None):
         env = os.environ.copy()
         env['TZ'] = 'UTC'
+        env['WIRESHARK_ABORT_ON_DISSECTOR_BUG'] = '1'
         home_env = 'APPDATA' if sys.platform.startswith('win32') else 'HOME'
         if home:
             env[home_env] = home

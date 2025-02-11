@@ -1375,6 +1375,10 @@
         <translation>pcap形式</translation>
     </message>
     <message>
+        <source>Compression:</source>
+        <translation>圧縮:</translation>
+    </message>
+    <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instead of using a single capture file, multiple files will be created.&lt;/p&gt;&lt;p&gt;The generated file names will contain an incrementing number and the start time of the capture.&lt;/p&gt;&lt;p&gt;NOTE: If enabled, at least one of the new-file criteria MUST be selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;1つのキャプチャファイルを用いる代わりに複数のファイルが作成されます。&lt;/p&gt;&lt;p&gt;生成されたファイル名は連番とキャプチャ開始時間を含みます。&lt;/p&gt;&lt;p&gt;注意:有効にすると少なくとも1つの新規ファイルの基準が選択されなければなりません。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -1444,16 +1448,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>すべての802.11インターフェースにおいてモニターモードを有効化します</translation>
     </message>
     <message>
-        <source>compression</source>
-        <translation>圧縮</translation>
-    </message>
-    <message>
         <source>None</source>
         <translation>なし</translation>
     </message>
     <message>
         <source>gzip</source>
         <translation>gzip</translation>
+    </message>
+    <message>
+        <source>LZ4</source>
+        <translation>LZ4圧縮</translation>
     </message>
     <message>
         <source>File infix pattern</source>
@@ -3046,12 +3050,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>すべてのファイル(</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>ファイルを開く</translation>
+        <source>%1 Open File</source>
+        <translation>%1 ファイルを開く</translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>ファイルを選択</translation>
+        <source>%1 Select File</source>
+        <translation>%1 ファイルを選択</translation>
     </message>
 </context>
 <context>
@@ -4938,10 +4942,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>パケット形式正規表現</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifieing data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;Required is only a data group, also supported are time, dir and seqno.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;インポートするデータを識別する名前付きグループとともにファイルにある１つのパケットをキャプチャするPerl互換正規表現 アンカー、 ^ および $ 記号も新規の行の前後に合致します。 &lt;/p&gt;&lt;p&gt;必須はデータグループのみ、またtime,dirおよびseqnoもサポートされます。&lt;/p&gt;&lt;p&gt;Regex フラグ: DUPNAMES, MULTILINE および NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
         <source>This is regexHintLabel, it will be set to default_regex_hint</source>
         <translation>これは regexHintLabel です。default_regex_hint に設定されます</translation>
     </message>
@@ -5020,6 +5020,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>None</source>
         <translation>なし</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to treat multiple byte groups as being in little-endian byte order, instead of the default, network (big-endian) order.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;デフォルトのネットワークでの（ビックエンディアン）順のかわりに、リトルエンディアンのバイト順であるとして複数バイトグループを取り扱うかどうか&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Little-endian:</source>
+        <translation>リトルエンディアン:</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifying data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;The only required group is data, but time, dir and seqno are also supported.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl互換の正規表現で、ファイル内の単一のパケットをキャプチャします。インポートするデータを識別する名前付きグループが含まれます。  アンカー ^ および $ は、改行の前後にも適合します。&lt;/p&gt;&lt;p&gt; 必須のグループは data だけですが、time, dir および seqno もサポートされています。&lt;/p&gt;&lt;p&gt;正規表現のフラグ: DUPNAMES、MULTILINE、NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;small&gt;&lt;i&gt;recommended regex:&lt;/small&gt;&lt;/i&gt;</source>
@@ -5190,8 +5202,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>サポートされているフィールドは data, dir, time, seqno です</translation>
     </message>
     <message>
-        <source>Missing capturing group data (use (?</source>
-        <translation>キャプチャグループデータが不明（使用中？）</translation>
+        <source>Missing capturing group data (use (?&lt;data&gt;(...)) )</source>
+        <translation>キャプチャグループデータが欠けています ( (?&lt;data&gt;(...))を使用してください )</translation>
     </message>
     <message>
         <source>Import From Hex Dump</source>
@@ -5265,12 +5277,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>外部のキャプチャインターフェース無効化</translation>
     </message>
     <message>
+        <source>&lt;p&gt;Local interfaces are unavailable because WinPcap is installed but is no longer supported.&lt;/p&gt;&lt;p&gt;You can fix this by uninstalling WinPcap and installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;WinPcapがインストールされているものの、もはやサポートされていないためにローカルインターフェースは利用できません。&lt;/p&gt;&lt;p&gt;WinPcapをアンインストールして &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;をインストールすることにより修正することができます。&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Local interfaces are unavailable because no packet capture driver is installed.&lt;/p&gt;&lt;p&gt;You can fix this by installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;キャプチャドライバがインストールされていないのでローカルインターフェースは利用できません。&lt;p&gt;以下をインストールすることで修正できます。 &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed or &lt;pre&gt;net start npf&lt;/pre&gt; if you have WinPcap installed. Both commands must be run as Administrator.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;キャプチャドライバが読み込まれていないためローカルインターフェースは利用できません。&lt;/p&gt;&lt;p&gt;以下を実行することで修正することができます。 もしNpcapをインストールした場合、&lt;pre&gt;net start npcap&lt;/pre&gt; もしWinPcapをインストールした場合、&lt;pre&gt;net start npf&lt;/pre&gt; 両方のコマンドは管理者権限として実行する必要があります。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed. The command must be run as Administrator.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;パケットキャプチャドライバが読み込まれていないためローカルインターフェースは利用できません。&lt;/p&gt;&lt;p&gt;もしNpcapをインストールしていたら &lt;pre&gt;net start npcap&lt;/pre&gt; を実行することで修正できます。このコマンドは管理者として実行しなければなりません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You don&apos;t have permission to capture on local interfaces.&lt;/p&gt;&lt;p&gt;You can fix this by &lt;a href=&quot;file://%1&quot;&gt;installing ChmodBPF&lt;/a&gt;.&lt;/p&gt;</source>
@@ -6923,6 +6939,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>Display filter as %1</source>
         <translation>%1 として表示フィルタ</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation>ワイヤーシャーク ネットワークアナライザ</translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation>Stratoshark システムコールログアナライザ</translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation>%1 からキャプチャ中</translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -7542,6 +7570,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Generate hexdumps for secondary data sources like reassembled or decrypted buffers in addition to the frame&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;フレームに加えて第二データソースに対し再組立てや復号化したバッファなどの16進数ダンプを作成します。&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Include timestamp preamble</source>
+        <translation>タイムスタンププランブルを含む</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include each frame timestamp immediately before its hex dump, using the current time display format.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;現在の時刻表示形式で16進数ダンプの直前に各フレームのタイムスタンプを含めてください&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -8302,8 +8338,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>フィルタフィールドリファレンス</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>コピー済</translation>
+        <source>Copied %1</source>
+        <translation>%1 コピー済</translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -11969,6 +12005,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>ズーム</translation>
     </message>
     <message>
+        <source>Sampling Method</source>
+        <translation>サンプリング方法</translation>
+    </message>
+    <message>
+        <source>Select which packets and how the RTT sampling is done</source>
+        <translation> どのパケットを選択し、どのようにRTTのサンプリングを行うかを選択します。</translation>
+    </message>
+    <message>
         <source>Display Round Trip Time vs Sequence Number</source>
         <translation>往復遅延時間対シーケンス番号を表示</translation>
     </message>
@@ -12263,6 +12307,38 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>4</source>
         <translation>4</translation>
+    </message>
+    <message>
+        <source>All Data Packets</source>
+        <translation>すべてのデータパケット</translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets</source>
+        <translation>すべてのデータパケットからサンプリング</translation>
+    </message>
+    <message>
+        <source>All Data Packets w/ SACK</source>
+        <translation>すべてのデータパケットでSACKのもの</translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets w/ SACK</source>
+        <translation>すべてのデータパケットでSACKのものからサンプリング</translation>
+    </message>
+    <message>
+        <source>Data Packets matching RTT</source>
+        <translation>RTTに適合するデータパケット</translation>
+    </message>
+    <message>
+        <source>Sampling from RTT packets</source>
+        <translation>RTTパケットからサンプリング</translation>
+    </message>
+    <message>
+        <source>Data Packets matching Karn RTT</source>
+        <translation>Karn RTTに適合するデータパケット</translation>
+    </message>
+    <message>
+        <source>Sampling from Karn RTT packets</source>
+        <translation>Karn RTTパケットからサンプリング</translation>
     </message>
     <message>
         <source>Zoom In X Axis</source>
@@ -14705,24 +14781,12 @@ a:hover {
         <translation>パケット時間を前に表示されたパケットからの秒数で表示します</translation>
     </message>
     <message>
-        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456)</source>
-        <translation>UTC日時 (1973-06-14 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC date and time of day.</source>
         <translation>パケット時間をUTC日付および時刻で表示します</translation>
     </message>
     <message>
-        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456)</source>
-        <translation>UTC年、通年日、時刻 (1970/001 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC year, day of the year and time of day.</source>
         <translation>パケット時間をUTC年、通年日、時刻で表示します</translation>
-    </message>
-    <message>
-        <source>UTC Time of Day (01:02:03.123456)</source>
-        <translation>UTC時刻 (01:02:03.123456)</translation>
     </message>
     <message>
         <source>Show packet times as the UTC time of day.</source>
@@ -14973,6 +15037,18 @@ a:hover {
     <message>
         <source>&amp;Unmark All Displayed</source>
         <translation>表示されているものすべてをマーク解除(&amp;U)</translation>
+    </message>
+    <message>
+        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456Z)</source>
+        <translation>UTC日時 (1970-01-01 01:02:03.123456Z)</translation>
+    </message>
+    <message>
+        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456Z)</source>
+        <translation>UTC年、通年日、時刻  (1970/001 01:02:03.123456Z)</translation>
+    </message>
+    <message>
+        <source>UTC Time of Day (01:02:03.123456Z)</source>
+        <translation>UTC時刻 (01:02:03.123456Z)</translation>
     </message>
     <message>
         <source>All VoIP Calls</source>
@@ -15261,14 +15337,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>保存せずに停止して続ける(&amp;w)</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>ワイヤーシャークネットワークアナライザ</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>%1 からキャプチャ中</translation>
     </message>
     <message>
         <source> before opening another file</source>

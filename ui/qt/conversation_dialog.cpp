@@ -83,14 +83,13 @@ ConversationDialog::ConversationDialog(QWidget &parent, CaptureFile &cf) :
 
     follow_bt_ = buttonBox()->addButton(tr("Follow Stream…"), QDialogButtonBox::ActionRole);
     follow_bt_->setToolTip(tr("Follow a TCP or UDP stream."));
-    connect(follow_bt_, SIGNAL(clicked()), this, SLOT(followStream()));
+    connect(follow_bt_, &QPushButton::clicked, this, &ConversationDialog::followStream);
 
     graph_bt_ = buttonBox()->addButton(tr("Graph…"), QDialogButtonBox::ActionRole);
     graph_bt_->setToolTip(tr("Graph a TCP conversation."));
-    connect(graph_bt_, SIGNAL(clicked()), this, SLOT(graphTcp()));
+    connect(graph_bt_, &QPushButton::clicked, this, &ConversationDialog::graphTcp);
 
-    connect(mainApp->mainWindow(), SIGNAL(displayFilterSuccess(bool)),
-            this, SLOT(displayFilterSuccess(bool)));
+    connect(mainApp->mainWindow(), &MainWindow::displayFilterSuccess, this, &ConversationDialog::displayFilterSuccess);
 
     absoluteTimeCheckBox()->show();
 
@@ -173,7 +172,12 @@ void ConversationDialog::tabChanged(int)
             // Move the selected tab to the head
             if (selected_tab != nullptr) {
                 recent.conversation_tabs = g_list_remove_link(recent.conversation_tabs, selected_tab);
+#if GLIB_CHECK_VERSION(2, 62, 0)
+                recent.conversation_tabs = g_list_insert_before_link(recent.conversation_tabs, recent.conversation_tabs, selected_tab);
+#else
                 recent.conversation_tabs = g_list_prepend(recent.conversation_tabs, selected_tab->data);
+                g_list_free_1(selected_tab);
+#endif
             }
         }
         int endpointType = trafficTab()->currentItemData(ATapDataModel::ENDPOINT_DATATYPE).toInt();

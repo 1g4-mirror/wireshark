@@ -24,12 +24,10 @@ DIAG_ON(frame-larger-than=)
 #include <wsutil/filesystem.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
-#include <wsutil/version_info.h>
 #include <epan/prefs.h>
 #include <epan/plugin_if.h>
 
 #include "ui/iface_toolbar.h"
-#include "ui/commandline.h"
 
 #ifdef HAVE_LIBPCAP
 #include "ui/capture.h"
@@ -609,8 +607,8 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
     connect(packet_list_, &PacketList::packetDissectionChanged, this, &StratosharkMainWindow::redissectPackets);
     connect(packet_list_, &PacketList::showColumnPreferences, this, &StratosharkMainWindow::showPreferencesDialog);
     connect(packet_list_, &PacketList::showProtocolPreferences, this, &StratosharkMainWindow::showPreferencesDialog);
-    connect(packet_list_, SIGNAL(editProtocolPreference(pref_t*, module_t*)),
-            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*, module_t*)));
+    connect(packet_list_, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*,module_t*)));
     connect(packet_list_, &PacketList::editColumn, this, &StratosharkMainWindow::showColumnEditor);
     connect(main_ui_->columnEditorFrame, &ColumnEditorFrame::columnEdited, packet_list_, &PacketList::columnsChanged);
     connect(packet_list_, &QAbstractItemView::doubleClicked, this, [=](const QModelIndex &){ openPacketDialog(); });
@@ -618,8 +616,8 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
 
     connect(proto_tree_, &ProtoTree::openPacketInNewWindow, this, &StratosharkMainWindow::openPacketDialog);
     connect(proto_tree_, &ProtoTree::showProtocolPreferences, this, &StratosharkMainWindow::showPreferencesDialog);
-    connect(proto_tree_, SIGNAL(editProtocolPreference(pref_t*, module_t*)),
-            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*, module_t*)));
+    connect(proto_tree_, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+            main_ui_->preferenceEditorFrame, SLOT(editPreference(pref_t*,module_t*)));
 
     connect(main_ui_->statusBar, &MainStatusBar::showExpertInfo, this, [=]() {
         statCommandExpertInfo(NULL, NULL);
@@ -683,6 +681,7 @@ main_ui_->goToLineEdit->setValidator(goToLineQiv);
     main_ui_->actionHelpDownloads->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_DOWNLOAD)));
     main_ui_->actionHelpWiki->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_WIKI)));
     main_ui_->actionHelpSampleCaptures->setToolTip(gchar_free_to_qstring(topic_action_url(ONLINEPAGE_SAMPLE_CAPTURES)));
+    main_ui_->actionHelpReleaseNotes->setToolTip(gchar_free_to_qstring(topic_action_url(LOCALPAGE_STRATOSHARK_RELEASE_NOTES)));
 
     showWelcome();
 }
@@ -2008,9 +2007,9 @@ void StratosharkMainWindow::initMainToolbarIcons()
     // Toolbar actions. The GNOME HIG says that we should have a menu icon for each
     // toolbar item but that clutters up our menu. Set menu icons sparingly.
 
-    main_ui_->actionCaptureStart->setIcon(StockIcon("x-capture-start-circle"));
+    main_ui_->actionCaptureStart->setIcon(StockIcon("x-capture-start"));
     main_ui_->actionCaptureStop->setIcon(StockIcon("x-capture-stop"));
-    main_ui_->actionCaptureRestart->setIcon(StockIcon("x-capture-restart-circle"));
+    main_ui_->actionCaptureRestart->setIcon(StockIcon("x-capture-restart"));
     main_ui_->actionCaptureOptions->setIcon(StockIcon("x-capture-options"));
 
     // Menu icons are disabled in stratoshark_main_window.ui for these File-> items.
@@ -2058,7 +2057,7 @@ void StratosharkMainWindow::initShowHideMainWidgets()
     }
 
     show_hide_actions_ = new QActionGroup(this);
-    QMap<QAction *, QWidget *> shmw_actions;
+    QHash<QAction *, QWidget *> shmw_actions;
 
     show_hide_actions_->setExclusive(false);
     shmw_actions[main_ui_->actionViewMainToolbar] = main_ui_->mainToolBar;
@@ -2286,120 +2285,6 @@ void StratosharkMainWindow::setTitlebarForCaptureFile()
 {
     use_capturing_title_ = false;
     updateTitlebar();
-}
-
-QString StratosharkMainWindow::replaceWindowTitleVariables(QString title)
-{
-    title.replace("%P", get_profile_name());
-    title.replace("%V", get_ss_vcs_version_info());
-
-#ifdef HAVE_LIBPCAP
-    if (global_commandline_info.capture_comments) {
-        // Use the first capture comment from command line.
-        title.replace("%C", (char *)g_ptr_array_index(global_commandline_info.capture_comments, 0));
-    } else {
-        // No capture comment.
-        title.remove("%C");
-    }
-#else
-    title.remove("%C");
-#endif
-
-    if (title.contains("%F")) {
-        // %F is file path of the capture file.
-        if (capture_file_.capFile()) {
-            // get_dirname() will overwrite the argument so make a copy first
-            char *filename = g_strdup(capture_file_.capFile()->filename);
-            QString file(get_dirname(filename));
-            g_free(filename);
-#ifndef _WIN32
-            // Substitute HOME with ~
-            QString homedir(g_getenv("HOME"));
-            if (!homedir.isEmpty()) {
-                homedir.remove(QRegularExpression("[/]+$"));
-                file.replace(homedir, "~");
-            }
-#endif
-            title.replace("%F", file);
-        } else {
-            // No file loaded, no folder name
-            title.remove("%F");
-        }
-    }
-
-    if (title.contains("%S")) {
-        // %S is a conditional separator (" - ") that only shows when surrounded by variables
-        // with values or static text. Remove repeating, leading and trailing separators.
-        title.replace(QRegularExpression("(%S)+"), "%S");
-        title.remove(QRegularExpression("^%S|%S$"));
-#ifdef __APPLE__
-        // On macOS we separate with a unicode em dash
-        title.replace("%S", " " UTF8_EM_DASH " ");
-#else
-        title.replace("%S", " - ");
-#endif
-    }
-
-    return title;
-}
-
-void StratosharkMainWindow::setWSWindowTitle(QString title)
-{
-    if (title.isEmpty()) {
-        title = tr("The Stratoshark System Call and Log Analyzer");
-    }
-
-    if (prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
-        QString custom_title = replaceWindowTitleVariables(prefs.gui_prepend_window_title);
-        if (custom_title.length() > 0) {
-            title.prepend(QStringLiteral("[%1] ").arg(custom_title));
-        }
-    }
-
-    if (prefs.gui_window_title && prefs.gui_window_title[0]) {
-        QString custom_title = replaceWindowTitleVariables(prefs.gui_window_title);
-        if (custom_title.length() > 0) {
-#ifdef __APPLE__
-            // On macOS we separate the titles with a unicode em dash
-            title.append(QStringLiteral(" %1 %2").arg(UTF8_EM_DASH).arg(custom_title));
-#else
-            title.append(QStringLiteral(" [%1]").arg(custom_title));
-#endif
-        }
-    }
-
-    setWindowTitle(title);
-    setWindowFilePath(NULL);
-}
-
-void StratosharkMainWindow::setTitlebarForCaptureInProgress()
-{
-    use_capturing_title_ = true;
-    updateTitlebar();
-}
-
-void StratosharkMainWindow::updateTitlebar()
-{
-    if (use_capturing_title_ && capture_file_.capFile()) {
-        setWSWindowTitle(tr("Capturing from %1").arg(cf_get_tempfile_source(capture_file_.capFile())));
-    } else if (capture_file_.capFile() && capture_file_.capFile()->filename) {
-        setWSWindowTitle(QStringLiteral("[*]%1").arg(capture_file_.fileDisplayName()));
-        //
-        // XXX - on non-Mac platforms, put in the application
-        // name?  Or do so only for temporary files?
-        //
-        if (!capture_file_.capFile()->is_tempfile) {
-            //
-            // Set the file path; that way, for macOS, it'll set the
-            // "proxy icon".
-            //
-            setWindowFilePath(capture_file_.filePath());
-        }
-        setWindowModified(cf_has_unsaved_data(capture_file_.capFile()));
-    } else {
-        /* We have no capture file. */
-        setWSWindowTitle();
-    }
 }
 
 // Menu state
@@ -2784,7 +2669,7 @@ void StratosharkMainWindow::addPluginIFStructures()
         if (menu->parent_menu) {
             QMenu *sortUnderneath = searchSubMenu(QString(menu->parent_menu));
             if (sortUnderneath)
-                subMenu = sortUnderneath->addMenu(menu->label);
+                subMenu = findOrAddMenu(sortUnderneath, QStringList() << menu->label);
         }
 
         if (!subMenu)

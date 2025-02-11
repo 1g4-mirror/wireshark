@@ -29,6 +29,7 @@
 #include <wsutil/array.h>
 #include <epan/expert.h>
 #include <epan/reassemble.h>
+#include <epan/tfs.h>
 
 #include "packet-ber.h"
 #include "packet-x509if.h"
@@ -272,7 +273,7 @@ static int ett_dlms_fragments;
 
 static expert_field ei_dlms_no_success;
 static expert_field ei_dlms_not_implemented;
-static expert_field ei_dlms_check_sequence;;
+static expert_field ei_dlms_check_sequence;
 
 static dissector_handle_t cosem_handle;
 static dissector_handle_t dlms_handle;
@@ -441,7 +442,7 @@ static const value_string dlms_data_access_result_names[] = {
     { 3, "read-write-denied" },
     { 4, "object-undefined" },
     { 9, "object-class-inconsistent" },
-    { 11, "object-unvailable" },
+    { 11, "object-unavailable" },
     { 12, "type-unmatched" },
     { 13, "scope-of-access-violated" },
     { 14, "data-block-unavailable" },
@@ -484,20 +485,6 @@ static const value_string dlms_service_error_names[] = {
     { 1, "operation-not-possible" },
     { 2, "service-not-supported" },
     { 3, "other-reason" },
-    {0, NULL}
-};
-
-/* Names of the values of the service-class bit in the Invoke-Id-And-Priority */
-static const value_string dlms_service_class_names[] = {
-    { 0, "unconfirmed" },
-    { 1, "confirmed" },
-    {0, NULL}
-};
-
-/* Names of the values of the priority bit in the Invoke-Id-And-Priority */
-static const value_string dlms_priority_names[] = {
-    { 0, "normal" },
-    { 1, "high" },
     {0, NULL}
 };
 
@@ -2464,12 +2451,12 @@ dlms_dissect_get_request(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, in
     if (choice == DLMS_GET_REQUEST_NORMAL) {
         col_set_str(pinfo->cinfo, COL_INFO, "Get-Request-Normal");
         offset = dlms_dissect_cosem_attribute_descriptor(tvb, pinfo, tree, offset);
-        offset = dlms_dissect_selective_access_descriptor(tvb, pinfo, tree, offset);
+        /*offset = */dlms_dissect_selective_access_descriptor(tvb, pinfo, tree, offset);
     }
     else if (choice == DLMS_GET_REQUEST_NEXT) {
         proto_tree_add_item(tree, hf_dlms_block_number, tvb, offset, 4, ENC_BIG_ENDIAN);
         block_number = tvb_get_ntohl(tvb, offset);
-        offset += 4;
+        /*offset += 4;*/
         col_add_fstr(pinfo->cinfo, COL_INFO, "Get-Request-Next (block %u)", block_number);
     }
     else {
@@ -2622,7 +2609,7 @@ dlms_dissect_action_response(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree
         col_set_str(pinfo->cinfo, COL_INFO, "Action-Response-Normal");
         item = proto_tree_add_item(tree, hf_dlms_action_result, tvb, offset, 1, ENC_NA);
         result = tvb_get_uint8(tvb, offset);
-        offset += 1;
+        /*offset += 1;*/
         if (result) {
             result_name = val_to_str_const(result, dlms_action_result_names, "unknown");
             col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)", result_name);
@@ -3550,9 +3537,9 @@ void proto_register_cosem(void) {
     { &hf_dlms_invoke_id,
     { "Invoke Id", "dlms.invoke_id", FT_UINT8, BASE_DEC, NULL, 0x0f, NULL, HFILL }},
     { &hf_dlms_service_class,
-    { "Service Class", "dlms.service_class", FT_UINT8, BASE_DEC, VALS(dlms_service_class_names), 0x40, NULL, HFILL }},
+    { "Service Class", "dlms.service_class", FT_BOOLEAN, 8, TFS(&tfs_confirmed_unconfirmed), 0x40, NULL, HFILL }},
     { &hf_dlms_priority,
-    { "Priority", "dlms.priority", FT_UINT8, BASE_DEC, VALS(dlms_priority_names), 0x80, NULL, HFILL }},
+    { "Priority", "dlms.priority", FT_BOOLEAN, 32, TFS(&tfs_high_normal), 0x80, NULL, HFILL }},
     /* Long-Invoke-Id-And-Priority */
     { &hf_dlms_long_invoke_id,
     { "Long Invoke Id", "dlms.long_invoke_id", FT_UINT32, BASE_DEC, NULL, 0xffffff, NULL, HFILL }},
@@ -3561,9 +3548,9 @@ void proto_register_cosem(void) {
     { &hf_dlms_processing_option,
     { "Processing Option", "dlms.processing_option", FT_UINT32, BASE_DEC, VALS(dlms_processing_option_names), 0x20000000, NULL, HFILL }},
     { &hf_dlms_long_service_class,
-    { "Service Class", "dlms.service_class", FT_UINT32, BASE_DEC, VALS(dlms_service_class_names), 0x40000000, NULL, HFILL }},
+    { "Service Class", "dlms.service_class", FT_BOOLEAN, 32, TFS(&tfs_confirmed_unconfirmed), 0x40000000, NULL, HFILL }},
     { &hf_dlms_long_priority,
-    { "Priority", "dlms.priority", FT_UINT32, BASE_DEC, VALS(dlms_priority_names), 0x80000000, NULL, HFILL }},
+    { "Priority", "dlms.priority", FT_BOOLEAN, 32, TFS(&tfs_high_normal), 0x80000000, NULL, HFILL }},
     /* fragment_items */
     { &hf_dlms_fragments,
     { "Fragments", "dlms.fragments", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }},
@@ -3594,11 +3581,11 @@ void proto_register_cosem(void) {
     { &hf_dlms_proposed_quality_of_service,
     { "proposed-quality-of-service", "dlms.proposed_quality_of_service.count", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
     { &hf_dlms_proposed_dlms_version_number,
-    { "proposed-dlms-version-number", "dlms.proposed_dlms_version_numbert", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+    { "proposed-dlms-version-number", "dlms.proposed_dlms_version_number", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
     { &hf_dlms_negotiated_quality_of_service,
     { "negotiated-quality-of-service", "dlms.negotiated_quality_of_service", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
     { &hf_dlms_negotiated_dlms_version_number,
-    { "negotiated-dlms-version-number", "dlms.negotiated_dlms_version_numbert", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+    { "negotiated-dlms-version-number", "dlms.negotiated_dlms_version_number", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
     { &hf_dlms_object_name,
     { "ObjectName", "dlms.objectname", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
 

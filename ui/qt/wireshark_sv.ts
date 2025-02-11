@@ -1380,6 +1380,10 @@
         <translation>pcap</translation>
     </message>
     <message>
+        <source>Compression:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instead of using a single capture file, multiple files will be created.&lt;/p&gt;&lt;p&gt;The generated file names will contain an incrementing number and the start time of the capture.&lt;/p&gt;&lt;p&gt;NOTE: If enabled, at least one of the new-file criteria MUST be selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Istället för att använda en enda fångstfil kommer flera filer skapas.&lt;/p&gt;&lt;p&gt;De genererade filnamnen kommer innehålla ett ökande nummer och starttidpunkten för fångsten.&lt;/p&gt;&lt;p&gt;OBS: om aktiverat MÅSTE åtminstone ett av kriterierna för ny fil väljas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -1450,16 +1454,16 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Aktivera övervakningsläge på alla 802.11-gränssnitt</translation>
     </message>
     <message>
-        <source>compression</source>
-        <translation>komprimering</translation>
-    </message>
-    <message>
         <source>None</source>
         <translation>Ingen</translation>
     </message>
     <message>
         <source>gzip</source>
         <translation>gzip</translation>
+    </message>
+    <message>
+        <source>LZ4</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File infix pattern</source>
@@ -3052,12 +3056,12 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Alla filer (</translation>
     </message>
     <message>
-        <source>Open File</source>
-        <translation>Öppna fil</translation>
+        <source>%1 Open File</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select File</source>
-        <translation>Välj fil</translation>
+        <source>%1 Select File</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4954,10 +4958,6 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Paketformat reguljärt uttryck</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifieing data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;Required is only a data group, also supported are time, dir and seqno.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl-kompatibelt reguljärt uttryck för att fånga ett enskilt paket i filen med namngivna grupper som identifierar data att importera. Ankaren ^ och $ matchar även före/efter nyrader&lt;/p&gt;&lt;p&gt;Datagruppen är det enda nödvändiga, stödjer även tid, katalog och sekvensnummer.&lt;/p&gt;&lt;p&gt;Flaggor för reguljäruttryck: DUPNAMES, MULTILINE och NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
         <source>This is regexHintLabel, it will be set to default_regex_hint</source>
         <translation>Detta är regexHintLabel, det kommer sättas till default_regex_hint</translation>
     </message>
@@ -5036,6 +5036,18 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
     <message>
         <source>None</source>
         <translation>Ingen</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to treat multiple byte groups as being in little-endian byte order, instead of the default, network (big-endian) order.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Little-endian:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perl compatible regular expression capturing a single packet in the file with named groups identifying data to import. Anchors ^ and $ also match before/after newlines &lt;/p&gt;&lt;p&gt;The only required group is data, but time, dir and seqno are also supported.&lt;/p&gt;&lt;p&gt;Regex flags: DUPNAMES, MULTILINE and NOEMPTY&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;small&gt;&lt;i&gt;recommended regex:&lt;/small&gt;&lt;/i&gt;</source>
@@ -5206,8 +5218,8 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Fält som stödjs är data, dir, time, seqno</translation>
     </message>
     <message>
-        <source>Missing capturing group data (use (?</source>
-        <translation>Data för fångstgrupp saknas (använd (?</translation>
+        <source>Missing capturing group data (use (?&lt;data&gt;(...)) )</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Import From Hex Dump</source>
@@ -5281,12 +5293,16 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Externa fångstgränssnitt avaktiverade.</translation>
     </message>
     <message>
+        <source>&lt;p&gt;Local interfaces are unavailable because WinPcap is installed but is no longer supported.&lt;/p&gt;&lt;p&gt;You can fix this by uninstalling WinPcap and installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Local interfaces are unavailable because no packet capture driver is installed.&lt;/p&gt;&lt;p&gt;You can fix this by installing &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Lokala gränssnitt är inte tillgängliga för att ingen paketfångstdrivrutin är installerad&lt;/p&gt;&lt;p&gt;Man kan lösa detta genom att installera &lt;a href=&quot;https://npcap.com/&quot;&gt;Npcap&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed or &lt;pre&gt;net start npf&lt;/pre&gt; if you have WinPcap installed. Both commands must be run as Administrator.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lokala gränssnitt är otillgängliga för att paketfångstdrivrutinen inte är inläst.&lt;/p&gt;&lt;p&gt;Du kan fixa detta genom att köra &lt;pre&gt;net start npcap&lt;/pre&gt; om du har Npcap installerat eller &lt;pre&gt;net start npf&lt;/pre&gt; om du har WinPcap installerat. Båda kommandona måste köras som administratör.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Local interfaces are unavailable because the packet capture driver isn&apos;t loaded.&lt;/p&gt;&lt;p&gt;You can fix this by running &lt;pre&gt;net start npcap&lt;/pre&gt; if you have Npcap installed. The command must be run as Administrator.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;You don&apos;t have permission to capture on local interfaces.&lt;/p&gt;&lt;p&gt;You can fix this by &lt;a href=&quot;file://%1&quot;&gt;installing ChmodBPF&lt;/a&gt;.&lt;/p&gt;</source>
@@ -6940,6 +6956,18 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <source>Display filter as %1</source>
         <translation>Visningsfilter som %1</translation>
     </message>
+    <message>
+        <source>The Wireshark Network Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Stratoshark System Call and Log Analyzer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capturing from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowPreferencesFrame</name>
@@ -7561,6 +7589,14 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Generate hexdumps for secondary data sources like reassembled or decrypted buffers in addition to the frame&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Generera hexdumpar för sekundära datakällor såsom återsammansatta eller dekrypterade buffertar utöver ramen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Include timestamp preamble</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include each frame timestamp immediately before its hex dump, using the current time display format.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8329,8 +8365,8 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>Filterfältreferens</translation>
     </message>
     <message>
-        <source>Copied </source>
-        <translation>Kopierade </translation>
+        <source>Copied %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wiki Page for %1</source>
@@ -11999,6 +12035,14 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
         <translation>zoomningar</translation>
     </message>
     <message>
+        <source>Sampling Method</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select which packets and how the RTT sampling is done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Display Round Trip Time vs Sequence Number</source>
         <translation>Visa rundturstider mot sekvensnummer</translation>
     </message>
@@ -12293,6 +12337,38 @@ Till exempel, använd 1 timma för att en ny fil skall skapas varje timma vid he
     <message>
         <source>4</source>
         <translation>4</translation>
+    </message>
+    <message>
+        <source>All Data Packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All Data Packets w/ SACK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from all data packets w/ SACK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Packets matching RTT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from RTT packets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Packets matching Karn RTT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sampling from Karn RTT packets</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom In X Axis</source>
@@ -14736,24 +14812,12 @@ a:hover {
         <translation>Visa pakettider som antalet sekunder sedan föregående visade paket.</translation>
     </message>
     <message>
-        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456)</source>
-        <translation>UTC-datum och tid på dagen (1970-01-01 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC date and time of day.</source>
         <translation>Visa pakettider som UTC-datumet och tiden på dagen.</translation>
     </message>
     <message>
-        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456)</source>
-        <translation>UTC-år, dag på året, och tid på dagen (1970/001 01:02:03.123456)</translation>
-    </message>
-    <message>
         <source>Show packet times as the UTC year, day of the year and time of day.</source>
         <translation>Visa pakettider som UTC-år, dag på året och tid på dagen.</translation>
-    </message>
-    <message>
-        <source>UTC Time of Day (01:02:03.123456)</source>
-        <translation>UTC-tid på dagen (01:02:03.123456)</translation>
     </message>
     <message>
         <source>Show packet times as the UTC time of day.</source>
@@ -15004,6 +15068,18 @@ a:hover {
     <message>
         <source>&amp;Unmark All Displayed</source>
         <translation>&amp;Avmarkera alla visade</translation>
+    </message>
+    <message>
+        <source>UTC Date and Time of Day (1970-01-01 01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTC Year, Day of Year, and Time of Day (1970/001 01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTC Time of Day (01:02:03.123456Z)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>All VoIP Calls</source>
@@ -15291,14 +15367,6 @@ a:hover {
         <source>Stop and Continue &amp;without Saving</source>
         <oldsource>Stop and Continue without Saving</oldsource>
         <translation>Stoppa och fortsätt &amp;utan att spara</translation>
-    </message>
-    <message>
-        <source>The Wireshark Network Analyzer</source>
-        <translation>Nätverksanalysatorn Wireshark</translation>
-    </message>
-    <message>
-        <source>Capturing from %1</source>
-        <translation>Fångst från %1</translation>
     </message>
     <message>
         <source> before opening another file</source>
