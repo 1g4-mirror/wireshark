@@ -1323,12 +1323,13 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 					default:
 						break;
 				}
+				offset += byte_len;
 
+			}
 
-			}offset += byte_len;
-
-			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+j, values);
+			proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset-channels*byte_len, byte_len*channels, channels, "Sample %4d:     %s",count_sample_groups+j, values);
 			max_samples--;
+
 		}
 		count_sample_groups += 10;
   }
@@ -1402,7 +1403,7 @@ static int dissect_idn_audio_samples(tvbuff_t *tvb, int offset, proto_tree *idn_
 			proto_item_append_text(audio_samples_tree, ", format 0x2(24 Bit Words)");
 			break;
 	}
-	dissect_idn_formatted_audio_samples(tvb, offset, audio_samples_tree, config, byte_len);
+	offset = dissect_idn_formatted_audio_samples(tvb, offset, audio_samples_tree, config, byte_len);
 	return offset;
 }
 
