@@ -77,6 +77,11 @@ void proto_reg_handoff_dlt_storage_header(void);
 #define DLT_MSG_VERB_PARAM_TRAI                         0x00002000
 #define DLT_MSG_VERB_PARAM_STRU                         0x00004000
 
+#define DLT_MSG_VERB_PARAM_TYFM_BASE10                  0x00000000
+#define DLT_MSG_VERB_PARAM_TYFM_BASE8                   0x00008000
+#define DLT_MSG_VERB_PARAM_TYFM_BASE16                  0x00010000
+#define DLT_MSG_VERB_PARAM_TYFM_BASE2                   0x00020000
+
 #define DLT_MSG_VERB_PARAM_SCOD                         0x00038000
 #define DLT_MSG_VERB_PARAM_SCOD_ASCII                   0x00000000
 #define DLT_MSG_VERB_PARAM_SCOD_UTF8                    0x00008000
@@ -382,6 +387,7 @@ static const value_string dlt_service_options[] = {
 
 static expert_field ei_dlt_unsupported_datatype;
 static expert_field ei_dlt_unsupported_length_datatype;
+static expert_field ei_dlt_unsupported_int_type_format;
 static expert_field ei_dlt_unsupported_string_coding;
 static expert_field ei_dlt_unsupported_non_verbose_msg_type;
 static expert_field ei_dlt_buffer_too_short;
@@ -401,6 +407,14 @@ expert_dlt_unsupported_length_datatype(proto_tree *tree, packet_info *pinfo, tvb
         proto_tree_add_expert(tree, pinfo, &ei_dlt_unsupported_length_datatype, tvb, offset, length);
     }
     col_append_str(pinfo->cinfo, COL_INFO, " [DLT: Unsupported Length of Datatype!]");
+}
+
+static void
+expert_dlt_unsupported_int_type_format(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset, int length) {
+    if (tvb != NULL) {
+        proto_tree_add_expert(tree, pinfo, &ei_dlt_unsupported_int_type_format, tvb, offset, length);
+    }
+    col_append_str(pinfo->cinfo, COL_INFO, " [DLT: Unsupported integer type format!]");
 }
 
 static void
@@ -583,7 +597,7 @@ dissect_dlt_verbose_parameter_int(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 }
 
 static uint32_t
-dissect_dlt_verbose_parameter_uint(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, const unsigned encoding, uint32_t type_info _U_, int length) {
+dissect_dlt_verbose_parameter_uint(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, const unsigned encoding, uint32_t type_info, int length) {
     uint8_t *vari_name_string = NULL;
     uint8_t *vari_unit_string = NULL;
     if ((type_info & DLT_MSG_VERB_PARAM_VARI) == DLT_MSG_VERB_PARAM_VARI) {
@@ -624,11 +638,33 @@ dissect_dlt_verbose_parameter_uint(tvbuff_t *tvb, packet_info *pinfo, proto_tree
         proto_item_append_text(ti, " [unit: %s]", vari_unit_string);
     }
 
-    if (length == 1 || length == 2 || length == 4) {
-        col_append_fstr(pinfo->cinfo, COL_INFO, " %u", value);
-    } else if (length == 8) {
-        col_append_fstr(pinfo->cinfo, COL_INFO, " %" PRIu64, value64);
+    switch (type_info) { 
+    case DLT_MSG_VERB_PARAM_TYFM_BASE16:
+        if (length == 1 || length == 2 || length == 4) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " 0x%u", value);
+        } else if (length == 8) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " 0x%" PRIx64, value64);
+        }
+        break;
+    case DLT_MSG_VERB_PARAM_TYFM_BASE8:
+        if (length == 1 || length == 2 || length == 4) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " 0%o", value);
+        } else if (length == 8) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " 0%" PRIo64, value64);
+        }
+        break;
+    case DLT_MSG_VERB_PARAM_TYFM_BASE10:
+    case DLT_MSG_VERB_PARAM_TYFM_BASE2:
+        if (length == 1 || length == 2 || length == 4) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " %u", value);
+        } else if (length == 8) {
+            col_append_fstr(pinfo->cinfo, COL_INFO, " %" PRIu64, value64);
+        }
+        break;
+    default:
+        expert_dlt_unsupported_int_type_format(tree, pinfo, tvb, offset, length);
     }
+
     return length;
 }
 
@@ -1428,6 +1464,9 @@ void proto_register_dlt(void) {
         { &ei_dlt_unsupported_length_datatype, {
             "dlt.unsupported_length_datatype", PI_MALFORMED, PI_ERROR,
             "DLT: Unsupported Length of Datatype!", EXPFILL } },
+        { &ei_dlt_unsupported_int_type_format, {
+            "dlt.unsupported_integer_type_format", PI_MALFORMED, PI_ERROR,
+            "DLT: Unsupported integer type format!", EXPFILL } },
         { &ei_dlt_unsupported_string_coding, {
             "dlt.unsupported_string_coding", PI_MALFORMED, PI_ERROR,
             "DLT: Unsupported String Coding!", EXPFILL } },
