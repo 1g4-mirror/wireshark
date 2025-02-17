@@ -1,6 +1,8 @@
 /* packet-oran.c
  * Routines for O-RAN fronthaul UC-plane dissection
  * Copyright 2020, Jan Schiefer, Keysight Technologies, Inc.
+ * Copyright 2020- Martin Mathieson
+ *
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -558,6 +560,8 @@ static int  pref_support_udcompLen = 2;            /* start heuristic, can force
 static bool udcomplen_heuristic_result_set = false;
 static bool udcomplen_heuristic_result = false;
 
+/* st6-4byte-alignment-required */
+static bool st6_4byte_alignment = false;
 
 static const enum_val_t dl_compression_options[] = {
     { "COMP_NONE",                             "No Compression",                                                             COMP_NONE },
@@ -595,6 +599,7 @@ static const enum_val_t udcomphdr_present_options[] = {
     { "HEURISTIC",                 "Attempt Heuristic", 2 },
     { NULL, NULL, 0 }
 };
+
 
 
 static const value_string e_bit[] = {
@@ -868,8 +873,6 @@ static AllowedCTs_t ext_cts[HIGHEST_EXTTYPE] = {
     { false, false, false, true,  false, false, false },  // SE 25     (5)
     { false, false, false, true,  false, false, false },  // SE 26     (5)
     { false, false, false, true,  false, false, false },  // SE 27     (5)
-
-
 };
 
 static bool se_allowed_in_st(unsigned se, unsigned ct)
@@ -896,6 +899,7 @@ static bool se_allowed_in_st(unsigned se, unsigned ct)
 
 /************************************************************************************/
 
+/* Table 7.7.1.2-2 */
 static const value_string bfw_comp_headers_iq_width[] = {
     {0,     "I and Q are 16 bits wide"},
     {1,     "I and Q are 1 bit wide"},
@@ -1008,6 +1012,7 @@ static const value_string lbtTrafficClass_vals[] = {
     {0,   NULL}
 };
 
+/* 7.5.3.22 */
 static const value_string lbtPdschRes_vals[] = {
     {0,   "not sensing – indicates that the O-RU is transmitting data"},
     {1,   "currently sensing – indicates the O-RU has not yet acquired the channel"},
@@ -1016,12 +1021,14 @@ static const value_string lbtPdschRes_vals[] = {
     {0,   NULL}
 };
 
+/* Table 7.5.2.15-3 */
 static const value_string ci_comp_opt_vals[] = {
     {0,   "compression per UE, one ciCompParam exists before the I/Q value of each UE"},
     {1,   "compression per PRB, one ciCompParam exists before the I/Q value of each PRB"},
     {0,   NULL}
 };
 
+/* 7.5.2.17 */
 static const range_string cmd_scope_vals[] = {
     {0, 0,  "ARRAY-COMMAND"},
     {1, 1,  "CARRIER-COMMAND"},
@@ -1088,6 +1095,7 @@ static const value_string prg_size_st5_vals[] = {
     { 0, NULL}
 };
 
+/* 7.7.21.3.2 */
 static const value_string prg_size_st6_vals[] = {
     { 0, "if ciPrbGroupSize is 2 or 4, then ciPrbGroupSize, else WIDEBAND"},
     { 1, "Precoding resource block group size as WIDEBAND"},
@@ -1096,12 +1104,14 @@ static const value_string prg_size_st6_vals[] = {
     { 0, NULL}
 };
 
+/* 7.7.24.4 */
 static const value_string alpn_per_sym_vals[] = {
     { 0, "report one allocated IPN value per all allocated symbols with DMRS"},
     { 1, "report one allocated IPN value per group of consecutive DMRS symbols"},
     { 0, NULL}
 };
 
+/* 7.7.24.5 */
 static const value_string ant_dmrs_snr_vals[] = {
     { 0, "O-RU shall not report the MEAS_ANT_DMRS_SNR"},
     { 1, "O-RU shall report the MEAS_ANT_DMRS_SNR"},
@@ -2358,7 +2368,7 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                 float value = decompress_value(bits, ci_comp_meth, ci_iq_width, exponent);
 
                 /* Add to tree. */
-                proto_tree_add_float_format_value(sample_tree, hf_oran_ciIsample, tvb, bit_offset/8, (16+7)/8, value, "#%u=%f", m, value);
+                proto_tree_add_float_format_value(sample_tree, hf_oran_ciIsample, tvb, bit_offset/8, (ci_iq_width+7)/8, value, "#%u=%f", m, value);
                 bit_offset += ci_iq_width;
                 proto_item_append_text(sample_ti, "I%u=%f ", m, value);
 
@@ -2368,13 +2378,16 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                 value = decompress_value(bits, ci_comp_meth, ci_iq_width, exponent);
 
                 /* Add to tree. */
-                proto_tree_add_float_format_value(sample_tree, hf_oran_ciQsample, tvb, bit_offset/8, (16+7)/8, value, "#%u=%f", m, value);
+                proto_tree_add_float_format_value(sample_tree, hf_oran_ciQsample, tvb, bit_offset/8, (ci_iq_width+7)/8, value, "#%u=%f", m, value);
                 bit_offset += ci_iq_width;
                 proto_item_append_text(sample_ti, "Q%u=%f ", m, value);
             }
-            proto_item_set_len(prb_ti, (bit_offset-prb_start_offset)/8);
+            proto_item_set_len(prb_ti, (bit_offset-prb_start_offset+7)/8);
         }
-        offset = (bit_offset/8);
+
+        /* Pad out by 1 or 4 bytes, according to preference */
+        offset = (bit_offset + ((st6_4byte_alignment ? 31 : 7) / 8));
+        proto_item_set_end(c_section_tree, tvb, offset);
     }
 
     bool seen_se10 = false;
@@ -4950,10 +4963,10 @@ static int dissect_oran_c(tvbuff_t *tvb, packet_info *pinfo,
                     }
                     offset += 2;
 
-                    /* disableTDBFNs */
+                    /* disableTDBFNs (1 bit) */
                     proto_tree_add_item_ret_boolean(command_tree, hf_oran_disable_tdbfns, tvb, offset, 1, ENC_BIG_ENDIAN, &disable_tdbfns);
 
-                    /* tdBeamNum  */
+                    /* tdBeamNum (15 bits) */
                     proto_tree_add_item(command_tree, hf_oran_td_beam_num, tvb, offset, 2, ENC_BIG_ENDIAN);
                     offset += 2;
 
@@ -4972,11 +4985,11 @@ static int dissect_oran_c(tvbuff_t *tvb, packet_info *pinfo,
                     /* Read beam entries until reach end of command length */
                     while ((offset - command_start_offset) < (st4_cmd_len * 4)) {
 
-                        /* disableTDBFWs */
+                        /* disableTDBFWs (1 bit) */
                         bool disable_tdbfws;
                         proto_tree_add_item_ret_boolean(command_tree, hf_oran_disable_tdbfws, tvb, offset, 1, ENC_BIG_ENDIAN, &disable_tdbfws);
 
-                        /* tdBeamNum  */
+                        /* tdBeamNum (15 bits) */
                         proto_tree_add_item(command_tree, hf_oran_td_beam_num, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
 
@@ -8368,6 +8381,9 @@ proto_register_oran(void)
     prefs_register_enum_preference(oran_module, "oran.support_udcomplen", "udCompLen supported",
         "When enabled, U-Plane messages with relevant compression schemes will include udCompLen",
         &pref_support_udcompLen, udcomp_support_options, false);
+
+    prefs_register_bool_preference(oran_module, "oran.st6_4byte_alignment_required", "Use 4-byte alignment for ST6 sections",
+        "Default is 1-byte alignment", &st6_4byte_alignment);
 
     flow_states_table = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
     flow_results_table = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
