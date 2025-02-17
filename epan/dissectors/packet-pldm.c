@@ -3,6 +3,10 @@
  * disassembly
  * https://www.dmtf.org/sites/default/files/standards/documents/DSP0240_1.1.0.pdf
  * https://www.dmtf.org/sites/default/files/standards/documents/DSP0248_1.2.0.pdf
+ * https://www.dmtf.org/sites/default/files/standards/documents/DSP0257_1.0.1_0.pdf
+ * https://www.dmtf.org/sites/default/files/standards/documents/DSP0247_1.0.0.pdf
+ * 
+ * 
  * Copyright 2023, Riya Dixit <riyadixitagra@gmail.com>
  *
  * Wireshark - Network traffic analyzer
@@ -15,10 +19,13 @@
 
 #include "config.h"
 #include <epan/packet.h>
+#include <wsutil/wmem/wmem.h>
+#include <wsutil/wmem/wmem_strbuf.h>
 
 #define PLDM_MIN_LENGTH 4
 #define PLDM_MAX_TYPES 8
-
+/*BIOS*/                  
+#define BCD44_TO_DEC(x) ((((x)&0xf0) >> 4) * 10 + ((x)&0x0f))
 
 static int proto_pldm;
 static int ett_pldm;
@@ -163,6 +170,76 @@ static int hf_fru_record_field_len;
 static int hf_fru_record_field_value;
 static int hf_fru_record_crc;
 static int hf_fru_table_handle;
+
+/*BIOS*/
+static int hf_bios_attr_handle;
+static int hf_bios_attr_type;
+static int hf_bios_attr_name_handle;
+static int hf_bios_enumer_num_pos_values;
+static int hf_bios_enumer_pos_value_str_hndl;
+static int hf_bios_enumer_num_default_values;
+static int hf_bios_enumer_default_value_str_hndl;
+static int hf_bios_attr_table_pad_bytes;
+static int hf_bios_attr_table_checksum;
+static int hf_bios_str_handle;
+static int hf_bios_str_len;
+static int hf_bios_str;
+static int hf_bios_string_type;
+static int hf_bios_min_str_len;
+static int hf_bios_max_str_len;
+static int hf_bios_def_str_len;
+static int hf_bios_def_str;
+static int hf_bios_int_lower_bound;
+static int hf_bios_int_upper_bound;
+static int hf_bios_int_scalar_inc;
+static int hf_bios_int_def_val;
+static int hf_bios_boot_config_type;
+static int hf_bios_fail_through_modes;
+static int hf_bios_min_num_boot_src;
+static int hf_bios_max_num_boot_src;
+static int hf_bios_pos_num_boot_src;
+static int hf_bios_src_str_hndl;
+static int hf_bios_col_name_str_hndl;
+static int hf_bios_max_num_attr;
+static int hf_bios_col_type;
+static int hf_bios_num_pos_config;
+static int hf_bios_pos_config_str_hndl;
+static int hf_bios_enumer_num_cur_values;
+static int hf_bios_enumer_cur_value_str_hndl;
+static int hf_bios_cur_str_len;
+static int hf_bios_cur_str;
+static int hf_bios_cur_pass_len;
+static int hf_bios_cur_pass;
+static int hf_bios_cur_val;
+static int hf_bios_num_boot_src;
+static int hf_bios_boot_src_str_hndl;
+static int hf_bios_num_attr;
+static int hf_bios_attr_hndl;
+static int hf_bios_cur_config_set_str_hndl;
+static int hf_bios_enumer_num_pen_values;
+static int hf_bios_enumer_pen_value_str_hndl;
+static int hf_bios_pen_str_len;
+static int hf_bios_pen_str;
+static int hf_bios_pen_pass_len;
+static int hf_bios_pen_pass;
+static int hf_bios_pen_val;
+static int hf_bios_config_set_str_hndl;
+static int hf_bios_pass_type;
+static int hf_bios_min_pass_len;
+static int hf_bios_max_pass_len;
+static int hf_bios_def_pass_len;
+static int hf_bios_def_pass;
+static int hf_bios_num_pen_boot_src;
+static int hf_bios_table_type;
+static int hf_bios_next_data_handle;
+static int hf_bios_transfer_flag;
+static int hf_bios_enum_curr_str_hndl_idx;
+static int hf_bios_data_handle;
+static int hf_bios_num_curr_value;
+
+// Date and Time
+static int hf_pldm_time;
+static int hf_pldm_date;
 
 static const value_string directions[] = {
 	{0, "response"},
@@ -488,6 +565,51 @@ static const value_string field_types_general[] = {
 	{0, NULL}
 };
 
+/*BIOS*/
+static const value_string bios_table_types[] = {
+    {0x0, "BIOS String Table"},
+    {0x1, "BIOS Attribute Table"},
+    {0x2, "BIOS Attribute Value Table"},
+    {0x3, "BIOS Attribute Pending Value Table"},
+    {0, NULL}
+};
+
+static const value_string bios_attribute_type[] = {
+    {0x0, "BIOSEnumeration"},
+    {0x1, "BIOSString"},
+    {0x2, "BIOSPassword"},
+    {0x3, "BIOSInteger"},
+    {0x4, "BIOSBootConfigSetting"},
+    {0x5, "BIOSCollection"},
+    {0x6, "BIOSConfigSet"},
+    {0x80, "BIOSEnumerationReadOnly"},
+    {0x81, "BIOSStringRaedOnly"},
+    {0x82, "BIOSPasswordReadOnly"},
+    {0x83, "BIOSIntegerReadOnly"},
+    {0x84, "BIOSPasswordReadOnly"},
+    {0x85, "BIOSCollectionReadOnly"},
+    {0x86, "BIOSConfigSetReadOnly"},
+	{0, NULL}
+};
+
+static const value_string pldm_bios_boot_config_type[]={                       
+  {0x00, "Unknown"},
+  {0x01, "Default"},
+  {0x02, "Next"},
+  {0x03, "Default and Next"},
+  {0x04, "One Time"}, 
+  {0x05, "Default and One Time"},
+  {0, NULL}
+};
+
+static const value_string pldm_bios_fail_through_mode[]={
+  {0x00, "Unordered and Limited Fail Through"},
+  {0x01, "Unordered and Fail Through"},
+  {0x02, "Ordered and Limited Fail Through"},
+  {0x03, "Ordered and Fail Through"},
+  {0, NULL}
+};
+
 /* Some details of frame seen passed info functions handling packet types.
    Not stored as per-packet data in frame...  */
 typedef struct pldm_packet_data {
@@ -497,67 +619,63 @@ typedef struct pldm_packet_data {
 
 
 /* Return number of characters written */
-static int print_version_field(uint8_t bcd, char *buffer, size_t buffer_size)
+static void print_version_field(uint8_t bcd, wmem_strbuf_t *buf)
 {
 	int v;
 	if (bcd == 0xff)
 		// No value to write
-		return 0;
-	if (((bcd) & 0xf0) == 0xf0) {
+		return;
+	if ((bcd & 0xf0) == 0xf0) {
 		// First nibble all set, so get value from 2nd nibble - show as bcd
-		v = (bcd) & 0x0f;
-		return snprintf(buffer, buffer_size, "%d", v);
+		v = bcd & 0x0f;
+		wmem_strbuf_append_printf(buf, "%d", v);
+	} else {
+		// Get one char from each nibble by printing as 2-digit number
+		int tens = (bcd >> 4) & 0x0f;  // Extract the tens digit
+		int units = bcd & 0x0f;        // Extract the units digit
+		wmem_strbuf_append_printf(buf, "%d%d", tens, units);
 	}
-	// Get one char from each nibble by printing as 2-digit number
-	v = (((bcd) >> 4) * 10) + ((bcd) & 0x0f);
-	return snprintf(buffer, buffer_size, "%02d", v);
 }
 
-static char* ver2str(tvbuff_t *tvb, int offset)
+static const char* ver2str(tvbuff_t *tvb, int offset, packet_info *pinfo)
 {
-	#define VER_BUF_LEN 12
-	static char buffer[VER_BUF_LEN+1];
-	char* buf_ptr = &buffer[0];
-
 	uint8_t major = tvb_get_uint8(tvb, offset);
 	uint8_t minor = tvb_get_uint8(tvb, offset+1);
 	uint8_t update = tvb_get_uint8(tvb, offset+2);
 	uint8_t alpha = tvb_get_uint8(tvb, offset+3);
 
 	// major, minor and update fields are all BCD encoded
-	uint8_t c_offset = 0;
+	wmem_strbuf_t *version_buf = wmem_strbuf_new(pinfo->pool, NULL);
 
 	// Major
 	if (major != 0xff) {
-		c_offset += print_version_field(major, buf_ptr+c_offset, VER_BUF_LEN-c_offset);
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, ".");
+		print_version_field(major, version_buf);
+		wmem_strbuf_append(version_buf, ".");
 	} else {
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, "-");
+		wmem_strbuf_append(version_buf, "-");
 	}
 	// Minor
 	if (minor != 0xff) {
-		c_offset += print_version_field(minor, buf_ptr+c_offset, VER_BUF_LEN-c_offset);
+		print_version_field(minor, version_buf);
 	} else {
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, "-");
+		wmem_strbuf_append(version_buf, "-");
 	}
 	// Update
 	if (update != 0xff) {
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, ".");
-		c_offset += print_version_field(update, buf_ptr+c_offset, VER_BUF_LEN-c_offset);
+		wmem_strbuf_append(version_buf, ".");
+		print_version_field(update, version_buf);
 	} else {
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, "-");
+		wmem_strbuf_append(version_buf, "-");
 	}
 	// Alpha
 	if (alpha != 0x00) {
-		/*c_offset += */snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, "%c", alpha);
+		wmem_strbuf_append_printf(version_buf, "%c", alpha);
 	} else {
-		c_offset += snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, ".");
-		snprintf(buf_ptr+c_offset, VER_BUF_LEN-c_offset, "-");
+		wmem_strbuf_append(version_buf, "-");
 	}
 
-	return buf_ptr;
+	return wmem_strbuf_finalize(version_buf);
 }
-
 
 static
 int dissect_base(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p_tree, const pldm_packet_data *data)
@@ -598,10 +716,9 @@ int dissect_base(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p_tree, const pl
 				offset += 4;
 				proto_tree_add_item(p_tree, hf_pldm_base_transferFlag, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 				offset += 1;
-				const char *version_string = ver2str(tvb, offset);
+				const char *version_string = ver2str(tvb, offset, pinfo);
 				proto_tree_add_string_format_value(p_tree, hf_pldm_base_typeVersion, tvb, offset, 4,
 				                                   version_string, "%s", version_string);
-				// possibly more than one entry
 			}
 			break;
 		case 04: // GetPLDMTypes
@@ -634,7 +751,7 @@ int dissect_base(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p_tree, const pl
 				}
 				proto_tree_add_item(p_tree, hf_pldm_base_PLDMtype, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 				offset += 1;
-				const char *version_string = ver2str(tvb, offset);
+				const char *version_string = ver2str(tvb, offset, pinfo);
 				proto_tree_add_string_format_value(p_tree, hf_pldm_base_typeVersion, tvb, offset, 4,
 				                                   version_string, "%s", version_string);
 			} else if (!request) {
@@ -1232,9 +1349,769 @@ int dissect_FRU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *p_tree, const pld
 			col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid PLDM command");
 			break;
 	}
-
 	return tvb_captured_length(tvb);
 }
+
+void dissect_bios_string_table(tvbuff_t *tvb, proto_tree *p_tree,
+                               int *offset, packet_info *pinfo, int sz) {
+	uint16_t len = tvb_reported_length(tvb);
+	len = len - sz;
+	uint16_t rem_bytes = len;
+	int L=0;
+	uint32_t str_len = 0;
+	int num_pad_bytes = 0;
+	while (rem_bytes >= 8) {
+		proto_tree_add_item(p_tree, hf_bios_str_handle, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN);
+		*offset += 2;
+		proto_tree_add_item_ret_uint(p_tree, hf_bios_str_len, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN, &str_len);
+		if (str_len >= (uint32_t)(rem_bytes - 4)) break;
+		*offset += 2;
+		L+=4;
+		proto_tree_add_item(p_tree, hf_bios_str, tvb, *offset, str_len, ENC_ASCII);
+		proto_item_append_text(
+			p_tree, ": %s",
+			tvb_get_string_enc(pinfo->pool, tvb, *offset, str_len, ENC_ASCII));
+		L+=str_len;
+		*offset += str_len;
+		rem_bytes = rem_bytes - 4 - str_len;
+		str_len = 0;
+	}   
+
+	num_pad_bytes = rem_bytes % 4;
+	if (num_pad_bytes>0){
+		num_pad_bytes = 4 - (L%4);
+		proto_tree_add_item(p_tree, hf_bios_attr_table_pad_bytes, tvb, *offset,
+							num_pad_bytes, ENC_LITTLE_ENDIAN);
+		*offset += num_pad_bytes;
+		int reported_length = tvb_reported_length_remaining(tvb, *offset);
+		if (reported_length>=4){
+			proto_tree_add_item(p_tree, hf_bios_attr_table_checksum, tvb, *offset, 4,
+							ENC_LITTLE_ENDIAN);
+		}
+	}              
+	return;                 
+}   
+    
+void dissect_bios_attribute_table(tvbuff_t *tvb, proto_tree *p_tree,
+                                  int *offset, packet_info *pinfo, int sz) {
+
+	uint16_t len = tvb_reported_length(tvb);
+	len = len - sz;
+	uint16_t rem_bytes = len;
+	int len_attr_fields = 0;
+	int L=0;
+	uint32_t num_values = 0;
+	uint32_t attr_type = 0;
+	int num_pad_bytes = 0;
+	while (rem_bytes >= 8) {
+		proto_tree_add_item_ret_uint(p_tree, hf_bios_attr_handle, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN, &attr_type);
+		*offset += 2;
+		proto_tree_add_item(p_tree, hf_bios_attr_type, tvb, *offset, 1,
+							ENC_LITTLE_ENDIAN);
+		*offset += 1;
+		proto_tree_add_item(p_tree, hf_bios_attr_name_handle, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN);
+		*offset += 2;
+		L+=5;
+		switch (attr_type){
+			case 0:
+			case 128:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_enumer_num_pos_values, tvb, *offset,
+								1, ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_enumer_pos_value_str_hndl, tvb,
+										*offset, 2, ENC_LITTLE_ENDIAN);
+					*offset += 2;
+					len_attr_fields += 2;
+					num_values--;
+				}
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_enumer_num_default_values, tvb,
+									*offset, 1, ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_enumer_default_value_str_hndl, tvb,
+										*offset, 1, ENC_LITTLE_ENDIAN);
+					*offset += 1;
+					len_attr_fields += 1;
+					num_values--;
+				}
+				break;
+			case 1:
+			case 129:
+				proto_tree_add_item(p_tree, hf_bios_string_type, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_min_str_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				proto_tree_add_item(p_tree, hf_bios_max_str_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				uint32_t def_str_len;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_def_str_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN, &def_str_len);
+				*offset += 2;
+				len_attr_fields += 2;
+				if (def_str_len != 0) {
+					proto_tree_add_item(p_tree, hf_bios_def_str, tvb, *offset, def_str_len,
+										ENC_ASCII);
+					proto_item_append_text(p_tree, ": %s",
+											tvb_get_string_enc(pinfo->pool, tvb, *offset,
+																def_str_len, ENC_ASCII));
+					*offset += def_str_len;
+					len_attr_fields += def_str_len;
+				}
+				break;
+			case 2:
+			case 130:
+				proto_tree_add_item(p_tree, hf_bios_pass_type, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_min_pass_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				proto_tree_add_item(p_tree, hf_bios_max_pass_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				uint32_t def_pass_len;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_def_pass_len, tvb, *offset, 2,
+									ENC_LITTLE_ENDIAN, &def_pass_len);
+				*offset += 2;
+				len_attr_fields += 2;
+				if (def_pass_len != 0) {
+					proto_tree_add_item_ret_uint(p_tree, hf_bios_def_pass, tvb, *offset,
+										hf_bios_def_str_len, ENC_LITTLE_ENDIAN, &def_pass_len);
+					*offset += def_pass_len;
+					len_attr_fields += def_pass_len;
+				}
+				break;
+			case 3:
+			case 131:
+				proto_tree_add_item(p_tree, hf_bios_int_lower_bound, tvb, *offset, 8,
+								ENC_LITTLE_ENDIAN);
+				*offset += 8;
+				len_attr_fields += 8;
+				proto_tree_add_item(p_tree, hf_bios_int_upper_bound, tvb, *offset, 8,
+									ENC_LITTLE_ENDIAN);
+				*offset += 8;
+				len_attr_fields += 8;
+				proto_tree_add_item(p_tree, hf_bios_int_scalar_inc, tvb, *offset, 4,
+									ENC_LITTLE_ENDIAN);
+				*offset += 4;
+				len_attr_fields += 4;
+				proto_tree_add_item(p_tree, hf_bios_int_def_val, tvb, *offset, 8,
+									ENC_LITTLE_ENDIAN);
+				*offset += 8;
+				len_attr_fields += 8;
+				break;
+			case 4:
+			case 132:
+				proto_tree_add_item(p_tree, hf_bios_boot_config_type, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_fail_through_modes, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_min_num_boot_src, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_max_num_boot_src, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_pos_num_boot_src, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_src_str_hndl, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN);
+					*offset += 2;
+					len_attr_fields += 2;
+					num_values--;
+				}
+				break;
+			case 5:
+			case 133:
+				proto_tree_add_item(p_tree, hf_bios_col_name_str_hndl, tvb, *offset, 2,
+								ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				proto_tree_add_item(p_tree, hf_bios_max_num_attr, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_col_type, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				break;
+			case 6:
+			case 134:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_num_pos_config, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_pos_config_str_hndl, tvb, *offset,
+										2, ENC_LITTLE_ENDIAN);
+					*offset += 2;
+					len_attr_fields += 2;
+					num_values--;
+				}
+				break;
+			default: 
+				col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid attribute type");
+				break;
+		}
+		rem_bytes = rem_bytes - 5 - len_attr_fields;
+		L+=len_attr_fields;
+		len_attr_fields = 0;
+	}
+	num_pad_bytes = rem_bytes % 4;
+	if (num_pad_bytes>0){
+		num_pad_bytes = 4 - (L%4);
+		proto_tree_add_item(p_tree, hf_bios_attr_table_pad_bytes, tvb, *offset,
+							num_pad_bytes, ENC_LITTLE_ENDIAN); 
+		*offset += num_pad_bytes;
+		int reported_length = tvb_reported_length_remaining(tvb, *offset);
+		if (reported_length>=4){
+			proto_tree_add_item(p_tree, hf_bios_attr_table_checksum, tvb, *offset, 4,
+							ENC_LITTLE_ENDIAN);
+		}
+	}
+	return;
+}
+
+void dissect_bios_attribute_val_table(tvbuff_t *tvb, proto_tree *p_tree,
+                                      int *offset, packet_info *pinfo, int sz) {
+	uint16_t len = tvb_reported_length(tvb);
+	len = len - sz;
+	uint16_t rem_bytes = len;
+	int len_attr_fields = 0;
+	int L=0;
+	uint32_t num_values = 0;
+	uint32_t attr_type = 0;
+	int num_pad_bytes = 0;
+	while (rem_bytes >= 8 && rem_bytes > 0) {
+		proto_tree_add_item(p_tree, hf_bios_attr_handle, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN);
+		*offset += 2;
+		proto_tree_add_item_ret_uint(p_tree, hf_bios_attr_type, tvb, *offset, 1,
+							ENC_LITTLE_ENDIAN, &attr_type);
+		*offset += 1;
+		L+=3;
+		switch (attr_type){
+			case 0:
+			case 128:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_enumer_num_cur_values, tvb, *offset,
+								1, ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_enumer_cur_value_str_hndl, tvb,
+										*offset, 1, ENC_LITTLE_ENDIAN);
+					*offset += 1;
+					len_attr_fields += 1;
+					num_values--;
+				}
+				break;
+			case 1:
+			case 129:
+				{
+					uint32_t cur_str_len =0;
+					proto_tree_add_item_ret_uint(p_tree, hf_bios_cur_str_len, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN, &cur_str_len);
+					*offset += 2;
+					len_attr_fields += 2;
+					if (cur_str_len > 0){
+						proto_tree_add_item(p_tree, hf_bios_def_str, tvb, *offset, cur_str_len,
+											ENC_ASCII);
+						proto_item_append_text(p_tree, ": %s",
+												tvb_get_string_enc(pinfo->pool, tvb, *offset,
+																	cur_str_len, ENC_ASCII));
+					}
+					*offset += cur_str_len;
+					len_attr_fields += cur_str_len;
+				}
+				break;
+			case 2:
+			case 130:
+				proto_tree_add_item(p_tree, hf_bios_cur_pass_len, tvb, *offset, 2,
+								ENC_LITTLE_ENDIAN);
+				*offset += 2;
+				len_attr_fields += 2;
+				uint32_t cur_pass_len;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_cur_pass, tvb, *offset,
+									hf_bios_cur_pass_len, ENC_LITTLE_ENDIAN, &cur_pass_len);
+				*offset += cur_pass_len;
+				len_attr_fields += cur_pass_len;
+				break;
+			case 3:
+			case 131:
+				proto_tree_add_item(p_tree, hf_bios_cur_val, tvb, *offset, 8,
+								ENC_LITTLE_ENDIAN);
+				*offset += 8;
+				len_attr_fields += 8;
+				break;
+			case 4:
+			case 132:
+				proto_tree_add_item(p_tree, hf_bios_boot_config_type, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_fail_through_modes, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_num_boot_src, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_boot_src_str_hndl, tvb, *offset, 1,
+										ENC_LITTLE_ENDIAN);
+					*offset += 1;
+					len_attr_fields += 1;
+					num_values--;
+				}
+				break;
+			case 5:
+			case 133:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_num_attr, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_attr_hndl, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN);
+					*offset += 2;
+					len_attr_fields += 2;
+					num_values--;
+				}
+				break;
+			case 6:
+			case 134:
+				proto_tree_add_item(p_tree, hf_bios_cur_config_set_str_hndl, tvb,
+								(*offset), 1, ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				break;
+			default:
+				col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid attribute type");
+				break;
+		}
+		rem_bytes = rem_bytes - 3 - len_attr_fields;
+		L+=len_attr_fields;
+		len_attr_fields = 0;
+	}
+	num_pad_bytes = rem_bytes % 4;
+	if (num_pad_bytes>0){
+		num_pad_bytes = 4 - (L%4);
+		proto_tree_add_item(p_tree, hf_bios_attr_table_pad_bytes, tvb, *offset,
+							num_pad_bytes, ENC_LITTLE_ENDIAN);
+		*offset += num_pad_bytes;
+		int reported_length = tvb_reported_length_remaining(tvb, *offset);
+		if (reported_length>=4){
+			proto_tree_add_item(p_tree, hf_bios_attr_table_checksum, tvb, *offset, 4,
+							ENC_LITTLE_ENDIAN);
+		}
+	}
+	return;
+}
+
+void dissect_bios_attribute_pending_val_table(tvbuff_t *tvb, proto_tree *p_tree,
+                                              int *offset, packet_info *pinfo __attribute__((unused)), int sz) {
+	uint16_t len = tvb_reported_length(tvb);
+	len = len - sz;
+	uint16_t rem_bytes = len;
+	int len_attr_fields = 0;
+	int L=0;
+	uint32_t num_values = 0;
+	uint32_t attr_type = 0;
+	int num_pad_bytes = 0;
+	while (rem_bytes >= 8 && rem_bytes > 0) {
+		proto_tree_add_item(p_tree, hf_bios_attr_handle, tvb, *offset, 2,
+							ENC_LITTLE_ENDIAN);
+		*offset += 2;
+		proto_tree_add_item_ret_uint(p_tree, hf_bios_attr_type, tvb, *offset, 1,
+							ENC_LITTLE_ENDIAN, &attr_type);
+		*offset += 1;
+		L+=3;
+		switch (attr_type)
+		{
+			case 0:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_enumer_num_pen_values, tvb, *offset,
+								1, ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_enumer_pen_value_str_hndl, tvb,
+										*offset, 1, ENC_LITTLE_ENDIAN);
+					*offset += 1;
+					len_attr_fields += 1;
+					num_values--;
+				}
+				break;
+			case 1:
+				{
+					uint32_t pen_str_len;
+					proto_tree_add_item_ret_uint(p_tree, hf_bios_pen_str_len, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN, &pen_str_len);
+					*offset += 2;
+					len_attr_fields += 2;
+					proto_tree_add_item(p_tree, hf_bios_pen_str, tvb, *offset,
+										hf_bios_cur_str_len, ENC_LITTLE_ENDIAN);
+					*offset += pen_str_len;
+					len_attr_fields += pen_str_len;
+				}
+				break;
+			case 2:
+				{
+					uint32_t pen_pass_len;
+					proto_tree_add_item_ret_uint(p_tree, hf_bios_pen_pass_len, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN, &pen_pass_len);
+					*offset += 2;
+					len_attr_fields += 2;
+					proto_tree_add_item(p_tree, hf_bios_pen_pass, tvb, *offset,
+										hf_bios_cur_pass_len, ENC_LITTLE_ENDIAN);
+					*offset += pen_pass_len;
+					len_attr_fields += pen_pass_len;
+				}
+				break;
+			case 3:
+				proto_tree_add_item(p_tree, hf_bios_pen_val, tvb, *offset, 8,
+								ENC_LITTLE_ENDIAN);
+				*offset += 8;
+				len_attr_fields += 8;
+				break;
+			case 4:
+				proto_tree_add_item(p_tree, hf_bios_boot_config_type, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item(p_tree, hf_bios_fail_through_modes, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_num_pen_boot_src, tvb, *offset, 1,
+									ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_boot_src_str_hndl, tvb, *offset, 1,
+										ENC_LITTLE_ENDIAN);
+					*offset += 1;
+					len_attr_fields += 1;
+					num_values--;
+				}
+				break;
+			case 5:
+			case 133:
+				proto_tree_add_item_ret_uint(p_tree, hf_bios_num_attr, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN, &num_values);
+				*offset += 1;
+				len_attr_fields += 1;
+				while (num_values > 0) {
+					proto_tree_add_item(p_tree, hf_bios_attr_hndl, tvb, *offset, 2,
+										ENC_LITTLE_ENDIAN);
+					*offset += 2;
+					len_attr_fields += 2;
+					num_values--;
+				}
+				break;
+			case 6:
+				proto_tree_add_item(p_tree, hf_bios_config_set_str_hndl, tvb, *offset, 1,
+								ENC_LITTLE_ENDIAN);
+				*offset += 1;
+				len_attr_fields += 1;
+				break;
+			default:
+				col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid attribute type");
+				break;
+		}
+		rem_bytes = rem_bytes - 3 - len_attr_fields;
+		L+=len_attr_fields;
+		len_attr_fields = 0;
+	}
+	num_pad_bytes = rem_bytes % 4;
+	if (num_pad_bytes>0){
+		num_pad_bytes = 4 - (L%4);
+		proto_tree_add_item(p_tree, hf_bios_attr_table_pad_bytes, tvb, *offset,
+							num_pad_bytes, ENC_LITTLE_ENDIAN);
+		*offset += num_pad_bytes;
+		int reported_length = tvb_reported_length_remaining(tvb, *offset);
+		if (reported_length>=4){
+			proto_tree_add_item(p_tree, hf_bios_attr_table_checksum, tvb, *offset, 4,
+							ENC_LITTLE_ENDIAN);
+		}
+	}
+	return;
+}
+
+int dissect_bios(tvbuff_t *tvb, packet_info *pinfo __attribute__((unused)) , proto_tree *p_tree,
+                 const pldm_packet_data *data) {				
+	uint8_t request = data->direction;
+	int offset = 0;
+	uint32_t pldm_cmd;
+	uint8_t hour, min, sec;
+	static uint32_t table_type = 0;
+	int bytes_traversed =0;
+	proto_tree_add_item_ret_uint(p_tree, hf_pldm_BIOS_commands, tvb, offset, 1, ENC_LITTLE_ENDIAN, &pldm_cmd);
+	offset += 1;
+	bytes_traversed+=1;
+	if (!request) {
+		uint32_t completion_code;
+		proto_tree_add_item_ret_uint(p_tree, hf_pldm_completion_code, tvb, offset, 1,
+							ENC_LITTLE_ENDIAN, &completion_code);
+		if (completion_code)
+			return tvb_captured_length(tvb);
+		offset += 1;
+		bytes_traversed+=1;
+  	}
+	switch (pldm_cmd) {
+	case 0x1: // Get BIOS Table
+		if (request) {
+			proto_tree_add_item(p_tree, hf_bios_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_pldm_base_transferOperationFlag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			proto_tree_add_item_ret_uint(p_tree, hf_bios_table_type, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN, &table_type);
+		} else {
+			proto_tree_add_item(p_tree, hf_bios_next_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_bios_transfer_flag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			bytes_traversed += 5;
+			switch (table_type){
+				case 0: 
+					dissect_bios_string_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				case 1:
+					dissect_bios_attribute_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				case 2:
+					dissect_bios_attribute_val_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				case 3:
+					dissect_bios_attribute_pending_val_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				default:
+					col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid BIOS table type");
+					break;
+			}
+		}
+		break;
+	case 0x02: // Set BIOS Table
+		if (request) {
+			proto_tree_add_item(p_tree, hf_bios_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_bios_transfer_flag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			proto_tree_add_item_ret_uint(p_tree, hf_bios_table_type, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN, &table_type);
+			offset += 1;
+			bytes_traversed += 6;
+			switch (table_type){
+				case 0: 
+					dissect_bios_string_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				case 1:
+					dissect_bios_attribute_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				case 2:
+					dissect_bios_attribute_val_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+					break;
+				default:
+					col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid table type");
+					break;
+			}
+		} else {
+			proto_tree_add_item(p_tree, hf_bios_next_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+		}
+		break;
+	case 0x07: // Set BIOS Attribute Current Value
+		if (request) {
+			proto_tree_add_item(p_tree, hf_bios_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_bios_transfer_flag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			proto_tree_add_item(p_tree, hf_bios_attr_handle, tvb, offset, 2,
+									ENC_LITTLE_ENDIAN);
+			offset += 2;
+			uint32_t attr_type;
+			proto_tree_add_item_ret_uint(p_tree, hf_bios_attr_type, tvb, offset, 1,
+									ENC_LITTLE_ENDIAN, &attr_type);
+			offset += 1;
+			switch (attr_type)
+			{
+				case 0x00://BIOS Enum
+				case 0x80:
+						{
+							uint32_t num_curr_val =0;
+							proto_tree_add_item_ret_uint(p_tree, hf_bios_num_curr_value, tvb, offset, 1,
+													ENC_LITTLE_ENDIAN, &num_curr_val);
+							offset += 1;
+							for (uint8_t i = 0; i < num_curr_val; i++, offset+=1){
+								proto_tree_add_item(p_tree, hf_bios_enum_curr_str_hndl_idx, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+							}
+						}
+					break;
+				case 0x01://BIOS String
+				case 0x81:
+						{
+							uint32_t cur_str_length=0;
+							proto_tree_add_item_ret_uint(p_tree, hf_bios_cur_str_len, tvb, offset, 2,
+									ENC_LITTLE_ENDIAN, &cur_str_length);
+							offset += 2;
+							if (cur_str_length > 0){
+								proto_tree_add_item(p_tree, hf_bios_def_str, tvb, offset, cur_str_length,
+													ENC_ASCII);
+								proto_item_append_text(p_tree, ": %s",
+													tvb_get_string_enc(pinfo->pool, tvb, offset,
+																		cur_str_length, ENC_ASCII));
+							}
+						} 
+					break;
+				case 0x02://BIOS Password
+				case 0x82://BIOS Password Read Only
+						proto_tree_add_item(p_tree, hf_bios_cur_pass_len, tvb, offset, 2,
+								ENC_LITTLE_ENDIAN);
+						offset += 2;
+						uint32_t cur_pass_len;
+						proto_tree_add_item_ret_uint(p_tree, hf_bios_cur_pass, tvb, offset,
+											hf_bios_cur_pass_len, ENC_LITTLE_ENDIAN, &cur_pass_len);
+						offset += cur_pass_len;
+					break;
+				case 0x03://BIOS Integer
+				case 0x83://BIOS Integer Read Only
+						proto_tree_add_item(p_tree, hf_bios_cur_val, tvb, offset, 8,
+								ENC_LITTLE_ENDIAN);
+						offset += 8;
+					break;
+				case 0x04://BIOS Boot Config Setting
+				case 0x84://BIOS Boot Config Setting ReadOnly
+						proto_tree_add_item(p_tree, hf_bios_boot_config_type, tvb, offset, 1,
+											ENC_LITTLE_ENDIAN);
+						offset += 1;
+						proto_tree_add_item(p_tree, hf_bios_fail_through_modes, tvb, offset, 1,
+											ENC_LITTLE_ENDIAN);
+						offset += 1;
+							uint32_t num_boot_values;
+						proto_tree_add_item_ret_uint(p_tree, hf_bios_num_boot_src, tvb, offset, 1,
+											ENC_LITTLE_ENDIAN, &num_boot_values);
+						offset += 1;
+						for (uint8_t i=0; i < num_boot_values ; i++) {
+							proto_tree_add_item(p_tree, hf_bios_boot_src_str_hndl, tvb, offset, 1, i);
+							offset += 1;
+						}
+					break;
+				case 0x05://BIOS Collection
+				case 0x85://BIOS Collection Read Only
+						{
+							uint32_t num_attr_values;
+							proto_tree_add_item_ret_uint(p_tree, hf_bios_num_attr, tvb, offset, 1,
+												ENC_LITTLE_ENDIAN, &num_attr_values);
+							offset += 1;
+							for (uint8_t i=0; i < num_attr_values ; i++) {
+								proto_tree_add_item(p_tree, hf_bios_attr_hndl, tvb, offset, 2,
+													i);
+								offset += 2;
+							}
+						}			
+					break;
+				case 0x06://BIOS Config Set
+				case 0x86://BIOS Config Set
+						proto_tree_add_item(p_tree, hf_bios_config_set_str_hndl, tvb, offset, 1,
+											ENC_LITTLE_ENDIAN);
+						offset += 1;
+					break;
+				default:
+					col_append_fstr(pinfo->cinfo, COL_INFO,
+								"Unsupported or Invalid attribute type");
+					break;
+			}
+		} else {
+			proto_tree_add_item(p_tree, hf_bios_next_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+		}
+		break;
+	case 0x08: // Get BIOS Attribute Current Value by Handle
+		if (request) {
+			proto_tree_add_item(p_tree, hf_bios_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_pldm_base_transferOperationFlag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			proto_tree_add_item(p_tree, hf_bios_attr_handle, tvb, offset, 2,
+								ENC_LITTLE_ENDIAN);
+		} else {
+			proto_tree_add_item(p_tree, hf_bios_next_data_handle, tvb, offset, 4,
+								ENC_LITTLE_ENDIAN);
+			offset += 4;
+			proto_tree_add_item(p_tree, hf_bios_transfer_flag, tvb, offset, 1,
+								ENC_LITTLE_ENDIAN);
+			offset += 1;
+			bytes_traversed += 5;
+			dissect_bios_attribute_val_table(tvb, p_tree, &offset, pinfo, bytes_traversed);
+		}
+		break;
+	case 0x0c: // Get Date and Time
+		if (!request) {
+			sec = BCD44_TO_DEC(tvb_get_uint8(tvb, offset));
+			min = BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 1));
+			hour = BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 2));
+			if (hour > 23 || min > 59 || sec > 59)
+				return -1;
+			wmem_strbuf_t *time_buf = wmem_strbuf_new(pinfo->pool, NULL);
+			wmem_strbuf_append_printf(time_buf, "%02d:%02d:%02d", hour, min, sec);
+			proto_tree_add_string(p_tree, hf_pldm_time, tvb, offset, 3, wmem_strbuf_finalize(time_buf));
+			offset += 3;
+			uint8_t day = BCD44_TO_DEC(tvb_get_uint8(tvb, offset));
+			uint8_t month = BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 1));
+			uint16_t year = BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 3)) * 100 +
+							BCD44_TO_DEC(tvb_get_uint8(tvb, offset + 2));
+			if (day > 31 || day < 1 || month > 12 || month < 1)
+				return -1;
+			wmem_strbuf_t *date_buf = wmem_strbuf_new(pinfo->pool, NULL);
+			wmem_strbuf_append_printf(date_buf, "%02d/%02d/%04d", day, month, year);
+			proto_tree_add_string(p_tree, hf_pldm_date, tvb, offset, 4, wmem_strbuf_finalize(date_buf));
+		}
+		break;
+	default:
+		col_append_fstr(pinfo->cinfo, COL_INFO,
+						"Unsupported or Invalid PLDM command");
+		break;
+	}
+	return tvb_captured_length(tvb);
+}   
 
 static int dissect_pldm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 void *data _U_)
@@ -1278,8 +2155,14 @@ static int dissect_pldm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 				case 2:
 					dissect_platform(next_tvb, pinfo, pldm_tree, &d);
 					break;
+				case 3:
+					dissect_bios(next_tvb, pinfo, pldm_tree, (void *)&d);
+					break;
 				case 4:
 					dissect_FRU(next_tvb, pinfo, pldm_tree, &d);
+					break;
+				default:
+					col_append_str(pinfo->cinfo, COL_INFO, "Unsupported or Invalid PLDM type");
 			}
 		}
 	}
@@ -1633,6 +2516,216 @@ void proto_register_pldm(void)
 		{&hf_fru_record_crc,
 			{"FRU Record CRC32 (Unchecked)", "pldm.fru.record.crc", FT_UINT32, BASE_HEX, NULL,
 				0x0, NULL, HFILL}},
+		/*BIOS*/
+		{&hf_bios_data_handle,
+			{"Data transfer handle", "pldm.bios.table.handle", FT_UINT32, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_table_type,
+			{"BIOS table type", "pldm.bios.table.type", FT_UINT8, BASE_HEX,
+			VALS(bios_table_types), 0x0, NULL, HFILL}},
+		{&hf_bios_next_data_handle,
+			{"Next data transfer handle", "pldm.bios.table.nexthandle", FT_UINT32,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_transfer_flag,
+			{"Data transfer operation flag", "pldm.bios.table.flag", FT_UINT8,
+			BASE_HEX, VALS(transferFlags), 0x0, NULL, HFILL}},
+		{&hf_bios_attr_handle,
+			{"Attribute handle", "pldm.bios.attr.handle", FT_UINT16, BASE_HEX, NULL,
+			0x0, NULL, HFILL}},
+		{&hf_bios_attr_type,
+			{"Attribute type", "pldm.bios.attr.type", FT_UINT8, BASE_HEX,
+			VALS(bios_attribute_type), 0x0, NULL, HFILL}},
+		{&hf_bios_attr_name_handle,
+			{"BIOS attribute name handle", "pldm.bios.attr.name.handle", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_enumer_num_pos_values,
+			{"BIOS enumeration number of possible values",
+			"pldm.bios.enumer.num.pos.values", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_pos_value_str_hndl,
+			{"BIOS enumeration possible value string handle",
+			"pldm.bios.enumer.pos.value.str.hndl", FT_UINT16, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_num_default_values,
+			{"BIOS enumeration number of default values",
+			"pldm.bios.enumer.num.default.values", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_default_value_str_hndl,
+			{"BIOS enumeration default value string handle",
+			"pldm.bios.enumer.default.value.str.hndl", FT_UINT8, BASE_HEX, NULL, 0x0,
+			NULL, HFILL}},
+		{&hf_bios_attr_table_pad_bytes,
+			{"BIOS attribute table pad bytes", "pldm.bios.attribute.pad.bytes", FT_UINT64,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_attr_table_checksum,
+			{"BIOS attribute table checksum", "pldm.bios.attr.table.checksum", FT_UINT32,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_str_handle,
+			{"BIOS attribute string handle", "pldm.bios.str.handle", FT_UINT16, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_str_len,
+			{"BIOS attribute string length", "pldm.bios.str.len", FT_UINT16, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_str,
+			{"BIOS attribute string", "pldm.bios.attribute.str", FT_STRING, BASE_NONE, NULL, 0x0,
+			NULL, HFILL}},
+		{&hf_bios_string_type,
+			{"BIOS attribute string type", "pldm.bios.string.type", FT_UINT8, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_min_str_len,
+			{"BIOS attribute min string length", "pldm.bios.min.str.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_max_str_len,
+			{"BIOS attribute max string length", "pldm.bios.max.str.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_def_str_len,
+			{"BIOS attribute default string length", "pldm.bios.def.str.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_def_str,
+			{"BIOS attribute default string", "pldm.bios.def.str", FT_STRING, BASE_NONE,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pass_type,
+			{"BIOS attribute password type", "pldm.bios.password.type", FT_UINT8, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_min_pass_len,
+			{"BIOS attribute min password length", "pldm.bios.min.password.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_max_pass_len,
+			{"BIOS attribute max password length", "pldm.bios.max.password.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_def_pass_len,
+			{"BIOS attribute default password length", "pldm.bios.def.password.len",
+			FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_def_pass,
+			{"BIOS attribute default password", "pldm.bios.def.password", FT_UINT16, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_int_lower_bound,
+			{"BIOS attribute integer lower bound", "pldm.bios.int.lower.bound", FT_UINT64,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_int_upper_bound,
+			{"BIOS attribute integer upper bound", "pldm.bios.int.upper.bound", FT_UINT64,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_int_scalar_inc,
+			{"BIOS attribute integer scalar inc", "pldm.bios.int.scalar.inc", FT_UINT32,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_int_def_val,
+			{"BIOS attribute integer default value", "pldm.bios.int.def.val", FT_UINT64,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_boot_config_type,
+			{"BIOS boot config type", "pldm.bios.boot.config.type", FT_UINT8, BASE_HEX,
+			VALS(pldm_bios_boot_config_type), 0x0, NULL, HFILL}},
+		{&hf_bios_fail_through_modes,
+			{"BIOS attribute suuported and ordered fail through modes",
+			"pldm.bios.fail.through.modes", FT_UINT8, BASE_HEX, VALS(pldm_bios_fail_through_mode),
+		0x0, NULL, HFILL}},
+		{&hf_bios_min_num_boot_src,
+			{"BIOS attribute minimum number of boot source settings",
+			"pldm.bios.min.num.boot.src", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_max_num_boot_src,
+			{"BIOS attribute maximum number of boot source settings",
+			"pldm.bios.max.num.boot.src", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pos_num_boot_src,
+			{"BIOS attribute number of possible boot source settings",
+			"pldm.bios.pos.num.boot.src", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_src_str_hndl,
+			{"BIOS attribute possible boot source string handle",
+			"pldm.bios.src.str.hndl", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_col_name_str_hndl,
+			{"BIOS attribute collection name string handle",
+			"pldm.bios.col.name.str.hndl", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_max_num_attr,
+			{"BIOS attribute max number of attributes", "pldm.bios.max.num.attr",
+			FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_col_type,
+			{"BIOS attribute collection type", "pldm.bios.col.type", FT_UINT16, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_num_pos_config,
+			{"BIOS attribute number of possible BIOS config", "pldm.bios.num.pos.config",
+			FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pos_config_str_hndl,
+			{"BIOS attribute possible BIOS config string handle",
+			"pldm.bios.pos.config.str.hndl", FT_UINT16, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_num_cur_values,
+			{"BIOS attribute enumeration number of current values",
+			"pldm.bios.enumer.num.cur.values", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_cur_value_str_hndl,
+			{"BIOS attribute enumeration current value string handle",
+			"pldm.bios.enumer.cur.value.str.hndl", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_cur_str_len,
+			{"BIOS attribute current string length", "pldm.bios.cur.str.len", FT_UINT16,
+			BASE_DEC, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_cur_str,
+			{"BIOS attribute current string", "pldm.bios.cur.str", FT_UINT64, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_cur_pass_len,
+			{"BIOS attribute current password length", "pldm.bios.cur.pass.len",
+			FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_cur_pass,
+			{"BIOS attribute current password", "pldm.bios.cur.pass", FT_UINT32, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_cur_val,
+			{"BIOS attribute current value", "pldm.bios.cur.val", FT_UINT64, BASE_DEC,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_num_boot_src,
+			{"BIOS attribute number of boot source settings", "pldm.bios.num.boot.src",
+			FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_boot_src_str_hndl,
+			{"BIOS attribute boot source setting string handle",
+			"pldm.bios.boot.src.str.hndl", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_num_attr,
+			{"BIOS collection number of attributes", "pldm.bios.num.attr", FT_UINT8,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_attr_hndl,
+			{"BIOS collection attribute handle", "pldm.bios.attr.hndl", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_cur_config_set_str_hndl,
+			{"BIOS cuurent config set string handle index",
+			"pldm.bios.cur.config.set.str.hndl", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_num_pen_values,
+			{"BIOS attribute enumeration pending of current values",
+			"pldm.bios.enumer.num.pen.values", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_enumer_pen_value_str_hndl,
+			{"BIOS attribute enumeration pending value string handle",
+			"pldm.bios.enumer.pen.value.str.hndl", FT_UINT8, BASE_HEX, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_bios_pen_str_len,
+			{"BIOS attribute pending string length", "pldm.bios.pen.str.len", FT_UINT16,
+			BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pen_str,
+			{"BIOS attribute pending string", "pldm.bios.pen.str", FT_UINT64, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pen_pass_len,
+			{"BIOS attribute pending password length", "pldm.bios.pen.pass.len",
+			FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pen_pass,
+			{"BIOS attribute pending password", "pldm.bios.pen.pass", FT_UINT64, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_pen_val,
+			{"BIOS attribute pending value", "pldm.bios.pen.val", FT_UINT64, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_num_curr_value,
+			{"BIOS number of current values", "pldm.bios.number_curr_val", FT_UINT8, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_num_pen_boot_src,
+			{"BIOS attribute number of pending boot source settings",
+			"pldm.bios.num.pen.boot.src", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_config_set_str_hndl,
+			{"BIOS config set string handle index", "pldm.bios.config.set.str.hndl",
+			FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+		{&hf_bios_enum_curr_str_hndl_idx,
+			{"BIOS ENUM Current Value String Handle Index", "pldm.bios.enum.curr_str_handle_idx", FT_UINT8, BASE_HEX,
+			NULL, 0x0, NULL, HFILL}},
+		{&hf_pldm_time,
+			{"Time", "pldm.bios.time", FT_STRING, BASE_NONE, NULL, 0x0, NULL,
+			HFILL}},
+		{&hf_pldm_date,
+			{"Date", "pldm.bios.date", FT_STRING, BASE_NONE, NULL, 0x0, NULL,
+			HFILL}},
 	};
 
 	static int *ett[] = {&ett_pldm};
