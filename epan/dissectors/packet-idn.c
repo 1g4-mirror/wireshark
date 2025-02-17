@@ -3,12 +3,17 @@
  * By Maxim Kropp <maxim.kropp@hotmail.de>
  * Copyright 2017 Maxim Kropp
  *
+ * Addition of dissection of IDN Audio message and minor fixes/updates
+ * Copyright 2024/2025 Roman Lichnock
+ *
  * Supervised by Matthias Frank <matthew@cs.uni-bonn.de>
- * Copyright 2017 Matthias Frank, Institute of Computer Science 4, University of Bonn
+ * Copyright 2017-2025 Matthias Frank, Institute of Computer Science 4, University of Bonn
  *
  * Stream Specification: https://www.ilda.com/resources/StandardsDocs/ILDA_IDN-Stream_rev001.pdf
  * This specification only defines IDN messages, the other packet commands
- * are part of the hello specification which is not released yet.
+ * are part of the IDN-Hello specification which is not released yet.
+ * Please see https://www.ilda.com/technical.htm for pre-releases or drafts of the IDN specifications
+ * and https://www.ilda.com/idn.htm for general information on IDN
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -538,18 +543,18 @@ static void set_laser_sample_values_string(tvbuff_t *tvb, int offset, configurat
 	int l = 0;
 
 	if((config->dic_precision)[2] == 1)
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_ntohis(tvb, offset));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint16(tvb, offset, 2));
 	else
-		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_int8(tvb, offset));
+		l += snprintf(values, MAX_BUFFER, "%5d", tvb_get_uint8(tvb, offset));
 
 	for(i=1; i<config->sample_size && (l < MAX_BUFFER-100); i++){
 		if((config->dic_precision)[i+1] == 1) {
 			//do nothing
 		}else if((config->dic_precision)[i+2] == 1) {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_ntohis(tvb, offset+i));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint16(tvb, offset+i, 2));
 			i++;
 		}else {
-			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_int8(tvb, offset+i));
+			l += snprintf(values+l, MAX_BUFFER-l, " %5d", tvb_get_uint8(tvb, offset+i));
 		}
 	}
 }
@@ -1279,11 +1284,10 @@ static int dissect_idn_audio_header(tvbuff_t *tvb, int offset, proto_tree *idn_t
 	config->max_samples = max_samples;
 	freq = (float)max_samples / (float)duration;
 	freq *= 1000;
-	freq /= (float)channels;
 
 	config->audio_freq = freq;
 
-	proto_item_append_text(audio_header_tree, "  %.2f kHZ", freq);
+	proto_item_append_text(audio_header_tree, "  %.2f kHz", freq);
 	return offset;
 }
 
@@ -1294,8 +1298,6 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 		int count_sample_groups = 1;
     char values[MAX_BUFFER];
 		char group_numbers[MAX_BUFFER];
-		printf("max samples: %d\n",max_samples );
-		printf("remaining: %d\n",tvb_reported_length_remaining(tvb, offset) );
 		if(max_samples * byte_len *channels != tvb_reported_length_remaining(tvb, offset)){
 			proto_item_append_text(idn_tree, " WARNING: length not matching captured bytes");
 			max_samples = tvb_reported_length_remaining(tvb, offset) / byte_len /channels;
@@ -1338,7 +1340,6 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 		sprintf(group_numbers, "Sample %4d - %4d", count_sample_groups, count_sample_groups + max_samples-1);
 		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
 		int remainder = 0;
-		printf("remaining -2  %d\n",max_samples );
 		while (max_samples > 0) {
 			int l = 0;
 			max_samples--;
@@ -1359,7 +1360,8 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 
 					offset += byte_len;
 				}
-				proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+remainder, values);
+
+				proto_tree_add_uint_format(subtree, hf_idn_audio_sample_format_one, tvb, offset-channels*byte_len, (int)2*channels, channels, "Sample %4d:     %s",count_sample_groups+remainder, values);
 				remainder++;
 		}
 	}
