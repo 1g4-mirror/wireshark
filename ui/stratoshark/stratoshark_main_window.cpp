@@ -2599,6 +2599,7 @@ void StratosharkMainWindow::reloadDynamicMenus()
     mainApp->clearRemovedMenuGroupItems();
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void StratosharkMainWindow::externalMenuHelper(ext_menu_t * menu, QMenu  * subMenu, int depth)
 {
     QAction * itemAction = Q_NULLPTR;
@@ -2609,7 +2610,7 @@ void StratosharkMainWindow::externalMenuHelper(ext_menu_t * menu, QMenu  * subMe
     Q_ASSERT(subMenu != NULL);
 
     /* If the depth counter exceeds, something must have gone wrong */
-    Q_ASSERT(depth < EXT_MENUBAR_MAX_DEPTH);
+    Q_ASSERT(depth < mainApp->maxMenuDepth());
 
     children = menu->children;
     /* Iterate the child entries */

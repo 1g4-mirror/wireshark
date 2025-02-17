@@ -133,17 +133,24 @@ QTreeView * TrafficTab::createTree(int protoId)
         tree->setSelectionModel(ism);
         connect(ism, &QItemSelectionModel::currentChanged, this, &TrafficTab::doCurrentIndexChange);
 
+        // Initially resize to the header widths (inc. hidden/filtered columns).
+        for (int col = 0; col < tree->model()->columnCount(); col++) {
+            tree->resizeColumnToContents(col);
+        }
+
         tree->applyRecentColumns();
 
         tree->sortByColumn(0, Qt::AscendingOrder);
 
         connect(proxyModel, &TrafficDataFilterProxy::modelReset, this, [tree]() {
             if (tree->model()->rowCount() > 0) {
-                for (int col = 0; col < tree->model()->columnCount(); col++)
-                    tree->resizeColumnToContents(col);
+                for (int col = 0; col < tree->model()->columnCount(); col++) {
+                    tree->widenColumnToContents(col);
+                }
             }
         });
         connect(proxyModel, &TrafficDataFilterProxy::modelReset, this, &TrafficTab::modelReset);
+        connect(proxyModel, &TrafficDataFilterProxy::layoutChanged, this, &TrafficTab::modelReset);
 
         /* If the columns for the tree have changed, contact the tab. By also having the tab
          * columns changed signal connecting back to the tree, it will propagate to all trees
@@ -176,6 +183,16 @@ void TrafficTab::useNanosecondTimestamps(bool nanoseconds)
     }
 }
 
+void TrafficTab::limitToDisplayFilter(bool limit)
+{
+    for(int idx = 0; idx < count(); idx++)
+    {
+        ATapDataModel * atdm = dataModelForTabIndex(idx);
+        if (atdm)
+            atdm->limitToDisplayFilter(limit);
+    }
+}
+
 void TrafficTab::disableTap()
 {
     for(int idx = 0; idx < count(); idx++)
@@ -192,7 +209,6 @@ void TrafficTab::disableTap()
 void TrafficTab::setOpenTabs(QList<int> protocols)
 {
     QList<int> tabs = _tabs.keys();
-    QList<int> remove;
     blockSignals(true);
 
     foreach(int protocol, protocols)
@@ -350,6 +366,7 @@ QVariant TrafficTab::currentItemData(int role)
     return QVariant();
 }
 
+// update current tab label to include row count
 void TrafficTab::modelReset()
 {
     if (! qobject_cast<TrafficDataFilterProxy *>(sender()))
@@ -488,8 +505,7 @@ TrafficTab::writeGeoIPMapFile(QFile * fp, bool json_only, TrafficDataFilterProxy
 
         if (!ipmap.open(QIODevice::ReadOnly)) {
             QMessageBox::warning(this, tr("Map file error"), tr("Could not open base file %1 for reading: %2")
-                .arg(get_datafile_path("ipmap.html"))
-                .arg(g_strerror(errno))
+                .arg(get_datafile_path("ipmap.html"), g_strerror(errno))
             );
             return false;
         }
@@ -638,7 +654,7 @@ void TrafficTab::attachTab(QWidget * content, QString name)
 {
     ATapDataModel * model = dataModelForWidget(content);
     if (!model) {
-        attachTab(content, name);
+        DetachableTabWidget::attachTab(content, name);
         return;
     }
 

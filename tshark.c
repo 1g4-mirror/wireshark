@@ -2479,6 +2479,7 @@ main(int argc, char *argv[])
         }
     }
     cfile.dfcode = dfcode;
+    tap_load_main_filter(dfcode);
 
     if (print_packet_info) {
         /* If we're printing as text or PostScript, we have
@@ -3633,6 +3634,8 @@ process_cap_file_first_pass(capture_file *cf, int max_packet_count,
 
     cf->provider.prev_dis = NULL;
     cf->provider.prev_cap = NULL;
+
+    wtap_rec_cleanup(&rec);
 
     return status;
 }
