@@ -386,18 +386,20 @@ static const value_string result_code[] = {
 	{ 0, NULL}
 };
 
-static const value_string category[] _U_= {
+static const value_string category[] = {
 	{ 0x0, "Decoder modifiers with suffix" },
 	{ 0x1, "Decoder modifiers with parameter" },
 	{ 0x4, "Sample word descriptors" },
 	{ 0x6, "Common channel layout descriptors" },
-	{ 0x8, "Multichannel layout descriptors" }
+	{ 0x8, "Multichannel layout descriptors" },
+	{ 0, NULL}
 };
 
-static const value_string format[] _U_={
+static const value_string format[] = {
 	{ 0x0, "8 Bit signed integer (one octet)" },
 	{ 0x1, "16 Bit signed integer (two octets)" },
-	{ 0x2, "24 Bit signed integer (three octets)" }
+	{ 0x2, "24 Bit signed integer (three octets)" },
+	{ 0, NULL}
 };
 
 static int get_service_match(uint8_t flags) {
@@ -1304,7 +1306,7 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
 		}
 
   while (max_samples >= 10) {
-		sprintf(group_numbers, "Sample %4d - %4d", count_sample_groups, count_sample_groups+9);
+		snprintf(group_numbers, MAX_BUFFER, "Sample %4d - %4d", count_sample_groups, count_sample_groups+9);
 		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
 
 
@@ -1337,7 +1339,7 @@ static int dissect_idn_formatted_audio_samples(tvbuff_t *tvb, int offset, proto_
   }
 
 	if (max_samples > 0) {
-		sprintf(group_numbers, "Sample %4d - %4d", count_sample_groups, count_sample_groups + max_samples-1);
+		snprintf(group_numbers, MAX_BUFFER, "Sample %4d - %4d", count_sample_groups, count_sample_groups + max_samples-1);
 		proto_tree *subtree = proto_tree_add_subtree(idn_tree, tvb, offset, 10*channels*byte_len, ett_audio_samples_subtree, NULL, group_numbers);
 		int remainder = 0;
 		while (max_samples > 0) {
