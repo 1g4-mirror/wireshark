@@ -7986,7 +7986,7 @@ ssl_dissect_hnd_hello_ext_pre_shared_key(ssl_common_dissect_t *hf, tvbuff_t *tvb
                 proto_tree_add_item(binder_tree, hf->hf.hs_ext_psk_binder_binder, tvb, offset, binder_length, ENC_BIG_ENDIAN);
                 offset += binder_length;
 
-                proto_item_set_end(binder_tree, tvb, offset);
+                proto_item_set_end(binder_item, tvb, offset);
             }
         }
         break;
