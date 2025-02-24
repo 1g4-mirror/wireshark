@@ -7962,8 +7962,32 @@ ssl_dissect_hnd_hello_ext_pre_shared_key(ssl_common_dissect_t *hf, tvbuff_t *tvb
             }
             offset += 2;
 
-            proto_tree_add_item(psk_tree, hf->hf.hs_ext_psk_binders, tvb, offset, binders_length, ENC_NA);
-            offset += binders_length;
+            proto_item *binders_item;
+            proto_tree *binders_tree;
+            binders_item = proto_tree_add_item(psk_tree, hf->hf.hs_ext_psk_binders, tvb, offset, binders_length, ENC_NA);
+            binders_tree = proto_item_add_subtree(binders_item, hf->ett.hs_ext_psk_binders);
+            uint32_t binders_end = offset + binders_length;
+            while (offset < binders_end) {
+                uint32_t binder_length;
+                proto_item *binder_item;
+                proto_tree *binder_tree;
+
+                binder_item = proto_tree_add_item(binders_tree, hf->hf.hs_ext_psk_binder, tvb, offset, 1, ENC_NA);
+                binder_tree = proto_item_add_subtree(binder_item, hf->ett.hs_ext_psk_binder);
+
+                /* opaque PskBinderEntry<32..255>; */
+                if (!ssl_add_vector(hf, tvb, pinfo, binder_tree, offset, binders_end, &binder_length,
+                                    hf->hf.hs_ext_psk_binder_binder_length, 32, 255)) {
+                    return binders_end;
+                }
+                offset += 1;
+                proto_item_append_text(binder_tree, " (length: %u)", binder_length);
+
+                proto_tree_add_item(binder_tree, hf->hf.hs_ext_psk_binder_binder, tvb, offset, binder_length, ENC_BIG_ENDIAN);
+                offset += binder_length;
+
+                proto_item_set_end(binder_item, tvb, offset);
+            }
         }
         break;
         case SSL_HND_SERVER_HELLO: {
@@ -10665,8 +10689,13 @@ ssl_dissect_hnd_cli_hello(ssl_common_dissect_t *hf, tvbuff_t *tvb,
             curr_entry = wmem_list_frame_next(curr_entry);
         }
     }
-    ja4_hash = g_compute_checksum_for_string(G_CHECKSUM_SHA256, wmem_strbuf_get_str(ja4_br),-1);
+    if ( wmem_strbuf_get_len(ja4_br) == 0 ) {
+        ja4_hash = g_strdup("000000000000");
+    } else {
+        ja4_hash = g_compute_checksum_for_string(G_CHECKSUM_SHA256, wmem_strbuf_get_str(ja4_br),-1);
+    }
     ja4_b = wmem_strndup(pinfo->pool, ja4_hash, 12);
+
     g_free(ja4_hash);
     if ( wmem_strbuf_get_len(ja4_cr) == 0 ) {
         ja4_hash = g_strdup("000000000000");
