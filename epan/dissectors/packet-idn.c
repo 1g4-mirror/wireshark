@@ -2158,76 +2158,76 @@ void proto_register_idn(void) {
 			NULL, HFILL }
 		},
 		{
-		 &hf_idn_audio_dictionary_tag,
-		 	{ "Audio Dictionary Tag", "idn.audioheader",
-		 	FT_UINT16, BASE_HEX,
-		 	NULL, 0x0,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_audio_dictionary_tag,
+			{ "Audio Dictionary Tag", "idn.audioheader",
+			FT_UINT16, BASE_HEX,
+			NULL, 0x0,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_category,
-		 	{ "Category", "idn.category",
-		 	FT_UINT16, BASE_HEX,
-		 	VALS(category), 0xF000,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_category,
+			{ "Category", "idn.category",
+			FT_UINT16, BASE_HEX,
+			VALS(category), 0xF000,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_format,
-		 	{ "Format", "idn.format",
-		 	FT_UINT16, BASE_DEC,
-		 	VALS(format), 0x0F00,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_format,
+			{ "Format", "idn.format",
+			FT_UINT16, BASE_DEC,
+			VALS(format), 0x0F00,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_layout,
-		 	{ "Layout", "idn.layout",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x00F0,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_layout,
+			{ "Layout", "idn.layout",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x00F0,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_4bit_channels,
-		 	{ "Channels", "idn.category6channels",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x000F,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_4bit_channels,
+			{ "Channels", "idn.category6channels",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x000F,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_subcategory,
-		 	{ "Subcategory", "idn.subcategory",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x0F00,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_subcategory,
+			{ "Subcategory", "idn.subcategory",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x0F00,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_parameter,
-		 	{ "Format", "idn.format",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x00F0,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_parameter,
+			{ "Format", "idn.format",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x00F0,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_suffix_length,
-		 	{ "Suffix length", "idn.suffix_length",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x000F,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_suffix_length,
+			{ "Suffix length", "idn.suffix_length",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x000F,
+			NULL, HFILL
+			}
 		},
 		{
-		 &hf_idn_8bit_channels,
-		 	{ "Channels", "idn.channel",
-		 	FT_UINT16, BASE_DEC,
-		 	NULL, 0x00FF,
-		 	NULL, HFILL
-		 	}
+		&hf_idn_8bit_channels,
+			{ "Channels", "idn.channel",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x00FF,
+			NULL, HFILL
+			}
 		},
 		{
 			&hf_idn_audio_flags,
