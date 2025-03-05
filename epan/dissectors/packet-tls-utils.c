@@ -2706,6 +2706,7 @@ const val64_string quic_transport_parameter_id[] = {
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT11, "initial_max_path_id (draft-11)" },
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT12, "initial_max_path_id (draft-12)" },
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID, "initial_max_path_id" },
+    { SSL_HND_QUIC_TP_ADDRESS_DISCOVERY, "address_discovery" },
     { 0, NULL }
 };
 
@@ -2723,6 +2724,15 @@ const val64_string quic_enable_multipath_vals[] = {
     { 1, "support multipath as defined in this document" },
     { 0, NULL }
 };
+
+/* https://datatracker.ietf.org/doc/html/draft-ietf-quic-address-discovery-00 */
+const val64_string quic_address_discovery_vals[] = {
+    { 0, "I am able to provide OBSERVED_ADDRESS frames" },
+    { 1, "I would like to receive OBSERVED_ADDRESS frames" },
+    { 2, "I am able to generate OBSERVED_ADDRESS frames and I would like to receive them, too" },
+    { 0, NULL }
+};
+
 
 /* https://www.ietf.org/archive/id/draft-ietf-tls-esni-16.txt */
 const value_string tls_hello_ext_ech_clienthello_types[] = {
@@ -8973,6 +8983,11 @@ ssl_dissect_hnd_hello_ext_quic_transport_parameters(ssl_common_dissect_t *hf, tv
             break;
             case SSL_HND_QUIC_TP_FACEBOOK_PARTIAL_RELIABILITY:
                 proto_tree_add_item_ret_varint(parameter_tree, hf->hf.hs_ext_quictp_parameter_facebook_partial_reliability,
+                                               tvb, offset, -1, ENC_VARINT_QUIC, &value, &len);
+                offset += parameter_length;
+            break;
+            case SSL_HND_QUIC_TP_ADDRESS_DISCOVERY:
+                proto_tree_add_item_ret_varint(parameter_tree, hf->hf.hs_ext_quictp_parameter_address_discovery,
                                                tvb, offset, -1, ENC_VARINT_QUIC, &value, &len);
                 offset += parameter_length;
             break;
