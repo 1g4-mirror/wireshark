@@ -33473,7 +33473,7 @@ ieee80211_tag_vendor_specific_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 
     /* Normal IEEE vendor ids (from oui.h) */
     case OUI_CISCOWL:  /* Cisco Wireless (Aironet) */
-      dissect_vendor_ie_aironet(field_data->item_tag, tree, tvb, offset, tag_vs_len,pinfo);
+      dissect_vendor_ie_aironet(field_data->item_tag, tree, tvb, offset, tag_vs_len, pinfo);
       break;
     case OUI_MARVELL:
       dissect_vendor_ie_marvell(field_data->item_tag, tree, tvb, offset, tag_vs_len);
