@@ -290,6 +290,7 @@ static const value_string encoding_types_vs[] = {
 	{ VNC_ENCODING_TYPE_TIGHT,		"Tight"                },
 	{ VNC_ENCODING_TYPE_ZLIBHEX,		"ZlibHex"              },
 	{ VNC_ENCODING_TYPE_ULTRA,		"Ultra"		       },
+	{ VNC_ENCODING_TYPE_TRLE,		"Tiled Run-Length"     },
 	{ VNC_ENCODING_TYPE_RLE,		"ZRLE"                 },
 	{ VNC_ENCODING_TYPE_HITACHI_ZYWRLE,	"Hitachi ZYWRLE"       },
 	{ VNC_ENCODING_TYPE_JPEG_0,		"JPEG quality level 0" },
