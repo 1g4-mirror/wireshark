@@ -890,7 +890,9 @@ deregister_user_data(void) {
     deregister_user_data_hfarray_prepare_for_deregister(&dynamic_hf_agg_int, &dynamic_hf_agg_int_number);
 
     proto_deregister_all_fields_with_prefix(proto_signal_pdu, SPDU_NAME_SIGNAL_PREFIX);
-    proto_free_deregistered_fields();
+    if (dynamic_hf_base_raw != NULL || dynamic_hf_agg_sum != NULL || dynamic_hf_agg_avg != NULL || dynamic_hf_agg_int != NULL) {
+        proto_free_deregistered_fields();
+    }
 
     deregister_user_data_hfarray_free(&dynamic_hf_base_raw, &dynamic_hf_base_raw_number);
     deregister_user_data_hfarray_free(&dynamic_hf_agg_sum, &dynamic_hf_agg_sum_number);
