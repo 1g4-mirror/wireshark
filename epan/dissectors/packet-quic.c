@@ -25,6 +25,7 @@
  * https://tools.ietf.org/html/draft-ietf-quic-ack-frequency-07 (and also draft-04/05)
  * https://tools.ietf.org/html/draft-banks-quic-cibir-01
  * https://tools.ietf.org/html/draft-ietf-quic-multipath-13 (and also >= draft-07)
+ * https://datatracker.ietf.org/doc/html/draft-ietf-quic-address-discovery-00
 
  *
  * Currently supported QUIC version(s): draft-21, draft-22, draft-23, draft-24,
@@ -119,6 +120,10 @@ static int hf_quic_ack_ack_range;
 static int hf_quic_ack_ect0_count;
 static int hf_quic_ack_ect1_count;
 static int hf_quic_ack_ecn_ce_count;
+static int hf_quic_observed_address_seq_no;
+static int hf_quic_observed_address_ipv4_address;
+static int hf_quic_observed_address_ipv6_address;
+static int hf_quic_observed_address_port;
 static int hf_quic_rsts_stream_id;
 static int hf_quic_rsts_application_error_code;
 static int hf_quic_rsts_final_size;
@@ -700,6 +705,8 @@ static const value_string quic_v2_long_packet_type_vals[] = {
 #define FT_MAX_PATH_ID              0x15228c0c /* multipath-draft-09 */
 #define FT_PATHS_BLOCKED            0x15228c0d /* multipath-draft-11 */
 #define FT_PATH_CIDS_BLOCKED        0x15228c0e /* multipath-draft-12 */
+#define FT_OBSERVED_ADDRESS_V4      0x9f81a6 /* address-discovery-00 */
+#define FT_OBSERVED_ADDRESS_V6      0x9f81a7 /* address-discovery-00 */
 #define FT_TIME_STAMP               0x02F5
 
 static const range_string quic_frame_type_vals[] = {
@@ -745,6 +752,8 @@ static const range_string quic_frame_type_vals[] = {
     { 0x15228c0c, 0x15228c0c, "MAX_PATH_ID" }, /* >= multipath-draft-09 */
     { 0x15228c0d, 0x15228c0d, "PATHS_BLOCKED" }, /* >= multipath-draft-11 */
     { 0x15228c0e, 0x15228c0e, "PATH_CIDS_BLOCKED" }, /* >= multipath-draft-12 */
+    { 0x9f81a6, 0x9f81a6, "OBSERVED_ADDRESS (V4)" }, /* address-discovery-00 */
+    { 0x9f81a7, 0x9f81a7, "OBSERVED_ADDRESS (V6)" }, /* address-discovery-00 */
     { 0,    0,        NULL },
 };
 
@@ -2454,6 +2463,27 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
                 proto_tree_add_item_ret_varint(ft_tree, hf_quic_ack_ecn_ce_count, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &lenvar);
                 offset += lenvar;
             }
+        }
+        break;
+        case FT_OBSERVED_ADDRESS_V4:
+        case FT_OBSERVED_ADDRESS_V6:{
+            uint64_t seq_no = 0;
+            int32_t len_seq_no = 0;
+
+            col_append_str(pinfo->cinfo, COL_INFO, ", OA");
+
+            proto_tree_add_item_ret_varint(ft_tree, hf_quic_observed_address_seq_no, tvb, offset, -1, ENC_VARINT_QUIC, &seq_no, &len_seq_no);
+            offset += len_seq_no;
+
+            if (frame_type == FT_OBSERVED_ADDRESS_V4){
+                proto_tree_add_item(ft_tree, hf_quic_observed_address_ipv4_address, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+            } else {
+                proto_tree_add_item(ft_tree, hf_quic_observed_address_ipv6_address, tvb, offset, 16, ENC_NA);
+                offset += 16;
+            }
+            proto_tree_add_item(ft_tree, hf_quic_observed_address_port, tvb, offset, 2, ENC_BIG_ENDIAN);
+            offset += 2;
         }
         break;
         case FT_RESET_STREAM:{
@@ -5365,6 +5395,27 @@ proto_register_quic(void)
           { "ECN-CE Count", "quic.ack.ecn_ce_count",
             FT_UINT64, BASE_DEC, NULL, 0x0,
             "Total number of packets received with the CE codepoint", HFILL }
+        },
+        /* OBSERVED ADDRESS */
+        { &hf_quic_observed_address_seq_no,
+            { "Sequence Number", "quic.observed_address.seq_no",
+              FT_UINT64, BASE_DEC, NULL, 0x0,
+              "Sequence number of frame", HFILL }
+        },
+        { &hf_quic_observed_address_ipv4_address,
+            { "Observed IP Address (v4)", "quic.observed_address.ipv4_address",
+              FT_IPv4, BASE_NONE, NULL, 0x0,
+              "Observed IPv4 address", HFILL }
+        },
+        { &hf_quic_observed_address_ipv6_address,
+            { "Observed IP Address (v6)", "quic.observed_address.ipv6_address",
+              FT_IPv6, BASE_NONE, NULL, 0x0,
+              "Observed IPv6 address", HFILL }
+        },
+        { &hf_quic_observed_address_port,
+            { "Observed Port", "quic.observed_address.port",
+              FT_UINT16, BASE_DEC, NULL, 0x0,
+              "Observed IP port", HFILL }
         },
         /* RESET_STREAM */
         { &hf_quic_rsts_stream_id,

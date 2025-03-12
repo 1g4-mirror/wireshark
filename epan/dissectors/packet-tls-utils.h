@@ -212,6 +212,7 @@ typedef enum {
 #define SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT11         0x0f739bbc1b666d11 /* https://tools.ietf.org/html/draft-ietf-quic-multipath-11 */
 #define SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT12         0x0f739bbc1b666d0c /* https://tools.ietf.org/html/draft-ietf-quic-multipath-12 */
 #define SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID                 0x0f739bbc1b666d0d /* https://tools.ietf.org/html/draft-ietf-quic-multipath-13 */
+#define SSL_HND_QUIC_TP_ADDRESS_DISCOVERY                  0x9f81a176 /* https://quicwg.org/address-discovery/draft-ietf-quic-address-discovery.html */
 
 /*
  * Lookup tables
@@ -254,6 +255,7 @@ extern const val64_string quic_transport_parameter_id[];
 extern const range_string quic_version_vals[];
 extern const val64_string quic_enable_time_stamp_v2_vals[];
 extern const val64_string quic_enable_multipath_vals[];
+extern const val64_string quic_address_discovery_vals[];
 extern const value_string tls_hello_ext_ech_clienthello_types[];
 extern const value_string kem_id_type_vals[];
 extern const value_string kdf_id_type_vals[];
@@ -1120,6 +1122,7 @@ typedef struct ssl_common_dissect {
         int hs_ext_quictp_parameter_enable_multipath;
         int hs_ext_quictp_parameter_initial_max_paths;
         int hs_ext_quictp_parameter_initial_max_path_id;
+        int hs_ext_quictp_parameter_address_discovery;
 
         int esni_suite;
         int esni_record_digest_length;
@@ -2602,6 +2605,11 @@ ssl_common_dissect_t name;
     { & name .hf.hs_ext_quictp_parameter_initial_max_path_id,           \
       { "Initial Max Path ID", prefix ".quic.parameter.initial_max_path_id", \
         FT_UINT64, BASE_DEC, NULL, 0x00,                                \
+        NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_quictp_parameter_address_discovery,           \
+      { "Address Discovery", prefix ".quic.parameter.address_discovery", \
+        FT_UINT64, BASE_DEC|BASE_VAL64_STRING, VALS64(quic_address_discovery_vals), 0x00,                                \
         NULL, HFILL }                                                   \
     },                                                                  \
     { & name .hf.hs_ext_connection_id_length,                           \
