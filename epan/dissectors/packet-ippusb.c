@@ -30,10 +30,6 @@
  */
 #define HTTP 0
 
-/* As also defined in IPP dissector */
-#define PRINT_JOB              0x0002
-#define SEND_DOCUMENT          0x0006
-
 #define TAG_END_OF_ATTRIBUTES 0x03
 #define NEWLINE 0x0a
 
@@ -42,8 +38,6 @@
 #define BITS_PER_BYTE 8
 
 static const uint8_t CHUNKED_END[] = { 0x30, 0x0d, 0x0a, 0x0d, 0x0a };
-static const uint8_t RETURN_NEWLINE[] = { 0x0d, 0x0a };
-static tvbuff_t *return_newline_tvb;
 
 void proto_register_ippusb(void);
 void proto_reg_handoff_ippusb(void);
@@ -102,10 +96,6 @@ struct ippusb_multisegment_pdu {
     bool reassembled;
     bool is_ipp;
 
-    uint32_t document;
-    #define MSP_HAS_DOCUMENT        0x00000001
-    #define MSP_DOCUMENT_TRUNCATED  0x00000002
-
     uint32_t flags;
     #define MSP_FLAGS_REASSEMBLE_ENTIRE_SEGMENT	0x00000001
     #define MSP_FLAGS_GOT_ALL_SEGMENTS          0x00000002
@@ -113,7 +103,7 @@ struct ippusb_multisegment_pdu {
 };
 
 static struct ippusb_multisegment_pdu *
-pdu_store(packet_info *pinfo, wmem_tree_t *multisegment_pdus, uint32_t first_frame, bool is_ipp, unsigned document)
+pdu_store(packet_info *pinfo, wmem_tree_t *multisegment_pdus, uint32_t first_frame, bool is_ipp)
 {
     struct ippusb_multisegment_pdu *msp;
 
@@ -122,7 +112,6 @@ pdu_store(packet_info *pinfo, wmem_tree_t *multisegment_pdus, uint32_t first_fra
     msp->finished = false;
     msp->reassembled = false;
     msp->is_ipp = is_ipp;
-    msp->document = document;
     msp->flags = 0;
     wmem_tree_insert32(multisegment_pdus, pinfo->num, (void *)msp);
 
@@ -197,12 +186,10 @@ static int
 dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     int offset = 0;
-    int ret = 0;
     unsigned first_linelen;
     const unsigned char *first_line;
     int next_offset;
     uint8_t last;
-    uint8_t status_code;
     struct ippusb_analysis *ippusbd = NULL;
     conversation_t *conv = NULL;
 
@@ -210,7 +197,6 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     struct ippusb_multisegment_pdu *current_msp = NULL;
     struct ippusb_multisegment_pdu *previous_msp = NULL;
 
-    int reported_length = tvb_reported_length(tvb);
     int captured_length = tvb_captured_length(tvb);
 
     if((conv = find_conversation_pinfo(pinfo, 0)) != NULL) {
@@ -231,7 +217,6 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
     /* Get last byte of segment */
     last = tvb_get_uint8(tvb, captured_length - 1);
-    status_code = tvb_get_bits8(tvb, 3 * BITS_PER_BYTE, BITS_PER_BYTE);
 
     /* Is the segment the last chunk from chunk transfer? */
     bool is_last_chunk = false;
@@ -239,7 +224,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
         is_last_chunk = tvb_memeql(tvb, offset, CHUNKED_END, CHUNK_LENGTH_MIN) == 0;
     }
 
-    if (is_http_header(first_linelen, first_line) && last == TAG_END_OF_ATTRIBUTES && status_code != PRINT_JOB && status_code != SEND_DOCUMENT) {
+    if (is_http_header(first_linelen, first_line) && last == TAG_END_OF_ATTRIBUTES) {
         /* An individual ippusb packet with http header */
 
         proto_tree_add_item(tree, proto_ippusb, tvb, offset, -1, ENC_NA);
@@ -248,7 +233,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
             ippusb_last_pdu = -1;
         }
 
-        ret = dissector_try_uint_with_data(ippusb_dissector_table, HTTP, tvb, pinfo, tree, true, data);
+        dissector_try_uint_with_data(ippusb_dissector_table, HTTP, tvb, pinfo, tree, true, data);
     }
     else if (global_ippusb_reassemble) {
         /* If reassembly is wanted */
@@ -264,7 +249,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
             if (is_http_header(first_linelen, first_line)) {
                 /* The start of a new packet that will need to be reassembled */
 
-                new_msp = pdu_store(pinfo, ippusbd->multisegment_pdus, pinfo->num, true, 0);
+                new_msp = pdu_store(pinfo, ippusbd->multisegment_pdus, pinfo->num, true);
                 new_msp->running_size = captured_length;
 
                 fragment_add_check(&ippusb_reassembly_table, tvb, offset, pinfo, new_msp->first_frame,
@@ -278,7 +263,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
                 if (previous_msp) {
                     previous_msp->nxtpdu = pinfo->num;
-                    new_msp = pdu_store(pinfo, ippusbd->multisegment_pdus, previous_msp->first_frame, previous_msp->is_ipp, previous_msp->document);
+                    new_msp = pdu_store(pinfo, ippusbd->multisegment_pdus, previous_msp->first_frame, previous_msp->is_ipp);
                     new_msp->running_size = previous_msp->running_size + captured_length;
 
                     /* This packet has an HTTP header but is not an ipp packet */
@@ -287,35 +272,11 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
                         new_msp->is_ipp = false;
                     }
 
-                    /* This packet will have an attached document */
-                    if (status_code == PRINT_JOB || status_code == SEND_DOCUMENT) {
-                        new_msp->document |= MSP_HAS_DOCUMENT;
-                    }
-
                     if (!is_last_chunk) {
                         /* If this segment is not the last chunk in a chunked transfer */
 
-                        if (captured_length < reported_length && (new_msp->document & MSP_HAS_DOCUMENT)) {
-                            /* The attached document segment is smaller than it says it should be and cannot be reassembled properly */
-
-                            tvbuff_t *new_tvb = tvb_new_subset_length(tvb, 0, captured_length);
-
-                            fragment_add_check(&ippusb_reassembly_table, new_tvb, offset, pinfo, new_msp->first_frame,
-                                            GUINT_TO_POINTER(new_msp->first_frame), previous_msp->running_size, captured_length, true);
-
-                            new_msp->document |= MSP_DOCUMENT_TRUNCATED;
-                        }
-                        else {
-                            fragment_add_check(&ippusb_reassembly_table, tvb, offset, pinfo, new_msp->first_frame,
-                                            GUINT_TO_POINTER(new_msp->first_frame), previous_msp->running_size, captured_length, true);
-                        }
-
-                        if (last != NEWLINE) {
-                            fragment_add_check(&ippusb_reassembly_table, return_newline_tvb, offset, pinfo, new_msp->first_frame,
-                                            GUINT_TO_POINTER(new_msp->first_frame), new_msp->running_size, sizeof(RETURN_NEWLINE), true);
-
-                            new_msp->running_size += sizeof(RETURN_NEWLINE);
-                        }
+                        fragment_add_check(&ippusb_reassembly_table, tvb, offset, pinfo, new_msp->first_frame,
+                                        GUINT_TO_POINTER(new_msp->first_frame), previous_msp->running_size, captured_length, true);
 
                         ippusb_last_pdu = pinfo->num;
                     }
@@ -333,7 +294,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
                         pinfo->can_desegment = 0;
 
                         if(processed_tvb){
-                            ret = dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
+                            dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
                             col_append_str(pinfo->cinfo, COL_INFO, " Reassembled Data");
                         }
                     }
@@ -366,20 +327,8 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
                     pinfo->fd->visited = false;
 
-                    if (captured_length < reported_length && (current_msp->document & MSP_HAS_DOCUMENT)) {
-                        /* The attached document segment is smaller than it says it should be and cannot be reassembled properly */
-
-                        tvbuff_t *new_tvb = tvb_new_subset_length(tvb, 0, captured_length);
-
-                        head = fragment_add_check(&ippusb_reassembly_table, new_tvb, offset, pinfo, current_msp->first_frame,
-                                            GUINT_TO_POINTER(current_msp->first_frame), current_msp->running_size - captured_length, captured_length, false);
-
-                        current_msp->document |= MSP_DOCUMENT_TRUNCATED;
-                    }
-                    else {
-                         head = fragment_add_check(&ippusb_reassembly_table, tvb, 0, pinfo, current_msp->first_frame,
-                                            GUINT_TO_POINTER(current_msp->first_frame), current_msp->running_size - captured_length, captured_length, false);
-                    }
+                    head = fragment_add_check(&ippusb_reassembly_table, tvb, 0, pinfo, current_msp->first_frame,
+                                        GUINT_TO_POINTER(current_msp->first_frame), current_msp->running_size - captured_length, captured_length, false);
 
                     pinfo->fd->visited = true;
 
@@ -396,11 +345,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
                 if (processed_tvb) {
                     pinfo->can_desegment = 0;
 
-                    ret = dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
-
-                    if (current_msp->document & MSP_DOCUMENT_TRUNCATED) {
-                        col_append_str(pinfo->cinfo, COL_INFO, " Document Truncated");
-                    }
+                    dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
                 }
             }
             else if (current_msp && is_last_chunk) {
@@ -415,14 +360,9 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
                 if (processed_tvb) {
                     pinfo->can_desegment = 0;
 
-                    ret = dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
+                    dissector_try_uint_with_data(ippusb_dissector_table, HTTP, processed_tvb, pinfo, tree, true, data);
 
                     col_append_str(pinfo->cinfo, COL_INFO, " Reassembled Data");
-
-                    /* If the document was truncated mark it as such in the UX */
-                    if (current_msp->document & MSP_DOCUMENT_TRUNCATED) {
-                        col_append_str(pinfo->cinfo, COL_INFO, " Document Truncated");
-                    }
                 }
             }
 
@@ -430,12 +370,7 @@ dissect_ippusb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
         }
     }
 
-    if (ret) {
-        return tvb_captured_length(tvb);
-    }
-    else {
-        return 0;
-    }
+    return tvb_captured_length(tvb);
 }
 
 static int
@@ -449,11 +384,6 @@ is_http_header(unsigned first_linelen, const unsigned char *first_line) {
     else {
         return false;
     }
-}
-
-static void
-ippusb_shutdown(void) {
-    tvb_free(return_newline_tvb);
 }
 
 void
@@ -525,17 +455,18 @@ proto_register_ippusb(void)
     /* Reassembly, made an option due to memory costs */
     prefs_register_bool_preference(ippusb_module, "attempt_reassembly", "Reassemble payload", "", &global_ippusb_reassemble);
 
-    return_newline_tvb = tvb_new_real_data(RETURN_NEWLINE, sizeof(RETURN_NEWLINE), sizeof(RETURN_NEWLINE));
-
-    register_shutdown_routine(ippusb_shutdown);
-
     ippusb_handle = register_dissector("ippusb", dissect_ippusb, proto_ippusb);
 }
 
 void
 proto_reg_handoff_ippusb(void)
 {
-    dissector_add_uint("usb.bulk", IF_CLASS_PRINTER, ippusb_handle);
+    dissector_add_uint("usb.protocol", 0x070104, ippusb_handle);
+
+    /* Seen on old HP printers (should possibly check for vendor id 0x03f0) */
+    dissector_add_uint("usb.protocol", 0xff0901, ippusb_handle);
+
+    dissector_add_for_decode_as("usb.protocol", ippusb_handle);
 }
 
 /*
