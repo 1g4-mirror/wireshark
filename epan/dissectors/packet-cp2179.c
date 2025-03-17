@@ -118,6 +118,7 @@ typedef struct {
 /* CP2179 function codes */
 #define BASIC_SCAN                          0x00
 #define SCAN_INCLUSIVE                      0x01
+#define SUPERVISORY_CONTROL                 0x02
 #define SCAN_FOR_SPECIAL_CALC               0x03
 #define RETRIEVE_TIME_TAGGED_INFO           0x04   /* not supported by the RTAC */
 #define SCAN_BY_TABLE                       0x0A
@@ -131,6 +132,7 @@ typedef struct {
 static const value_string FunctionCodenames[] = {
 { BASIC_SCAN,                     "Basic Scan" },
 { SCAN_INCLUSIVE,                 "Scan Inclusive"},
+{ SUPERVISORY_CONTROL,            "Supervisory Control"},
 { SCAN_FOR_SPECIAL_CALC,          "Scan Floating Points" },
 { RETRIEVE_TIME_TAGGED_INFO,      "Retrieve Time Tagged Information" },
 { SCAN_BY_TABLE,                  "Scan by Table" },
