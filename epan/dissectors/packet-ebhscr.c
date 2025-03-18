@@ -36,6 +36,7 @@ static int hf_ebhscr_status_unused;
 
 static int hf_can_proto_type;
 static int hf_can_status_available;
+static int hf_can_status_overflow;
 static int hf_can_LEC;
 static int hf_can_ERRP;
 static int hf_can_ERRW;
@@ -253,6 +254,7 @@ static int ett_lin_payload;
 static int * const can_status_bits[] = {
 	&hf_can_proto_type,
 	&hf_can_status_available,
+	&hf_can_status_overflow,
 	NULL
 };
 
@@ -281,6 +283,12 @@ static const value_string can_status_available_strings[] = {
 	{ 0, NULL },
 };
 
+static const value_string can_status_overflow_strings[] = {
+	{ 0,	"No FIFO overflow detected" },
+	{ 1,	"FIFO overflow detected, data were lost" },
+	{ 0, NULL },
+};
+
 static const val64_string can_last_err_code_strings[] = {
 	{ 0,	"No Error" },
 	{ 1,	"Stuff Error" },
@@ -289,7 +297,7 @@ static const val64_string can_last_err_code_strings[] = {
 	{ 4,	"Bit1 Error" },
 	{ 5,	"Bit0 Error" },
 	{ 6,	"CRC Error" },
-	{ 7,	"Reserved" },
+	{ 7,	"No Change" },
 	{ 0, NULL },
 };
 
@@ -1626,6 +1634,12 @@ proto_register_ebhscr(void)
 			VALS(can_status_available_strings), 0x0002,
 			NULL, HFILL }
 		},
+		{ &hf_can_status_overflow,
+			{ "Overflow flag", "ebhscr.can.overflow",
+			FT_UINT16, BASE_HEX,
+			VALS(can_status_overflow_strings), 0x0004,
+			NULL, HFILL }
+		},
 		{ &hf_can_LEC,
 			{ "CAN Last error code", "ebhscr.can.LEC",
 			FT_UINT64, BASE_DEC | BASE_VAL64_STRING,
@@ -1645,13 +1659,13 @@ proto_register_ebhscr(void)
 			NULL, HFILL }
 		},
 		{ &hf_can_BOFF,
-		{ "CAN Bus Off state", "ebhscr.can.boff",
+			{ "CAN Bus Off state", "ebhscr.can.boff",
 			FT_UINT64, BASE_DEC | BASE_VAL64_STRING,
 			VALS64(can_BOFF_strings), 0x0000008000000000,
 			NULL, HFILL }
 		},
 		{ &hf_can_DLEC,
-		{ "CAN Data phase of CAN FD frame (with BRS flag set) last error code.", "ebhscr.can.dlec",
+			{ "CAN Data phase of CAN FD frame (with BRS flag set) last error code.", "ebhscr.can.dlec",
 			FT_UINT64, BASE_HEX | BASE_VAL64_STRING,
 			VALS64(can_last_err_code_strings), 0x0000070000000000,
 			NULL, HFILL }
