@@ -129,6 +129,7 @@ static int hf_flexray_FESERR;
 static int hf_flexray_FSSERR;
 static int hf_flexray_BSSERR;
 static int hf_flexray_jump_occurred;
+static int hf_flexray_overflow_err;
 static int hf_flexray_slot_information;
 static int hf_flexray_SBV;
 static int hf_flexray_ACI;
@@ -503,6 +504,15 @@ static int * const flexray_frame_status_bits[] = {
 	&hf_flexray_FESERR,
 	&hf_flexray_FSSERR,
 	&hf_flexray_BSSERR,
+	&hf_flexray_jump_occurred,
+	NULL
+};
+
+static int * const flexray_slot_status_bits[] = {
+	&hf_flexray_monitoring_bit,
+	&hf_flexray_sync_bit,
+	&hf_flexray_packet_type,
+	&hf_flexray_overflow_err,
 	&hf_flexray_jump_occurred,
 	NULL
 };
@@ -1126,11 +1136,11 @@ static int dissect_ebhscr_flexray_slot_status_packet(tvbuff_t *tvb, packet_info 
 	proto_tree *flexray_mhdr_tree, *flexray_mhdr_sub_tree, *flexray_status_tree;
 
 	supercycle_counter = tvb_get_uint32(tvb, 28, ENC_BIG_ENDIAN);
-	col_append_fstr(pinfo->cinfo, COL_INFO, "SLSTS: SCC %d", supercycle_counter);
+	col_append_fstr(pinfo->cinfo, COL_INFO, " SLSTS: SCC %d", supercycle_counter);
 
 	ti = proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_status, tvb, 2, 2, ENC_BIG_ENDIAN);
 	flexray_status_tree = proto_item_add_subtree(ti, ett_ebhscr_status);
-	proto_tree_add_bitmask_list(flexray_status_tree, tvb, 2, 2, flexray_status_bits, ENC_BIG_ENDIAN);
+	proto_tree_add_bitmask_list(flexray_status_tree, tvb, 2, 2, flexray_slot_status_bits, ENC_BIG_ENDIAN);
 
 	ti = proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_mjr_hdr, tvb, 24, 8, ENC_BIG_ENDIAN);
 	flexray_mhdr_tree = proto_item_add_subtree(ti, ett_ebhscr_mjr_hdr);
@@ -1158,7 +1168,7 @@ static int dissect_ebhscr_flexray_start_of_cycle_packet(tvbuff_t *tvb, packet_in
 	cycle_counter = tvb_get_uint8(tvb, 25);
 	supercycle_counter = tvb_get_uint32(tvb, 28, ENC_BIG_ENDIAN);
 
-	col_append_fstr(pinfo->cinfo, COL_INFO, "SOC: CC %2d SCC %d", cycle_counter, supercycle_counter);
+	col_append_fstr(pinfo->cinfo, COL_INFO, " SOC: CC %2d SCC %d", cycle_counter, supercycle_counter);
 
 	ti = proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_status, tvb, 2, 2, ENC_BIG_ENDIAN);
 	flexray_status_tree = proto_item_add_subtree(ti, ett_ebhscr_status);
@@ -1184,7 +1194,7 @@ static int dissect_ebhscr_flexray(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 	uint32_t flexray_packet_type;
 	uint32_t ebhscr_current_payload_length;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "FLEXRAY (EBHSCR)");
+	col_set_str(pinfo->cinfo, COL_INFO, "FLEXRAY:");
 	ebhscr_current_payload_length = ebhscr_frame_length - EBHSCR_HEADER_LENGTH;
 
 	flexray_channel_tree = proto_item_add_subtree(ebhscr_channel, ett_ebhscr_channel);
@@ -2153,6 +2163,12 @@ proto_register_ebhscr(void)
 			FT_BOOLEAN, 16,
 			NULL, 0x0800,
 			"Set to 1 if a time jump occurred near the edge and thus the timestamp was estimated.", HFILL }
+		},
+		{ &hf_flexray_overflow_err,
+			{ "Overflow error", "ebhscr.flexray.overflow_err",
+			FT_BOOLEAN, 16,
+			NULL, 0x0010,
+			"FIFO overflow error. Captured FlexRay data were lost.", HFILL }
 		},
 		{ &hf_flexray_slot_information,
 			{ "Slot information", "ebhscr.flexray.slotinfo",
