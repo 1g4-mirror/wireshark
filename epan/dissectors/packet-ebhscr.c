@@ -20,7 +20,40 @@
 #include <epan/expert.h>
 #include <epan/tfs.h>
 
-#define CSI2_FRAME_NUM_SECTIONS 8U
+/* Custom EBHSCR packet types */
+#define EBHSCR_USER_FIRST 				0x43
+#define EBHSCR_USER_LAST 				0x4F
+
+/* EBHSCR packet types */
+#define ETHERNET_FRAME 					0x50
+#define NMEA_FRAME 						0x51
+#define TIME_STATE_FRAME 				0x52
+#define CAN_FRAME 						0x53
+#define LIN_FRAME 						0x55
+#define DIO_FRAME 						0x56
+#define FLEXRAY_FRAME 					0x57
+#define MIPI_CSI2 						0x59
+#define DSI3_FRAME 						0x5C
+#define CSI2_FRAME 						0x5E
+
+/* Protocol specific definitions */
+#define FLEXRAY_FRAME_PACKET 			0x00
+#define FLEXRAY_SYMBOL_PACKET 			0x01
+#define FLEXRAY_SLOT_STATUS_PACKET 	 	0x02
+#define FLEXRAY_START_OF_CYCLE_PACKET  	0x03
+#define FLEXRAY_CHANNEL_B_MASK 			0x02
+#define FLEXRAY_TSSVIOL_MASK 			0x0020
+#define FLEXRAY_CODERR_MASK 			0x0010
+#define FLEXRAY_FESERR_MASK 			0x0100
+#define FLEXRAY_HCRCERR_MASK 			0x0040
+#define FLEXRAY_FCRCERR_MASK 			0x0080
+#define MIPI_CSI2_PKT_HDR_LEN 			8U
+#define CSI2_FRAME_NUM_SECTIONS 		8U
+#define CSI2_FRAME_SECTION_SIZE_BYTES 	16U
+#define CSI2_FRAME_PKT_HDR_LEN 			128U
+#define DSI3_CHANNEL_SLAVE 				0x00
+#define DSI3_CHANNEL_MASTER 			0x01
+#define EBHSCR_HEADER_LENGTH 			32U
 
 void proto_reg_handoff_ebhscr(void);
 void proto_register_ebhscr(void);
@@ -556,18 +589,6 @@ static const value_string flexray_monitoring_bit_strings[] = {
 	{ 0, NULL },
 };
 
-#define FLEXRAY_FRAME_PACKET 			0x00
-#define FLEXRAY_SYMBOL_PACKET 			0x01
-#define FLEXRAY_SLOT_STATUS_PACKET 	 	0x02
-#define FLEXRAY_START_OF_CYCLE_PACKET  	0x03
-
-#define FLEXRAY_CHANNEL_B_MASK 	0x02
-#define FLEXRAY_TSSVIOL_MASK 	0x0020
-#define FLEXRAY_CODERR_MASK 	0x0010
-#define FLEXRAY_FESERR_MASK 	0x0100
-#define FLEXRAY_HCRCERR_MASK 	0x0040
-#define FLEXRAY_FCRCERR_MASK 	0x0080
-
 static const value_string flexray_packet_type_strings[] = {
 	{ FLEXRAY_FRAME_PACKET, "Frame" },
 	{ FLEXRAY_SYMBOL_PACKET, "Symbol" },
@@ -754,30 +775,6 @@ static dissector_handle_t ebhscr_user_handle;
 
 static dissector_table_t subdissector_table;
 
-#define EBHSCR_USER_FIRST 0X43
-#define EBHSCR_USER_LAST 0X4F
-
-#define ETHERNET_FRAME 0x50
-#define NMEA_FRAME 0x51
-#define TIME_STATE_FRAME 0x52
-#define CAN_FRAME 0x53
-#define LIN_FRAME 0x55
-#define DIO_FRAME 0x56
-#define FLEXRAY_FRAME 0x57
-#define MIPI_CSI2 0x59
-#define DSI3_FRAME 0x5C
-#define CSI2_FRAME 0x5E
-
-#define MIPI_CSI2_PKT_HDR_LEN 8U
-
-#define CSI2_FRAME_SECTION_SIZE_BYTES 16U
-#define CSI2_FRAME_PKT_HDR_LEN 128U
-
-#define DSI3_CHANNEL_SLAVE 0x00
-#define DSI3_CHANNEL_MASTER 0x01
-
-#define EBHSCR_HEADER_LENGTH 32
-
 static int dissect_ebhscr_can(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 								proto_tree *ebhscr_packet_header_tree, uint16_t ebhscr_status,
 								uint32_t ebhscr_frame_length)
@@ -899,7 +896,7 @@ static int dissect_ebhscr_ts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	uint64_t time_source = 0;
 	proto_item *ti;
 
-	col_set_str(pinfo->cinfo, COL_INFO, "TimeState ");
+	col_set_str(pinfo->cinfo, COL_INFO, "TimeState:");
 	ti = proto_tree_add_bitmask(ebhscr_packet_header_tree, tvb, 2, hf_ebhscr_status, ett_ebhscr_status,
 								ts_status_bits, ENC_BIG_ENDIAN);
 
@@ -949,7 +946,6 @@ static int dissect_ebhscr_lin(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ebh
 	proto_tree *lin_payload_tree, *lin_pid_tree;
 	uint32_t ebhscr_current_payload_length;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "LIN (EBHSCR)");
 	ebhscr_current_payload_length = ebhscr_frame_length - EBHSCR_HEADER_LENGTH;
 
 	ti = proto_tree_add_bitmask(ebhscr_packet_header_tree, tvb, 2, hf_ebhscr_status,
@@ -1512,8 +1508,10 @@ dissect_ebhscr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_mjr_hdr, tvb, 24, 8, ENC_BIG_ENDIAN);
 			next_tvb = tvb_new_subset_length(tvb, 32, ebhscr_current_payload_length);
 			call_data_dissector(next_tvb, pinfo, tree);
-			col_append_fstr(pinfo->cinfo, COL_INFO, "  %s", tvb_bytes_to_str_punct(pinfo->pool, tvb, 32,
-							ebhscr_current_payload_length, ' '));
+			if (ebhscr_current_payload_length > 0) {
+				col_append_fstr(pinfo->cinfo, COL_INFO, "  %s", tvb_bytes_to_str_punct(pinfo->pool, tvb, 32,
+								ebhscr_current_payload_length, ' '));
+			}
 		}
 		return tvb_captured_length(tvb);
 	}
@@ -1535,6 +1533,7 @@ dissect_ebhscr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	else if (ebhscr_major_num == TIME_STATE_FRAME) {
 		dissect_ebhscr_ts(tvb, pinfo, tree, ebhscr_packet_header_tree, ebhscr_status, ebhscr_frame_length);
 	}
+
 	else if (ebhscr_major_num == LIN_FRAME) {
 		dissect_ebhscr_lin(tvb, pinfo, ebhscr_tree, ebhscr_packet_header_tree, ebhscr_status, ebhscr_frame_length);
 	}
@@ -1580,7 +1579,7 @@ proto_register_ebhscr(void)
 			FT_UINT32, BASE_HEX,
 			NULL, 0x0,
 			NULL, HFILL }
-			},
+		},
 		{ &hf_ebhscr_major_number,
 			{ "Major number", "ebhscr.mjr",
 			FT_UINT8, BASE_HEX,
