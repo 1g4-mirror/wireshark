@@ -20,6 +20,8 @@
 #include <epan/expert.h>
 #include <epan/tfs.h>
 
+#define CSI2_FRAME_NUM_SECTIONS 8U
+
 void proto_reg_handoff_ebhscr(void);
 void proto_register_ebhscr(void);
 
@@ -203,6 +205,35 @@ static int hf_mipi_csi2_payload_pkt_hdr_ecc;
 static int hf_mipi_csi2_payload_pkt_hdr_crc;
 static int hf_mipi_csi2_payload_pkt_hdr_wc_lsb;
 static int hf_mipi_csi2_payload_pkt_hdr_wc_msb;
+
+static int hf_csi2_frame_status_packet_checksum_err;
+static int hf_csi2_frame_status_ecc_err;
+static int hf_csi2_frame_status_rcv_decoder_err;
+static int hf_csi2_frame_status_section_err;
+static int hf_csi2_frame_status_fifo_overflow;
+static int hf_csi2_frame_status_payload_trunc_err;
+static int hf_csi2_frame_status_trans_rejected;
+
+static int hf_csi2_frame_mjr_hdr_flags;
+static int hf_csi2_frame_mjr_hdr_flags_proc;
+static int hf_csi2_frame_mjr_hdr_flags_pad_align;
+static int hf_csi2_frame_mjr_hdr_flags_mipi_phy_type;
+static int hf_csi2_frame_mjr_hdr_vc;
+static int hf_csi2_frame_mjr_hdr_imhv;
+
+static int hf_csi2_frame_header;
+static int hf_csi2_frame_header_payload_byte_offset;
+static int hf_csi2_frame_header_bytes_total;
+static int hf_csi2_frame_header_bytes_per_line;
+static int hf_csi2_frame_header_number_lines;
+static int hf_csi2_frame_header_error_bits;
+static int hf_csi2_frame_header_mipi_data_type;
+static int hf_csi2_frame_sections[CSI2_FRAME_NUM_SECTIONS];
+
+static int hf_csi2_frame_header_error_bits_packet_checksum_err;
+static int hf_csi2_frame_header_error_bits_correctable_ecc_err;
+static int hf_csi2_frame_header_error_bits_uncorrectable_ecc_err;
+static int hf_csi2_frame_header_error_bits_rcv_dec_err;
 
 static int hf_ebhscr_version;
 static int hf_ebhscr_length;
@@ -645,11 +676,40 @@ static const true_false_string hf_mipi_csi2_mjr_hdr_flags_mipi_phy_type_string[]
 	{NULL, NULL}
 };
 
+static int * const csi2_frame_status_bits[] = {
+	&hf_csi2_frame_status_packet_checksum_err,
+	&hf_csi2_frame_status_ecc_err,
+	&hf_csi2_frame_status_rcv_decoder_err,
+	&hf_csi2_frame_status_section_err,
+	&hf_csi2_frame_status_fifo_overflow,
+	&hf_csi2_frame_status_payload_trunc_err,
+	&hf_csi2_frame_status_trans_rejected,
+	NULL
+};
+
+static int * const csi2_frame_mjr_hdr_bits[] = {
+	&hf_csi2_frame_mjr_hdr_flags_proc,
+	&hf_csi2_frame_mjr_hdr_flags_pad_align,
+	&hf_csi2_frame_mjr_hdr_flags_mipi_phy_type,
+	&hf_csi2_frame_mjr_hdr_vc,
+	&hf_csi2_frame_mjr_hdr_imhv,
+	NULL
+};
+
+static int * const csi2_frame_header_error_bits_bits[] = {
+	&hf_csi2_frame_header_error_bits_packet_checksum_err,
+	&hf_csi2_frame_header_error_bits_correctable_ecc_err,
+	&hf_csi2_frame_header_error_bits_uncorrectable_ecc_err,
+	&hf_csi2_frame_header_error_bits_rcv_dec_err,
+	NULL
+};
+
 static expert_field ei_ebhscr_frame_header;
 static expert_field ei_ebhscr_err_status_flag;
 static expert_field ei_ebhscr_info_status_flag;
 static expert_field ei_ebhscr_err_channel_flag;
 static expert_field ei_ebhscr_warn_mjr_hdr_status_flag;
+static expert_field ei_ebhscr_warn_csi2_hdr_error_flag;
 
 static dissector_handle_t ebhscr_handle;
 
@@ -674,8 +734,12 @@ static dissector_table_t subdissector_table;
 #define FLEXRAY_FRAME 0x57
 #define MIPI_CSI2 0x59
 #define DSI3_FRAME 0x5C
+#define CSI2_FRAME 0x5E
 
 #define MIPI_CSI2_PKT_HDR_LEN 8U
+
+#define CSI2_FRAME_SECTION_SIZE_BYTES 16U
+#define CSI2_FRAME_PKT_HDR_LEN 128U
 
 #define DSI3_CHANNEL_SLAVE 0x00
 #define DSI3_CHANNEL_MASTER 0x01
@@ -1280,6 +1344,90 @@ static int dissect_ebhscr_mipi_csi2(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 	return tvb_captured_length(tvb);
 }
 
+static int dissect_ebhscr_csi2_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+	proto_tree *ebhscr_packet_header_tree, uint16_t ebhscr_status, uint32_t ebhscr_frame_length)
+{
+	proto_item *ti;
+	tvbuff_t* next_tvb;
+	proto_tree *csi2_frame_status_tree;
+	proto_tree *csi2_frame_mhdr_tree;
+	proto_tree *csi2_frame_header_subtree;
+	proto_tree *csi2_frame_header_sections_subtree[CSI2_FRAME_NUM_SECTIONS];
+	proto_tree *csi2_frame_header_sections_err_bits_subtree;
+	uint32_t ebhscr_current_payload_length;
+	uint8_t csi2_frame_header_error_flags;
+
+	col_set_str(pinfo->cinfo, COL_INFO, "CSI2_FRAME:");
+	ebhscr_current_payload_length = ebhscr_frame_length - EBHSCR_HEADER_LENGTH;
+
+	ti = proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_status, tvb, 2, 2, ENC_BIG_ENDIAN);
+	csi2_frame_status_tree = proto_item_add_subtree(ti, ett_ebhscr_status);
+	proto_tree_add_bitmask_list(csi2_frame_status_tree, tvb, 2, 2, csi2_frame_status_bits, ENC_BIG_ENDIAN);
+
+	if (ebhscr_status) {
+		expert_add_info(pinfo, ti, &ei_ebhscr_err_status_flag);
+	}
+
+	ti = proto_tree_add_item(ebhscr_packet_header_tree, hf_ebhscr_mjr_hdr, tvb, 24, 8, ENC_BIG_ENDIAN);
+	csi2_frame_mhdr_tree = proto_item_add_subtree(ti, ett_ebhscr_mjr_hdr);
+	proto_tree_add_bitmask_list(csi2_frame_mhdr_tree, tvb, 24, 4, csi2_frame_mjr_hdr_bits, ENC_BIG_ENDIAN);
+
+	if (ebhscr_current_payload_length < CSI2_FRAME_PKT_HDR_LEN) {
+		return tvb_captured_length(tvb);
+	}
+
+	ti = proto_tree_add_item(tree, hf_csi2_frame_header, tvb, 32, 128, ENC_BIG_ENDIAN);
+	csi2_frame_header_subtree = proto_item_add_subtree(ti, ett_ebhscr_mjr_hdr);
+
+	for (int i = 0, section_offset = EBHSCR_HEADER_LENGTH; i < CSI2_FRAME_NUM_SECTIONS; i++) {
+		int field_offset = section_offset;
+		int current_section = hf_csi2_frame_sections[i];
+		ti = proto_tree_add_item(csi2_frame_header_subtree, current_section, tvb, section_offset, CSI2_FRAME_SECTION_SIZE_BYTES, ENC_BIG_ENDIAN);
+		section_offset += CSI2_FRAME_SECTION_SIZE_BYTES;
+
+		csi2_frame_header_sections_subtree[i] = proto_item_add_subtree(ti, ett_ebhscr_status);
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_payload_byte_offset, tvb, field_offset, 4, ENC_BIG_ENDIAN);
+		field_offset += 4;
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_bytes_total, tvb, field_offset, 4, ENC_BIG_ENDIAN);
+		field_offset += 4;
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_bytes_per_line, tvb, field_offset, 2, ENC_BIG_ENDIAN);
+		field_offset += 2;
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_number_lines, tvb, field_offset, 2, ENC_BIG_ENDIAN);
+		field_offset += 2;
+
+		/* Next 2 bytes are reserved */
+		field_offset += 2;
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_error_bits, tvb, field_offset, 1, ENC_BIG_ENDIAN);
+		csi2_frame_header_sections_err_bits_subtree = proto_item_add_subtree(ti, ett_ebhscr_mjr_hdr);
+		proto_tree_add_bitmask_list(csi2_frame_header_sections_err_bits_subtree, tvb, field_offset, 1, csi2_frame_header_error_bits_bits, ENC_BIG_ENDIAN);
+		csi2_frame_header_error_flags = tvb_get_uint8(tvb, field_offset) & 0x0F;
+		if (csi2_frame_header_error_flags) {
+			expert_add_info(pinfo, ti, &ei_ebhscr_warn_csi2_hdr_error_flag);
+		}
+		field_offset += 1;
+
+		ti = proto_tree_add_item(csi2_frame_header_sections_subtree[i], hf_csi2_frame_header_mipi_data_type, tvb, field_offset, 1, ENC_BIG_ENDIAN);
+		field_offset += 1;
+
+		ebhscr_current_payload_length -= CSI2_FRAME_SECTION_SIZE_BYTES;
+	}
+
+	uint32_t const headers_length = EBHSCR_HEADER_LENGTH + (CSI2_FRAME_NUM_SECTIONS * CSI2_FRAME_SECTION_SIZE_BYTES);
+
+	if (ebhscr_current_payload_length > 0) {
+		next_tvb = tvb_new_subset_length(tvb, headers_length, ebhscr_current_payload_length);
+		call_data_dissector(next_tvb, pinfo, tree);
+		col_append_fstr(pinfo->cinfo, COL_INFO, "  %s", tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, headers_length, ebhscr_current_payload_length, ' '));
+	}
+
+	return tvb_captured_length(tvb);
+}
+
 static int
 dissect_ebhscr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
@@ -1372,6 +1520,10 @@ dissect_ebhscr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
 	else if (ebhscr_major_num == MIPI_CSI2) {
 		dissect_ebhscr_mipi_csi2(tvb, pinfo, tree, ebhscr_packet_header_tree, ebhscr_status, ebhscr_frame_length);
+	}
+
+	else if (ebhscr_major_num == CSI2_FRAME) {
+		dissect_ebhscr_csi2_frame(tvb, pinfo, tree, ebhscr_packet_header_tree, ebhscr_status, ebhscr_frame_length);
 	}
 
 	else {
@@ -2397,6 +2549,192 @@ proto_register_ebhscr(void)
 			FT_UINT16, BASE_HEX,
 			NULL, 0x00FF,
 			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_packet_checksum_err,
+			{ "MIPI CSI-2 long packet checksum error", "ebhscr.csi2_frame.st.checksum_err",
+			FT_BOOLEAN, 12,
+			NULL, 0x01,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_ecc_err,
+			{ "MIPI CSI-2 packet header contains an uncorrectable ECC error", "ebhscr.csi2_frame.st.ecc_err",
+			FT_BOOLEAN, 12,
+			NULL, 0x04,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_rcv_decoder_err,
+			{ "Receiver Decoder error", "ebhscr.csi2_frame.st.decoder_err",
+			FT_BOOLEAN, 12,
+			NULL, 0x08,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_section_err,
+			{ "Section Error", "ebhscr.csi2_frame.st.section_err",
+			FT_BOOLEAN, 12,
+			NULL, 0x10,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_fifo_overflow,
+			{ "FIFO Overflow error", "ebhscr.csi2_frame.st.fifo_of",
+			FT_BOOLEAN, 12,
+			NULL, 0x20,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_payload_trunc_err,
+			{ "Payload Truncated Error", "ebhscr.csi2_frame.st.trunc_err",
+			FT_BOOLEAN, 12,
+			NULL, 0x40,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_status_trans_rejected,
+			{ "Transmission Rejected", "ebhscr.csi2_frame.st.trns_rjct",
+			FT_BOOLEAN, 12,
+			NULL, 0x0400,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_mjr_hdr_flags_proc,
+			{ "The image has been processed", "ebhscr.csi2_frame.mjr_hdr.flags.proc",
+			FT_BOOLEAN, 32,
+			NULL, 0x00010000,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_mjr_hdr_flags_pad_align,
+			{ "Padding and alignment of 8 bytes", "ebhscr.csi2_frame.mjr_hdr.flags.pd_algn",
+			FT_BOOLEAN, 32,
+			NULL, 0x00040000,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_mjr_hdr_flags_mipi_phy_type,
+			{ "MIPI PHY Type", "ebhscr.csi2_frame.mjr_hdr.flags.phy_type",
+			FT_BOOLEAN, 32,
+			TFS(hf_mipi_csi2_mjr_hdr_flags_mipi_phy_type_string), 0x80000000,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_mjr_hdr_vc,
+			{ "Virtual Channel", "ebhscr.csi2_frame.mjr_hdr.vc",
+			FT_UINT32, BASE_HEX,
+			NULL, 0x00000F00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_mjr_hdr_imhv,
+			{ "Image Header Version", "ebhscr.csi2_frame.mjr_hdr.imhv",
+			FT_UINT32, BASE_HEX,
+			NULL, 0x000000FF,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header,
+			{ "CSI-2 Frame Packet Header", "ebhscr.csi2_frame_hdrs",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[0],
+			{ "Section 0", "ebhscr.csi2_frame_hdr0",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[1],
+			{ "Section 1", "ebhscr.csi2_frame_hdr1",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[2],
+			{ "Section 2", "ebhscr.csi2_frame_hdr2",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[3],
+			{ "Section 3", "ebhscr.csi2_frame_hdr3",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[4],
+			{ "Section 4", "ebhscr.csi2_frame_hdr4",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[5],
+			{ "Section 5", "ebhscr.csi2_frame_hdr5",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[6],
+			{ "Section 6", "ebhscr.csi2_frame_hdr6",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_sections[7],
+			{ "Section 7", "ebhscr.csi2_frame_hdr7",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_payload_byte_offset,
+			{ "Payload Byte Offset", "ebhscr.csi2_frame_hdr.pbo",
+			FT_UINT32, BASE_DEC,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_bytes_total,
+			{ "Bytes Total", "ebhscr.csi2_frame_hdr.byte_total",
+			FT_UINT32, BASE_DEC,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_bytes_per_line,
+			{ "Bytes Per Line", "ebhscr.csi2_frame_hdr.bpl",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_number_lines,
+			{ "Number Lines", "ebhscr.csi2_frame_hdr.num_lines",
+			FT_UINT16, BASE_DEC,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_error_bits,
+			{ "Error Bits", "ebhscr.csi2_frame_hdr.err_bits",
+			FT_NONE, BASE_NONE,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_mipi_data_type,
+			{ "MIPI Data Type", "ebhscr.csi2_frame_hdr.mipi_dt",
+			FT_UINT8, BASE_HEX,
+			NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_error_bits_packet_checksum_err,
+			{ "MIPI CSI-2 long packet checksum error", "ebhscr.csi2_frame_hdr.err_bits.crc_err",
+			FT_BOOLEAN, 8,
+			NULL, 0x01,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_error_bits_correctable_ecc_err,
+			{ "MIPI CSI-2 packet header contains an correctable ECC error", "ebhscr.csi2_frame_hdr.err_bits.cor_ecc_err",
+			FT_BOOLEAN, 8,
+			NULL, 0x02,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_error_bits_uncorrectable_ecc_err,
+			{ "MIPI CSI-2 packet header contains an uncorrectable ECC error", "ebhscr.csi2_frame_hdr.err_bits.uncor_ecc_err",
+			FT_BOOLEAN, 8,
+			NULL, 0x04,
+			NULL, HFILL }
+		},
+		{ &hf_csi2_frame_header_error_bits_rcv_dec_err,
+			{ "Receiver Decoder error", "ebhscr.csi2_frame_hdr.err_bits.rcv_decode_err",
+			FT_BOOLEAN, 8,
+			NULL, 0x08,
+			NULL, HFILL }
 		}
 	};
 
@@ -2429,6 +2767,10 @@ proto_register_ebhscr(void)
 		{ &ei_ebhscr_warn_mjr_hdr_status_flag,
 			{ "ebhscr.mjrhdr.warn", PI_PROTOCOL, PI_WARN,
 			"Major number specific header status flag is set", EXPFILL }
+		},
+		{ &ei_ebhscr_warn_csi2_hdr_error_flag,
+			{ "ebhscr.csi2_frame_hdr.warn", PI_PROTOCOL, PI_WARN,
+			"CSI-2 Frame header error bit is set", EXPFILL }
 		}
 	};
 
