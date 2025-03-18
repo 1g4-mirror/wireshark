@@ -67,9 +67,6 @@ static int ett_quake_flags;
 static dissector_handle_t quake_handle;
 
 /* I took these names directly out of the Q1 source. */
-#define NET_HEADERSIZE 8
-#define DEFAULTnet_hostport 26000
-
 #define NETFLAG_DATA            0x0001
 #define NETFLAG_ACK             0x0002
 #define NETFLAG_NAK             0x0004
@@ -581,7 +578,9 @@ proto_register_quake(void)
 void
 proto_reg_handoff_quake(void)
 {
-	dissector_add_uint_with_preference("udp.port", DEFAULTnet_hostport, quake_handle);
+	// port 26000 - Quake
+	// port 26900 - Hexen II
+	dissector_add_uint_range_with_preference("udp.port", "26000,26900", quake_handle);
 }
 
 /*
