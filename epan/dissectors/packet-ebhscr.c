@@ -111,6 +111,8 @@ static int hf_lin_payload_checksum;
 static int hf_dio_overflow_mon_unit;
 static int hf_dio_jump_occurred;
 static int hf_dio_value_type;
+static int hf_dio_channel_ref;
+static int hf_dio_gpio_id;
 static int hf_dio_reserved_bytes;
 
 static int hf_flexray_ch_a;
@@ -453,6 +455,8 @@ static int * const dio_status_bits[] = {
 
 static int * const dio_mjr_hdr_bits[] = {
 	&hf_dio_value_type,
+	&hf_dio_channel_ref,
+	&hf_dio_gpio_id,
 	&hf_dio_reserved_bytes,
 	NULL
 };
@@ -460,6 +464,16 @@ static int * const dio_mjr_hdr_bits[] = {
 static const val64_string dio_val_type_strings[] = {
 	{ 0,	"Event triggered falling edge" },
 	{ 1,	"Event triggered rising edge" },
+	{ 2,	"GPIO is in low state (No state change)" },
+	{ 3,	"GPIO is in high state (No state change)" },
+	{ 0, NULL },
+};
+
+static const val64_string dio_channel_ref_strings[] = {
+	{ 0,	"The EBHSCR header 'Channel' field refers to the Digital IO line number (zero based). EB 2200 /"
+			"EB 5200 provides four input lines for DETI with the values 0-3" },
+	{ 1,	"The EBHSCR header 'Channel' field refers to a accumulated GPIO data channel and the GPIO-"
+			"ID field is used for further identification of the GPIO" },
 	{ 0, NULL },
 };
 
@@ -971,7 +985,7 @@ dissect_ebhscr_dio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	proto_item *ti;
 	uint32_t ebhscr_current_payload_length;
 
-	col_set_str(pinfo->cinfo, COL_INFO, "DIO");
+	col_set_str(pinfo->cinfo, COL_INFO, "DIO:");
 	ebhscr_current_payload_length = ebhscr_frame_length - EBHSCR_HEADER_LENGTH;
 
 	ti = proto_tree_add_bitmask(ebhscr_packet_header_tree, tvb, 2, hf_ebhscr_status,
@@ -989,6 +1003,7 @@ dissect_ebhscr_dio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	next_tvb = tvb_new_subset_length(tvb, 32, ebhscr_current_payload_length);
 	call_data_dissector(next_tvb, pinfo, tree);
+	col_append_fstr(pinfo->cinfo, COL_INFO, "  %s", tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, 32, ebhscr_current_payload_length, ' '));
 
 	return tvb_captured_length(tvb);
 }
@@ -2033,8 +2048,21 @@ proto_register_ebhscr(void)
 		{ &hf_dio_value_type,
 			{ "Digital IO value type", "ebhscr.dio.valtype",
 			FT_UINT64, BASE_DEC | BASE_VAL64_STRING,
-			VALS64(dio_val_type_strings), 0x0100000000000000,
+			VALS64(dio_val_type_strings), 0x0300000000000000,
 			NULL, HFILL }
+		},
+		{ &hf_dio_channel_ref,
+			{ "Digital IO EBHSCR header 'Channel' referrence", "ebhscr.dio.ch_ref",
+			FT_UINT64, BASE_DEC | BASE_VAL64_STRING,
+			VALS64(dio_channel_ref_strings), 0x0400000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_dio_gpio_id,
+			{ "Digital IO GPIO ID", "ebhscr.dio.gpio_id",
+			FT_UINT64, BASE_DEC | BASE_VAL64_STRING,
+			NULL, 0x00FF000000000000,
+			"Specifies the ID of a GPIO. Based on the Physical Module this may refer to a physical"
+			"GPIO-PIN on the interface module or a virtual GPIO-ID", HFILL }
 		},
 		{ &hf_dio_reserved_bytes,
 			{ "Reserved Flags", "ebhscr.dio.rsv",
