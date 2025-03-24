@@ -40,6 +40,16 @@ static int hf_isobus_dst_addr;
 static int hf_isobus_pgn;
 static int hf_isobus_payload;
 
+static int hf_isobus_datetime_response;
+static int hf_isobus_datetime_seconds;
+static int hf_isobus_datetime_minute;
+static int hf_isobus_datetime_hour;
+static int hf_isobus_datetime_day;
+static int hf_isobus_datetime_month;
+static int hf_isobus_datetime_year;
+static int hf_isobus_datetime_utc_offset_min;
+static int hf_isobus_datetime_utc_offset_hour;
+
 static int hf_isobus_req_requested_pgn;
 static int hf_isobus_ac_name;
 static int hf_isobus_ac_name_id_number;
@@ -201,6 +211,7 @@ static int ett_isobus_can_id;
 static int ett_isobus_name;
 static int ett_isobus_fragment;
 static int ett_isobus_fragments;
+static int ett_isobus_datetime_response;
 
 static const fragment_items isobus_frag_items = {
     &ett_isobus_fragment,
@@ -689,8 +700,45 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
             col_append_fstr(pinfo->cinfo, COL_INFO, "Address claimed %u", address_claimed);
         }
     } else if (call_isobus_subdissector(tvb, pinfo, isobus_tree, false, priority, pdu_format, pgn, src_addr, data) == 0) {
-        col_append_str(pinfo->cinfo, COL_INFO, "Protocol not yet supported");
-        proto_tree_add_item(isobus_tree, hf_isobus_payload, tvb, 0, tvb_captured_length(tvb), ENC_NA);
+        if (pgn == 65254) {
+            // Time/Date response
+            uint16_t year = tvb_get_uint8(tvb, 5) + 1985;
+            uint8_t day = (uint8_t)(tvb_get_uint8(tvb, 4) * 0.25f);
+            uint8_t sec = (uint8_t)(tvb_get_uint8(tvb, 0) * 0.25f);
+            int8_t utc_hour_offset = tvb_get_int8(tvb, 7) - 125;
+            int8_t utc_min_offset = tvb_get_int8(tvb, 6) - 125;
+
+            char utc_min_offset_str[9]  = {0};
+            if (utc_min_offset)
+            {
+                snprintf(utc_min_offset_str, 8, "%d min", utc_min_offset);
+            }
+
+            col_append_fstr(pinfo->cinfo, COL_INFO, "Date/time:  %u.%u.%u %u:%u:%u (UTC+%d hour%s)",
+                year,
+                tvb_get_uint8(tvb, 3),
+                day,
+                tvb_get_uint8(tvb, 2),
+                tvb_get_uint8(tvb, 1),
+                sec,
+                utc_hour_offset,
+                utc_min_offset_str
+            );
+            proto_tree *datetime_tree;
+            ti = proto_tree_add_item(isobus_tree, hf_isobus_datetime_response, tvb, 0, 8, ENC_NA);
+            datetime_tree = proto_item_add_subtree(ti, ett_isobus_datetime_response);
+            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_year, tvb, 0, 1, tvb_get_uint8(tvb, 0), "%u", year);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_month, tvb, 3, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_day, tvb, 4, 1, tvb_get_uint8(tvb, 4), "%u", day);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_hour, tvb, 2, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_minute, tvb, 1, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_seconds, tvb, 0, 1, tvb_get_uint8(tvb, 1), "%u", sec);
+            proto_tree_add_int_format_value(datetime_tree, hf_isobus_datetime_utc_offset_hour, tvb, 7, 1, tvb_get_uint8(tvb, 7), "%d", utc_hour_offset);
+            proto_tree_add_int_format_value(datetime_tree, hf_isobus_datetime_utc_offset_min, tvb, 6, 1, tvb_get_uint8(tvb, 6), "%d", utc_min_offset);
+        } else {
+            col_append_str(pinfo->cinfo, COL_INFO, "Protocol not yet supported");
+            proto_tree_add_item(isobus_tree, hf_isobus_payload, tvb, 0, tvb_captured_length(tvb), ENC_NA);
+        }
     }
 
     return tvb_reported_length(tvb);
@@ -732,6 +780,25 @@ proto_register_isobus(void) {
             "PGN", "isobus.pgn", FT_UINT24, BASE_DEC_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
         { &hf_isobus_payload, {
             "Payload", "isobus.payload", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+
+        { &hf_isobus_datetime_response, {
+            "Date/Time", "isobus.datetime_response", FT_PROTOCOL, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_seconds, {
+            "Second", "isobus.datetime.second", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_minute, {
+            "Minute", "isobus.datetime.minute", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_hour, {
+            "Hour", "isobus.datetime.hour", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_day, {
+            "Day", "isobus.datetime.day", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_month, {
+            "Month", "isobus.datetime.month", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_year, {
+            "Year", "isobus.datetime.year", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_utc_offset_min, {
+            "Local time - UTC offset minutes", "isobus.datetime.utc_offset_min", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_utc_offset_hour, {
+            "Local time - UTC offset hours", "isobus.datetime.utc_offset_hour", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
 
         { &hf_isobus_req_requested_pgn, {
             "Requested PGN", "isobus.req.requested_pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
@@ -823,7 +890,8 @@ proto_register_isobus(void) {
         &ett_isobus_can_id,
         &ett_isobus_name,
         &ett_isobus_fragment,
-        &ett_isobus_fragments
+        &ett_isobus_fragments,
+        &ett_isobus_datetime_response
     };
 
     /* Register protocol init routine */
