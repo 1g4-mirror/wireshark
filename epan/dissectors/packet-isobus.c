@@ -47,8 +47,7 @@ static int hf_isobus_datetime_hour;
 static int hf_isobus_datetime_day;
 static int hf_isobus_datetime_month;
 static int hf_isobus_datetime_year;
-static int hf_isobus_datetime_utc_offset_min;
-static int hf_isobus_datetime_utc_offset_hour;
+static int hf_isobus_datetime_utc_offset;
 
 static int hf_isobus_req_requested_pgn;
 static int hf_isobus_ac_name;
@@ -727,14 +726,16 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
             proto_tree *datetime_tree;
             ti = proto_tree_add_item(isobus_tree, hf_isobus_datetime_response, tvb, 0, 8, ENC_NA);
             datetime_tree = proto_item_add_subtree(ti, ett_isobus_datetime_response);
-            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_year, tvb, 0, 1, tvb_get_uint8(tvb, 0), "%u", year);
-            proto_tree_add_item(datetime_tree, hf_isobus_datetime_month, tvb, 3, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_day, tvb, 4, 1, tvb_get_uint8(tvb, 4), "%u", day);
-            proto_tree_add_item(datetime_tree, hf_isobus_datetime_hour, tvb, 2, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(datetime_tree, hf_isobus_datetime_minute, tvb, 1, 1, ENC_LITTLE_ENDIAN);
-            proto_tree_add_uint_format_value(datetime_tree, hf_isobus_datetime_seconds, tvb, 0, 1, tvb_get_uint8(tvb, 1), "%u", sec);
-            proto_tree_add_int_format_value(datetime_tree, hf_isobus_datetime_utc_offset_hour, tvb, 7, 1, tvb_get_uint8(tvb, 7), "%d", utc_hour_offset);
-            proto_tree_add_int_format_value(datetime_tree, hf_isobus_datetime_utc_offset_min, tvb, 6, 1, tvb_get_uint8(tvb, 6), "%d", utc_min_offset);
+
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_year, tvb, 0, 1, ENC_NA);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_month, tvb, 3, 1, ENC_NA);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_day, tvb, 4, 1, ENC_NA);
+
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_hour, tvb, 2, 1, ENC_NA);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_minute, tvb, 1, 1, ENC_NA);
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_seconds, tvb, 0, 1, ENC_NA);
+
+            proto_tree_add_item(datetime_tree, hf_isobus_datetime_utc_offset, tvb, 6, 2, ENC_LITTLE_ENDIAN);
         } else {
             col_append_str(pinfo->cinfo, COL_INFO, "Protocol not yet supported");
             proto_tree_add_item(isobus_tree, hf_isobus_payload, tvb, 0, tvb_captured_length(tvb), ENC_NA);
@@ -742,6 +743,27 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
     }
 
     return tvb_reported_length(tvb);
+}
+
+static void isobus_print_datetime_year(char* s, uint32_t v)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%u", v + 1985);
+}
+
+static void isobus_print_datetime_day_or_sec(char* s, uint32_t v)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%u", (uint8_t)(v * 0.25f));
+}
+
+static void isobus_print_datetime_utc_offset(char* s, uint32_t v)
+{
+    snprintf(s, ITEM_LABEL_LENGTH, "%d hour", (int8_t)(((v >> 8) & 0xFF) - 125));
+    int8_t minutes = ((v & 0xFF) - 125);
+    if (minutes != 0)
+    {
+        size_t current_len = strlen(s);
+        snprintf(&s[current_len], ITEM_LABEL_LENGTH - current_len, " %d minute(s)", minutes);
+    }
 }
 
 static void
@@ -783,22 +805,20 @@ proto_register_isobus(void) {
 
         { &hf_isobus_datetime_response, {
             "Date/Time", "isobus.datetime_response", FT_PROTOCOL, BASE_NONE, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_seconds, {
-            "Second", "isobus.datetime.second", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_minute, {
-            "Minute", "isobus.datetime.minute", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_hour, {
-            "Hour", "isobus.datetime.hour", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_day, {
-            "Day", "isobus.datetime.day", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_year, {
+            "Year", "isobus.datetime.year", FT_UINT8, BASE_CUSTOM, CF_FUNC(isobus_print_datetime_year), 0x0, NULL, HFILL } },
         { &hf_isobus_datetime_month, {
             "Month", "isobus.datetime.month", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_year, {
-            "Year", "isobus.datetime.year", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_utc_offset_min, {
-            "Local time - UTC offset minutes", "isobus.datetime.utc_offset_min", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-        { &hf_isobus_datetime_utc_offset_hour, {
-            "Local time - UTC offset hours", "isobus.datetime.utc_offset_hour", FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_day, {
+            "Day", "isobus.datetime.day", FT_UINT8, BASE_CUSTOM, CF_FUNC(isobus_print_datetime_day_or_sec), 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_hour, {
+            "Hour", "isobus.datetime.hour", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_minute, {
+            "Minute", "isobus.datetime.minute", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_seconds, {
+            "Second", "isobus.datetime.second", FT_UINT8, BASE_CUSTOM, CF_FUNC(isobus_print_datetime_day_or_sec), 0x0, NULL, HFILL } },
+        { &hf_isobus_datetime_utc_offset, {
+            "Local time - UTC offset", "isobus.datetime.utc_offset", FT_UINT16, BASE_CUSTOM, CF_FUNC(isobus_print_datetime_utc_offset), 0x0, NULL, HFILL } },
 
         { &hf_isobus_req_requested_pgn, {
             "Requested PGN", "isobus.req.requested_pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
