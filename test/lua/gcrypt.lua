@@ -144,11 +144,16 @@ testlib.test(CTL,"GcryptCipher:ctl-3", pcall(GcryptCipher_ctl, gcrypt_cbc, GCRYC
 testlib.test(CTL,"GcryptCipher:ctl-4", pcall(GcryptCipher_ctl, gcrypt_cbc, GCRYCTL_SET_CBC_MAC, ByteArray.new()))
 
 testlib.testing(INFO, "negative tests")
-testlib.test(INFO,"GcryptCipher:info-0", not pcall(GcryptCipher_info, gcrypt_gcm, 0xffff, NULL, 1))
+testlib.test(INFO,"GcryptCipher:info-0", not pcall(GcryptCipher_info, gcrypt_gcm, 0xffff, NULL, 0))
 testlib.test(INFO,"GcryptCipher:info-1", not pcall(GcryptCipher_info, gcrypt_gcm, GCRYCTL_GET_TAGLEN, ByteArray.new(), NULL))
 
+-- In some versions the gcry_cipher_info function returns the value in the nbytes, in others in the buffer.
 testlib.testing(INFO, "positive tests")
-testlib.test(INFO,"GcryptCipher:info-2", pcall(GcryptCipher_info, gcrypt_gcm, GCRYCTL_GET_TAGLEN, NULL, 1))
+local ok = pcall(GcryptCipher_info, gcrypt_gcm, GCRYCTL_GET_TAGLEN, 8, 8)
+if ok == false then
+    ok = pcall(GcryptCipher_info, gcrypt_gcm, GCRYCTL_GET_TAGLEN, NULL, 1)
+end
+testlib.test(INFO,"GcryptCipher:info-2", ok == true)
 
 testlib.testing(ENCRYPT, "negative tests")
 testlib.test(ENCRYPT,"GcryptCipher:encrypt-0", not pcall(GcryptCipher_encrypt, gcrypt_cbc))
@@ -210,9 +215,21 @@ testlib.test(ALGO_INFO,"gcry_cipher_algo_info-1", not pcall(gcry_cipher_algo_inf
 testlib.test(ALGO_INFO,"gcry_cipher_algo_info-2", not pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_BLKLEN, NULL, NULL))
 
 testlib.testing(ALGO_INFO, "positive tests")
-testlib.test(ALGO_INFO,"gcry_cipher_algo_info-3", pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_KEYLEN, NULL, 0))
-testlib.test(ALGO_INFO,"gcry_cipher_algo_info-4", pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_BLKLEN, NULL, 0))
-testlib.test(ALGO_INFO,"gcry_cipher_algo_info-5", pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_TEST_ALGO, NULL, NULL))
+local ok_algo_info_1 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_KEYLEN, 8, 8)
+if (ok_algo_info_1 == false) then
+    ok_algo_info_1 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_KEYLEN, NULL, 0)
+end
+testlib.test(ALGO_INFO,"gcry_cipher_algo_info-3", ok_algo_info_1 == true)
+local ok_algo_info_2 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_BLKLEN, 8, 8)
+if (ok_algo_info_2 == false) then
+    ok_algo_info_2 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_GET_BLKLEN, NULL, 0)
+end
+testlib.test(ALGO_INFO,"gcry_cipher_algo_info-4", ok_algo_info_2 == true)
+local ok_algo_info_3 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_TEST_ALGO, 8, 8)
+if (ok_algo_info_3 == false) then
+    ok_algo_info_3 = pcall(gcry_cipher_algo_info, GCRY_CIPHER_AES, GCRYCTL_TEST_ALGO, NULL, 0)
+end
+testlib.test(ALGO_INFO,"gcry_cipher_algo_info-5", ok_algo_info_3 == true)
 
 testlib.testing(ALGO_NAME, "positive tests")
 testlib.test(ALGO_NAME,"gcry_cipher_algo_name-0", gcry_cipher_algo_name(0xFFFF) == "?")
