@@ -3020,7 +3020,7 @@ proto_register_ntp(void)
 			"Reference Timestamp", "ntp.reftime", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC,
 			NULL, 0, "Time when the system clock was last set or corrected", HFILL }},
 		{ &hf_ntp_org, {
-			"Origin Timestamp", "ntp.org", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC,
+			"Originate Timestamp", "ntp.org", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC,
 			NULL, 0, "Time at the client when the request departed for the server", HFILL }},
 		{ &hf_ntp_rec, {
 			"Receive Timestamp", "ntp.rec", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC,
