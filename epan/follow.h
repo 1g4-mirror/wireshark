@@ -15,6 +15,7 @@
 
 #include <epan/epan.h>
 #include <epan/packet.h>
+#include <epan/dissectors/packet-tcp.h>
 #include <wsutil/inet_cidr.h>
 #include <epan/tap.h>
 #include <epan/wmem_scopes.h>
@@ -61,6 +62,10 @@ typedef struct _follow_info {
     address         server_ip;
     void*           gui_data;
     uint64_t        substream_id;  /**< Sub-stream; used only by HTTP2 and QUIC */
+    struct tcp_analysis *tcpd;
+    uint32_t        tcp_fin[2]; /* TCP only */
+    uint32_t        tcp_rst[2]; /* TCP only */
+    bool            tcp_rst_with_data;
 } follow_info_t;
 
 struct register_follow;

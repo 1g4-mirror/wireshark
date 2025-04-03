@@ -3490,6 +3490,31 @@ if(BUILD_capinfos)
 	install(TARGETS capinfos RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
+if(BUILD_tcpdiff)
+	set(tcpdiff_LIBS
+		ui
+		epan
+		${ZLIB_LIBRARIES}
+		${ZLIBNG_LIBRARIES}
+		${GCRYPT_LIBRARIES}
+		${CMAKE_DL_LIBS}
+	)
+	set(tcpdiff_FILES
+		$<TARGET_OBJECTS:shark_common>
+		tshark-tap-register.c
+		tcpdiff.c
+		${CMAKE_SOURCE_DIR}/ui/cli/tap-follow.c
+		${CMAKE_SOURCE_DIR}/ui/cli/tap-iousers.c
+		${TSHARK_TAP_SRC}
+	)
+	set_executable_resources(tcpdiff "tcpdiff")
+	add_executable(tcpdiff ${tcpdiff_FILES})
+	set_extra_executable_properties(tcpdiff "Executables")
+	target_link_libraries(tcpdiff ${tcpdiff_LIBS})
+	target_include_directories(tcpdiff SYSTEM PRIVATE ${GCRYPT_INCLUDE_DIRS})
+	install(TARGETS tcpdiff RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 if(BUILD_captype)
 	set(captype_LIBS
 		ui
@@ -4185,6 +4210,7 @@ set(CLEAN_C_FILES
 	${text2pcap_FILES}
 	${mergecap_FILES}
 	${capinfos_FILES}
+	${tcpdiff_FILES}
 	${captype_FILES}
 	${editcap_FILES}
 	${idl2wrs_FILES}
