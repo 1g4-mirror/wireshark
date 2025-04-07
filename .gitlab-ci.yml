@@ -103,9 +103,11 @@ workflow:
     - env | grep ^CI | sort
     - printf "\e[0Ksection_end:%s:ci_env_section\r\e[0K" "$(date +%s)"
   after_script:
-    - for builddir in build/packaging/rpm/BUILD/wireshark-*/build build/packaging/rpm/BUILD/wireshark-* build obj-*; do [ ! -d "$builddir/run" ] || break; done
-    - if [[ "$CI_JOB_NAME" == "build:rpm-opensuse-"* ]]; then export LD_LIBRARY_PATH=$builddir/run; fi
-    - if [ -f $builddir/run/tshark ]; then $builddir/run/tshark --version; fi
+  - for builddir in build/packaging/rpm/BUILD/wireshark-*/build build/packaging/rpm/BUILD/wireshark-* build obj-*; do [ ! -d "$builddir/run" ] || break; done || true
+  - if [[ "$CI_JOB_NAME" == "build:rpm-opensuse-"* ]]; then export LD_LIBRARY_PATH=$builddir/run; fi || true
+  - if [ -f $builddir/run/tshark ]; then $builddir/run/tshark --version; fi || true
+
+
   needs: []
 
 .test-linux:
