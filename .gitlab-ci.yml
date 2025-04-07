@@ -97,7 +97,7 @@ workflow:
 .build-linux:
   stage: build
   tags:
-    - saas-linux-small-amd64
+    - wireshark
   before_script:
     - printf "\e[0Ksection_start:%s:ci_env_section[collapsed=true]\r\e[0KCI environment variables" "$(date +%s)"
     - env | grep ^CI | sort
@@ -111,7 +111,7 @@ workflow:
 .test-linux:
   stage: test
   tags:
-    - saas-linux-small-amd64
+    - wireshark
   variables:
     GIT_STRATEGY: none
 
@@ -206,7 +206,7 @@ workflow:
 # https://gitlab.com/gitlab-org/ci-cd/shared-runners/images/macstadium/orka/-/blob/main/toolchain/monterey.yml
 .build-macos:
   stage: build
-  tags: [ saas-macos-medium-m1 ] # https://docs.gitlab.com/ee/ci/runners/saas/macos/environment.html
+  tags: [ wireshark ] # https://docs.gitlab.com/ee/ci/runners/saas/macos/environment.html
   retry: 1
   # https://gould.cx/ted/blog/2017/06/10/ccache-for-Gitlab-CI/
   cache:
@@ -253,7 +253,7 @@ workflow:
   stage: build
   image: registry.gitlab.com/wireshark/wireshark-containers/mingw-dev
   tags:
-    - saas-linux-small-amd64
+    - wireshark
   cache:
     # XXX Use ${CI_JOB_NAME}-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME} instead?
     key: ${CI_JOB_NAME}-master
@@ -493,7 +493,7 @@ Windows x64 Package:
   extends: .build-windows
   rules: !reference [.if-w-w-only-merged]
   tags:
-    - wireshark-windows-x64-package
+    - wireshark
   before_script:
     - $env:WIRESHARK_BASE_DIR = "C:\Development"
     - $env:Configuration = "RelWithDebInfo"
@@ -541,7 +541,7 @@ Windows Arm64 Package:
   extends: .build-windows
   rules: !reference [.if-w-w-only-merged]
   tags:
-    - wireshark-windows-arm64-package
+    - wireshark
   before_script:
     - $env:WIRESHARK_BASE_DIR = "C:\Development"
     - $env:Configuration = "RelWithDebInfo"
@@ -601,7 +601,7 @@ macOS Arm Package:
   variables:
     CODE_SIGN_IDENTITY: "Wireshark Foundation"
   tags:
-    - wireshark-macos-arm-package
+    - wireshark
   retry: 1
   script:
     - export CMAKE_PREFIX_PATH=/usr/local/Qt-$MACOS_QT_VERSION
@@ -661,7 +661,7 @@ macOS Intel Package:
   variables:
     CODE_SIGN_IDENTITY: "Wireshark Foundation"
   tags:
-    - wireshark-macos-intel-package
+    - wireshark
   retry: 1
   script:
     - export CMAKE_PREFIX_PATH=/usr/local/Qt-$MACOS_QT_VERSION
@@ -862,7 +862,7 @@ Ubuntu Qt5 Build:
 Clang + Code Checks:
   extends: .build-ubuntu
   tags:
-    - saas-linux-medium-amd64
+    - wireshark
   rules: !reference [.if-merge-request]
   needs: [ 'Commit Check' ]
   script:
@@ -937,10 +937,11 @@ No options:
 # Windows runners are still beta, at least technically:
 # https://docs.gitlab.com/ee/user/gitlab_com/index.html#windows-shared-runners-beta
 Windows Build:
-  extends: .build-windows
-  rules: !reference [.if-w-w-only-merge-request]
+ # extends: .build-windows
+  rules: 
+    - when : never
   tags:
-    - wireshark-windows-merge-req
+    - wireshark
   needs: [ 'Commit Check' ]
   script:
     # lib{sinsp,scap} don't support Configuration=Debug, so we can't enable
@@ -1013,11 +1014,11 @@ Coverity GCC Submit:
   needs: [ 'Coverity GCC Scan' ]
 
 Coverity Visual C++ Scan:
-  extends: .build-windows
+ # extends: .build-windows
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "coverity-visual-c++"'
+  #  - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "coverity-visual-c++"'
   tags:
-    - wireshark-windows-merge-req
+    - wireshark
   stage: analysis
   needs: []
   script:
@@ -1070,12 +1071,12 @@ Clang Static Analyzer:
 # Windows runners are still beta, at least technically:
 # https://docs.gitlab.com/ee/user/gitlab_com/index.html#windows-shared-runners-beta
 Visual Studio Code Analysis:
-  extends: .build-windows
+ # extends: .build-windows
   tags:
-    - wireshark-windows-dev
+    - wireshark
   rules:
     # The wireshark-windows-* tags are only available in wireshark/wireshark.
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "daily" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
+  #  - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "daily" && $CI_PROJECT_URL =~ /.*gitlab.com\/wireshark\/wireshark/'
   script:
     - py -m venv sarif-tools.venv
     - sarif-tools.venv\Scripts\pip.exe install sarif-tools
@@ -1172,7 +1173,7 @@ Code Lines and Data:
   retry: 0
   rules: !reference [.if-fuzz-schedule]
   tags:
-    - wireshark-ubuntu-fuzz
+    - wireshark
   resource_group: fuzz-master
   variables:
     INSTALL_PREFIX: "$CI_PROJECT_DIR/_install"
