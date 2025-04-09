@@ -1470,6 +1470,12 @@ static int hf_ptp_v2_atoi_tlv_displayname_length;
 /* Field for the PATH TRACE TLV */
 static int hf_ptp_v2_an_tlv_pathsequence;
 
+/* Fields for the AUTHENTICATION2_TLV */
+static int hf_ptp_v2_auth_tlv_spp;
+static int hf_ptp_v2_auth_tlv_sec_param_indicator;
+static int hf_ptp_v2_auth_tlv_key_id;
+static int hf_ptp_v2_auth_tlv_icv;
+
 /* Fields for an undissected TLV */
 static int hf_ptp_v2_an_tlv_data;
 
@@ -4010,6 +4016,23 @@ disect_ptp_v2_tlvs(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_item *ti
             break;
         }
 
+        case PTP_V2_TLV_TYPE_AUTHENTICATION2:
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Authentication TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_spp, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_sec_param_indicator, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_key_id, tvb, offset, 4, ENC_BIG_ENDIAN);
+            offset += 4;
+
+            int auth_tlv_icv_length = tlv_length - 6;
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_icv, tvb, offset, auth_tlv_icv_length, ENC_BIG_ENDIAN);
+            offset += auth_tlv_icv_length;
+            break;
         } /* end of switch (tlv_type) */
 
         /* check first we have a registered subdissector for the organizationId */
@@ -7204,6 +7227,22 @@ proto_register_ptp(void) {
           { "Change in number", "ptp.v2.oe.smpte.leapsecondjump.change",
             FT_BOOLEAN, 8, TFS(&tfs_set_notset), PTP_V2_FLAGS_OE_SMPTE_LEAP_SECOND_JUMP_CHANGE,
             NULL, HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_spp,
+          { "spp", "ptp.v2.auth.spp",
+            FT_UINT8, BASE_DEC, NULL, 0x00, "Which security association was used", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_sec_param_indicator,
+          { "secParamIndicator", "ptp.v2.auth.secParamIndicator",
+            FT_UINT8, BASE_HEX, NULL, 0x00, "Indicates the existence of optional fields in the TLV", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_key_id,
+          { "keyId", "ptp.v2.auth.keyId",
+            FT_UINT32, BASE_DEC, NULL, 0x00, "Which key was used to calculate the integrity check value (ICV)", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_icv,
+          { "icv", "ptp.v2.auth.icv",
+            FT_BYTES, SEP_SPACE, NULL, 0x00, "Integrity check value", HFILL }
         },
         { &hf_ptp_v2_analysis_followup_to_sync,
           { "This is a Follow Up to Sync in Frame", "ptp.v2.analysis.followuptosync",
