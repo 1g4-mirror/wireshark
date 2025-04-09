@@ -1762,7 +1762,7 @@ find_conversation(const uint32_t frame_num, const address *addr_a, const address
              * address, unless the CONVERSATION_TEMPLATE option is set.)
              */
             DPRINT(("wildcarded dest address match found"));
-            if (!(conversation->options & NO_ADDR2) && ctype != CONVERSATION_UDP)
+            if (!(options & NO_ADDR_B) && ctype != CONVERSATION_UDP)
             {
                 if (!(conversation->options & CONVERSATION_TEMPLATE))
                 {
@@ -1854,7 +1854,7 @@ find_conversation(const uint32_t frame_num, const address *addr_a, const address
              * unless the CONVERSATION_TEMPLATE option is set.)
              */
             DPRINT(("match found"));
-            if (!(conversation->options & NO_PORT2) && ctype != CONVERSATION_UDP)
+            if (!(options & NO_PORT_B) && ctype != CONVERSATION_UDP)
             {
                 if (!(conversation->options & CONVERSATION_TEMPLATE))
                 {
@@ -1942,9 +1942,9 @@ find_conversation(const uint32_t frame_num, const address *addr_a, const address
         {
             if (!(conversation->options & CONVERSATION_TEMPLATE))
             {
-                if (!(conversation->options & NO_ADDR2))
+                if (!(options & NO_ADDR_B))
                     conversation_set_addr2(conversation, addr_b);
-                if (!(conversation->options & NO_PORT2))
+                if (!(options & NO_PORT_B))
                     conversation_set_port2(conversation, port_b);
             }
             else
@@ -1960,7 +1960,7 @@ find_conversation(const uint32_t frame_num, const address *addr_a, const address
      * valid conversation than what is being searched using
      * addr_a, port_a.
      */
-    if (ctype != CONVERSATION_IBQP)
+    if (ctype != CONVERSATION_IBQP && !(options & NO_ADDR_B))
     {
 
         /*
@@ -1976,7 +1976,7 @@ find_conversation(const uint32_t frame_num, const address *addr_a, const address
             DPRINT(("trying wildcarded match: %s:%d -> *:*",
                         addr_b_str, port_a));
             conversation = conversation_lookup_no_addr2_or_port2(frame_num, addr_b, port_a, ctype);
-        } else {
+        } else if (!(options & NO_PORT_B)) {
             DPRINT(("trying wildcarded match: %s:%d -> *:*",
                         addr_b_str, port_b));
             conversation = conversation_lookup_no_addr2_or_port2(frame_num, addr_b, port_b, ctype);
