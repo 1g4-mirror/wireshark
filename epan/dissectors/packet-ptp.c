@@ -16,6 +16,7 @@
  * Copyright 2024, Dr. Lars Völker <lars.voelker@technica-engineering.de>
  * Copyright 2024, Martin Ostertag <martin.ostertag@zhaw.ch>
  *                 Aurel Hess <hesu@zhaw.ch>
+ * Copyright 2025, Alex Gebhard <alexander.gebhard@marquette.edu>
  *
  * Revisions:
  * - Markus Seehofer 09.08.2005 <mseehofe@nt.hirschmann.de>
@@ -51,7 +52,8 @@
  *   - TLV rework
  * - Martin Ostertag & Aurel Hess 09-12-2024 <martin.ostertag@zhaw.ch> & <hesu@zhaw.ch>
  *   - Added support for drift_tracking TLV (802.1ASdm)
-
+ * - Alex Gebhard 04-09-2025 <alexander.gebhard@marquette.edu>
+ *   - Added support for authentication TLV
 
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -4016,7 +4018,7 @@ disect_ptp_v2_tlvs(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_item *ti
             break;
         }
 
-        case PTP_V2_TLV_TYPE_AUTHENTICATION2:
+        case PTP_V2_TLV_TYPE_AUTHENTICATION2: {
             proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Authentication TLV");
             offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
 
@@ -4033,7 +4035,8 @@ disect_ptp_v2_tlvs(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_item *ti
             proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_icv, tvb, offset, auth_tlv_icv_length, ENC_BIG_ENDIAN);
             offset += auth_tlv_icv_length;
             break;
-        } /* end of switch (tlv_type) */
+        }
+      } /* end of switch (tlv_type) */
 
         /* check first we have a registered subdissector for the organizationId */
         if (offset == offset_loopstart && tlv_type == PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION) {
