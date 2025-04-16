@@ -188,6 +188,8 @@ void PacketListHeader::contextMenuEvent(QContextMenuEvent *event)
     connect(action, &QAction::triggered, this, &PacketListHeader::doEditColumn);
     action = contextMenu->addAction(tr("Resize to Contents"));
     connect(action, &QAction::triggered, this, &PacketListHeader::resizeToContent);
+    action = contextMenu->addAction(tr("Resize All to Contents"));
+    connect(action, &QAction::triggered, this, &PacketListHeader::resizeAllToContent);
     action = contextMenu->addAction(tr("Resize Column to Width…"));
     connect(action, &QAction::triggered, this, &PacketListHeader::resizeToWidth);
 
@@ -361,6 +363,24 @@ void PacketListHeader::resizeToContent()
     PacketList * packetList = qobject_cast<PacketList *>(parent());
     if (packetList)
         packetList->resizeColumnToContents(section);
+}
+
+void PacketListHeader::resizeAllToContent()
+{
+    QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
+    QMenu * menu = qobject_cast<QMenu *>(action->parent());
+    if (!menu)
+        return;
+
+    PacketList * packetList = qobject_cast<PacketList *>(parent());
+    if (packetList) {
+        for (int cnt = 0; cnt < count(); cnt++) {
+            packetList->resizeColumnToContents(cnt);
+        }
+    }
 }
 
 void PacketListHeader::removeColumn()
