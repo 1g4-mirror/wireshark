@@ -44,6 +44,7 @@ protected slots:
     void showColumnPrefs();
     void doEditColumn();
     void resizeToContent();
+    void resizeAllToContent();
     void removeColumn();
     void resizeToWidth();
 
