@@ -3968,6 +3968,34 @@ dissector_dump_table_decodes(const char *table_name, const char *ui_name _U_, vo
 }
 
 void
+dissector_set_proto_encapsulated(packet_info *pinfo, const char *proto)
+{
+	if (NULL != proto) {
+		pinfo->encapsulated = g_memdup2(proto, (strlen(proto) + 1));
+	}
+}
+
+void
+dissector_clear_proto_encapsulated(packet_info *pinfo)
+{
+	if (NULL != pinfo->encapsulated) {
+		g_free((gpointer)pinfo->encapsulated);
+		pinfo->encapsulated = NULL;
+	}
+}
+
+void
+dissector_set_proto_col_str(packet_info *pinfo, const char *proto)
+{
+    if ((NULL != pinfo->encapsulated) && (strlen(pinfo->encapsulated) > 0)) {
+        col_set_str(pinfo->cinfo, COL_PROTOCOL, (char *)pinfo->encapsulated);
+        col_append_sep_str(pinfo->cinfo, COL_PROTOCOL, "/", proto);
+    } else {
+	    col_set_str(pinfo->cinfo, COL_PROTOCOL, proto);
+    }
+}
+
+void
 dissector_dump_decodes(void)
 {
 	dissector_all_tables_foreach_table(dissector_dump_table_decodes, NULL, (GCompareFunc)strcmp);

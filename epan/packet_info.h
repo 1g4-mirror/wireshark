@@ -134,7 +134,7 @@ typedef struct _packet_info {
                                        unknown (P2P_DIR_UNKNOWN) */
 
   GHashTable *private_table;    /**< a hash table passed from one dissector to another */
-
+  const char *encapsulated;     /**< when not NULL, updates the protocol column to indicate the packet was encapsulated by prepending this string */
   wmem_list_t *layers;          /**< layers of each protocol */
   wmem_map_t *proto_layers;     /** map of proto_id to curr_proto_layer_num. */
   uint8_t curr_layer_num;        /**< The current "depth" or layer number in the current frame */

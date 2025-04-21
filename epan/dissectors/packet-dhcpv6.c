@@ -2504,7 +2504,7 @@ dhcpv6_option(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bp_tree,
          * packet.  But at least disambiguate it a little bit vs. "regular"
          * DHCP.
          */
-        col_set_str(pinfo->cinfo, COL_PROTOCOL, "DHCPv4o6");
+        dissector_set_proto_col_str(pinfo, "DHCPv4o6");
         col_prepend_fstr(pinfo->cinfo, COL_INFO, "%-12s ", val_to_str_ext(msgtype, &msgtype_vals_ext, "Message Type %u"));
         break;
     }
@@ -3217,7 +3217,7 @@ dissect_dhcpv6_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 {
     hopcount_info hpi;
     initialize_hopount_info(&hpi);
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "DHCPv6");
+    dissector_set_proto_col_str(pinfo, "DHCPv6");
     col_clear(pinfo->cinfo, COL_INFO);
     dissect_dhcpv6(tvb, pinfo, tree, 0, tvb_reported_length(tvb), hpi);
     return tvb_captured_length(tvb);
@@ -3242,7 +3242,7 @@ dissect_dhcpv6_bulk_leasequery_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     hopcount_info hpi;
     initialize_hopount_info(&hpi);
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "DHCPv6 BulkLease");
+    dissector_set_proto_col_str(pinfo, "DHCPv6 BulkLease");
     col_clear(pinfo->cinfo, COL_INFO);
 
     ti = proto_tree_add_item(tree, proto_dhcpv6_bulk_leasequery, tvb, 0, -1, ENC_NA );

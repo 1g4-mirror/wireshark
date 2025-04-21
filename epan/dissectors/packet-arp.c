@@ -1249,6 +1249,7 @@ dissect_ax25arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
      Our caller may use that to determine how much of its packet
      was padding. */
   tvb_set_reported_length(tvb, tot_len);
+  char *proto = NULL;
 
   switch (ar_op) {
 
@@ -1258,19 +1259,21 @@ dissect_ax25arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       /* fall-through */
   case ARPOP_REPLY:
   default:
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ARP");
+    proto = "ARP";
     break;
 
   case ARPOP_RREQUEST:
   case ARPOP_RREPLY:
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "RARP");
+    proto = "RARP";
     break;
 
   case ARPOP_IREQUEST:
   case ARPOP_IREPLY:
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "Inverse ARP");
+    proto = "Inverse ARP";
     break;
   }
+
+  dissector_set_proto_col_str(pinfo, proto);
 
   /* Get the offsets of the addresses. */
   /* Source Hardware Address */
@@ -1404,6 +1407,7 @@ dissect_arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
   bool          duplicate_detected = false;
   uint32_t      duplicate_ip       = 0;
   dissector_handle_t hw_handle;
+  char          *proto = "ARP";
 
   /* Call it ARP, for now, so that if we throw an exception before
      we decide whether it's ARP or RARP or IARP or ATMARP, it shows
@@ -1411,7 +1415,10 @@ dissect_arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
      Clear the Info column so that, if we throw an exception, it
      shows up as a short or malformed ARP frame. */
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "ARP");
+  /*
+   * Set the contents of the protocol column based on information in the packet's private_info table.
+   */
+  dissector_set_proto_col_str(pinfo, proto);
   col_clear(pinfo->cinfo, COL_INFO);
 
   /* Hardware Address Type */
@@ -1457,23 +1464,22 @@ dissect_arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
       /* FALLTHRU */
     case ARPOP_REPLY:
     default:
-      col_set_str(pinfo->cinfo, COL_PROTOCOL, "ARP");
       break;
 
     case ARPOP_RREQUEST:
     case ARPOP_RREPLY:
-      col_set_str(pinfo->cinfo, COL_PROTOCOL, "RARP");
+      proto = "RARP";
       break;
 
     case ARPOP_DRARPREQUEST:
     case ARPOP_DRARPREPLY:
     case ARPOP_DRARPERROR:
-      col_set_str(pinfo->cinfo, COL_PROTOCOL, "DRARP");
+      proto = "DRARP";
       break;
 
     case ARPOP_IREQUEST:
     case ARPOP_IREPLY:
-      col_set_str(pinfo->cinfo, COL_PROTOCOL, "Inverse ARP");
+      proto = "Inverse ARP";
       break;
 
    case ARPOP_MARS_REQUEST:
@@ -1488,13 +1494,15 @@ dissect_arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
    case ARPOP_MARS_GROUPLIST_REQUEST:
    case ARPOP_MARS_GROUPLIST_REPLY:
    case ARPOP_MARS_REDIRECT_MAP:
-     col_set_str(pinfo->cinfo, COL_PROTOCOL, "MARS");
+     proto = "MARS";
      break;
 
    case ARPOP_MAPOS_UNARP:
-     col_set_str(pinfo->cinfo, COL_PROTOCOL, "MAPOS");
+     proto = "MAPOS";
      break;
   }
+
+  dissector_set_proto_col_str(pinfo, proto);
 
   /* Get the offsets of the addresses. */
   /* Source Hardware Address */

@@ -7175,7 +7175,7 @@ dissect_dhcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		isProxyDhcp = false;
 	}
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "BOOTP");
+	dissector_set_proto_col_str(pinfo, "BOOTP");
 	/*
 	 * In case we throw an exception fetching the opcode, etc.
 	 */
@@ -7250,7 +7250,7 @@ dissect_dhcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		 * Yes, this is a DHCP packet, and "dhcp_type" is the
 		 * packet type.
 		 */
-		col_set_str(pinfo->cinfo, COL_PROTOCOL, "DHCP");
+        dissector_set_proto_col_str(pinfo, "DHCP");
 
 		col_add_fstr(pinfo->cinfo, COL_INFO, "%sDHCP %-8s - Transaction ID 0x%x",
 			     isProxyDhcp ? "proxy" : "", dhcp_type, tvb_get_ntohl(tvb, 4));

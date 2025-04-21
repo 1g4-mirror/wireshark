@@ -925,6 +925,21 @@ typedef struct ethertype_data_s
 } ethertype_data_t;
 
 /*
+ * Allocates the private_info table and adds a key indicating a dissector is encapsulating protocol data.
+ */
+WS_DLL_PUBLIC void dissector_set_proto_encapsulated(packet_info *pinfo, const char *proto);
+
+/*
+ * Clears the protocol data encapsulation key, and deallocates the private_info table if that was its only usage.
+ */
+WS_DLL_PUBLIC void dissector_clear_proto_encapsulated(packet_info *pinfo);
+
+/*
+ * Set the contents of the protocol column based on potential information in the packet's private_info table.
+ */
+WS_DLL_PUBLIC void dissector_set_proto_col_str(packet_info *pinfo, const char *proto);
+
+/*
  * Dump layer/selector/dissector records in a fashion similar to the
  * proto_registrar_dump_* routines.
  */
