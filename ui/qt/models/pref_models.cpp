@@ -325,6 +325,8 @@ void PrefsModel::populate()
     special_item = new PrefsItem(PrefsModel::RSAKeys, root_);
     root_->prependChild(special_item);
 #endif
+    special_item = new PrefsItem(PrefsModel::TLSSessionKeyFiles, root_);
+    root_->prependChild(special_item);
     special_item = new PrefsItem(PrefsModel::Advanced, root_);
     root_->prependChild(special_item);
 }
@@ -344,6 +346,7 @@ QString PrefsModel::typeToString(int type)
         case Expert: typeStr = tr("Expert"); break;
         case FilterButtons: typeStr = tr("Filter Buttons"); break;
         case RSAKeys: typeStr = tr("RSA Keys"); break;
+        case TLSSessionKeyFiles: typeStr = tr("TLS Session Key Files"); break;
     }
 
     return typeStr;
@@ -378,6 +381,9 @@ QString PrefsModel::typeToHelp(int type)
             break;
         case RSAKeys:
             helpStr = QStringLiteral("ChCustPreferencesSection.html#ChCustPrefsRSASection");
+            break;
+        case TLSSessionKeyFiles:
+            helpStr = QStringLiteral("ChCustPreferencesSection.html#ChCustPrefsTLSSessionKeysSection");
             break;
         case Advanced:
             helpStr = QStringLiteral("ChCustPreferencesSection.html#_advanced");

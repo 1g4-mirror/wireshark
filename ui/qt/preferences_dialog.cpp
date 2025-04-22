@@ -143,6 +143,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::Expert)] = pd_ui_->expertFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::FilterButtons)] = pd_ui_->filterExpressonsFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::RSAKeys)] = pd_ui_->rsaKeysFrame;
+    prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::TLSSessionKeyFiles)] = pd_ui_->tlsSessionKeyFilesFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::Advanced)] = pd_ui_->advancedFrame;
     prefs_pane_to_item_[MODULES_NAME] = NULL;
 
@@ -397,6 +398,7 @@ void PreferencesDialog::apply()
 #ifdef HAVE_LIBGNUTLS
     pd_ui_->rsaKeysFrame->acceptChanges();
 #endif
+    pd_ui_->tlsSessionKeyFilesFrame->acceptChanges();
 
     //Filter expressions don't affect dissection, so there is no need to
     //send any events to that effect.  However, the app needs to know
@@ -468,6 +470,7 @@ void PreferencesDialog::on_buttonBox_rejected()
 #ifdef HAVE_LIBGNUTLS
     pd_ui_->rsaKeysFrame->rejectChanges();
 #endif
+    pd_ui_->tlsSessionKeyFilesFrame->rejectChanges();
     reject();
 }
 

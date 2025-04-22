@@ -262,6 +262,7 @@ set(WIRESHARK_QT_HEADERS
 	tap_parameter_dialog.h
 	tcp_stream_dialog.h
 	time_shift_dialog.h
+	tls_session_key_files_frame.h
 	traffic_table_dialog.h
 	uat_dialog.h
 	uat_frame.h
@@ -517,6 +518,7 @@ set(WIRESHARK_QT_SRC
 	simple_dialog.cpp
 	simple_statistics_dialog.cpp
 	tlskeylog_launcher_dialog.cpp
+	tls_session_key_files_frame.cpp
 	strip_headers_dialog.cpp
 	supported_protocols_dialog.cpp
 	tabnav_tree_widget.cpp
@@ -658,6 +660,7 @@ set(WIRESHARK_QT_UI
 	tap_parameter_dialog.ui
 	tcp_stream_dialog.ui
 	time_shift_dialog.ui
+	tls_session_key_files_frame.ui
 	traffic_table_dialog.ui
 	uat_dialog.ui
 	uat_frame.ui

@@ -12,6 +12,10 @@
 #ifndef __PACKET_TLS_UTILS_H__
 #define __PACKET_TLS_UTILS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <stdio.h>      /* some APIs we declare take a stdio stream as an argument */
 
 #include <glib.h>
@@ -3003,10 +3007,16 @@ ssl_debug_printf(const char* fmt _U_,...)
 
 #endif /* SSL_DECRYPT_DEBUG */
 
+extern void
+tls_session_key_files_load(void);
 
 uint32_t
 ssl_dissect_ext_ech_echconfiglist(ssl_common_dissect_t *hf, tvbuff_t *tvb, packet_info *pinfo,
                                   proto_tree *tree, uint32_t offset, uint32_t offset_end);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* __PACKET_TLS_UTILS_H__ */
 

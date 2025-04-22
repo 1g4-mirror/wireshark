@@ -29,6 +29,7 @@
 # include <wsutil/file_util.h>
 # include <errno.h>
 #endif  /* HAVE_LIBGNUTLS */
+#include <epan/dissectors/packet-tls-utils.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -36,6 +37,19 @@
 
 /** Maps uint32_t secrets_type -> secrets_block_callback_t. */
 static GHashTable *secrets_callbacks;
+
+/* TLS Session Key Files */
+static GHashTable *tls_session_key_files;
+
+typedef struct {
+    char *filename;
+} tls_session_key_file_record_t;
+
+static uat_t *tls_session_key_files_uat;
+static tls_session_key_file_record_t *uat_tls_session_key_files;
+static unsigned uat_num_tls_session_key_files;
+
+static void register_tls_session_key_files_uats(void);
 
 #ifdef HAVE_LIBGNUTLS
 /** Maps public key IDs (cert_key_id_t) -> gnutls_privkey_t.  */
@@ -74,6 +88,8 @@ secrets_init(void)
     rsa_privkeys = privkey_hash_table_new();
     register_rsa_uats();
 #endif  /* HAVE_LIBGNUTLS */
+    tls_session_key_files = privkey_hash_table_new();
+    register_tls_session_key_files_uats();
 }
 
 void
@@ -89,6 +105,8 @@ secrets_cleanup(void)
     rsa_privkeys_pkcs11_pins = NULL;
 #endif  /* HAVE_GNUTLS_PKCS11 */
 #endif  /* HAVE_LIBGNUTLS */
+    g_hash_table_destroy(tls_session_key_files);
+    tls_session_key_files = NULL;
 }
 
 void
@@ -649,6 +667,75 @@ secrets_rsa_decrypt(const cert_key_id_t *key_id, const uint8_t *encr, int encr_l
     return ret;
 }
 #endif  /* HAVE_LIBGNUTLS */
+
+UAT_FILENAME_CB_DEF(tls_session_key_files_uats, filename, tls_session_key_file_record_t)
+
+static void *
+uat_tls_session_key_file_copy_str_cb(void *dest, const void *source, size_t len _U_)
+{
+    tls_session_key_file_record_t *d = (tls_session_key_file_record_t *)dest;
+    const tls_session_key_file_record_t *s = (const tls_session_key_file_record_t *)source;
+    d->filename = g_strdup(s->filename);
+    return dest;
+}
+
+static void
+uat_tls_session_key_file_free_str_cb(void *record)
+{
+    tls_session_key_file_record_t *rec = (tls_session_key_file_record_t *)record;
+    g_free(rec->filename);
+}
+
+void
+tls_session_key_files_load(void)
+{
+    ssl_master_key_map_t *mk_map = tls_get_master_key_map(false);
+
+    for (unsigned i = 0; i < uat_num_tls_session_key_files; i++) {
+        const tls_session_key_file_record_t *rec = &uat_tls_session_key_files[i];
+        ssl_load_keyfile(rec->filename, NULL, mk_map);
+    }
+}
+
+static void
+uat_tls_session_key_files_post_update(void)
+{
+    ssl_master_key_map_t *mk_map = tls_get_master_key_map(false);
+
+    /* If the tls master key hash table isn't initialized yet, we cannot
+     * do this yet. That is fine, we will force a load after the SSL part
+     * is initialized.
+     */
+    if (mk_map->session == NULL) {
+	printf("mk_map not ready yet, reloading it later.\n");
+	return;
+    }
+
+    tls_session_key_files_load();
+}
+
+static void
+register_tls_session_key_files_uats(void)
+{
+    static uat_field_t uat_tls_session_key_files_fields[] = {
+        UAT_FLD_FILENAME_OTHER(tls_session_key_files_uats, filename, "TLS Session Key File", NULL, "TLS Session Key File"),
+        UAT_END_FIELDS
+    };
+    tls_session_key_files_uat = uat_new("TLS Session Key Files",
+            sizeof(tls_session_key_file_record_t),
+            "tls_session_key_files",                 /* filename */
+            false,                                   /* from_profile */
+            &uat_tls_session_key_files,              /* data_ptr */
+            &uat_num_tls_session_key_files,          /* numitems_ptr */
+            UAT_AFFECTS_DISSECTION,                  /* requires a reload - However, doesn't seem to work for this... */
+            NULL,                                    /* Help section (currently a wiki page) */
+            uat_tls_session_key_file_copy_str_cb,    /* copy_cb */
+            NULL,                                    /* update_cb */
+            uat_tls_session_key_file_free_str_cb,    /* free_cb */
+            uat_tls_session_key_files_post_update,   /* post_update_cb */
+            NULL,                                    /* reset_cb */
+            uat_tls_session_key_files_fields);
+}
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

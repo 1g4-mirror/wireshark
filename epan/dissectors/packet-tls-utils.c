@@ -6996,6 +6996,29 @@ ssl_load_keyfile(const char *tls_keylog_filename, FILE **keylog_file,
 
     ssl_debug_printf("trying to use TLS keylog in %s\n", tls_keylog_filename);
 
+    /* If we are loading a file from the Preferences / TLS Session Key Files,
+     * then the file is static and we don't have to worry about following it.
+     */
+    if (keylog_file == NULL) {
+	FILE *fin = ws_fopen(tls_keylog_filename, "r");
+	if (fin == NULL) {
+	    ssl_debug_printf("%s failed to open TLS session key file\n", G_STRFUNC);
+	    return;
+	}
+	for (;;) {
+	    char buf[1110], *line;
+	    line = fgets(buf, sizeof(buf), fin);
+	    if (!line) {
+		if (!feof(fin) && ferror(fin))
+		    ssl_debug_printf("%s Error while reading key log file, closing it!\n", G_STRFUNC);
+		break;
+	    }
+	    tls_keylog_process_lines(mk_map, (uint8_t *)line, (int)strlen(line));
+	}
+	fclose(fin);
+	return;
+    }
+
     /* if the keylog file was deleted/overwritten, re-open it */
     if (*keylog_file && file_needs_reopen(ws_fileno(*keylog_file), tls_keylog_filename)) {
         ssl_debug_printf("%s file got deleted, trying to re-open\n", G_STRFUNC);

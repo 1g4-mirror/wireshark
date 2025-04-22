@@ -343,6 +343,7 @@ ssl_init(void)
     ssl_common_init(&ssl_master_key_map,
                     &ssl_decrypted_data, &ssl_compressed_data);
     ssl_debug_flush();
+    tls_session_key_files_load();
 
     /* Reset the identifier for a group of handshake fragments. */
     hs_reassembly_id_count = 0;

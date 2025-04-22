@@ -51,6 +51,7 @@
       <widget class="UatFrame" name="expertFrame"/>
       <widget class="UatFrame" name="filterExpressonsFrame"/>
       <widget class="RsaKeysFrame" name="rsaKeysFrame"/>
+      <widget class="TlsSessionKeyFilesFrame" name="tlsSessionKeyFilesFrame"/>
       <widget class="QFrame" name="advancedFrame">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -170,6 +171,12 @@
    <class>RsaKeysFrame</class>
    <extends>QFrame</extends>
    <header>rsa_keys_frame.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TlsSessionKeyFilesFrame</class>
+   <extends>QFrame</extends>
+   <header>tls_session_key_files_frame.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
