@@ -8370,7 +8370,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     copy_address_shallow(&tcph->ip_src, &pinfo->src);
     copy_address_shallow(&tcph->ip_dst, &pinfo->dst);
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "TCP");
+  	dissector_set_proto_col_str(pinfo, "TCP");
     col_clear(pinfo->cinfo, COL_INFO);
     col_append_ports(pinfo->cinfo, COL_INFO, PT_TCP, tcph->th_sport, tcph->th_dport);
 

@@ -1500,7 +1500,7 @@ dissect_icmp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data)
 	nstime_t ts, time_relative;
 	ws_ip4 *iph = WS_IP4_PTR(data);
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ICMP");
+	dissector_set_proto_col_str(pinfo, "ICMP");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* To do: check for runts, errs, etc. */

@@ -309,7 +309,10 @@ dissect_igmp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int* of
 	proto_item* ti;
 	proto_tree* igmp_tree;
 
-	col_add_fstr(pinfo->cinfo, COL_PROTOCOL, "IGMPv%d", version);
+	#define IGMP_VERSTR_LEN 8
+	char igmp_version[IGMP_VERSTR_LEN] = {0};
+	snprintf(igmp_version, (IGMP_VERSTR_LEN - 1), "IGMPv%d", version);
+	dissector_set_proto_col_str(pinfo, igmp_version);
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	ti = proto_tree_add_item(tree, proto_igmp, tvb, 0, -1, ENC_NA);
@@ -340,7 +343,7 @@ dissect_igmp_unknown(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree)
 	int offset = 0;
 	unsigned char type;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IGMP");
+	dissector_set_proto_col_str(pinfo, "IGMP");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	ti = proto_tree_add_item(parent_tree, proto_igmp, tvb, offset, -1, ENC_NA);
@@ -759,7 +762,7 @@ dissect_igmp_mtrace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 	ti = proto_tree_add_item(parent_tree, proto_igmp, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(ti, ett_igmp);
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IGMP");
+	dissector_set_proto_col_str(pinfo, "IGMP");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* All multicast traceroute packets (Query, Request and

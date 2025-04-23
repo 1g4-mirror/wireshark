@@ -114,6 +114,9 @@ static unsigned sak_for_decode_len = 0;
 /* if set, try to use the EAPOL-MKA CKN table as well */
 static bool try_mka = false;
 
+/* if set, show MACsec encapsulation int he protocol field */
+static bool show_encap = false;
+
 /* PSK key config data */
 typedef struct _psk_info {
     unsigned char *key;
@@ -692,7 +695,15 @@ dissect_macsec(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         ethertype_data.trailer_id = hf_macsec_eth_padding;
         ethertype_data.fcs_len = 0;
 
+        if (true == show_encap) {
+            dissector_set_proto_encapsulated(pinfo, "MACsec");
+        }
+
         call_dissector_with_data(ethertype_handle, next_tvb, pinfo, tree, &ethertype_data);
+
+        if (true == show_encap) {
+            dissector_clear_proto_encapsulated(pinfo);
+        }
 
         /* restore original value */
         pinfo->fd->pkt_len = pkt_len_saved;
@@ -865,7 +876,11 @@ proto_register_macsec(void)
     prefs_register_bool_preference(module, "mka", "Also Use MKA For Decode",
                                      "Also attempt to use EAPOL-MKA Distributed SAKs to decode MACsec packets.",
                                      &try_mka);
-}
+
+    prefs_register_bool_preference(module, "show_encap", "Show MACsec Packets as Encapsulated",
+                                     "Show that a packet is encapsulated with MACsec in the Protocol column.",
+                                     &show_encap);
+                                    }
 
 void
 proto_reg_handoff_macsec(void)

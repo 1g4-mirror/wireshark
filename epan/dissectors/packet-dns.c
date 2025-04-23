@@ -5076,7 +5076,8 @@ dissect_dns_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static int
 dissect_dns_udp_sctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "DNS");
+
+  dissector_set_proto_col_str(pinfo, "DNS");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_UDP, false, false);
   return tvb_captured_length(tvb);
@@ -5085,7 +5086,7 @@ dissect_dns_udp_sctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 static int
 dissect_dns_doh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "DoH");
+  dissector_set_proto_col_str(pinfo, "DoH");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_HTTP, false, false);
   return tvb_captured_length(tvb);
@@ -5094,7 +5095,7 @@ dissect_dns_doh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 static int
 dissect_dns_doq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "DNS");
+  dissector_set_proto_col_str(pinfo, "DNS");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_QUIC, false, false);
   return tvb_captured_length(tvb);
@@ -5103,7 +5104,7 @@ dissect_dns_doq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 static int
 dissect_mdns_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "MDNS");
+  dissector_set_proto_col_str(pinfo, "MDNS");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_UDP, true, false);
   return tvb_captured_length(tvb);
@@ -5112,7 +5113,7 @@ dissect_mdns_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 static int
 dissect_llmnr_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "LLMNR");
+  dissector_set_proto_col_str(pinfo, "LLMNR");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_UDP, false, true);
   return tvb_captured_length(tvb);
@@ -5137,7 +5138,7 @@ get_dns_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U
 static int
 dissect_dns_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, "DNS");
+  dissector_set_proto_col_str(pinfo, "DNS");
 
   dissect_dns_common(tvb, pinfo, tree, DNS_TRANSPORT_TCP, false, false);
   return tvb_reported_length(tvb);

@@ -4363,7 +4363,7 @@ dissect_icmpv6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     icmp_transaction_t *trans      = NULL;
     ws_ip6 *iph = WS_IP6_PTR(data);
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ICMPv6");
+  	dissector_set_proto_col_str(pinfo, "ICMPv6");
     col_clear(pinfo->cinfo, COL_INFO);
 
     offset = 0;
