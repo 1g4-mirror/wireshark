@@ -5876,20 +5876,20 @@ extern uint32_t dissect_mqpcf_parm(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 extern int dissect_mqpcf_parm_grp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* mq_tree,
     unsigned offset, unsigned bLittleEndian, bool bParse);
 
-DEF_VALSX(mqcc);
+DEF_VALSX(MQCC);
 
 DEF_VALS_EXTX(MQAT);
 DEF_VALS_EXTX(MQCMD);
 DEF_VALS_EXTX(MQRC);
-DEF_VALS_EXTX(objtype);
+DEF_VALS_EXTX(MQOT);
 DEF_VALS_EXTX(PrmId);
 DEF_VALS_EXTX(PrmTyp);
 DEF_VALS_EXTX(PrmTyp2);
 DEF_VALS_EXTX(selector);
 DEF_VALS_EXTX(MQCFINT_Parse);
 
-DEF_VALSX(CtlOpt);
-DEF_VALSX(mqcft);
+DEF_VALSX(MQCFC);
+DEF_VALSX(MQCFT);
 
 DEF_VALSX(MQPER);
 DEF_VALSX(MQPRT);
@@ -5904,9 +5904,9 @@ DEF_VALSX(ADSDescr);
 DEF_VALSX(ConvTaskOpt);
 DEF_VALSX(TaskEndStatus);
 
-DEF_VALRX(ccsid);
-DEF_VALRX(WaitIntv);
-DEF_VALRX(OutDataLen);
+DEF_VALRX(MQCCSI);
+DEF_VALRX(MQWI);
+DEF_VALRX(MQCODL);
 
 /*
  * Editor modelines - https://www.wireshark.org/tools/modelines.html
