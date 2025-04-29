@@ -2122,6 +2122,10 @@ unsigned wtap_file_get_shb_global_interface_id(wtap *wth, unsigned shb_num, uint
 WS_DLL_PUBLIC
 wtapng_iface_descriptions_t *wtap_file_get_idb_info(wtap *wth);
 
+
+WS_DLL_PUBLIC
+wtapng_dpeb_lookup_info_t * wtap_file_get_dpeb_lookup_info(wtap *wth);
+
 /**
  * @brief Gets next interface description.
  *

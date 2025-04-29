@@ -191,6 +191,22 @@ wtap_file_get_idb_info(wtap *wth)
 	return idb_info;
 }
 
+wtapng_dpeb_lookup_info_t *
+wtap_file_get_dpeb_lookup_info(wtap *wth)
+{
+	wtapng_dpeb_lookup_info_t *lookup_info, *wth_lookup_info;
+
+	if ((wth_lookup_info = (wtapng_dpeb_lookup_info_t*)wth->darwin_opt) == NULL)
+		return NULL;
+
+	lookup_info = g_new(wtapng_dpeb_lookup_info_t,1);
+
+	lookup_info->dpebs 	  = wth_lookup_info->dpebs;
+	lookup_info->next_dpeb_id = wth_lookup_info->next_dpeb_id;
+
+	return lookup_info;
+}
+
 wtap_block_t
 wtap_get_next_interface_description(wtap *wth)
 {
