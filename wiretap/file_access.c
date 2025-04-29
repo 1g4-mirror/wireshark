@@ -2280,6 +2280,8 @@ wtap_dump_init_dumper(int file_type_subtype, wtap_compression_type compression_t
 	wdh->dsbs_growing = params->dsbs_growing;
 	/* Set Sysdig meta events */
 	wdh->mevs_growing = params->mevs_growing;
+	/* Set DPEBs */
+	wdh->dpebs_growing = params->dpebs_growing;
 	return wdh;
 }
 

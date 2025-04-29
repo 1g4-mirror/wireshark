@@ -296,7 +296,7 @@ pcapng_write_sysdig_event_block(wtap_dumper* wdh, const wtap_rec* rec,
 
 /* Process a Sysdig meta event block that we have just read. */
 bool
-pcapng_process_meta_event(wtap* wth, wtapng_block_t* wblock)
+pcapng_process_meta_event(wtap* wth, wtapng_block_t* wblock, int* err _U_, char** err_info _U_)
 {
     ws_debug("block type Sysdig meta event");
 

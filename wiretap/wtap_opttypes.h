@@ -154,6 +154,23 @@ extern "C" {
 #define OPT_ISB_OSDROP       7
 #define OPT_ISB_USRDELIV     8
 
+/* Darwin Process Event Block (DPEB) */
+#define OPT_DPEB_NAME       2   /**< Process name: NUL-terminated UTF8 string (limited to 16 characters including the NUL) */
+#define OPT_DPEB_UUID       4   /**< Process UUID: 16 byte */
+
+/* Darwin-specific options for EPB */
+#define OPT_PKT_DARWIN_DPEB_ID              32769   /**< 32-bit number of the DPEB that describes the Process ID. */
+#define	OPT_PKT_DARWIN_SVC_CODE	            32770	/**< 32-bit type of service code. */
+#define OPT_PKT_DARWIN_EFFECTIVE_DPEB_ID    32771   /**< 32-bit number of the DPEB that describes the Effective Process ID. */
+#define OPT_PKT_DARWIN_MD_FLAGS             32772   /**< 32-bit bitmask containing the packet metadata flags. */
+#define OPT_PKT_DARWIN_FLOW_ID              32773   /**< 32-bit opaque flow identifier. */
+#define OPT_PKT_DARWIN_TRACE_TAG            32774   /**< 16-bit opaque trace tag. */
+#define OPT_PKT_DARWIN_DROP_REASON          32775   /**< 32-bit drop reason. */
+#define OPT_PKT_DARWIN_DROP_LINE            32776   /**< 16-bit drop line. */
+#define OPT_PKT_DARWIN_DROP_FUNC            32777   /**< NUL-terminated name of the dropping function. */
+#define OPT_PKT_DARWIN_COMP_GENCNT          32778   /**< 32-bit current value of the compression generation count (epoch). */
+
+
 /*
  * Currently supported blocks; these are not the pcapng block type values
  * for them, they're identifiers used internally, and more than one
@@ -201,6 +218,7 @@ typedef enum {
     WTAP_BLOCK_META_EVENT,
     WTAP_BLOCK_SYSTEMD_JOURNAL_EXPORT,
     WTAP_BLOCK_CUSTOM,
+    WTAP_BLOCK_LEGACY_DARWIN_PROCESS_EVENT,
     MAX_WTAP_BLOCK_TYPE_VALUE
 } wtap_block_type_t;
 
@@ -256,6 +274,14 @@ typedef struct wtapng_section_mandatory_s {
 typedef struct wtapng_iface_descriptions_s {
     GArray *interface_data;
 } wtapng_iface_descriptions_t;
+
+/** struct holding the information to lookup a dpeb. TODO: fix comment.
+ *  the interface_data array holds an array of wtap_block_t
+ *  representing DPEB, one per interface.
+ */
+ typedef struct wtapng_dpeb_lookup_info_s {
+    GArray     *dpebs;
+} wtapng_dpeb_lookup_info_t;
 
 /**
  * Holds the required data from a WTAP_BLOCK_IF_ID_AND_INFO.
@@ -325,6 +351,13 @@ typedef struct wtapng_packet_mandatory_s {
     uint32_t orig_len;
 } wtapng_packet_mandatory_t;
 #endif
+
+/**
+ * Holds the required data from a WTAP_BLOCK_LEGACY_DARWIN_PROCESS_EVENT.
+ */
+ typedef struct wtapng_darwin_process_event_mandatory_s {
+    uint32_t               process_id;      /** Process ID */
+}  wtapng_darwin_process_event_mandatory_t;
 
 /**
  * Holds the required data from a WTAP_BLOCK_FT_SPECIFIC_REPORT.

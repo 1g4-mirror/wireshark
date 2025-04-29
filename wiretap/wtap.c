@@ -191,6 +191,17 @@ wtap_file_get_idb_info(wtap *wth)
 	return idb_info;
 }
 
+wtapng_dpeb_lookup_info_t *
+wtap_file_get_dpeb_lookup_info(wtap *wth)
+{
+	wtapng_dpeb_lookup_info_t *lookup_info;
+
+	lookup_info = g_new(wtapng_dpeb_lookup_info_t, 1);
+	lookup_info->dpebs = wth->dpebs;
+
+	return lookup_info;
+}
+
 wtap_block_t
 wtap_get_next_interface_description(wtap *wth)
 {
@@ -276,6 +287,12 @@ void
 wtap_add_idb(wtap *wth, wtap_block_t idb)
 {
 	g_array_append_val(wth->interface_data, idb);
+}
+
+void
+wtap_add_dpeb(wtap *wth, wtap_block_t dpeb)
+{
+	g_array_append_val(wth->dpebs, dpeb);
 }
 
 static wtap_block_t
@@ -558,6 +575,8 @@ wtap_dump_params_init(wtap_dump_params *params, wtap *wth)
 	params->nrbs_growing = wth->nrbs;
 	params->dsbs_growing = wth->dsbs;
 	params->mevs_growing = wth->meta_events;
+	ws_warning("%s setting params->dpebs_growing to %p", __func__, wth->dpebs);
+	params->dpebs_growing = wth->dpebs;
 	params->dont_copy_idbs = false;
 }
 
@@ -584,6 +603,8 @@ wtap_dump_params_init_no_idbs(wtap_dump_params *params, wtap *wth)
 	params->nrbs_growing = wth->nrbs;
 	params->dsbs_growing = wth->dsbs;
 	params->mevs_growing = wth->meta_events;
+	ws_warning("%s setting params->dpebs_growing to %p", __func__, wth->dpebs);
+	params->dpebs_growing = wth->dpebs;
 	params->dont_copy_idbs = true;
 }
 
@@ -1591,6 +1612,7 @@ wtap_close(wtap *wth)
 	wtap_block_array_free(wth->interface_data);
 	wtap_block_array_free(wth->dsbs);
 	wtap_block_array_free(wth->meta_events);
+	wtap_block_array_free(wth->dpebs);
 
 	g_free(wth);
 }

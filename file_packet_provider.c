@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <glib.h>
 #include "cfile.h"
+#include "wiretap/wtap.h"
+#include "wiretap/wtap_opttypes.h"
 
 const nstime_t *
 cap_file_provider_get_frame_ts(struct packet_provider_data *prov, uint32_t frame_num)
@@ -90,6 +92,139 @@ cap_file_provider_get_interface_description(struct packet_provider_data *prov, u
       return interface_name;
   }
   return NULL;
+}
+
+static bool
+cap_file_provider_get_dpeb(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number _U_, wtap_block_t *dpeb)
+{
+  wtapng_dpeb_lookup_info_t *info = wtap_file_get_dpeb_lookup_info(prov->wth);
+  wtap_block_t res = NULL;
+  bool rv = false;
+
+  if (info == NULL) {
+    ws_warning("Could not find dpeb lookup info for wtap %p", prov->wth);
+    goto out;
+  }
+
+  if (info->dpebs == NULL) {
+    ws_warning("Found dpeb lookup info for wtap %p, but no dpebs are available", prov->wth);
+    goto out;
+  }
+
+  if (info->dpebs->len <= dpeb_id) {
+    ws_warning("Found dpeb_id %u not present in wtap (size %u)", dpeb_id, info->dpebs->len);
+    goto out;
+  }
+
+  res = g_array_index(info->dpebs, wtap_block_t, dpeb_id);
+  if (res == NULL) {
+    ws_warning("Could not find dpeb with id=%d", dpeb_id);
+    goto out;
+  }
+
+  *dpeb = res;
+  rv = true;
+
+out:
+  if (info != NULL)
+    g_free(info);
+
+  return rv;
+}
+
+static bool
+cap_get_darwin_process_id(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number, int32_t *pid)
+{
+    wtapng_darwin_process_event_mandatory_t *dpeb_mand  = NULL;
+    wtap_block_t                             dpeb       = NULL;
+
+    if (!cap_file_provider_get_dpeb(prov, dpeb_id, section_number, &dpeb))
+        return false;
+
+    /* The process id is in the DPEB's mandatory data */
+    dpeb_mand = (wtapng_darwin_process_event_mandatory_t*)wtap_block_get_mandatory_data(dpeb);
+    if (!dpeb_mand)
+        return false;
+
+    *pid = dpeb_mand->process_id;
+    return true;
+}
+
+static bool
+cap_get_darwin_process_name(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number, char **pname)
+{
+    wtap_block_t dpeb;
+    if (!cap_file_provider_get_dpeb(prov, dpeb_id, section_number, &dpeb)) {
+        ws_warning("Failed to get dpeb with id=%u", dpeb_id);
+        return false;
+    }
+
+    if (wtap_block_get_string_option_value(dpeb, OPT_DPEB_NAME, pname) != WTAP_OPTTYPE_SUCCESS) {
+        ws_warning("Failed to get process name from dpeb %p id=%u", dpeb, dpeb_id);
+        return false;
+    }
+
+    return true;
+}
+
+static bool
+cap_get_darwin_process_uuid(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number, const uint8_t **uuid, size_t *uuid_len)
+{
+    wtap_block_t    dpeb              = NULL;
+    GBytes          *uuid_data        = NULL;
+    gsize           uuid_data_size    = 0;
+
+    if (!cap_file_provider_get_dpeb(prov, dpeb_id, section_number, &dpeb))
+        return false;
+
+    if (wtap_block_get_bytes_option_value(dpeb, OPT_DPEB_UUID, &uuid_data) != WTAP_OPTTYPE_SUCCESS) {
+        ws_warning("Failed to get process uuid from dpeb %p id=%u", dpeb, dpeb_id);
+        return false;
+    }
+
+    if (uuid_data == NULL) {
+        ws_warning("Null uuid found in dpeb %p id=%u", dpeb, dpeb_id);
+        return false;
+    }
+
+    *uuid = g_bytes_get_data(uuid_data, &uuid_data_size);
+    if (uuid_len)
+        *uuid_len = (*uuid == NULL) ? 0 : uuid_data_size;
+
+    return true;
+}
+
+int32_t
+cap_file_provider_get_process_id(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number)
+{
+  int32_t process_id;
+
+  if (!cap_get_darwin_process_id(prov, dpeb_id, section_number, &process_id))
+    return -1;
+
+  return process_id;
+}
+
+const char *
+cap_file_provider_get_process_name(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number _U_)
+{
+  char *process_name = NULL;
+
+  if (!cap_get_darwin_process_name(prov, dpeb_id, section_number, &process_name))
+    return NULL;
+
+  return process_name;
+}
+
+const uint8_t *
+cap_file_provider_get_process_uuid(struct packet_provider_data *prov, uint32_t dpeb_id, unsigned section_number _U_,  size_t *uuid_size)
+{
+    const uint8_t *uuid;
+
+    if (!cap_get_darwin_process_uuid(prov, dpeb_id, section_number, &uuid, uuid_size))
+        return NULL;
+
+    return uuid;
 }
 
 wtap_block_t
