@@ -311,7 +311,7 @@ static const value_string chunk_type[] = {
 static const value_string chunk_type_header[] = {
 	{ IDNCT_LP_WAVE_SAMPLE, "Wave Sample" },
 	{ IDNCT_LP_FRAME_CHUNK, "Frame Sample" },
-	{ IDNCT_LP_FRAME_FF, "Frame Sample" },
+	{ IDNCT_LP_FRAME_FF, "Frame Sample (first)" },
 	{ IDNCT_OCTET_SEGMENT, "Octet Segment" },
 	{ IDNCT_OCTET_STRING, "Octet String" },
 	{ IDNCT_DIMMER_LEVELS, "Dimmer Levels" },
@@ -765,7 +765,7 @@ static int dissect_idn_dmx_dictionary(tvbuff_t *tvb, int offset, proto_tree *idn
 	int i, j, curr_size;
 	bool words_found = 0;
 	int dictionary_size = 0;
-	uint8_t idepar; /* idetifier + parameter */
+	uint8_t idepar; /* identifier + parameter */
 	proto_tree *gts_tree = proto_tree_add_subtree(idn_tree, tvb, offset, -1, ett_dic_tree, NULL, "Dictionary");
 
 	for(i=1; i<=config->word_count; i++) {
