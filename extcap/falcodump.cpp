@@ -700,7 +700,7 @@ static bool get_plugin_config_schema(const std::shared_ptr<sinsp_plugin> &plugin
 }
 
 // For each loaded plugin, get its name and properties.
-static bool get_source_plugins(sinsp &inspector, std::map<std::string, struct plugin_configuration> &plugin_configs) {
+static bool get_source_plugins(sinsp &inspector, std::map<std::string, struct plugin_configuration> &plugin_configs, std::map<std::string, std::string> &versions) {
     const auto plugin_manager = inspector.get_plugin_manager();
 
     // XXX sinsp_plugin_manager::sources() can return different names, e.g. aws_cloudtrail vs cloudtrail.
@@ -712,6 +712,7 @@ static bool get_source_plugins(sinsp &inspector, std::map<std::string, struct pl
                     return false;
                 }
                 plugin_configs[plugin->name()] = plugin_config;
+                versions[plugin->name()] = plugin->plugin_version().as_string();
             }
         }
     } catch (sinsp_exception &e) {
@@ -934,6 +935,7 @@ int main(int argc, char **argv)
     char* help_header = NULL;
     sinsp inspector;
     std::string plugin_source;
+    std::map<std::string, std::string> plugin_versions;
 
     /* Set the program name. */
     g_set_prgname("falcodump");
@@ -980,11 +982,13 @@ int main(int argc, char **argv)
 
     load_plugins(inspector);
 
-    if (get_source_plugins(inspector, plugin_configs)) {
+    if (get_source_plugins(inspector, plugin_configs, plugin_versions)) {
         for (auto iter = plugin_configs.begin(); iter != plugin_configs.end(); ++iter) {
             // Where we're going we don't need DLTs, so use USER0 (147).
             // Additional info available via plugin->description() and plugin->event_source().
-            extcap_base_register_interface(extcap_conf, iter->first.c_str(), "Falco plugin", 147, "USER0");
+              std::string plugin_descripion = "Falco plugin ";
+              plugin_descripion.append(iter->first).append(" ").append(plugin_versions[iter->first]);
+            extcap_base_register_interface(extcap_conf, iter->first.c_str(), plugin_descripion.c_str(), 147, "USER0");
         }
     } else {
         ws_warning("Unable to load plugins.");
