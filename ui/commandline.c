@@ -235,9 +235,21 @@ static const struct ws_option long_options[] = {
         LONGOPT_CAPTURE_COMMON
         LONGOPT_DISSECT_COMMON
         LONGOPT_READ_CAPTURE_COMMON
+        LONGOPT_WSLOG
         {0, 0, 0, 0 }
     };
 static const char optstring[] = OPTSTRING;
+
+
+const struct ws_option* commandline_long_options(void)
+{
+    return long_options;
+}
+
+const char* commandline_optstring(void)
+{
+    return optstring;
+}
 
 #ifndef HAVE_LIBPCAP
 static void print_no_capture_support_error(void)
@@ -702,8 +714,12 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
                 arg_error = true;
 #endif
                 break;
-            default:
             case '?':        /* Bad flag - print usage message */
+            default:
+                /* wslog arguments are okay */
+                if (ws_log_is_wslog_arg(opt))
+                    break;
+
                 arg_error = true;
                 break;
             }
