@@ -412,7 +412,7 @@ cf_close(capture_file *cf)
     cf->f_datalen = 0;
     nstime_set_zero(&cf->elapsed_time);
 
-    reset_tap_listeners();
+    reset_tap_listeners(true);
 
     epan_free(cf->epan);
     cf->epan = NULL;
@@ -558,7 +558,7 @@ cf_read(capture_file *cf, bool reloading)
         (cf->dfcode != NULL || have_filtering_tap_listeners() ||
          (tap_flags & TL_REQUIRES_PROTO_TREE) || postdissectors_want_hfids());
 
-    reset_tap_listeners();
+    reset_tap_listeners(true);
 
     name_ptr = g_filename_display_basename(cf->filename);
 
@@ -1738,7 +1738,7 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, bo
          (tap_flags & TL_REQUIRES_PROTO_TREE) ||
          (redissect && postdissectors_want_hfids()));
 
-    reset_tap_listeners();
+    reset_tap_listeners(true);
     /* Which frame, if any, is the currently selected frame?
        XXX - should the selected frame or the focus frame be the "current"
        frame, that frame being the one from which "Find Frame" searches
@@ -2374,7 +2374,7 @@ cf_retap_packets(capture_file *cf)
         (filtering_tap_listeners || (tap_flags & TL_REQUIRES_PROTO_TREE));
 
     /* Reset the tap listeners. */
-    reset_tap_listeners();
+    reset_tap_listeners(true);
     uint32_t count = cf->count;
 
     epan_dissect_init(&callback_args.edt, cf->epan, create_proto_tree, false);

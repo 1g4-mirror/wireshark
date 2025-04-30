@@ -2901,7 +2901,7 @@ main(int argc, char *argv[])
     }
 
     /* Memory cleanup */
-    reset_tap_listeners();
+    reset_tap_listeners(true);
     funnel_dump_all_text_windows();
     epan_free(cfile.epan);
     epan_cleanup();
@@ -5066,6 +5066,7 @@ reset_epan_mem(capture_file *cf,epan_dissect_t *edt, bool tree, bool visual)
         return;
 
     fprintf(stderr, "resetting session.\n");
+    reset_tap_listeners(false);
 
     epan_dissect_cleanup(edt);
     epan_free(cf->epan);
