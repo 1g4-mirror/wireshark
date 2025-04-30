@@ -74,6 +74,8 @@ flags_to_str(uint32_t flags)
         return "tap listener";
     else if (flags & WS_PLUGIN_DESC_DFILTER)
         return "dfilter";
+    else if (flags & WS_PLUGIN_DESC_PCAPNG)
+        return "pcapng extension";
     else
         return "unknown";
 }

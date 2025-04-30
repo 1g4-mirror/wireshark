@@ -144,7 +144,8 @@ DESCRIPTION_FLAG = {
     'plugin': 'WS_PLUGIN_DESC_DISSECTOR',
     'plugin_wtap': 'WS_PLUGIN_DESC_FILE_TYPE',
     'plugin_codec': 'WS_PLUGIN_DESC_CODEC',
-    'plugin_tap': 'WS_PLUGIN_DESC_TAP_LISTENER'
+    'plugin_tap': 'WS_PLUGIN_DESC_TAP_LISTENER',
+    'plugin_wtap': 'WS_PLUGIN_DESC_PCAPNG'
 }
 
 reg_code += """

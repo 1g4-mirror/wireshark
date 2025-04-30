@@ -1891,6 +1891,7 @@ if(ENABLE_PLUGINS)
 		plugins/epan/wimaxmacphy
 		plugins/epan/dfilter/ipaddr
 		plugins/wiretap/usbdump
+		plugins/wiretap/pcapng
 		plugins/codecs/G711
 		plugins/codecs/l16_mono
 		${CUSTOM_PLUGIN_SRC_DIR}

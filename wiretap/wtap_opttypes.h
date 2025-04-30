@@ -140,6 +140,9 @@ extern "C" {
 #define OPT_PKT_VERDICT      7
 #define OPT_PKT_PROCIDTHRDID 8
 
+/* Apples EPB options extension */
+#define OPT_PKT_DARWIN_DPEB_ID 32769
+
 /* Name Resolution Block (NRB) */
 #define OPT_NS_DNSNAME       2
 #define OPT_NS_DNSIP4ADDR    3
@@ -204,6 +207,7 @@ typedef enum {
     WTAP_BLOCK_META_EVENT,
     WTAP_BLOCK_SYSTEMD_JOURNAL_EXPORT,
     WTAP_BLOCK_CUSTOM,
+    WTAP_BLOCK_DARWIN_PROCESS_EVENT,
     MAX_WTAP_BLOCK_TYPE_VALUE
 } wtap_block_type_t;
 

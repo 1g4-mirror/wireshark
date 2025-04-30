@@ -64,15 +64,15 @@
  * Event/Security Block
  */
 
-/* Block data to be passed between functions during reading */
+/** Block data to be passed between functions during reading */
 typedef struct wtapng_block_s {
-    uint32_t     type;           /* block_type as defined by pcapng */
-    bool         internal;       /* true if this block type shouldn't be returned from pcapng_read() */
+    uint32_t     type;           /**< block_type as defined by pcapng */
+    bool         internal;       /**< true if this block type shouldn't be returned from pcapng_read() */
     wtap_block_t block;
     wtap_rec     *rec;
 } wtapng_block_t;
 
-/* Section data in private struct */
+/** Section data in private struct */
 /*
  * XXX - there needs to be a more general way to implement the Netflix
  * BBLog blocks and options.

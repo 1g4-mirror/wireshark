@@ -1916,6 +1916,12 @@ static void cb_create(wtap_block_t block)
     block->mandatory_data = NULL;
 }
 
+static void dpeb_create(wtap_block_t block)
+{
+    /* Ensure this is null, so when g_free is called on it, it simply returns */
+    block->mandatory_data = NULL;
+}
+
 void wtap_opttypes_initialize(void)
 {
     static wtap_blocktype_t shb_block = {
@@ -2194,7 +2200,12 @@ void wtap_opttypes_initialize(void)
         WTAP_OPTTYPE_UINT64,
         0
     };
-
+    static const wtap_opttype_t pkt_darwin_dpeb_id = {
+        "darwin_dpeb_id",
+        "Darwin DPEB ID",
+        WTAP_OPTTYPE_UINT32,
+        WTAP_OPTTYPE_FLAG_MULTIPLE_ALLOWED
+    };
     static wtap_blocktype_t sysdig_block = {
         WTAP_BLOCK_SYSDIG_EVENT,
         "Sysdig event",
@@ -2223,6 +2234,31 @@ void wtap_opttypes_initialize(void)
         NULL,                         /* free_mand */
         NULL,                         /* copy_mand */
         NULL                          /* options */
+    };
+
+
+    static wtap_blocktype_t dpe_block = {
+        WTAP_BLOCK_DARWIN_PROCESS_EVENT, /* block_type */
+        "DPEB",                          /* name */
+        "Darwin Process Event Block",    /* description */
+        dpeb_create,                     /* create */
+        NULL,                            /* free_mand */
+        NULL,                            /* copy_mand */
+        NULL                             /* options */
+    };
+
+    static const wtap_opttype_t darwin_proc_name = {
+        "darwin_proc_name",
+        "Darwin process name",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+
+    static const wtap_opttype_t darwin_proc_uuid = {
+        "darwin_proc_uuid",
+        "Darwin process UUID",
+        WTAP_OPTTYPE_BYTES,
+        0
     };
 
     /*
@@ -2294,6 +2330,7 @@ void wtap_opttypes_initialize(void)
     wtap_opttype_option_register(&pkt_block, OPT_PKT_QUEUE, &pkt_queue);
     wtap_opttype_option_register(&pkt_block, OPT_PKT_VERDICT, &pkt_verdict);
     wtap_opttype_option_register(&pkt_block, OPT_PKT_PROCIDTHRDID, &pkt_proc_id_thread_id);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_DPEB_ID, &pkt_darwin_dpeb_id);
 
     /*
      * Register the Sysdig block and the (no) options that can appear in it.
