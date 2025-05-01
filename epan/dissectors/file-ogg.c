@@ -203,17 +203,17 @@ proto_register_ogg(void)
               "Page Header Type Flags", HFILL }
         },
         { &hf_type_flags_cont,
-            { "Continuation Flag",                                  "ogg.type_flags.cont",
+            { "Continuation Flag", "ogg.type_flags.cont",
             FT_BOOLEAN, 8, NULL, 0x01,
             "This packet is a continuation of the previous one.", HFILL }
         },
         { &hf_type_flags_bos,
-            { "Beginning of Stream",                                "ogg.type_flags.bos",
+            { "Beginning of Stream", "ogg.type_flags.bos",
             FT_BOOLEAN, 8, NULL, 0x02,
             "First page of logical bitstream.", HFILL }
         },
         { &hf_type_flags_eos,
-            { "End of Stream",                                      "ogg.type_flags.eos",
+            { "End of Stream", "ogg.type_flags.eos",
             FT_BOOLEAN, 8, NULL, 0x04,
             "Last page of logical bitstream.", HFILL }
         },
