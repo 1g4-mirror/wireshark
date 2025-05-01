@@ -33,7 +33,7 @@ static heur_dissector_list_t ogg_pl_dissectors;
 
 static int proto_ogg;
 
-static int hf_page;
+static int hf_ogg_page;
 static int hf_magic;
 static int hf_version;
 static int hf_type;
@@ -107,7 +107,7 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned o
     proto_item *ti, *ti_tree;
     proto_tree *ogg_tree, *subtree;
 
-    ti_tree = proto_tree_add_item(tree, hf_page, tvb, offset, -1, ENC_NA);
+    ti_tree = proto_tree_add_item(tree, hf_ogg_page, tvb, offset, -1, ENC_NA);
     ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg_page);
 
     proto_tree_add_item(ogg_tree, hf_magic,
@@ -182,7 +182,7 @@ void
 proto_register_ogg(void)
 {
     static hf_register_info hf[] = {
-        { &hf_page,
+        { &hf_ogg_page,
             { "Ogg Page", "ogg.page",
               FT_NONE, BASE_NONE, NULL, 0x00,
               "Ogg Stream Page", HFILL }
