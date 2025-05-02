@@ -47,6 +47,13 @@ static int hf_type_flags_cont;
 static int hf_type_flags_bos;
 static int hf_type_flags_eos;
 
+static int * const hf_type_flags[] = {
+    &hf_type_flags_cont,
+    &hf_type_flags_bos,
+    &hf_type_flags_eos,
+    NULL
+};
+
 static int ett_ogg;
 static int ett_ogg_page;
 static int ett_ogg_type;
@@ -103,9 +110,9 @@ find_ogg_page(tvbuff_t *tvb, unsigned offset, size_t len)
 static int
 dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset)
 {
-    uint8_t n_segs, flags;
-    proto_item *ti, *ti_tree;
-    proto_tree *ogg_tree, *subtree;
+    uint8_t n_segs;
+    proto_item *ti_tree;
+    proto_tree *ogg_tree;
 
     ti_tree = proto_tree_add_item(tree, hf_ogg_page, tvb, offset, -1, ENC_NA);
     ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg_page);
@@ -115,13 +122,7 @@ dissect_ogg_page(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned o
     proto_tree_add_item(ogg_tree, hf_version,
             tvb, offset + 4, 1, ENC_LITTLE_ENDIAN);
 
-    ti = proto_tree_add_item(ogg_tree, hf_type,
-            tvb, offset + 5, 1, ENC_LITTLE_ENDIAN);
-    subtree = proto_item_add_subtree(ti, ett_ogg_type);
-    flags = tvb_get_uint8(tvb, offset + 5);
-    proto_tree_add_boolean(subtree, hf_type_flags_cont, tvb, offset + 5, 1, flags);
-    proto_tree_add_boolean(subtree, hf_type_flags_bos , tvb, offset + 5, 1, flags);
-    proto_tree_add_boolean(subtree, hf_type_flags_eos , tvb, offset + 5, 1, flags);
+    proto_tree_add_bitmask(ogg_tree, tvb, offset + 5, hf_type, ett_ogg_type, hf_type_flags, ENC_LITTLE_ENDIAN);
 
     proto_tree_add_item(ogg_tree, hf_position,
             tvb, offset + 6, 8, ENC_LITTLE_ENDIAN);
