@@ -93,7 +93,7 @@ find_ogg_page(tvbuff_t *tvb, unsigned offset, size_t len)
     bool found = false;
 
     /* Find sync word */
-    while (offset < len - OGG_HDR_LEN) {
+    while (offset < (ssize_t)(len - OGG_HDR_LEN)) {
         if (tvb_strneql(tvb, 0, "OggS", 4) == 0) {
             found = true;
             break;
@@ -155,8 +155,10 @@ dissect_ogg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     offset = find_ogg_page(tvb, offset, len);
 
-    if (offset > len - OGG_HDR_LEN - 1)
+    if (offset > (ssize_t)(len - OGG_HDR_LEN - 1)) {
+        expert_add_info(pinfo, tree, &ei_ogg_missing_magic);
         return 0;
+    }
 
     ti_tree = proto_tree_add_item(tree, proto_ogg, tvb, offset, -1, ENC_NA);
     ogg_tree = proto_item_add_subtree(ti_tree, ett_ogg);
