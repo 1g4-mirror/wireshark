@@ -1079,7 +1079,7 @@ main(int argc, char *argv[])
     char                *err_str, *err_str_secondary;
 #else
     bool                 capture_option_specified = false;
-    volatile int         max_packet_count = 0;
+    int                  max_packet_count = 0;
 #endif
     volatile int          out_file_type = WTAP_FILE_TYPE_SUBTYPE_UNKNOWN;
     volatile bool         out_file_name_res = false;
@@ -1428,7 +1428,9 @@ main(int argc, char *argv[])
                     cmdarg_err("-M does not support two-pass analysis.");
                     arg_error=true;
                 }
-                epan_auto_reset_count = get_positive_int(ws_optarg, "epan reset count");
+                if (!get_positive_int(ws_optarg, "epan reset count", &epan_auto_reset_count))
+                    arg_error = true;
+
                 epan_auto_reset = true;
                 break;
             case 'a':        /* autostop criteria */
@@ -1466,7 +1468,10 @@ main(int argc, char *argv[])
                     goto clean_exit;
                 }
 #else
-                max_packet_count = get_positive_int(ws_optarg, "packet count");
+                if (!get_positive_int(ws_optarg, "packet count", &max_packet_count)) {
+                    exit_status = WS_EXIT_INVALID_OPTION;
+                    goto clean_exit;
+                }
 #endif
                 break;
             case 'w':        /* Write to file x */
@@ -3743,7 +3748,7 @@ process_packet_second_pass(capture_file *cf, epan_dissect_t *edt,
 
             if (ferror(stdout)) {
                 show_print_file_io_error();
-                exit(2);
+                return false;
             }
         }
         cf->provider.prev_dis = fdata;
@@ -4434,7 +4439,7 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, int64_t offset
 
             if (ferror(stdout)) {
                 show_print_file_io_error();
-                exit(2);
+                return false;
             }
         }
 
