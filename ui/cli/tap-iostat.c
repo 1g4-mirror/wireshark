@@ -968,8 +968,8 @@ static void
 iostat_draw(void *arg)
 {
     uint32_t num;
-    uint64_t interval, duration, t, invl_end, dv;
-    unsigned int i, j, k, num_cols, num_rows, dur_secs, dur_mag,
+    uint64_t interval, duration, invl_end, dv;
+    unsigned int i, j, k, num_cols, dur_secs, dur_mag,
         invl_mag, invl_prec, tabrow_w, borderlen, invl_col_w, type,
         maxfltr_w, ftype;
     char **fmts, *fmt = NULL;
@@ -1105,17 +1105,10 @@ iostat_draw(void *arg)
 
     iostat_draw_header_row(borderlen, iot, col_w, invl_col_w, tabrow_w);
 
-    t = 0;
     if (invl_prec == 0 && dur_mag == 1)
         full_fmt = g_strconcat("|  ", invl_fmt, " <> ", invl_fmt, "  |", NULL);
     else
         full_fmt = g_strconcat("| ", invl_fmt, " <> ", invl_fmt, " |", NULL);
-
-    if (interval == 0 || duration == 0) {
-        num_rows = 0;
-    } else {
-        num_rows = (unsigned int)(duration/interval) + ((unsigned int)(duration%interval) > 0 ? 1 : 0);
-    }
 
     /* Load item_in_column with the first item in each column */
     item_in_column = (io_stat_item_t **)g_malloc(sizeof(io_stat_item_t *) * num_cols);
@@ -1126,15 +1119,12 @@ iostat_draw(void *arg)
     /* Display the table values
     *
     * The outer loop is for time interval rows and the inner loop is for stat column items.*/
-    for (i=0; i<num_rows; i++) {
+    ws_assert(interval > 0);
+    for (uint64_t t = 0; t < duration; t += interval) {
 
-        if (i == num_rows-1)
+        invl_end = t + interval;
+        if (invl_end >= duration) {
             last_row = true;
-
-        /* Compute the interval for this row */
-        if (!last_row) {
-            invl_end = t + interval;
-        } else {
             invl_end = duration;
         }
 
@@ -1305,8 +1295,6 @@ iostat_draw(void *arg)
             printf("%*s", borderlen - tabrow_w, "|");
         }
         printf("\n");
-        t += interval;
-
     }
     for (i=0; i<borderlen; i++) {
         printf("=");
