@@ -226,7 +226,8 @@ workflow:
     - printf "\e[0Ksection_end:%s:ci_env_section\r\e[0K" "$(date +%s)"
     - brew --version
     - printf "\e[0Ksection_start:%s:brew_section[collapsed=true]\r\e[0KInstalling prerequisites" "$( date +%s)"
-    - ./tools/macos-setup-brew.sh --install-optional --install-test-deps
+    - brew install ccache cmake ninja qt6 asciidoctor docbook docbook-xsl
+    # - ./tools/macos-setup-brew.sh --install-optional --install-test-deps
     - printf "\e[0Ksection_end:%s:brew_section\r\e[0K" "$( date +%s)"
     - python3 -m venv $CI_PROJECT_DIR/.venv
     - source $CI_PROJECT_DIR/.venv/bin/activate
@@ -237,12 +238,23 @@ workflow:
     - mkdir build
     - cd build
   script:
+    - export WIRESHARK_BASE_DIR=${CI_PROJECT_DIR}/../wireshark-third-party
+    - if [ ! -d $WIRESHARK_BASE_DIR ] ; then mkdir $WIRESHARK_BASE_DIR ; fi
     - printf "\e[0Ksection_start:%s:cmake_section[collapsed=true]\r\e[0KRunning CMake" "$( date +%s)"
-    - cmake -G Ninja -DENABLE_CCACHE=ON -DTEST_EXTRA_ARGS=--disable-capture ..
+    - cmake -G Ninja
+      -DENABLE_CCACHE=ON
+      -DWIRESHARK_BASE_DIR=$WIRESHARK_BASE_DIR
+      -DBUILD_stratoshark=on -DBUILD_sshdig=on -DBUILD_falcodump=on
+      -DFALCO_PLUGINS="$WIRESHARK_BASE_DIR/macos-universal-master/lib/falco/plugins/libcloudtrail.so;$WIRESHARK_BASE_DIR/macos-universal-master/lib/falco/plugins/libgcpaudit.so"
+      -DTEST_EXTRA_ARGS=--disable-capture
+      ..
+    # The Falco libs 0.20.0 package at https://dev-libs.wireshark.org/macos/packages/falcosecurity-libs/
+    # is missing uthash.h.
+    - ( cd $WIRESHARK_BASE_DIR/macos-universal-master/include ; curl -JLO https://raw.githubusercontent.com/troydhanson/uthash/refs/tags/v1.9.8/src/uthash.h )
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
     - ninja
     - ninja test-programs
-    - pytest --disable-capture
+    - pytest --disable-capture --junitxml=../macos_tests.xml
   after_script:
     # The cache should be large enough to be useful but it shouldn't take
     # too long to restore+save each run.
@@ -595,7 +607,7 @@ Windows Arm64 Package:
       - build/packaging/nsis/wireshark-*.exe
     expire_in: 3 days
 
-macOS Arm Package:
+macOS Universal Package:
   stage: build
   rules: !reference [.if-w-w-only-merged]
   variables:
@@ -604,17 +616,45 @@ macOS Arm Package:
     - wireshark-macos-arm-package
   retry: 1
   script:
+    # Install a separate copy of pkg-config, otherwise we'll find a bunch of packages in /usr/local.
+    # - curl -JLO https://pkgconfig.freedesktop.org/releases/pkg-config-0.29.2.tar.gz
+    # - echo "6fc69c01688c9458a57eb9a1664c9aba372ccda420a02bf4429fe610e7e7d591  pkg-config-0.29.2.tar.gz" | shasum --algorithm 256 --check
+    # - mkdir _local
+    # - tar -xf pkg-config-0.29.2.tar.gz
+    # - cd pkg-config-0.29.2
+    # - CFLAGS="-Wno-int-conversion" ./configure --prefix="$CI_PROJECT_DIR/_local" --with-internal-glib
+    # - make
+    # - make install
+    # - cd ..
+    - export WIRESHARK_BASE_DIR=${CI_PROJECT_DIR}/../wireshark-third-party
+    - if [ ! -d $WIRESHARK_BASE_DIR ] ; then mkdir $WIRESHARK_BASE_DIR ; fi
     - export CMAKE_PREFIX_PATH=/usr/local/Qt-$MACOS_QT_VERSION
-    # Not needed for Falco libs 0.19?
-    - export CXXFLAGS="-isystem /usr/local/include/falcosecurity"
+    # - export PATH="$CI_PROJECT_DIR/_local/bin:$PATH:$HOME/bin"
     - export PATH="$PATH:$HOME/bin"
+    - export PKG_CONFIG_PATH=
     - mkdir build
     - cd build
     - ../tools/make-version.py --set-release --wireshark-version-file=wireshark_version.txt --stratoshark-version-file=stratoshark_version.txt ..
     - printf "\e[0Ksection_start:%s:cmake_section[collapsed=true]\r\e[0KRunning CMake" "$( date +%s)"
-    - cmake -DENABLE_CCACHE=ON -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_OSX_ARCHITECTURES=arm64 -DBUILD_stratoshark=on -DBUILD_sshdig=on -DBUILD_falcodump=on -DFALCO_PLUGINS=/usr/local/lib/falco-plugins/libcloudtrail.so -DTEST_EXTRA_ARGS=--enable-release -G Ninja ..
+    - cmake -G Ninja
+      -DENABLE_CCACHE=ON
+      -DWIRESHARK_BASE_DIR=$WIRESHARK_BASE_DIR
+      -DLIBXML2_INCLUDE_DIR=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/libxml2
+      -DLIBXML2_LIBRARY=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libxml2.tbd
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+      -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      -DBUILD_stratoshark=on -DBUILD_sshdig=on -DBUILD_falcodump=on
+      -DFALCO_PLUGINS="$WIRESHARK_BASE_DIR/macos-universal-master/lib/falco/plugins/libcloudtrail.so;$WIRESHARK_BASE_DIR/macos-universal-master/lib/falco/plugins/libgcpaudit.so"
+      -DTEST_EXTRA_ARGS=--enable-release
+      ..
+    # The Falco libs 0.20.0 package at https://dev-libs.wireshark.org/macos/packages/falcosecurity-libs/
+    # is missing uthash.h.
+    - ( cd $WIRESHARK_BASE_DIR/macos-universal-master/include ; curl -JLO https://raw.githubusercontent.com/troydhanson/uthash/refs/tags/v1.9.8/src/uthash.h )
     - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
     - ninja
+    - for exe in $( find run/{Wire,Strato}shark.app/Contents/MacOS -type f ) ; do
+        lipo "$exe" -verify_arch arm64 x86_64 ;
+      done
     - codesign-prep
     - security find-identity -v -s "$CODE_SIGN_IDENTITY"
     - ninja wireshark_dmg
@@ -627,24 +667,24 @@ macOS Arm Package:
     - spctl --assess --type open --context context:primary-signature --verbose=2 Wireshark?[1-9]*.dmg Stratoshark?[0-9]*.dmg
     - stat -f "%N %z bytes" Wireshark*.dmg Stratoshark*.dmg
     - for digest in sha512 sha256 sha1 ; do openssl $digest Wireshark*.dmg Stratoshark*.dmg ; done
-    - |
-      if [ -n "$S3_DESTINATION_MACOS_ARM64" ] ; then
-        aws s3 cp Wireshark?[1-9]*Arm*.dmg "$S3_DESTINATION_MACOS_ARM64/"
-        aws s3 cp Wireshark?dSYM*Arm*.dmg "$S3_DESTINATION_MACOS_ARM64/"
-        aws s3 cp Stratoshark?[0-9]*Arm*.dmg "$S3_DESTINATION_MACOS_ARM64/"
-        aws s3 cp Stratoshark?dSYM*Arm*.dmg "$S3_DESTINATION_MACOS_ARM64/"
+    - if [ -n "$S3_DESTINATION_MACOS_UNIVERSAL" ] ; then
+        aws s3 cp Wireshark?[1-9]*Arm*.dmg "$S3_DESTINATION_MACOS_UNIVERSAL/"
+        aws s3 cp Wireshark?dSYM*Arm*.dmg "$S3_DESTINATION_MACOS_UNIVERSAL/"
+        aws s3 cp Stratoshark?[0-9]*Arm*.dmg "$S3_DESTINATION_MACOS_UNIVERSAL/"
+        aws s3 cp Stratoshark?dSYM*Arm*.dmg "$S3_DESTINATION_MACOS_UNIVERSAL/"
       fi
     - $CI_PROJECT_DIR/build/run/tshark --version
     - WIRESHARK_SPARKLE_SIGNATURE=$( age --decrypt --identity="$MACOS_AGE_IDENTITY" "$MACOS_SPARKLE_BLOB" | /usr/local/Sparkle-2.2.2/bin/sign_update --ed-key-file - Wireshark?[1-9]*.dmg )
     - WIRESHARK_DMG_SHA256=$( shasum --algorithm 256 Wireshark?[1-9]*.dmg | awk '{print $1}' )
     - WIRESHARK_VERSION=$(< ../wireshark_version.txt)
     - printf '[DEFAULT]\nsparkle_signature = %s\ndmg_sha256 = %s\n' "$WIRESHARK_SPARKLE_SIGNATURE" "$WIRESHARK_DMG_SHA256" > wireshark-release-info-${WIRESHARK_VERSION}-macos-arm64.ini
+    - cp wireshark-release-info-${WIRESHARK_VERSION}-macos-arm64.ini wireshark-release-info-${WIRESHARK_VERSION}-macos-intel64.ini
     - STRATOSHARK_SPARKLE_SIGNATURE=$( age --decrypt --identity="$MACOS_AGE_IDENTITY" "$MACOS_SPARKLE_BLOB" | /usr/local/Sparkle-2.2.2/bin/sign_update --ed-key-file - Stratoshark?[0-9]*.dmg )
     - STRATOSHARK_DMG_SHA256=$( shasum --algorithm 256 Stratoshark?[0-9]*.dmg | awk '{print $1}' )
     - STRATOSHARK_VERSION=$(< ../stratoshark_version.txt)
     - printf '[DEFAULT]\nsparkle_signature = %s\ndmg_sha256 = %s\n' "$STRATOSHARK_SPARKLE_SIGNATURE" "$STRATOSHARK_DMG_SHA256" > stratoshark-release-info-${STRATOSHARK_VERSION}-macos-arm64.ini
-    - |
-      if [ -n "$S3_DESTINATION_RELEASE" ] ; then
+    - cp stratoshark-release-info-${STRATOSHARK_VERSION}-macos-arm64.ini stratoshark-release-info-${STRATOSHARK_VERSION}-macos-intel64.ini
+    - if [ -n "$S3_DESTINATION_RELEASE" ] ; then
         aws s3 cp wireshark-release-info-*-macos-*.ini "$S3_DESTINATION_RELEASE/"
         aws s3 cp stratoshark-release-info-*-macos-*.ini "$S3_DESTINATION_RELEASE/"
       fi
@@ -655,7 +695,7 @@ macOS Arm Package:
       - build/run/*shark-release-info-*-macos-*.ini
   needs: []
 
-macOS Intel Package:
+.macOS Intel Package:
   stage: build
   rules: !reference [.if-w-w-only-merged]
   variables:
@@ -957,13 +997,6 @@ Windows Build:
 macOS Build:
   extends: .build-macos
   rules: !reference [.if-w-w-only-merge-request]
-  script:
-    - printf "\e[0Ksection_start:%s:cmake_section[collapsed=true]\r\e[0KRunning CMake" "$( date +%s)"
-    - cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENABLE_CCACHE=ON -DTEST_EXTRA_ARGS=--disable-capture ..
-    - printf "\e[0Ksection_end:%s:cmake_section\r\e[0K" "$( date +%s)"
-    - ninja
-    - ninja test-programs
-    - pytest --disable-capture --junitxml=../macos_tests.xml
   artifacts:
     when: always
     reports:
