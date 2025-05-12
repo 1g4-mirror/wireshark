@@ -79,7 +79,7 @@ XZ_VERSION=5.2.5
 # CMake is required to do the build - and to build some of the
 # dependencies.
 #
-CMAKE_VERSION=${CMAKE_VERSION-3.21.4}
+CMAKE_VERSION=${CMAKE_VERSION-3.30.5}
 
 #
 # Ninja isn't required, as make is provided with Xcode, but it is
@@ -701,7 +701,7 @@ install_cmake() {
             fi
             [ -f cmake-$CMAKE_VERSION-$type.dmg ] || curl "${CURL_REMOTE_NAME_OPTS[@]}" https://cmake.org/files/v$CMAKE_MAJOR_MINOR_VERSION/cmake-$CMAKE_VERSION-$type.dmg
             $no_build && echo "Skipping installation" && return
-            sudo hdiutil attach cmake-$CMAKE_VERSION-$type.dmg
+            sudo hdiutil attach -nobrowse cmake-$CMAKE_VERSION-$type.dmg
             sudo ditto /Volumes/cmake-$CMAKE_VERSION-$type/CMake.app /Applications/CMake.app
 
             #
@@ -773,7 +773,8 @@ install_meson() {
         :
     else
         $no_build && echo "Skipping installation" && return
-        sudo pip3 install meson
+        $DO_PIP3 install meson
+        MESON=meson
         touch meson-done
     fi
 }
@@ -783,7 +784,7 @@ uninstall_meson() {
     # If we installed Meson, uninstal it with pip3.
     #
     if [ -f meson-done ] ; then
-        sudo pip3 uninstall meson
+        $DO_PIP3 uninstall meson
         rm -f meson-done
     fi
 }
@@ -797,7 +798,7 @@ install_pytest() {
         # We have it.
         :
     else
-        sudo pip3 install pytest pytest-xdist
+        $DO_PIP3 install pytest pytest-xdist
         touch pytest-done
     fi
 }
@@ -807,7 +808,7 @@ uninstall_pytest() {
     # If we installed pytest, uninstal it with pip3.
     #
     if [ -f pytest-done ] ; then
-        sudo pip3 uninstall pytest pytest-xdist
+        $DO_PIP3 uninstall pytest pytest-xdist
         rm -f pytest-done
     fi
 }
@@ -2677,12 +2678,12 @@ install_python3() {
     # down to 10.9 (Mavericks). The 10.9 installer was deprecated in 3.9.8
     # and stopped being released after 3.9.13
     local macver=11
-    if [ "$PYTHON3_VERSION" -a ! -f python3-$PYTHON3_VERSION-done ] ; then
+    if [ "$PYTHON3_VERSION" ] && [ ! -f "python3-$PYTHON3_VERSION-done" ] ; then
         echo "Downloading and installing python3:"
-        [ -f python-$PYTHON3_VERSION-macos$macver.pkg ] || curl "${CURL_REMOTE_NAME_OPTS[@]}" https://www.python.org/ftp/python/$PYTHON3_VERSION/python-$PYTHON3_VERSION-macos$macver.pkg
+        [ -f "python-$PYTHON3_VERSION-macos$macver.pkg" ] || curl "${CURL_REMOTE_NAME_OPTS[@]}" https://www.python.org/ftp/python/$PYTHON3_VERSION/python-$PYTHON3_VERSION-macos$macver.pkg
         $no_build && echo "Skipping installation" && return
-        sudo installer -target / -pkg python-$PYTHON3_VERSION-macos$macver.pkg
-        touch python3-$PYTHON3_VERSION-done
+        sudo installer -target / -pkg "python-$PYTHON3_VERSION-macos$macver.pkg"
+        touch "python3-$PYTHON3_VERSION-done"
 
         #
         # On macOS, the pip3 installed from Python packages appears to
@@ -2693,17 +2694,9 @@ install_python3() {
         # Strip off any dot-dot component in $PYTHON3_VERSION.
         #
         python_version=$( echo "$PYTHON3_VERSION" | sed 's/\([1-9][0-9]*\.[1-9][0-9]*\).*/\1/' )
-        #
-        # Now treat Meson as being in the directory in question.
-        #
-        MESON="/Library/Frameworks/Python.framework/Versions/$python_version/bin/meson"
-    else
-        #
-        # We're using the Python 3 that's in /usr/bin, the pip3 for
-        # which installs scripts in /usr/local/bin, so, when we
-        # install Meson, look for it there.
-        #
-        MESON=/usr/local/bin/meson
+    fi
+    if ! "$installation_prefix/bin/pip3" ; then
+        python3 -m venv "$installation_prefix"
     fi
 }
 
@@ -2890,8 +2883,6 @@ install_sparkle() {
         #
         [ -f Sparkle-$SPARKLE_VERSION.tar.xz ] || curl "${CURL_LOCAL_NAME_OPTS[@]}" Sparkle-$SPARKLE_VERSION.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz
         $no_build && echo "Skipping installation" && return
-        test -d "$installation_prefix/Sparkle-$SPARKLE_VERSION" || sudo mkdir "$installation_prefix/Sparkle-$SPARKLE_VERSION"
-        sudo tar -C "$installation_prefix/Sparkle-$SPARKLE_VERSION" -xpof Sparkle-$SPARKLE_VERSION.tar.xz
         touch sparkle-$SPARKLE_VERSION-done
     fi
 }
@@ -3805,13 +3796,15 @@ done
 
 no_build=false
 
-installation_prefix=/usr/local
+installation_prefix="/opt/wireshark-$(arch)-libs"
 
 while getopts hnp:t:u name
 do
     case $name in
     h|\?)
         echo "Usage: macos-setup.sh [ -n ] [ -p <installation prefix> ] [ -t <target> ] [ -u ]" 1>&1
+        echo "  Default installation prefix: $installation_prefix" 1>&1
+        echo "  Default minimum macOS target: $min_osx_target" 1>&1
         exit 0
         ;;
     n)
@@ -3829,6 +3822,7 @@ do
     esac
 done
 
+
 #
 # Create our custom installation prefix if needed.
 #
@@ -3836,7 +3830,8 @@ if [ "$installation_prefix" != "/usr/local" ] ; then
     export PATH="$installation_prefix/bin:$PATH"
     if [ ! -d "$installation_prefix" ] ; then
         echo "Creating $installation_prefix"
-        $DO_MKDIR "$installation_prefix"
+        sudo mkdir "$installation_prefix"
+        sudo chown "$USER" "$installation_prefix"
     fi
 fi
 
@@ -3862,6 +3857,7 @@ then
     DO_TEE_TO_PC_FILE="tee"
     DO_RM="rm"
     DO_MV="mv"
+    DO_PIP3="$installation_prefix/bin/pip3"
 else
     DO_MAKE="sudo make"
     DO_MAKE_INSTALL="sudo make install"
@@ -3871,6 +3867,7 @@ else
     DO_TEE_TO_PC_FILE="sudo tee"
     DO_RM="sudo rm"
     DO_MV="sudo mv"
+    DO_PIP3="sudo $installation_prefix/bin/pip3"
 fi
 
 #
