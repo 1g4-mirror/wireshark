@@ -59,6 +59,7 @@ typedef struct _io_stat_t {
     unsigned int num_cols;         /* The number of columns of stats in the table */
     struct _io_stat_item_t *items;  /* Each item is a single cell in the table */
     nstime_t start_time;    /* Time of first frame matching the filter */
+    uint64_t last_relative_time;
     /* The following are all per-column fixed information arrays */
     const char **filters; /* 'io,stat' cmd strings (e.g., "AVG(smb.time)smb.time") */
     uint64_t *max_vals;    /* The max value sans the decimal or nsecs portion in each stat column */
@@ -86,8 +87,66 @@ static char *io_decimal_point;
 
 #define NANOSECS_PER_SEC UINT64_C(1000000000)
 
-static uint64_t last_relative_time;
+/*
+ *  Reset an io_stat_item_t that's presumed to be one of io->items[].
+ *  Set its stats to 0 and remove any other items in its linked list.
+ */
+static void
+iostat_item_reset(io_stat_item_t *mit)
+{
+    io_stat_item_t *p, *cur;
 
+    mit->start_time = 0;
+    mit->frames = 0;
+    mit->num = 0;
+    mit->counter = 0;
+
+    /* Free up the linked list in both directions. Reset mit->prev
+     * to point back at mit to match the initialization in register_io_tap().
+     * The list appears to be circular (XXX: is this intentional?)
+     * so it's important to clear the transitive pointer back to the item
+     * being freed, even if we'd think that next item is about to be freed anyway.
+     */
+    cur = mit->prev;
+    mit->prev = mit;
+    while (cur != NULL && cur != mit && cur != cur->prev) {
+        p = cur->prev;
+        p->next = NULL;
+        g_free(cur);
+        cur = p;
+    }
+    cur = mit->next;
+    mit->next = NULL;
+    while (cur != NULL && cur != mit && cur != cur->next) {
+        p = cur->next;
+        p->prev = NULL;
+        g_free(cur);
+        cur = p;
+    }
+}
+
+/*
+ *  Free an io_stat_t and all the memory it allocated.
+ *  Assumes that the pointers in an incompletely created io_stat_t are null
+ *  if they haven't been allocated yet.
+ */
+static void
+iostat_io_free(io_stat_t *io)
+{
+    for (unsigned int i = 0; i < io->num_cols; i++) {
+        g_free((char*)io->filters[i]);
+        iostat_item_reset(&io->items[i]);
+    }
+    g_free(io->items);
+    g_free((gpointer)io->filters);
+    g_free(io->max_vals);
+    g_free(io->max_frame);
+    g_free(io->hf_indexes);
+    g_free(io->calc_type);
+    g_free(io);
+}
+
+/* Tap function: collect statistics of interest from the current packet. */
 static tap_packet_status
 iostat_packet(void *arg, packet_info *pinfo, epan_dissect_t *edt, const void *dummy _U_, tap_flags_t flags _U_)
 {
@@ -108,9 +167,9 @@ iostat_packet(void *arg, packet_info *pinfo, epan_dissect_t *edt, const void *du
     if ((pinfo->rel_ts.secs >= 0) && (pinfo->rel_ts.nsecs >= 0)) {
         relative_time = ((uint64_t)pinfo->rel_ts.secs * UINT64_C(1000000)) +
                         ((uint64_t)((pinfo->rel_ts.nsecs+500)/1000));
-        last_relative_time = relative_time;
+        parent->last_relative_time = relative_time;
     } else {
-        relative_time = last_relative_time;
+        relative_time = parent->last_relative_time;
     }
 
     if (nstime_is_unset(&mit->parent->start_time)) {
@@ -666,6 +725,54 @@ fill_abs_ydoy_time(const nstime_t* the_time, char *time_buf, char *decimal_point
     return;
 }
 
+static void
+fill_start_time(const io_stat_t *iot, const nstime_t *rel_time, ws_tsprec_e invl_prec, char *time_buf)
+{
+    nstime_t abs_time;
+    nstime_sum(&abs_time, rel_time, &iot->start_time);
+
+    switch (timestamp_get_type()) {
+    case TS_ABSOLUTE:
+      fill_abs_time(&abs_time, time_buf, io_decimal_point, invl_prec, true);
+      break;
+
+    case TS_ABSOLUTE_WITH_YMD:
+      format_nstime_as_iso8601(time_buf, NSTIME_ISO8601_BUFSIZE, &abs_time,
+        io_decimal_point, true, invl_prec);
+      break;
+
+    case TS_ABSOLUTE_WITH_YDOY:
+      fill_abs_ydoy_time(&abs_time, time_buf, io_decimal_point, invl_prec, true);
+      break;
+
+    case TS_UTC:
+      fill_abs_time(&abs_time, time_buf, io_decimal_point, invl_prec, false);
+      break;
+
+    case TS_UTC_WITH_YMD:
+      format_nstime_as_iso8601(time_buf, NSTIME_ISO8601_BUFSIZE, &abs_time,
+        io_decimal_point, false, invl_prec);
+      break;
+
+    case TS_UTC_WITH_YDOY:
+      fill_abs_ydoy_time(&abs_time, time_buf, io_decimal_point, invl_prec, false);
+      break;
+
+    case TS_RELATIVE:
+    case TS_NOT_SET:
+      display_signed_time(time_buf, NSTIME_ISO8601_BUFSIZE, rel_time, invl_prec);
+      break;
+    case TS_DELTA:
+    case TS_DELTA_DIS:
+    case TS_EPOCH:
+      /* Can't happen - see iostat_init. */
+      ws_assert_not_reached();
+      break;
+    default:
+      break;
+    }
+}
+
 /* Calc the total width of each row in the stats table and build the printf format string for each
 *  column based on its field type, width, and name length.
 *  NOTE: The magnitude of all types including float and double are stored in iot->max_vals which
@@ -973,7 +1080,6 @@ iostat_draw(void *arg)
         invl_mag, invl_prec, tabrow_w, borderlen, invl_col_w, type,
         maxfltr_w, ftype;
     char **fmts, *fmt = NULL;
-    static char *invl_fmt, *full_fmt;
     io_stat_item_t *mit, **stat_cols, *item, **item_in_column;
     bool last_row = false;
     io_stat_t *iot;
@@ -984,7 +1090,7 @@ iostat_draw(void *arg)
     iot = mit->parent;
     num_cols = iot->num_cols;
     col_w = g_new(column_width, num_cols);
-    fmts = (char **)g_malloc(sizeof(char *) * num_cols);
+    fmts = g_new0(char *, num_cols);
     duration = ((uint64_t)cfile.elapsed_time.secs * UINT64_C(1000000)) +
                 (uint64_t)((cfile.elapsed_time.nsecs + 500) / 1000);
 
@@ -1042,16 +1148,11 @@ iostat_draw(void *arg)
     if (iot->interval == UINT64_MAX)
         interval = duration;
 
-    //int dur_w = dur_mag + (invl_prec == 0 ? 0 : invl_prec+1);
-
-    /* Calc the width of the time interval column (incl borders and padding). */
-    if (invl_prec == 0) {
-        invl_fmt = g_strdup_printf("%%%du", dur_mag);
-        invl_col_w = (2*dur_mag) + 8;
-    } else {
-        invl_fmt = g_strdup_printf("%%%du.%%0%du", dur_mag, invl_prec);
-        invl_col_w = (2*dur_mag) + (2*invl_prec) + 10;
-    }
+    /* This is the max width of a duration. */
+    int dur_w = dur_mag + (invl_prec == 0 ? 0 : invl_prec+1);
+    /* Add a space on the side, and make sure the width is at least as wide
+     * as "Dur". ("Dur" does not need a space between it and "|".) */
+    dur_w = MAX(dur_w + 1, 3);
 
     /* Update the width of the time interval column if date is shown */
     switch (timestamp_get_type()) {
@@ -1062,12 +1163,13 @@ iostat_draw(void *arg)
         // We don't show more than 6 fractional digits (+Z) currently.
         // NSTIME_ISO8601_BUFSIZE is enough room for 9 frac digits + Z + '\0'
         // That's 4 extra characters, which leaves room for the "|  |".
-        invl_col_w = MAX(invl_col_w, NSTIME_ISO8601_BUFSIZE + invl_prec - 6);
+        invl_col_w = NSTIME_ISO8601_BUFSIZE + invl_prec - 6;
         break;
 
     default:
-        // Make it as least as twice as wide as "> Dur|" for the final interval
-        invl_col_w = MAX(invl_col_w, 12);
+        /* Calc the width of the time interval column (incl borders and padding,
+         * which are "|" and " <" on each side.) */
+        invl_col_w = 2*(dur_w + 3);
         break;
     }
 
@@ -1106,10 +1208,6 @@ iostat_draw(void *arg)
     iostat_draw_header_row(borderlen, iot, col_w, invl_col_w, tabrow_w);
 
     t = 0;
-    if (invl_prec == 0 && dur_mag == 1)
-        full_fmt = g_strconcat("|  ", invl_fmt, " <> ", invl_fmt, "  |", NULL);
-    else
-        full_fmt = g_strconcat("| ", invl_fmt, " <> ", invl_fmt, " |", NULL);
 
     if (interval == 0 || duration == 0) {
         num_rows = 0;
@@ -1141,71 +1239,29 @@ iostat_draw(void *arg)
         /* Patch for Absolute Time */
         /* XXX - has a Y2.038K problem with 32-bit time_t */
         nstime_t the_time = NSTIME_INIT_SECS_USECS(t / 1000000, t % 1000000);
-        nstime_add(&the_time, &iot->start_time);
 
         /* Display the interval for this row */
+        /* Get the string representing the start time of this interval. */
+        fill_start_time(iot, &the_time, invl_prec, time_buf);
+        /* Now add the surrounding column information according to our
+         * output format (currently, only text table is supported.) */
         switch (timestamp_get_type()) {
-        case TS_ABSOLUTE:
-          fill_abs_time(&the_time, time_buf, io_decimal_point, invl_prec, true);
-          // invl_col_w includes the "|  |"
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
-
-        case TS_ABSOLUTE_WITH_YMD:
-          format_nstime_as_iso8601(time_buf, NSTIME_ISO8601_BUFSIZE, &the_time,
-            io_decimal_point, true, invl_prec);
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
-
-        case TS_ABSOLUTE_WITH_YDOY:
-          fill_abs_ydoy_time(&the_time, time_buf, io_decimal_point, invl_prec, true);
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
-
-        case TS_UTC:
-          fill_abs_time(&the_time, time_buf, io_decimal_point, invl_prec, false);
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
-
-        case TS_UTC_WITH_YMD:
-          format_nstime_as_iso8601(time_buf, NSTIME_ISO8601_BUFSIZE, &the_time,
-            io_decimal_point, false, invl_prec);
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
-
-        case TS_UTC_WITH_YDOY:
-          fill_abs_ydoy_time(&the_time, time_buf, io_decimal_point, invl_prec, false);
-          printf("| %-*s |", invl_col_w - 4, time_buf);
-          break;
 
         case TS_RELATIVE:
         case TS_NOT_SET:
-          if (invl_prec == 0) {
-              if (last_row) {
-                  int maxw;
-                  maxw = dur_mag >= 3 ? dur_mag+1 : 3;
-                  g_free(full_fmt);
-                  full_fmt = g_strdup_printf("| %s%s <> %%-%ds|",
-                                            dur_mag == 1 ? " " : "",
-                                            invl_fmt, maxw);
-                  printf(full_fmt, (uint32_t)(t/UINT64_C(1000000)), "Dur");
-              } else {
-                  printf(full_fmt, (uint32_t)(t/UINT64_C(1000000)),
-                         (uint32_t)(invl_end/UINT64_C(1000000)));
-              }
-          } else {
-              printf(full_fmt, (uint32_t)(t/UINT64_C(1000000)),
-                     (uint32_t)(t%UINT64_C(1000000) / dv),
-                     (uint32_t)(invl_end/UINT64_C(1000000)),
-                     (uint32_t)(invl_end%UINT64_C(1000000) / dv));
-          }
-          break;
-     /* case TS_DELTA:
-        case TS_DELTA_DIS:
-        case TS_EPOCH:
-            are not implemented */
+            /* For relative times, we show both ends of the interval. */
+            printf("|%*s <", dur_w, time_buf);
+            if (invl_prec == 0 && last_row) {
+                g_strlcpy(time_buf, "Dur", NSTIME_ISO8601_BUFSIZE);
+            } else {
+                nstime_add(&the_time, &invl_time);
+                display_signed_time(time_buf, NSTIME_ISO8601_BUFSIZE, &the_time, invl_prec);
+            }
+            printf("> %-*s|", dur_w, time_buf);
+            break;
         default:
-          break;
+            printf("| %-*s |", invl_col_w - 4, time_buf);
+            break;
         }
 
         /* Display stat values in each column for this row */
@@ -1292,11 +1348,7 @@ iostat_draw(void *arg)
                     break;
                 }
 
-                if (last_row) {
-                    g_free(fmt);
-                } else {
-                    item_in_column[j] = item_in_column[j]->next;
-                }
+                item_in_column[j] = item_in_column[j]->next;
             } else {
                 printf(fmt, (uint64_t)0, (uint64_t)0);
             }
@@ -1312,25 +1364,47 @@ iostat_draw(void *arg)
         printf("=");
     }
     printf("\n");
-    g_free(iot->items);
-    for (i = 0; i < iot->num_cols; i++) {
-        g_free((char*)iot->filters[i]);
-    }
-    g_free((gpointer)iot->filters);
-    g_free(iot->max_vals);
-    g_free(iot->max_frame);
-    g_free(iot->hf_indexes);
-    g_free(iot->calc_type);
-    g_free(iot);
     g_free(col_w);
-    g_free(invl_fmt);
-    g_free(full_fmt);
+    for (i=0; i<num_cols; ++i) {
+        g_free(fmts[i]);
+    }
     g_free(fmts);
     g_free(stat_cols);
     g_free(item_in_column);
 }
 
+/* A new capture file is being loaded (or the current one reloaded),
+ * reset our statistics.
+ */
+static void
+iostat_reset(void *arg)
+{
+    io_stat_item_t *mit = (io_stat_item_t *)arg;
+    io_stat_t *io = mit->parent;
 
+    nstime_set_unset(&io->start_time);
+    io->last_relative_time = UINT64_C(0);
+    for (unsigned int i=0; i<io->num_cols; i++) {
+        iostat_item_reset(&io->items[i]);
+        io->max_vals[i]  = 0;
+        io->max_frame[i] = 0;
+    }
+}
+
+/* Our listeneer is being removed, free our memory. */
+static void
+iostat_finish(void *arg)
+{
+    io_stat_item_t *mit = (io_stat_item_t *)arg;
+    io_stat_t *io = mit->parent;
+    iostat_io_free(io);
+}
+
+/*
+ *  Register a new iostat tap for column number i.
+ *  The new tap's tapdata (see doc/README.tapping) is io->items[i], not io itself.
+ *  We only set the draw/reset/finish functions if i == 0 so everything is handled only once.
+ */
 static bool
 register_io_tap(io_stat_t *io, unsigned int i, const char *filter, GString *err)
 {
@@ -1474,8 +1548,11 @@ register_io_tap(io_stat_t *io, unsigned int i, const char *filter, GString *err)
     }
     g_free(field);
 
-    error_string = register_tap_listener("frame", &io->items[i], flt, TL_REQUIRES_PROTO_TREE, NULL,
-                                       iostat_packet, i ? NULL : iostat_draw, NULL);
+    error_string = register_tap_listener("frame", &io->items[i], flt, TL_REQUIRES_PROTO_TREE,
+                                       i ? NULL : iostat_reset,
+                                       iostat_packet,
+                                       i ? NULL : iostat_draw,
+                                       i ? NULL : iostat_finish);
     if (error_string) {
         /* Accumulate errors about all the possible filters tried at the same
          * starting character.
@@ -1542,7 +1619,8 @@ iostat_init(const char *opt_arg, void *userdata _U_)
         break;
     }
 
-    io = g_new(io_stat_t, 1);
+    io = g_new0(io_stat_t, 1);
+    io->last_relative_time = UINT64_C(0);
 
     /* If interval is 0, calculate statistics over the whole file by setting the interval to
     *  UINT64_MAX */
@@ -1569,22 +1647,20 @@ iostat_init(const char *opt_arg, void *userdata _U_)
                1.1, the last interval becomes
                last interval is rounded up to value that is greater than the duration. */
             const char *invl_start = opt_arg+8;
-            char *intv_end;
-            int invl_len;
+            unsigned invl_len;
 
-            intv_end = g_strstr_len(invl_start, -1, ",");
-            invl_len = (int)(intv_end - invl_start);
-            invl_start = g_strstr_len(invl_start, invl_len, ".");
+            invl_start = strpbrk(invl_start, ".,");
 
-            if (invl_start != NULL) {
-                invl_len = (int)(intv_end - invl_start - 1);
+            if (invl_start != NULL && *invl_start == '.') {
+                invl_len = (unsigned)strcspn(invl_start + 1, ",");
                 if (invl_len)
-                    io->invl_prec = MIN(invl_len, 6);
+                    io->invl_prec = MIN(invl_len, 6U);
             }
         }
     }
     if (io->interval < 1) {
         cmdarg_err("\ntshark: \"-z\" interval must be >=0.000001 seconds or \"0\" for the entire capture duration.\n");
+        iostat_io_free(io);
         return false;
     }
 
@@ -1613,7 +1689,7 @@ iostat_init(const char *opt_arg, void *userdata _U_)
         }
     }
 
-    io->items      = g_new(io_stat_item_t, io->num_cols);
+    io->items      = g_new0(io_stat_item_t, io->num_cols);
     io->filters    = (const char **)g_malloc(sizeof(char *) * io->num_cols);
     io->max_vals   = g_new(uint64_t, io->num_cols);
     io->max_frame  = g_new(uint32_t, io->num_cols);
@@ -1674,8 +1750,7 @@ iostat_init(const char *opt_arg, void *userdata _U_)
         cmdarg_err("\ntshark: Couldn't register io,stat tap: %s\n",
             err->str);
         g_string_free(err, TRUE);
-        g_free(io->items);
-        g_free(io);
+        iostat_io_free(io);
         return false;
     }
     g_string_free(err, TRUE);
