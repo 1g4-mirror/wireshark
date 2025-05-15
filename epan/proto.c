@@ -231,6 +231,8 @@ static const char *hf_try_val_to_str(uint32_t value, const header_field_info *hf
 static const char *hf_try_val64_to_str(uint64_t value, const header_field_info *hfinfo);
 static const char *hf_try_val_to_str_const(uint32_t value, const header_field_info *hfinfo, const char *unknown_str);
 static const char *hf_try_val64_to_str_const(uint64_t value, const header_field_info *hfinfo, const char *unknown_str);
+static const char *hf_try_val_to_str_idx(uint32_t value, const header_field_info *hfinfo, int *idx);
+static const char *hf_try_val64_to_str_idx(uint64_t value, const header_field_info *hfinfo, int *idx);
 static int hfinfo_bitoffset(const header_field_info *hfinfo);
 static int hfinfo_mask_bitwidth(const header_field_info *hfinfo);
 static int hfinfo_container_bitwidth(const header_field_info *hfinfo);
@@ -10361,6 +10363,30 @@ hf_try_val_to_str(uint32_t value, const header_field_info *hfinfo)
 }
 
 static const char *
+hf_try_val_to_str_idx(uint32_t value, const header_field_info *hfinfo, int *idx)
+{
+	if (hfinfo->display & BASE_RANGE_STRING)
+		return try_rval_to_str_idx(value, (const range_string *) hfinfo->strings, idx);
+
+	if (hfinfo->display & BASE_EXT_STRING) {
+		if (hfinfo->display & BASE_VAL64_STRING)
+			return try_val64_to_str_idx_ext(value, (val64_string_ext *) hfinfo->strings, idx);
+		else
+			return try_val_to_str_idx_ext(value, (value_string_ext *) hfinfo->strings, idx);
+	}
+
+	if (hfinfo->display & BASE_VAL64_STRING)
+		return try_val64_to_str_idx(value, (const val64_string *) hfinfo->strings, idx);
+
+	if (hfinfo->display & BASE_UNIT_STRING) {
+		/* If this is called with a unit name string, something isn't right. */
+		REPORT_DISSECTOR_BUG("field %s strings is a unit name string", hfinfo->abbrev);
+	}
+
+	return try_val_to_str_idx(value, (const value_string *) hfinfo->strings, idx);
+}
+
+static const char *
 hf_try_val64_to_str(uint64_t value, const header_field_info *hfinfo)
 {
 	if (hfinfo->display & BASE_VAL64_STRING) {
@@ -10375,6 +10401,35 @@ hf_try_val64_to_str(uint64_t value, const header_field_info *hfinfo)
 
 	if (hfinfo->display & BASE_UNIT_STRING)
 		return unit_name_string_get_value64(value, (const struct unit_name_string*) hfinfo->strings);
+
+	/* If this is reached somebody registered a 64-bit field with a 32-bit
+	 * value-string, which isn't right. */
+	REPORT_DISSECTOR_BUG("field %s is a 64-bit field with a 32-bit value_string",
+	    hfinfo->abbrev);
+
+	/* This is necessary to squelch MSVC errors; is there
+	   any way to tell it that DISSECTOR_ASSERT_NOT_REACHED()
+	   never returns? */
+	return NULL;
+}
+
+static const char *
+hf_try_val64_to_str_idx(uint64_t value, const header_field_info *hfinfo, int *idx)
+{
+	if (hfinfo->display & BASE_VAL64_STRING) {
+		if (hfinfo->display & BASE_EXT_STRING)
+			return try_val64_to_str_idx_ext(value, (val64_string_ext *) hfinfo->strings, idx);
+		else
+			return try_val64_to_str_idx(value, (const val64_string *) hfinfo->strings, idx);
+	}
+
+	if (hfinfo->display & BASE_RANGE_STRING)
+		return try_rval64_to_str_idx(value, (const range_string *) hfinfo->strings, idx);
+
+	if (hfinfo->display & BASE_UNIT_STRING) {
+		/* If this is called with a unit name string, something isn't right. */
+		REPORT_DISSECTOR_BUG("field %s strings is a unit name string", hfinfo->abbrev);
+	}
 
 	/* If this is reached somebody registered a 64-bit field with a 32-bit
 	 * value-string, which isn't right. */
@@ -10428,6 +10483,7 @@ fill_label_bitfield_char(const field_info *fi, char *label_str, size_t *value_po
 
 	char        buf[32];
 	const char *out;
+	int         idx;
 
 	const header_field_info *hfinfo = fi->hfinfo;
 
@@ -10456,7 +10512,10 @@ fill_label_bitfield_char(const field_info *fi, char *label_str, size_t *value_po
 		label_fill(label_str, bitfield_byte_length, hfinfo, tmp, value_pos);
 	}
 	else if (hfinfo->strings) {
-		const char *val_str = hf_try_val_to_str_const(value, hfinfo, "Unknown");
+		hf_try_val_to_str_idx(value, hfinfo, &idx);
+		const char* val_str = 
+			hf_try_val_to_str_const(
+				(hfinfo->display & BASE_DEFAULT_VALS && idx == -1) ? -1 : value, hfinfo, "Unknown");
 
 		out = hfinfo_char_vals_format(hfinfo, buf, value);
 		if (out == NULL) /* BASE_NONE so don't put integer in descr */
@@ -10480,6 +10539,7 @@ fill_label_bitfield(const field_info *fi, char *label_str, size_t *value_pos, bo
 	uint32_t    value, unshifted_value;
 	char        buf[NUMBER_LABEL_LENGTH];
 	const char *out;
+	int         idx;
 
 	const header_field_info *hfinfo = fi->hfinfo;
 
@@ -10517,7 +10577,10 @@ fill_label_bitfield(const field_info *fi, char *label_str, size_t *value_pos, bo
 		label_fill(label_str, bitfield_byte_length, hfinfo, tmp, value_pos);
 	}
 	else if (hfinfo->strings) {
-		const char *val_str = hf_try_val_to_str(value, hfinfo);
+		hf_try_val_to_str_idx(value, hfinfo, &idx);
+		const char* val_str = 
+			hf_try_val_to_str_const(
+				(hfinfo->display & BASE_DEFAULT_VALS && idx == -1) ? -1 : value, hfinfo, "Unknown");
 
 		out = hfinfo_number_vals_format(hfinfo, buf, value);
 		if (hfinfo->display & BASE_SPECIAL_VALS) {
@@ -10555,6 +10618,7 @@ fill_label_bitfield64(const field_info *fi, char *label_str, size_t *value_pos, 
 	uint64_t    value, unshifted_value;
 	char        buf[NUMBER_LABEL_LENGTH];
 	const char *out;
+	int         idx;
 
 	const header_field_info *hfinfo = fi->hfinfo;
 
@@ -10592,7 +10656,10 @@ fill_label_bitfield64(const field_info *fi, char *label_str, size_t *value_pos, 
 		label_fill(label_str, bitfield_byte_length, hfinfo, tmp, value_pos);
 	}
 	else if (hfinfo->strings) {
-		const char *val_str = hf_try_val64_to_str(value, hfinfo);
+		hf_try_val64_to_str_idx(value, hfinfo, &idx);
+		const char* val_str = 
+			hf_try_val64_to_str_const(
+				(hfinfo->display & BASE_DEFAULT_VALS && idx == -1) ? -1 : value, hfinfo, "Unknown");
 
 		out = hfinfo_number_vals_format64(hfinfo, buf, value);
 		if (hfinfo->display & BASE_SPECIAL_VALS) {
@@ -10630,6 +10697,7 @@ fill_label_char(const field_info *fi, char *label_str, size_t *value_pos)
 
 	char               buf[32];
 	const char        *out;
+	int                idx;
 
 	value = fvalue_get_uinteger(fi->value);
 
@@ -10643,7 +10711,10 @@ fill_label_char(const field_info *fi, char *label_str, size_t *value_pos)
 		label_fill(label_str, 0, hfinfo, tmp, value_pos);
 	}
 	else if (hfinfo->strings) {
-		const char *val_str = hf_try_val_to_str_const(value, hfinfo, "Unknown");
+		hf_try_val_to_str_idx(value, hfinfo, &idx);
+		const char* val_str = 
+			hf_try_val_to_str_const(
+				(hfinfo->display & BASE_DEFAULT_VALS && idx == -1) ? -1 : value, hfinfo, "Unknown");
 
 		out = hfinfo_char_vals_format(hfinfo, buf, value);
 		label_fill_descr(label_str, 0, hfinfo, val_str, out, value_pos);
