@@ -1293,8 +1293,7 @@ DEF_VALSE;
 
 static int dissect_mq_encoding(proto_tree* tree, int hfindex, tvbuff_t* tvb, const int start, int length, const unsigned encoding)
 {
-    char   sEnc[128] = "";
-    char* pEnc;
+    wmem_strbuf_t* pEnc = wmem_strbuf_new(NULL, "");
     unsigned  uEnc;
 
     if (length == 2)
@@ -1305,10 +1304,9 @@ static int dissect_mq_encoding(proto_tree* tree, int hfindex, tvbuff_t* tvb, con
     {
         uEnc = tvb_get_uint32(tvb, start, encoding);
     }
-    pEnc = sEnc;
 
 #define CHECK_ENC(M, T) ((uEnc & M) == T)
-#define DOPRT(A) pEnc += snprintf(pEnc, sizeof(sEnc)-1-(pEnc-sEnc), A);
+#define DOPRT(A) wmem_strbuf_append(pEnc, A);
     if (CHECK_ENC(MQ_MQENC_FLOAT_MASK, MQ_MQENC_FLOAT_UNDEFINED))
     {
         DOPRT("FLT_UNDEFINED");
@@ -1373,8 +1371,8 @@ static int dissect_mq_encoding(proto_tree* tree, int hfindex, tvbuff_t* tvb, con
 #undef DOPRT
 
     proto_tree_add_uint_format_value(tree, hfindex, tvb, start, length, uEnc,
-        "%8x-%d (%s)", uEnc, uEnc, sEnc);
-
+        "%8x-%d (%s)", uEnc, uEnc, pEnc->str);
+    wmem_strbuf_destroy(pEnc);
     return length;
 }
 
