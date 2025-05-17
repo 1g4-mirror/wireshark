@@ -379,8 +379,8 @@ void proto_reg_handoff_hsfz(void) {
     hsfz_handle_tcp = register_dissector("hsfz_over_tcp", dissect_hsfz_tcp, proto_hsfz);
     hsfz_handle_udp = register_dissector("hsfz_over_udp", dissect_hsfz_udp, proto_hsfz);
 
-    dissector_add_uint_range_with_preference("tcp.port", "", hsfz_handle_tcp);
-    dissector_add_uint_range_with_preference("udp.port", "", hsfz_handle_udp);
+    dissector_add_uint_range_with_preference("tcp.port", "6801", hsfz_handle_tcp);
+    dissector_add_uint_range_with_preference("udp.port", "6811", hsfz_handle_udp);
 
     uds_handle = find_dissector("uds_over_hsfz");
 }
