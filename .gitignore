@@ -171,3 +171,5 @@ vgcore.*
 test/*.log
 *.code-workspace
 __pycache__/
+wireshark-x64-libs/
+*.ffs_*
