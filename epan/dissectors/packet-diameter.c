@@ -227,11 +227,13 @@ static value_string_ext diameter_avp_data_addrfamily_vals_ext = VALUE_STRING_EXT
 static int proto_diameter;
 static int hf_diameter_length;
 static int hf_diameter_code;
+static int hf_diameter_code_name;
 static int hf_diameter_hopbyhopid;
 static int hf_diameter_endtoendid;
 static int hf_diameter_version;
 static int hf_diameter_vendor_id;
 static int hf_diameter_application_id;
+static int hf_diameter_application_name;
 static int hf_diameter_flags;
 static int hf_diameter_flags_request;
 static int hf_diameter_flags_proxyable;
@@ -1450,6 +1452,7 @@ dissect_diameter_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 	proto_tree *diam_tree;
 	diam_ctx_t *c = wmem_new0(pinfo->pool, diam_ctx_t);
 	int offset;
+	const char *app_str;
 	const char *cmd_str;
 	uint32_t cmd;
 	uint32_t hop_by_hop_id, end_to_end_id;
@@ -1501,16 +1504,24 @@ dissect_diameter_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 	app_item = proto_tree_add_item_ret_uint(diam_tree, hf_diameter_application_id, tvb, 8, 4,
 		ENC_BIG_ENDIAN, &diam_sub_dis_inf->application_id);
 
-	if (try_val_to_str_ext(diam_sub_dis_inf->application_id, dictionary.applications) == NULL) {
+	app_str = try_val_to_str_ext(diam_sub_dis_inf->application_id, dictionary.applications);
+	if (app_str == NULL) {
+		app_str = "Unknown Application Id";
 		proto_tree *tu = proto_item_add_subtree(app_item,ett_unknown);
 		proto_tree_add_expert_format(tu, c->pinfo, &ei_diameter_application_id, tvb, 8, 4,
 			"Unknown Application Id (%u), if you know what this is you can add it to dictionary.xml", diam_sub_dis_inf->application_id);
 	}
+	app_item = proto_tree_add_string(diam_tree, hf_diameter_application_name, tvb, 8, 4, app_str);
+	proto_item_set_generated(app_item);
+	proto_item_set_hidden(app_item);
 
 	cmd_str = val_to_str_const(cmd, cmd_vs, "Unknown");
 	if (strcmp(cmd_str, "Unknown") == 0) {
 		expert_add_info(c->pinfo, cmd_item, &ei_diameter_code);
 	}
+	cmd_item = proto_tree_add_string(diam_tree, hf_diameter_code_name, tvb, 5, 3, cmd_str);
+	proto_item_set_generated(cmd_item);
+	proto_item_set_hidden(cmd_item);
 
 
 	proto_tree_add_item_ret_uint(diam_tree, hf_diameter_hopbyhopid, tvb, 12, 4, ENC_BIG_ENDIAN, &hop_by_hop_id);
@@ -2437,6 +2448,9 @@ real_register_diameter_fields(void)
 	{ &hf_diameter_application_id,
 		  { "ApplicationId", "diameter.applicationId", FT_UINT32, BASE_DEC|BASE_EXT_STRING, VALS_EXT_PTR(dictionary.applications),
 			  0x0, NULL, HFILL }},
+	{ &hf_diameter_application_name,
+		  { "ApplicationName", "diameter.applicationName", FT_STRING, BASE_NONE, NULL,
+			  0x0, NULL, HFILL }},
 	{ &hf_diameter_hopbyhopid,
 		  { "Hop-by-Hop Identifier", "diameter.hopbyhopid", FT_UINT32,
 			  BASE_HEX, NULL, 0x0, NULL, HFILL }},
@@ -2489,6 +2503,8 @@ real_register_diameter_fields(void)
 		  { "Padding","diameter.avp.pad", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 	{ &hf_diameter_code,
 		  { "Command Code", "diameter.cmd.code", FT_UINT32, BASE_DEC, VALS(cmd_vs), 0, NULL, HFILL }},
+	{ &hf_diameter_code_name,
+		  { "Command Code Name", "diameter.cmd.name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_diameter_answer_in,
 		{ "Answer In", "diameter.answer_in", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
 		"The answer to this diameter request is in this frame", HFILL }},
