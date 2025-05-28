@@ -93,7 +93,7 @@ extern const uint32_t crc32_table[256];
 #define TK_OFFSET(akm, dh_group)  ((KEK_OFFSET(akm, dh_group) + Dot11DecryptGetKekLen(akm, dh_group) / 8))
 
 #define DOT11DECRYPT_GET_KCK(ptk, akm)   (ptk + KCK_OFFSET(akm))
-#define DOT11DECRYPT_GET_KEK(ptk, akm, dh_group)   (ptk + KEK_OFFSET(akm, dh_grop))
+#define DOT11DECRYPT_GET_KEK(ptk, akm, dh_group)   (ptk + KEK_OFFSET(akm, dh_group))
 #define DOT11DECRYPT_GET_TK_TKIP(ptk)    (ptk + 32)
 #define DOT11DECRYPT_GET_TK(ptk, akm, dh_group)    (ptk + TK_OFFSET(akm, dh_group))
 
@@ -230,7 +230,8 @@ Dot11DecryptDerivePtk(
     int key_version,
     int akm,
     int cipher,
-    uint8_t *ptk, size_t *ptk_len);
+    uint8_t *ptk, size_t *ptk_len,
+    int dh_group);
 
 static uint8_t
 Dot11DecryptFtDerivePtk(
@@ -1936,7 +1937,7 @@ Dot11DecryptScanFtAssocForKeys(
 
         ret = Dot11DecryptFtMicCheck(assoc_parsed,
                                      DOT11DECRYPT_GET_KCK(ptk, assoc_parsed->akm),
-                                     Dot11DecryptGetKckLen(assoc_parsed->akm) / 8, 0);
+                                     Dot11DecryptGetKckLen(assoc_parsed->akm, 0) / 8);
         if (ret == DOT11DECRYPT_RET_SUCCESS) {
             /* the key is the correct one, cache it in the Security Association */
             sa->key = tmp_key;
