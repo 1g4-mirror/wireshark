@@ -5549,36 +5549,36 @@ proto_register_isobus_vt(void)
             NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorcodes,
-          { "Error Codes", "isobus.vt.select_active_workingset_repsonse.errorcodes",
+          { "Error Codes", "isobus.vt.select_active_workingset_response.errorcodes",
             FT_UINT8, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorcode_flags,
-            { "Error flags", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags", FT_UINT8, BASE_HEX,
+            { "Error flags", "isobus.vt.select_active_workingset_response.errorcodes.flags", FT_UINT8, BASE_HEX,
                 NULL, 0, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_command_was_not_sent,
-          { "Command was not sent from the active WS", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.command_was_not_sent", FT_BOOLEAN,
+          { "Command was not sent from the active WS", "isobus.vt.select_active_workingset_response.errorcodes.flags.command_was_not_sent", FT_BOOLEAN,
                 8, NULL, 1, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_currentmask_is_alarmmask,
-          { "Currently Active mask is an Alarm Mask", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.currentmask_is_alarmmask", FT_BOOLEAN,
+          { "Currently Active mask is an Alarm Mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.currentmask_is_alarmmask", FT_BOOLEAN,
                 8, NULL, 2, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_name_command_does_not_identify_wsm,
-          { "NAME in command does not identify a working set", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.name_command_does_not_identify_wsm", FT_BOOLEAN,
+          { "NAME in command does not identify a working set", "isobus.vt.select_active_workingset_response.errorcodes.flags.name_command_does_not_identify_wsm", FT_BOOLEAN,
                 8, NULL, 4, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_objectpool,
-          { "Working set identified by NAME in command does not have an object pool on this VT", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.wsm_does_not_have_objectpool", FT_BOOLEAN,
+          { "Working set identified by NAME in command does not have an object pool on this VT", "isobus.vt.select_active_workingset_response.errorcodes.flags.wsm_does_not_have_objectpool", FT_BOOLEAN,
                 8, NULL, 8, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_active_datamask,
-          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.wsm_does_not_have_active_datamask", FT_BOOLEAN,
+          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.wsm_does_not_have_active_datamask", FT_BOOLEAN,
                 8, NULL, 16, NULL, HFILL }
         },
         { &hf_isobus_vt_select_active_workingset_errorflag_any_other_error,
-          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_repsonse.errorcodes.flags.any_other_error", FT_BOOLEAN,
+          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.any_other_error", FT_BOOLEAN,
                 8, NULL, 128, NULL, HFILL }
         },
         { &hf_isobus_vt_lockunlockmask_command,
