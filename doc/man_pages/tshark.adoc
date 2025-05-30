@@ -311,9 +311,11 @@ may differ from *-a packets:*<capture packet count>.
 -C  <configuration profile>::
 +
 --
-Run with the given configuration profile. If used in conjunction with
---global-profile, then the global profile with the associated name
-would be used.
+Run with the given configuration profile.
+
+If used in conjunction with --global-profile, the specified profile will be loaded from the global configuration directory (typically `/usr/share/wireshark/profiles`) instead of the user's personal configuration directory.
+
+This option is useful in shared environments or automated testing setups where consistent configurations are required and user-specific settings should be avoided.
 --
 
 -D|--list-interfaces::
