@@ -9,9 +9,12 @@
  */
 
 #include "config.h"
+#include "packet-tcp.h"
 
 #include <epan/packet.h>
 #include <epan/nlpid.h>
+#include <follow.h>
+#include <addr_resolv.h>
 
 void proto_register_x29(void);
 void proto_reg_handoff_x29(void);
@@ -35,6 +38,8 @@ static int hf_x29_parameter;
 static int hf_x29_value;
 
 static int ett_x29;
+
+static int x29_follow_tap = -1;
 
 /*
  * PAD messages.
@@ -218,12 +223,30 @@ dissect_x29(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 				linelen = next_offset - offset;
 
 				proto_tree_add_item(x29_tree, hf_x29_data, tvb, offset, linelen, ENC_NA|ENC_ASCII);
+
+				if (have_tap_listener(x29_follow_tap)) {
+					tap_queue_packet(x29_follow_tap, pinfo, tvb_clone_offset_len(tvb, offset, linelen));
+				}
+
 				offset = next_offset;
 			}
 		}
 	}
 
 	return tvb_captured_length(tvb);
+}
+
+gchar *x29_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, guint *stream, guint *sub_stream _U_)
+{
+	gchar *filter = tcp_follow_conv_filter(edt, pinfo, stream, sub_stream);
+
+	if (filter != NULL) {
+		char *new_filter = ws_strdup_printf("%s && x25", filter);
+		g_free(filter);
+		return new_filter;
+	}
+
+	return NULL;
 }
 
 void
@@ -262,6 +285,9 @@ proto_register_x29(void)
 	x29_handle = register_dissector("x29", dissect_x29, proto_x29);
 	proto_register_field_array(proto_x29, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	x29_follow_tap = register_tap("x29_follow");
+	register_follow_stream(proto_x29, "x29_follow", x29_follow_conv_filter, tcp_follow_index_filter, tcp_follow_address_filter, tcp_port_to_display, follow_tvb_tap_listener, NULL, NULL);
 }
 
 void
