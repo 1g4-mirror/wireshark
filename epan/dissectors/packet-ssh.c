@@ -449,6 +449,8 @@ static expert_field ei_ssh_packet_decode;
 static expert_field ei_ssh_channel_number;
 static expert_field ei_ssh_invalid_keylen;
 static expert_field ei_ssh_mac_bad;
+static expert_field ei_ssh2_kex_hybrid_msg_code;
+static expert_field ei_ssh2_kex_hybrid_msg_code_unknown;
 
 static bool ssh_desegment = true;
 
@@ -1631,6 +1633,7 @@ ssh_dissect_kex_ecdh(uint8_t msg_code, tvbuff_t *tvb,
     return offset;
 }
 
+
 static int ssh_dissect_kex_hybrid(uint8_t msg_code, tvbuff_t *tvb,
         packet_info *pinfo, int offset, proto_tree *tree,
         struct ssh_flow_data *global_data _U_, unsigned *seq_num)
@@ -1642,6 +1645,12 @@ static int ssh_dissect_kex_hybrid(uint8_t msg_code, tvbuff_t *tvb,
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
         val_to_str(msg_code, ssh2_kex_hybrid_msg_vals, "Unknown (%u)"));
 
+    const char *kex_name = global_data->kex;
+    expert_add_info(pinfo, NULL, &ei_ssh2_kex_hybrid_msg_code_unknown);
+    expert_add_info(pinfo, NULL, &ei_ssh2_kex_hybrid_msg_code);
+    ws_warning("KEX_HYBRID detected: KEX ALGORITHM = %s", kex_name);
+    ws_warning("KEX_HYBRID KEM support in Wireshark / TShark SSH dissector may be missing, partial or experimental");
+    ws_noisy(">>> KEX_HYBRID KEM detected: msg_code = %u, offset = %d, kex = %s", msg_code, offset, kex_name);
     return offset;
 }
 
@@ -1887,6 +1896,17 @@ static void ssh_set_kex_specific_dissector(struct ssh_flow_data *global_data)
     {
         global_data->kex_specific_dissector = ssh_dissect_kex_hybrid;
     }
+    else if (strcmp(kex_name, "sntrup761x25519-sha512") == 0)
+    /* ___place to add support for post-quantum hybrid KEM */
+    {
+        ws_warning("POST-QUANTUM KEX_HYBRID detected: KEX ALGORITHM = %s", kex_name);
+        ws_warning("POST-QUANTUM KEM KEX_HYBRID support in Wireshark / TShark SSH dissector may be missing, partial or experimental");
+        ws_noisy(">>> POST-QUANTUM KEM KEX_HYBRID: kex = %s", kex_name);
+    }
+    else
+    {
+	ws_warning("NOT SUPPORTED OR UNKNOWN KEX DETECTED: ALGORITHM = %s", kex_name);
+    }	
 }
 
 static int
@@ -6039,8 +6059,7 @@ proto_register_ssh(void)
         { &hf_ssh_segment_data,
           { "SSH segment data", "ssh.segment.data",
             FT_BYTES, BASE_NONE, NULL, 0x00,
-            "The payload of a single SSH segment", HFILL }
-        },
+            "The payload of a single SSH segment", HFILL }},
 
     };
 
@@ -6065,8 +6084,10 @@ proto_register_ssh(void)
         { &ei_ssh_channel_number, { "ssh.channel_number.error", PI_PROTOCOL, PI_WARN, "Coud not find channel", EXPFILL }},
         { &ei_ssh_invalid_keylen, { "ssh.key_length.error", PI_PROTOCOL, PI_ERROR, "Invalid key length", EXPFILL }},
         { &ei_ssh_mac_bad,        { "ssh.mac_bad.expert", PI_CHECKSUM, PI_ERROR, "Bad MAC", EXPFILL }},
-    };
+	{ &ei_ssh2_kex_hybrid_msg_code, { "ssh.kex_hybrid_msg_code", PI_SECURITY, PI_NOTE, "Hybrid KEX encountered", EXPFILL }},
+        { &ei_ssh2_kex_hybrid_msg_code_unknown, { "ssh.kex_hybrid_msg_code.unknown", PI_MALFORMED, PI_WARN, "Unknown KEX_HYBRID message code", EXPFILL }},
 
+    };
     module_t *ssh_module;
     expert_module_t *expert_ssh;
 
