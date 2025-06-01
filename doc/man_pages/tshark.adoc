@@ -311,11 +311,11 @@ may differ from *-a packets:*<capture packet count>.
 -C  <configuration profile>::
 +
 --
-Use the specified configuration profile with -C <profile>. By default, TShark loads profiles from the user's personal configuration directory (e.g., ~/.config/wireshark/profiles/ on Linux).
+Run with the given configuration profile.
 
-If --global-profile is specified, the profile will instead be loaded from the system-wide global configuration directory (typically /usr/share/wireshark/profiles/).
+If used in conjunction with --global-profile, the specified profile will be loaded from the global configuration directory (typically '/use/share/wireshark/profiles') instead of the user's personal configuration directory.
 
-This is particularly useful in automated environments, shared systems, or testing setups where relying on user-specific profiles is not desired or reproducible.
+Tis option is useful in shared environments or automated testing setups where consistent configurations are needed, and user-specific settings should be avoided.
 --
 
 -D|--list-interfaces::
