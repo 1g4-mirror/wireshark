@@ -1688,9 +1688,7 @@ dissect_vt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, enum vt_directio
         if(direction == ecu_to_vt)
         {
             col_append_str(pinfo->cinfo, COL_INFO, "Select active working set");
-            uint64_t name;
-            proto_tree_add_item_ret_uint64(tree,
-                hf_isobus_vt_select_active_workingset_name, tvb, offset, 8, ENC_LITTLE_ENDIAN, &name);
+            proto_tree_add_item(tree, hf_isobus_vt_select_active_workingset_name, tvb, offset, 8, ENC_LITTLE_ENDIAN);
         }
         else
         {
