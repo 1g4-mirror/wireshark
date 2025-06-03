@@ -9,6 +9,8 @@
 #ifndef __PCAP_MODULE_H__
 #define __PCAP_MODULE_H__
 
+#include <wiretap/wtap-int.h>
+
 #include "ws_symbol_export.h"
 #include "pcapng.h"
 
@@ -272,7 +274,7 @@ typedef bool (*custom_option_parser)(FILE_T fh, section_info_t* section_info,
     wtapng_block_t* wblock,
     int* err, char** err_info);
 typedef bool (*custom_option_processor)(wtapng_block_t* wblock,
-    section_info_t* section_info,
+    section_info_t* section_info, uint16_t option_code,
     const uint8_t* value, uint16_t length);
 
 typedef struct pcapng_custom_block_enterprise_handler_t
@@ -288,6 +290,17 @@ typedef struct pcapng_custom_block_enterprise_handler_t
 WS_DLL_PUBLIC
 void register_pcapng_custom_block_enterprise_handler(unsigned enterprise_number, pcapng_custom_block_enterprise_handler_t* handler);
 
+static inline bool
+pcapng_write_padding(wtap_dumper *wdh, size_t pad, int *err)
+{
+    if (pad != 0) {
+        const uint32_t zero_pad = 0;
+        if (!wtap_dump_file_write(wdh, &zero_pad, pad, err))
+            return false;
+    }
+
+    return true;
+}
 
 #ifdef __cplusplus
 }

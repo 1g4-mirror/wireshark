@@ -340,6 +340,7 @@ StratosharkMainWindow::StratosharkMainWindow(QWidget *parent) :
     }
     gbl_cur_main_window_ = this;
 #ifdef HAVE_LIBPCAP
+    info_data_.ui.ui = this;
     capture_input_init(&cap_session_, CaptureFile::globalCapFile());
 #endif
 
@@ -2424,6 +2425,7 @@ void StratosharkMainWindow::setForCapturedPackets(bool have_captured_packets)
     main_ui_->actionStatisticsCaptureFileProperties->setEnabled(have_captured_packets);
     main_ui_->actionStatisticsProtocolHierarchy->setEnabled(have_captured_packets);
     main_ui_->actionStatisticsIOGraph->setEnabled(have_captured_packets);
+    main_ui_->actionStatisticsPlot->setEnabled(have_captured_packets);
 }
 
 void StratosharkMainWindow::setMenusForFileSet(bool enable_list_files) {
