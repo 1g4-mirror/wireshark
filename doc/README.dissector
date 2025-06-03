@@ -2913,8 +2913,21 @@ upon the conversation index and values inside the request packets.
     }
 
 
+2.2.6 Registering with Analyze → Conversation Filter
 
-2.3 Dynamic conversation dissector registration.
+If your protocol defines conversations (e.g., using `conversation_new()`), you can register it with the “Analyze → Conversation Filter” menu in Wireshark.
+
+To do this, use the `conversation_filter_add()` function declared in `epan/conversation_filter.h`. This allows users to quickly apply a display filter to traffic belonging to that conversation from the GUI.
+
+Basic example:
+
+```c
+conversation_t *conversation = find_or_create_conversation(pinfo);
+conversation_filter_add(conversation, "myproto");
+
+
+
+2.3 Dynamic conversation dissector registratiogn.
 
 
 NOTE:   This sections assumes that all information is available to
