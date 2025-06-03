@@ -995,3 +995,45 @@ i.e., the file 'wireshark-disable-versioning' must exist in the git repo dir.
  * vi: set shiftwidth=4 tabstop=8 expandtab:
  * :indentSize=4:tabSize=8:noTabs=true:
  */
+
+
+== Restoring Fork Relationship on GitLab
+
+If your fork is no longer linked to the upstream Wireshark repository on GitLab (for example, after a migration), you may not be able to create Merge Requests.
+
+To fix this, follow these steps:
+
+1. Go to any GitLab page (e.g., this issue).
+2. Open the **Developer Console** in your browser:
+   - Firefox: `Ctrl+Shift+K` (or `Cmd+Option+K` on macOS)
+   - Chrome: `Ctrl+Shift+J` (or `Cmd+Option+J` on macOS)
+
+3. Paste and run the following JavaScript snippet:
+
+[source,javascript]
+----
+alert(await (async () => {
+  let project_name = 'wireshark';
+  let project_id = 7898047;
+  let token = document.querySelector('meta[name=csrf-token]').content;
+  if (!gon.current_username) return 'Not logged in or not on gitlab.com?';
+  else if (!token) return 'auth token not found';
+  // Remove existing (broken) fork relationship if any.
+  await fetch(`https://gitlab.com/api/v4/projects/${gon.current_username}%2F${project_name}/fork`, {
+    method: 'DELETE',
+    headers: { 'x-csrf-token': token }
+  });
+  // Reset fork relationship
+  let r = await fetch(`https://gitlab.com/api/v4/projects/${gon.current_username}%2F${project_name}/fork/${project_id}`, {
+    method: 'POST',
+    headers: { 'x-csrf-token': token }
+  });
+  if (r.status !== 201) return `Error ${r.status} ${await r.text()}`;
+  return 'Everything should be OK!';
+})());
+----
+
+If successful, you’ll see a pop-up saying: **Everything should be OK!**
+
+This script uses the GitLab API to reset the fork relationship. It’s safe to use while logged into your GitLab account and only affects your own fork.
+
