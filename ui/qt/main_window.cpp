@@ -400,24 +400,28 @@ void MainWindow::setMainWindowTitle(QString title)
         }
     }
 
-    if (prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
-        QString custom_title = replaceWindowTitleVariables(prefs.gui_prepend_window_title);
-        if (custom_title.length() > 0) {
-            title.prepend(QStringLiteral("[%1] ").arg(custom_title));
-        }
-    }
+    // Detectar si estamos en una sesión vacía (sin archivo ni argumentos)
+bool is_new_session = capture_file_.capFile() == nullptr || capture_file_.capFile()->filename == nullptr;
 
-    if (prefs.gui_window_title && prefs.gui_window_title[0]) {
-        QString custom_title = replaceWindowTitleVariables(prefs.gui_window_title);
-        if (custom_title.length() > 0) {
-#ifdef __APPLE__
-            // On macOS we separate the titles with a unicode em dash
-            title.append(QStringLiteral(" %1 %2").arg(UTF8_EM_DASH, custom_title));
-#else
-            title.append(QStringLiteral(" [%1]").arg(custom_title));
-#endif
-        }
+// Solo usar títulos personalizados si NO es una nueva sesión
+if (!is_new_session && prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
+    QString custom_title = replaceWindowTitleVariables(prefs.gui_prepend_window_title);
+    if (!custom_title.isEmpty()) {
+        title.prepend(QStringLiteral("[%1] ").arg(custom_title));
     }
+}
+
+if (!is_new_session && prefs.gui_window_title && prefs.gui_window_title[0]) {
+    QString custom_title = replaceWindowTitleVariables(prefs.gui_window_title);
+    if (!custom_title.isEmpty()) {
+#ifdef __APPLE__
+        title.append(QStringLiteral(" %1 %2").arg(UTF8_EM_DASH, custom_title));
+#else
+        title.append(QStringLiteral(" [%1]").arg(custom_title));
+#endif
+    }
+}
+
 
     setWindowTitle(title);
     setWindowFilePath(NULL);

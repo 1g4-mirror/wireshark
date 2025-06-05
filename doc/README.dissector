@@ -2913,6 +2913,80 @@ upon the conversation index and values inside the request packets.
     }
 
 
+2.2.6 Registering with Analyze → Conversation Filter
+
+If your protocol defines conversations (e.g., using `conversation_new()`), you can register it with the “Analyze → Conversation Filter” menu in Wireshark.
+
+To do this, use the `conversation_filter_add()` function declared in `epan/conversation_filter.h`. This allows users to quickly apply a display filter to traffic belonging to that conversation from the GUI.
+
+Basic example:
+
+```c
+conversation_t *conversation = find_or_create_conversation(pinfo);
+conversation_filter_add(conversation, "myproto");
+
+
+2.2.7 Initialization and Cleanup in Dissector Plugins
+
+Dissectors can define optional functions for initialization and cleanup purposes,
+especially useful when managing resources such as memory arenas.
+
+- proto_register_foo() should be used to register protocol fields and can
+  also perform global (once-only) initialization.
+- proto_reg_handoff_foo() is called after registration and is typically used
+  to register the dissector with heuristic or static tables.
+
+There are no built-in dissect_init() or dissect_cleanup() hooks. If your plugin
+needs to allocate temporary memory per-packet or per-frame, use the pinfo->pool
+which is an ephemeral memory pool managed by Wireshark and reset after each packet.
+
+Example:
+
+    static int proto_foo = -1;
+
+    void proto_register_foo(void) {
+        static hf_register_info hf[] = {
+            { &hf_foo_field,
+              { "Foo Field", "foo.field",
+                FT_UINT8, BASE_DEC, NULL, 0x0,
+                NULL, HFILL }
+            }
+        };
+        proto_foo = proto_register_protocol("Foo Protocol", "FOO", "foo");
+        proto_register_field_array(proto_foo, hf, array_length(hf));
+    }
+
+    void proto_reg_handoff_foo(void) {
+        dissector_handle_t foo_handle;
+
+        foo_handle = create_dissector_handle(dissect_foo, proto_foo);
+        dissector_add_uint("udp.port", FOO_PORT, foo_handle);
+    }
+
+
+2.2.8 Exported PDUs
+
+Wireshark supports Exported PDUs (Protocol Data Units), which allow pre-processed or extracted protocol payloads
+to be re-encapsulated and interpreted as individual packets. This is useful for cases where an external tool extracts
+sessions (e.g., VoIP, HTTP) and reinjects them into a capture for post-analysis.
+
+To handle Exported PDUs, Wireshark uses the `exported_pdu` dissector, which can wrap protocols like TCP, UDP, or any
+other payload into a new frame.
+
+An Exported PDU typically includes the following fields:
+
+- `pdu_type`: The protocol type of the encapsulated PDU.
+- `tvb`: The data buffer containing the payload.
+- `metadata`: (Optional) Custom information passed to the dissector.
+
+Plugins or dissectors can create and register exported PDUs using the internal API or by writing their data in PCAPNG
+format with `block_type` `0x00000BAD`.
+
+This mechanism improves modular analysis and allows tools to reuse Wireshark’s decoding logic.
+
+For more, see: `epan/exported_pdu.h`
+
+
 
 2.3 Dynamic conversation dissector registration.
 

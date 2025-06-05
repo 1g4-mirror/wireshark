@@ -9,6 +9,7 @@
 
 #include "packet_comment_dialog.h"
 #include <ui_packet_comment_dialog.h>
+#include <QKeyEvent>
 
 #include "main_application.h"
 
@@ -41,4 +42,20 @@ QString PacketCommentDialog::text()
 void PacketCommentDialog::on_buttonBox_helpRequested()
 {
 //    mainApp->helpTopicAction(HELP_PACKET_COMMENT_DIALOG);
+}
+
+void PacketCommentDialog::keyPressEvent(QKeyEvent *event)
+{
+#ifdef Q_OS_MAC
+    bool modifier = event->modifiers() & Qt::MetaModifier; // Command key
+#else
+    bool modifier = event->modifiers() & Qt::ControlModifier;
+#endif
+
+    if (modifier && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)) {
+        accept(); // Same as pressing OK
+        return;
+    }
+
+    GeometryStateDialog::keyPressEvent(event); // Pass to base class
 }
