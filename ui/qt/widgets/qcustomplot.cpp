@@ -6737,12 +6737,17 @@ QString QCPAxisTickerDateTime::getTickLabel(double tick, const QLocale &locale, 
 # elif QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
   if (mDateTimeSpec == Qt::TimeZone)
     return locale.toString(keyToDateTime(tick).toTimeZone(mTimeZone), mDateTimeFormat);
+  else if (mDateTimeSpec == Qt::UTC)
+    return locale.toString(keyToDateTime(tick).toTimeZone(QTimeZone::utc()), mDateTimeFormat);
+  else if (mDateTimeSpec == Qt::LocalTime)
+    return locale.toString(keyToDateTime(tick).toTimeZone(QTimeZone::systemTimeZone()), mDateTimeFormat);
   else
-    return locale.toString(keyToDateTime(tick).toTimeSpec(mDateTimeSpec), mDateTimeFormat);
+    return locale.toString(keyToDateTime(tick), mDateTimeFormat); // fallback sin conversión
 # else
   return locale.toString(keyToDateTime(tick).toTimeSpec(mDateTimeSpec), mDateTimeFormat);
 # endif
 }
+
 
 /*! \internal
 
