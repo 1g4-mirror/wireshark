@@ -1006,8 +1006,8 @@ dissect_sbc_readcapacity10 (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
                            unsigned offset, bool isreq, bool iscdb,
                            unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    uint32_t    lba, block_len;
-    uint64_t    totalSizeBytes64;
+    uint32_t    last_lba, block_len;
+    uint64_t    totalSizeBytes64, total_blocks;
     double      totalSizeBytes, totalSizeAbbrev;
     static const char* binaryPrefixes[] = { "B", "KiB", "MiB", "GiB", "TiB", "PiB" };
     int         idx = 0;
@@ -1020,12 +1020,13 @@ dissect_sbc_readcapacity10 (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
                 ett_scsi_control, cdb_control_fields, ENC_BIG_ENDIAN);
     }
     else if (!iscdb) {
-        lba       = tvb_get_ntohl(tvb, offset) + 1;   /* LBAs are zero-based so we add 1 */
-        proto_tree_add_uint_format(tree, hf_scsi_sbc_returned_lba, tvb, offset, 4, lba, "LBA: %u ", lba);
+        last_lba = tvb_get_ntohl(tvb, offset);
+        total_blocks = (uint64_t)last_lba + 1;  /* LBAs are zero-based so we add 1 */
+        proto_tree_add_uint_format(tree, hf_scsi_sbc_returned_lba, tvb, offset, 4, last_lba, "LBA: %u ", last_lba);
         proto_tree_add_item(tree, hf_scsi_sbc_blocksize, tvb, offset+4, 4, ENC_BIG_ENDIAN);
 
         block_len = tvb_get_ntohl(tvb, offset+4);
-        totalSizeBytes64 = (uint64_t)lba * (uint64_t)block_len;  /* prevent overflow */
+        totalSizeBytes64 = total_blocks * (uint64_t)block_len;  /* prevent overflow */
         totalSizeBytes = (double)totalSizeBytes64;
         totalSizeAbbrev = totalSizeBytes;
 
