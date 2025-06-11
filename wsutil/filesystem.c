@@ -70,6 +70,17 @@ static char *install_prefix;
 
 static bool do_store_persconffiles;
 static GHashTable *profile_files;
+static GQueue* saved_dir_queue;
+
+void wsutil_filesystem_init(void)
+{
+    saved_dir_queue = g_queue_new();
+}
+
+void wsutil_filesystem_cleanup(void)
+{
+    g_queue_clear_full(saved_dir_queue, g_free);
+}
 
 /*
  * Given a pathname, return a pointer to the last pathname separator
@@ -189,6 +200,52 @@ test_for_directory(const char *path)
     else
         return 0;
 }
+
+static bool
+ws_pushd(const char* dir)
+{
+    //Save the current working directory
+    const char* save_wd = get_current_working_dir();
+    if (save_wd != NULL)
+        g_queue_push_head(saved_dir_queue, g_strdup(save_wd));
+
+    //Change to the new one
+#ifdef _WIN32
+    SetCurrentDirectory(utf_8to16(dir));
+    return true;
+#else
+    return (chdir(dir) == 0);
+#endif
+}
+
+static bool
+ws_popd(void)
+{
+    int ret = 0;
+    char* saved_wd = g_queue_pop_head(saved_dir_queue);
+    if (saved_wd == NULL)
+        return false;
+
+    //Restore the previous one
+#ifdef _WIN32
+    SetCurrentDirectory(utf_8to16(saved_wd));
+#else
+    ret = chdir(saved_wd);
+#endif
+    g_free(saved_wd);
+    return (ret == 0);
+}
+
+void
+ws_execute_in_directory(const char* dir, ws_execute_in_directory_func func, void* param)
+{
+    if (ws_pushd(dir))
+    {
+        func(param);
+        ws_popd();
+    }
+}
+
 
 int
 test_for_fifo(const char *path)
