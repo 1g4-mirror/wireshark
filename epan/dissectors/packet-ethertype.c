@@ -99,6 +99,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_DEC_LAST,             "DEC LAST" },
 	{ ETHERTYPE_ETHBRIDGE,            "Transparent Ethernet bridging" },
 	{ ETHERTYPE_CGMP,                 "Cisco Group Management Protocol" },
+	{ ETHERTYPE_NHRP,                 "NHRP" },
 	{ ETHERTYPE_GIGAMON,              "Gigamon Header" },
 	{ ETHERTYPE_MSRP,                 "802.1Qat Multiple Stream Reservation Protocol" },
 	{ ETHERTYPE_MMRP,                 "802.1ak Multiple Mac Registration Protocol" },
