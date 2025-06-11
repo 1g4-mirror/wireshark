@@ -17,8 +17,6 @@
  * added by Timo Teras <timo.teras@iki.fi>
  */
 
-#include <execinfo.h>
-
 #include "config.h"
 
 
