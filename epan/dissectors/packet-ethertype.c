@@ -99,6 +99,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_DEC_LAST,             "DEC LAST" },
 	{ ETHERTYPE_ETHBRIDGE,            "Transparent Ethernet bridging" },
 	{ ETHERTYPE_CGMP,                 "Cisco Group Management Protocol" },
+	{ ETHERTYPE_NHRP,                 "NHRP" },
 	{ ETHERTYPE_GIGAMON,              "Gigamon Header" },
 	{ ETHERTYPE_MSRP,                 "802.1Qat Multiple Stream Reservation Protocol" },
 	{ ETHERTYPE_MMRP,                 "802.1ak Multiple Mac Registration Protocol" },
@@ -255,13 +256,13 @@ dissect_ethertype(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 			gleantype = (tvb_get_uint8(tvb, ethertype_data->payload_offset) & 0xF0) >> 4;
 			switch (gleantype) {
 			case 4: /* IPv4 */
-				payload_etype = ETHERTYPE_IP;
+				payload_etype = 0x0800;
 				break;
 			case 6: /* IPv6 */
-				payload_etype = ETHERTYPE_IPv6;
+				payload_etype = 0x86BB;
 				break;
 			default: /* ARP */
-				payload_etype = ETHERTYPE_ARP;
+				payload_etype = 0x0806;
 			}
 			ethertype_data->etype = payload_etype;
 		// FIXME: Add glean to protocol-stack in frame-header

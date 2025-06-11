@@ -100,7 +100,11 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_CGMP
-#define ETHERTYPE_CGMP			0x2001
+#define ETHERTYPE_CGMP			0x2000
+#endif
+
+#ifndef ETHERTYPE_NHRP
+#define ETHERTYPE_NHRP			0x2001
 #endif
 
 #ifndef ETHERTYPE_GIGAMON
