@@ -61,6 +61,7 @@ extern "C" {
 #define BLOCK_TYPE_SYSDIG_EVF_V2_LARGE    0x00000222 /* Sysdig Event Block with flags version 2 with large payload */
 #define BLOCK_TYPE_CB_COPY                0x00000BAD /* Custom Block which can be copied */
 #define BLOCK_TYPE_CB_NO_COPY             0x40000BAD /* Custom Block which should not be copied */
+#define BLOCK_TYPE_LEGACY_DPEB            0x80000001 /* Historically, Apple used this code for Darwin Process Event Block. */
 
 /* TODO: the following are not yet well defined in the draft spec,
  * and do not yet have block type values assigned to them:
@@ -123,7 +124,7 @@ typedef bool (*block_reader)(wtap* wth, FILE_T fh, uint32_t block_size,
                              int *err, char **err_info);
 typedef bool (*block_writer)(wtap_dumper *wdh, const wtap_rec *rec,
                              int *err, char **err_info);
-typedef bool (*block_processor)(wtap* wth, wtapng_block_t* wblock);
+typedef bool (*block_processor)(wtap* wth, wtapng_block_t* wblock, int* err, char** err_info);
 
 
 typedef struct pcapng_block_type_handler_t {

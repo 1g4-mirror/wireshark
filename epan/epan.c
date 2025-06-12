@@ -538,6 +538,34 @@ epan_get_frame_ts(const epan_t *session, uint32_t frame_num)
 	return abs_ts;
 }
 
+int32_t
+epan_get_process_id(const epan_t *session, uint32_t dpeb_id, unsigned section_number)
+{
+	if (session->funcs.get_process_id)
+		return session->funcs.get_process_id(session->prov, dpeb_id, section_number);
+
+	/* NOTE: process_id 0 is valid and is reserved for the kernel. */
+	return -1;
+}
+
+const char *
+epan_get_process_name(const epan_t *session, uint32_t dpeb_id, unsigned section_number)
+{
+	if (session->funcs.get_process_name)
+		return session->funcs.get_process_name(session->prov, dpeb_id, section_number);
+
+	return NULL;
+}
+
+const uint8_t *
+epan_get_process_uuid(const epan_t *session, uint32_t dpeb_id, unsigned section_number, size_t *uuid_size)
+{
+	if (session->funcs.get_process_uuid)
+		return session->funcs.get_process_uuid(session->prov, dpeb_id, section_number, uuid_size);
+
+	return NULL;
+}
+
 void
 epan_free(epan_t *session)
 {

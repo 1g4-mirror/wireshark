@@ -47,7 +47,8 @@ struct wtap {
     GArray                      *nrbs;                  /**< holds the Name Res Blocks, or NULL */
     GArray                      *dsbs;                  /**< An array of DSBs (of type wtap_block_t), or NULL if not supported. */
     GArray                      *meta_events;           /**< An array of meta events (of type wtap_block_t), or NULL if not supported. */
-
+    void                        *darwin_opt;            /**< Optional pointer to Darwin-specific data. */
+    unsigned                    next_dpeb_id;           /**< Next dpeb id  */
     char                        *pathname;              /**< File pathname; might just be "-" */
 
     void                        *priv;          /* this one holds per-file state and is free'd automatically by wtap_close() */

@@ -1885,6 +1885,23 @@ static void cb_create(wtap_block_t block)
     block->mandatory_data = NULL;
 }
 
+static void dpeb_create(wtap_block_t block)
+{
+    block->mandatory_data = g_new0(wtapng_darwin_process_event_mandatory_t, 1);;
+}
+
+static void dpeb_copy_mand(wtap_block_t dest_block, wtap_block_t src_block)
+{
+    memcpy(dest_block->mandatory_data, src_block->mandatory_data, sizeof(wtapng_darwin_process_event_mandatory_t));
+}
+
+static void dpeb_free_mand(wtap_block_t block)
+{
+    wtapng_nrb_mandatory_t *mand = (wtapng_nrb_mandatory_t *)block->mandatory_data;
+    g_free(mand);
+    block->mandatory_data = NULL;
+}
+
 void wtap_opttypes_initialize(void)
 {
     static wtap_blocktype_t shb_block = {
@@ -2153,6 +2170,66 @@ void wtap_opttypes_initialize(void)
         WTAP_OPTTYPE_UINT64,
         0
     };
+    static const wtap_opttype_t pkt_darwin_peb_id = {
+        "darwin_peb_id",
+        "Darwin PEB ID",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_svc_code = {
+        "darwin_svc_code",
+        "Darwin SVC code",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_effective_peb_id = {
+        "darwin_epeb_id",
+        "Darwin effective PEB ID",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_metadata_flags = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_flow_id = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_trace_tag = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_drop_reason = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_drop_line = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_drop_func = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+    static const wtap_opttype_t pkt_darwin_comp_gencnt = {
+        "darwin_md_flags",
+        "Darwin metadata flags",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
 
     static wtap_blocktype_t journal_block = {
         WTAP_BLOCK_SYSTEMD_JOURNAL_EXPORT, /* block_type */
@@ -2172,6 +2249,28 @@ void wtap_opttypes_initialize(void)
         NULL,                         /* free_mand */
         NULL,                         /* copy_mand */
         NULL                          /* options */
+    };
+
+    static wtap_blocktype_t dpeb_block = {
+        WTAP_BLOCK_LEGACY_DARWIN_PROCESS_EVENT, /* block_type */
+        "DPEB",                          /* name */
+        "Darwin Process Event Block",    /* description */
+        dpeb_create,                     /* create */
+        dpeb_free_mand,                            /* free_mand */
+        dpeb_copy_mand,                            /* copy_mand */
+        NULL                             /* options */
+    };
+    static const wtap_opttype_t dpeb_name = {
+        "name",
+        "Darwin Process Name",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+    static const wtap_opttype_t dpeb_uuid = {
+        "name",
+        "Darwin Process UUID",
+        WTAP_OPTTYPE_BYTES,
+        0
     };
 
     /*
@@ -2238,6 +2337,16 @@ void wtap_opttypes_initialize(void)
     wtap_opttype_option_register(&pkt_block, OPT_PKT_QUEUE, &pkt_queue);
     wtap_opttype_option_register(&pkt_block, OPT_PKT_VERDICT, &pkt_verdict);
     wtap_opttype_option_register(&pkt_block, OPT_PKT_PROCIDTHRDID, &pkt_proc_id_thread_id);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_DPEB_ID, &pkt_darwin_peb_id);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_SVC_CODE, &pkt_darwin_svc_code);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_EFFECTIVE_DPEB_ID, &pkt_darwin_effective_peb_id);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_MD_FLAGS, &pkt_darwin_metadata_flags);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_FLOW_ID, &pkt_darwin_flow_id);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_TRACE_TAG, &pkt_darwin_trace_tag);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_DROP_REASON, &pkt_darwin_drop_reason);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_DROP_LINE, &pkt_darwin_drop_line);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_DROP_FUNC, &pkt_darwin_drop_func);
+    wtap_opttype_option_register(&pkt_block, OPT_PKT_DARWIN_COMP_GENCNT, &pkt_darwin_comp_gencnt);
 
     /*
      * Register the SJEB and the (no) options that can appear in it.
@@ -2248,6 +2357,14 @@ void wtap_opttypes_initialize(void)
      * Register the CB and the options that can appear in it.
      */
     wtap_opttype_block_register(&cb_block);
+
+    /*
+     * Register the Legacy DPEB and the options that can appear in it.
+     */
+     wtap_opttype_block_register(&dpeb_block);
+     wtap_opttype_option_register(&dpeb_block, OPT_DPEB_NAME, &dpeb_name);
+     wtap_opttype_option_register(&dpeb_block, OPT_DPEB_UUID, &dpeb_uuid);
+
 
 #ifdef DEBUG_COUNT_REFS
     memset(blocks_active, 0, sizeof(blocks_active));

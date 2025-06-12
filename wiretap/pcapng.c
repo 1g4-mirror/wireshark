@@ -118,6 +118,13 @@ typedef struct pcapng_custom_block_s {
     /* Custom data and options */
 } pcapng_custom_block_t;
 
+/* pcapng: legacy DPEB (Darwin Process Event Block) file encoding */
+typedef struct pcapng_legacy_darwin_process_event_block_s {
+    uint32_t process_id;
+    /* Options */
+}  pcapng_legacy_darwin_process_event_block_t;
+
+
 /*
  * We require __REALTIME_TIMESTAMP in the Journal Export Format reader in
  * order to set each packet timestamp. Require it here as well, although
@@ -262,9 +269,17 @@ register_pcapng_block_type_handler(pcapng_block_type_handler_t* handler)
 
     /* Don't allow duplication of block types */
     if (g_hash_table_lookup(block_handlers, GUINT_TO_POINTER(handler->type)) != NULL) {
-        ws_warning("Attempt to register plugin for an existing block type 0x%08x not allowed",
-            handler->type);
-        return;
+
+        if (handler->type == BLOCK_TYPE_LEGACY_DPEB) {
+
+            /* This special exception because stuff happened the way it had happened */
+            g_hash_table_remove(block_handlers, GUINT_TO_POINTER(handler->type));
+        }
+        else {
+            ws_warning("Attempt to register plugin for an existing block type 0x%08x not allowed",
+                handler->type);
+            return;
+        }
     }
 
     /*
@@ -956,7 +971,6 @@ pcapng_process_custom_binary_option(wtapng_block_t *wblock,
     return ret;
 }
 
-#ifdef HAVE_PLUGINS
 static bool
 pcapng_process_unhandled_option(wtapng_block_t *wblock,
                                 unsigned bt_index,
@@ -967,32 +981,18 @@ pcapng_process_unhandled_option(wtapng_block_t *wblock,
 {
     option_handler *handler;
 
-    /*
-     * Do we have a handler for this packet block option code?
-     */
+    /* Do we have a handler for this packet block option code? */
     if (option_handlers[bt_index] != NULL &&
         (handler = (option_handler *)g_hash_table_lookup(option_handlers[bt_index],
                                                          GUINT_TO_POINTER((unsigned)option_code))) != NULL) {
         /* Yes - call the handler. */
         if (!handler->parser(wblock->block, section_info->byte_swapped,
                              option_length, option_content, err, err_info))
-            /* XXX - free anything? */
             return false;
     }
+
     return true;
 }
-#else
-static bool
-pcapng_process_unhandled_option(wtapng_block_t *wblock _U_,
-                                unsigned bt_index _U_,
-                                section_info_t *section_info _U_,
-                                uint16_t option_code _U_, uint16_t option_length _U_,
-                                const uint8_t *option_content _U_,
-                                int *err _U_, char **err_info _U_)
-{
-    return true;
-}
-#endif
 
 bool
 pcapng_process_options(FILE_T fh, wtapng_block_t *wblock,
@@ -3563,7 +3563,7 @@ pcapng_process_internal_block(wtap *wth, pcapng_t *pcapng, section_info_t *curre
                     /* XXX - Is it okay to not have a processor? */
                     break;
                 }
-                handler->processor(wth, wblock);
+                handler->processor(wth, wblock, NULL, NULL);
                 break;
             }
 
@@ -6567,6 +6567,13 @@ static const struct supported_option_type systemd_journal_export_block_options_s
     { OPT_CUSTOM_BIN_NO_COPY, MULTIPLE_OPTIONS_SUPPORTED }
 };
 
+/* Options for Darwin Process Event Block entry. */
+static const struct supported_option_type darwin_process_event_block_options_supported[] = {
+    { OPT_COMMENT, MULTIPLE_OPTIONS_SUPPORTED },
+    { OPT_DPEB_NAME, ONE_OPTION_SUPPORTED },
+    { OPT_DPEB_UUID, ONE_OPTION_SUPPORTED },
+};
+
 static const struct supported_block_type pcapng_blocks_supported[] = {
     /* Multiple sections. */
     { WTAP_BLOCK_SECTION, MULTIPLE_BLOCKS_SUPPORTED, OPTION_TYPES_SUPPORTED(section_block_options_supported) },
@@ -6600,6 +6607,9 @@ static const struct supported_block_type pcapng_blocks_supported[] = {
 
     /* Multiple custom blocks. */
     { WTAP_BLOCK_CUSTOM, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED },
+
+    /* Multiple DPEB blocks. */
+    { WTAP_BLOCK_LEGACY_DARWIN_PROCESS_EVENT, MULTIPLE_BLOCKS_SUPPORTED, OPTION_TYPES_SUPPORTED(darwin_process_event_block_options_supported) },
 };
 
 static const struct file_type_subtype_info pcapng_info = {
