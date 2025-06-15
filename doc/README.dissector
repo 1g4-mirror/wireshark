@@ -132,8 +132,8 @@ FIELDDISPLAY    --For FT_UINT{8,16,24,32,40,48,56,64} and
                   BASE_CUSTOM, or BASE_NONE, possibly ORed with
                   BASE_RANGE_STRING, BASE_EXT_STRING, BASE_VAL64_STRING,
                   BASE_ALLOW_ZERO, BASE_UNIT_STRING, BASE_SPECIAL_VALS,
-                  BASE_NO_DISPLAY_VALUE, BASE_SHOW_ASCII_PRINTABLE, or
-                  BASE_SHOW_UTF_8_PRINTABLE
+                  BASE_NO_DISPLAY_VALUE, BASE_SHOW_ASCII_PRINTABLE, 
+                  BASE_SHOW_UTF_8_PRINTABLE, or BASE_DEFAULT_VALS
 
                   BASE_NONE may be used with a non-NULL FIELDCONVERT when the
                   numeric value of the field itself is not of significance to
@@ -157,8 +157,8 @@ FIELDDISPLAY    --For FT_UINT{8,16,24,32,40,48,56,64} and
 
                 --For FT_CHAR:
                   BASE_HEX, BASE_OCT, BASE_CUSTOM, or BASE_NONE, possibly
-                  ORed with BASE_RANGE_STRING, BASE_EXT_STRING or
-                  BASE_VAL64_STRING.
+                  ORed with BASE_RANGE_STRING, BASE_EXT_STRING, 
+                  BASE_VAL64_STRING, or BASE_DEFAULT_VALS.
 
                   BASE_NONE can be used in the same way as with FT_UINT8.
 
@@ -1113,6 +1113,20 @@ numeric value of a field doesn't match any values in the value_string
 then just the numeric value is displayed (i.e. no "Unknown"). This is
 intended for use when the value_string only gives special names for
 certain field values and values not in the value_string are expected.
+
+If BASE_DEFAULT_VALS is also applied to the display bitmask, then if the
+numeric value of a field doesn't match any values in the value_string then
+the string for the numeric value -1 is displayed. This is intended for use
+when the value_string only gives special names for certain field values 
+and a default name for the rest. The value -1 is an arbitrary numeric
+value that is not expected to be part of the normal range of values, e.g.
+
+    static const value_string valstringname[] = {
+        { -1,      "Default String" },
+        { INTVAL1, "Descriptive String 1" },
+        { INTVAL2, "Descriptive String 2" },
+        { 0,       NULL }
+    };
 
 -- Extended value strings
 You can also use an extended version of the value_string for faster lookups.
