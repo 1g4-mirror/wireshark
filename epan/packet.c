@@ -786,7 +786,8 @@ dissect_file(epan_dissect_t *edt, wtap_rec *rec,
 
 enum dissector_e {
 	DISSECTOR_TYPE_SIMPLE,
-	DISSECTOR_TYPE_CALLBACK
+	DISSECTOR_TYPE_CALLBACK,
+	DISSECTOR_TYPE_NEW
 };
 
 /*
@@ -800,6 +801,7 @@ struct dissector_handle {
 	union {
 		dissector_t	dissector_type_simple;
 		dissector_cb_t	dissector_type_callback;
+		new_dissector_t	dissector_type_new;
 	} dissector_func;
 	void		*dissector_data;
 	protocol_t	*protocol;
@@ -858,21 +860,24 @@ remove_last_layer(packet_info *pinfo, bool reduce_count)
 
 
 /* This function will return
- *   >0  this protocol was successfully dissected and this was this protocol.
- *   0   this packet did not match this protocol.
+ *   true  this protocol was successfully dissected and this was this protocol.
+ *   false this packet did not match this protocol.
  *
  * XXX - if the dissector only dissects metadata passed through the data
  * pointer, and dissects none of the packet data, that's indistinguishable
  * from "packet did not match this protocol".  See issues #12366 and
  * #12368.
  */
-static int
+static bool
 call_dissector_through_handle(dissector_handle_t handle, tvbuff_t *tvb,
-			      packet_info *pinfo, proto_tree *tree, void *data)
+			      packet_info *pinfo, proto_tree *tree, void *data,
+			      int *dissected_length)
 {
-	const char *saved_proto;
-	int	    saved_proto_layer_num;
-	int         len;
+	const char       *saved_proto;
+	bool              ret;
+	int               saved_proto_layer_num;
+	int               len;
+	dissector_data_t  dissector_data;
 
 	saved_proto = pinfo->current_proto;
 	saved_proto_layer_num = pinfo->curr_proto_layer_num;
@@ -886,10 +891,20 @@ call_dissector_through_handle(dissector_handle_t handle, tvbuff_t *tvb,
 
 	case DISSECTOR_TYPE_SIMPLE:
 		len = (handle->dissector_func.dissector_type_simple)(tvb, pinfo, tree, data);
+		ret = (len != 0);
 		break;
 
 	case DISSECTOR_TYPE_CALLBACK:
 		len = (handle->dissector_func.dissector_type_callback)(tvb, pinfo, tree, data, handle->dissector_data);
+		ret = (len != 0);
+		break;
+
+	case DISSECTOR_TYPE_NEW:
+		dissector_data.data = data;
+		dissector_data.cb_data = handle->dissector_data;
+		dissector_data.dissected_length = tvb_captured_length(tvb);
+		ret = (handle->dissector_func.dissector_type_new)(tvb, pinfo, tree, &dissector_data);
+		len = dissector_data.dissected_length;
 		break;
 
 	default:
@@ -898,7 +913,9 @@ call_dissector_through_handle(dissector_handle_t handle, tvbuff_t *tvb,
 	pinfo->current_proto = saved_proto;
 	pinfo->curr_proto_layer_num = saved_proto_layer_num;
 
-	return len;
+	if (dissected_length != NULL)
+		*dissected_length = len;
+	return ret;
 }
 
 /*
@@ -910,23 +927,26 @@ call_dissector_through_handle(dissector_handle_t handle, tvbuff_t *tvb,
  * the length of the tvbuff pointed to by the argument.
  */
 
-static int
+static bool
 call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
-			  packet_info *pinfo_arg, proto_tree *tree, void *);
+			  packet_info *pinfo_arg, proto_tree *tree,
+			  void *data, int *dissected_length);
 
-static int
+static bool
 call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo,
-		    proto_tree *tree, bool add_proto_name, void *data)
+		    proto_tree *tree, bool add_proto_name, void *data,
+		    int *dissected_length)
 {
 	const char  *saved_proto;
 	int          saved_proto_layer_num;
 	uint16_t     saved_can_desegment;
-	int          len;
+	bool         ret;
 	unsigned     saved_layers_len = 0;
 	unsigned     saved_tree_count = tree ? tree->tree_data->count : 0;
 	unsigned     saved_desegment_len = pinfo->desegment_len;
 	bool         consumed_none;
 
+	DISSECTOR_ASSERT(handle != NULL);
 	if (handle->protocol != NULL &&
 	    !proto_is_protocol_enabled(handle->protocol)) {
 		/*
@@ -971,14 +991,14 @@ call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo
 	}
 
 	if (pinfo->flags.in_error_pkt) {
-		len = call_dissector_work_error(handle, tvb, pinfo, tree, data);
+		ret = call_dissector_work_error(handle, tvb, pinfo, tree, data, dissected_length);
 	} else {
 		/*
 		 * Just call the subdissector.
 		 */
-		len = call_dissector_through_handle(handle, tvb, pinfo, tree, data);
+		ret = call_dissector_through_handle(handle, tvb, pinfo, tree, data, dissected_length);
 	}
-	consumed_none = len == 0 || (pinfo->desegment_len != saved_desegment_len && pinfo->desegment_offset == 0);
+	consumed_none = !ret || (pinfo->desegment_len != saved_desegment_len && pinfo->desegment_offset == 0);
 	/* If len == 0, then the dissector didn't accept the packet.
 	 * In the latter case, the dissector accepted the packet, but didn't
 	 * consume any bytes because they all belong in a later segment.
@@ -1012,18 +1032,19 @@ call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo
 	pinfo->current_proto = saved_proto;
 	pinfo->curr_proto_layer_num = saved_proto_layer_num;
 	pinfo->can_desegment = saved_can_desegment;
-	return len;
+	return ret;
 }
 
 
-static int
+static bool
 call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
-			  packet_info *pinfo_arg, proto_tree *tree, void *data)
+			  packet_info *pinfo_arg, proto_tree *tree, void *data,
+			  int *dissected_length)
 {
 	packet_info  *pinfo = pinfo_arg;
 	const char   *saved_proto;
 	uint16_t      saved_can_desegment;
-	volatile int  len = 0;
+	volatile bool ret = false;
 	bool          save_writable;
 	address       save_dl_src;
 	address       save_dl_dst;
@@ -1069,7 +1090,7 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 
 	/* Dissect the contained packet. */
 	TRY {
-		len = call_dissector_through_handle(handle, tvb,pinfo, tree, data);
+		ret = call_dissector_through_handle(handle, tvb, pinfo, tree, data, dissected_length);
 	}
 	CATCH(BoundsError) {
 		/*
@@ -1116,7 +1137,9 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 		* the data in some tvbuff, so we'll assume that
 		* the entire tvbuff was dissected.
 		*/
-		len = tvb_captured_length(tvb);
+		ret = true;
+		if (dissected_length != NULL)
+			*dissected_length = tvb_captured_length(tvb);
 	}
 	ENDTRY;
 
@@ -1131,7 +1154,7 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 	pinfo->srcport = save_srcport;
 	pinfo->destport = save_destport;
 	pinfo->want_pdu_tracking = 0;
-	return len;
+	return ret;
 }
 
 /*
@@ -1615,25 +1638,25 @@ dissector_is_uint_changed(dissector_table_t const sub_dissectors, const uint32_t
 }
 
 /* Look for a given value in a given uint dissector table and, if found,
-   call the dissector with the arguments supplied, and return the number
-   of bytes consumed by the dissector, otherwise return 0. */
-
-int
-dissector_try_uint_with_data(dissector_table_t sub_dissectors, const uint32_t uint_val,
-		       tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-		       const bool add_proto_name, void *data)
+   call the dissector with the arguments supplied, and return true and
+   set *disected_length to the number of bytes consumed by the dissector,
+   otherwise return false. */
+bool
+new_dissector_try_uint(dissector_table_t sub_dissectors, const uint32_t uint_val,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
 	uint32_t                 saved_match_uint;
-	int len;
+	bool                     ret;
 
 	dtbl_entry = find_uint_dtbl_entry(sub_dissectors, uint_val);
 	if (dtbl_entry == NULL) {
 		/*
 		 * There's no entry in the table for our value.
 		 */
-		return 0;
+		return false;
 	}
 
 	/*
@@ -1646,7 +1669,7 @@ dissector_try_uint_with_data(dissector_table_t sub_dissectors, const uint32_t ui
 		 * so that other dissectors might have a chance
 		 * to dissect this packet.
 		 */
-		return 0;
+		return false;
 	}
 
 	/*
@@ -1656,31 +1679,35 @@ dissector_try_uint_with_data(dissector_table_t sub_dissectors, const uint32_t ui
 	 */
 	saved_match_uint  = pinfo->match_uint;
 	pinfo->match_uint = uint_val;
-	len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
+	ret = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data, dissected_length);
 	pinfo->match_uint = saved_match_uint;
 
-	/*
-	 * If a new-style dissector returned 0, it means that
-	 * it didn't think this tvbuff represented a packet for
-	 * its protocol, and didn't dissect anything.
-	 *
-	 * Old-style dissectors can't reject the packet.
-	 *
-	 * 0 is also returned if the protocol wasn't enabled.
-	 *
-	 * If the packet was rejected, we return 0, so that
-	 * other dissectors might have a chance to dissect this
-	 * packet, otherwise we return the dissected length.
-	 */
-	return len;
+	return ret;
+}
+
+int
+dissector_try_uint_with_data(dissector_table_t sub_dissectors, const uint32_t uint_val,
+		       tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+		       const bool add_proto_name, void *data)
+{
+	int dissected_length;
+
+	if (!new_dissector_try_uint(sub_dissectors, uint_val,
+	    tvb, pinfo, tree, add_proto_name, data, &dissected_length))
+		return 0;
+	return dissected_length;
 }
 
 int
 dissector_try_uint(dissector_table_t sub_dissectors, const uint32_t uint_val,
-		   tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+		       tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
+	int dissected_length;
 
-	return dissector_try_uint_with_data(sub_dissectors, uint_val, tvb, pinfo, tree, true, NULL);
+	if (!new_dissector_try_uint(sub_dissectors, uint_val,
+	    tvb, pinfo, tree, true, NULL, &dissected_length))
+		return 0;
+	return dissected_length;
 }
 
 /* Look for a given value in a given uint dissector table and, if found,
@@ -1930,60 +1957,66 @@ dissector_is_string_changed(dissector_table_t const sub_dissectors, const char *
 }
 
 /* Look for a given string in a given dissector table and, if found, call
-   the dissector with the arguments supplied, and return length of dissected data,
-   otherwise return 0. */
-int
-dissector_try_string_with_data(dissector_table_t sub_dissectors, const char *string,
-		     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
+   the dissector with the arguments supplied, and return true and set
+   *disected_length to the number of bytes consumed by the dissector,
+   otherwise return false. */
+bool
+new_dissector_try_string(dissector_table_t sub_dissectors, const char *string,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
-	int                      len;
 	const char              *saved_match_string;
+	bool                     ret;
 
 	/* XXX ASSERT instead ? */
-	if (!string) return 0;
+	if (!string) return false;
 	dtbl_entry = find_string_dtbl_entry(sub_dissectors, string);
-	if (dtbl_entry != NULL) {
+	if (dtbl_entry == NULL) {
 		/*
-		 * Is there currently a dissector handle for this entry?
+		 * There's no entry in the table for our value.
 		 */
-		handle = dtbl_entry->current;
-		if (handle == NULL) {
-			/*
-			 * No - pretend this dissector didn't exist,
-			 * so that other dissectors might have a chance
-			 * to dissect this packet.
-			 */
-			return 0;
-		}
-
-		/*
-		 * Save the current value of "pinfo->match_string",
-		 * set it to the string that matched, call the
-		 * dissector, and restore "pinfo->match_string".
-		 */
-		saved_match_string = pinfo->match_string;
-		pinfo->match_string = string;
-		len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
-		pinfo->match_string = saved_match_string;
-
-		/*
-		 * If a new-style dissector returned 0, it means that
-		 * it didn't think this tvbuff represented a packet for
-		 * its protocol, and didn't dissect anything.
-		 *
-		 * Old-style dissectors can't reject the packet.
-		 *
-		 * 0 is also returned if the protocol wasn't enabled.
-		 *
-		 * If the packet was rejected, we return 0, so that
-		 * other dissectors might have a chance to dissect this
-		 * packet, otherwise we return the dissected length.
-		 */
-		return len;
+		return false;
 	}
-	return 0;
+
+	/*
+	 * Is there currently a dissector handle for this entry?
+	 */
+	handle = dtbl_entry->current;
+	if (handle == NULL) {
+		/*
+		 * No - pretend this dissector didn't exist,
+		 * so that other dissectors might have a chance
+		 * to dissect this packet.
+		 */
+		return false;
+	}
+
+	/*
+	 * Save the current value of "pinfo->match_string",
+	 * set it to the string that matched, call the
+	 * dissector, and restore "pinfo->match_string".
+	 */
+	saved_match_string = pinfo->match_string;
+	pinfo->match_string = string;
+	ret = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data, dissected_length);
+	pinfo->match_string = saved_match_string;
+
+	return ret;
+}
+
+int
+dissector_try_string_with_data(dissector_table_t sub_dissectors, const char *string,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data)
+{
+	int dissected_length;
+
+	if (!new_dissector_try_string(sub_dissectors, string,
+	    tvb, pinfo, tree, add_proto_name, data, &dissected_length))
+		return 0;
+	return dissected_length;
 }
 
 /* Look for a given value in a given string dissector table and, if found,
@@ -2087,53 +2120,60 @@ void dissector_add_guid(const char *name, guid_key* guid_val, dissector_handle_t
 }
 
 /* Look for a given value in a given guid dissector table and, if found,
-   call the dissector with the arguments supplied, and return true,
+   call the dissector with the arguments supplied, and return true and
+   set *disected_length to the number of bytes consumed by the dissector,
    otherwise return false. */
-int dissector_try_guid_with_data(dissector_table_t sub_dissectors,
-    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
+bool
+new_dissector_try_guid(dissector_table_t sub_dissectors,
+    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
-	int len;
+	bool                     ret;
 
 	dtbl_entry = (dtbl_entry_t *)g_hash_table_lookup(sub_dissectors->hash_table, guid_val);
-	if (dtbl_entry != NULL) {
+	if (dtbl_entry == NULL) {
 		/*
-		 * Is there currently a dissector handle for this entry?
+		 * There's no entry in the table for our value.
 		 */
-		handle = dtbl_entry->current;
-		if (handle == NULL) {
-			/*
-			 * No - pretend this dissector didn't exist,
-			 * so that other dissectors might have a chance
-			 * to dissect this packet.
-			 */
-			return 0;
-		}
-
-		/*
-		 * Save the current value of "pinfo->match_uint",
-		 * set it to the uint_val that matched, call the
-		 * dissector, and restore "pinfo->match_uint".
-		 */
-		len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
-
-		/*
-		 * If a new-style dissector returned 0, it means that
-		 * it didn't think this tvbuff represented a packet for
-		 * its protocol, and didn't dissect anything.
-		 *
-		 * Old-style dissectors can't reject the packet.
-		 *
-		 * 0 is also returned if the protocol wasn't enabled.
-		 *
-		 * If the packet was rejected, we return 0, so that
-		 * other dissectors might have a chance to dissect this
-		 * packet, otherwise we return the dissected length.
-		 */
-		return len;
+		return false;
 	}
-	return 0;
+
+	/*
+	 * Is there currently a dissector handle for this entry?
+	 */
+	handle = dtbl_entry->current;
+	if (handle == NULL) {
+		/*
+		 * No - pretend this dissector didn't exist,
+		 * so that other dissectors might have a chance
+		 * to dissect this packet.
+		 */
+		return false;
+	}
+
+	/*
+	 * Save the current value of "pinfo->match_uint",
+	 * set it to the uint_val that matched, call the
+	 * dissector, and restore "pinfo->match_uint".
+	 */
+	ret = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data, dissected_length);
+
+	return ret;
+}
+
+int
+dissector_try_guid_with_data(dissector_table_t sub_dissectors,
+    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data)
+{
+	int dissected_length;
+
+	if (!new_dissector_try_guid(sub_dissectors, guid_val,
+	    tvb, pinfo, tree, add_proto_name, data, &dissected_length))
+		return 0;
+	return dissected_length;
 }
 
 /** Look for a given value in a given guid dissector table and, if found,
@@ -2162,6 +2202,16 @@ int dissector_try_payload_with_data(dissector_table_t sub_dissectors,
     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
 {
 	return dissector_try_uint_with_data(sub_dissectors, 0, tvb, pinfo, tree, add_proto_name, data);
+}
+
+/* Use the currently assigned payload dissector for the dissector table and,
+   if any, call the dissector with the arguments supplied, and return the
+   number of bytes consumed, otherwise return 0. */
+bool new_dissector_try_payload(dissector_table_t sub_dissectors,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length)
+{
+	return new_dissector_try_uint(sub_dissectors, 0, tvb, pinfo, tree, add_proto_name, data, dissected_length);
 }
 
 /* Change the entry for a dissector in a payload (FT_NONE) dissector table
@@ -3492,7 +3542,7 @@ create_dissector_handle(dissector_t dissector, const int proto)
 	return create_dissector_handle_with_name_and_description(dissector, proto, NULL, NULL);
 }
 
-static dissector_handle_t
+dissector_handle_t
 create_dissector_handle_with_name_and_data(dissector_cb_t dissector, const int proto, const char *name, void* cb_data)
 {
 	dissector_handle_t handle;
@@ -3508,6 +3558,55 @@ dissector_handle_t
 create_dissector_handle_with_data(dissector_cb_t dissector, const int proto, void* cb_data)
 {
 	return create_dissector_handle_with_name_and_data(dissector, proto, NULL, cb_data);
+}
+
+static dissector_handle_t
+create_new_dissector_handle(new_dissector_t dissector,
+    const int proto, const char* name, const char* description, void *cb_data)
+{
+	dissector_handle_t handle;
+
+	handle = new_dissector_handle(proto, name, description);
+	handle->dissector_type = DISSECTOR_TYPE_NEW;
+	handle->dissector_func.dissector_type_new = dissector;
+	handle->dissector_data = cb_data;
+	return handle;
+}
+
+dissector_handle_t
+new_create_dissector_handle_with_name_and_description(new_dissector_t dissector,
+    const int proto, const char* name, const char* description)
+{
+	return create_new_dissector_handle(dissector, proto, name,
+	    description, NULL);
+}
+
+dissector_handle_t
+new_create_dissector_handle_with_name(new_dissector_t dissector,
+    const int proto, const char* name)
+{
+	return create_new_dissector_handle(dissector, proto, name, NULL, NULL);
+}
+
+/* Create an anonymous handle for a new dissector. */
+dissector_handle_t
+new_create_dissector_handle(new_dissector_t dissector, const int proto)
+{
+	return create_new_dissector_handle(dissector, proto, NULL, NULL, NULL);
+}
+
+dissector_handle_t
+new_create_dissector_handle_with_name_and_data(new_dissector_t dissector, const int proto, const char *name, void* cb_data)
+{
+	return create_new_dissector_handle(dissector, proto, name, NULL,
+	    cb_data);
+}
+
+dissector_handle_t
+new_create_dissector_handle_with_data(new_dissector_t dissector, const int proto, void* cb_data)
+{
+	return create_new_dissector_handle(dissector, proto, NULL, NULL,
+	    cb_data);
 }
 
 /* Destroy an anonymous handle for a dissector. */
@@ -3576,6 +3675,43 @@ register_dissector_with_data(const char *name, dissector_cb_t dissector, const i
 	return register_dissector_handle(name, handle);
 }
 
+/* Register a new dissector by name. */
+dissector_handle_t
+new_register_dissector(const char *name, new_dissector_t dissector,
+    const int proto)
+{
+	dissector_handle_t handle;
+
+	handle = create_new_dissector_handle(dissector, proto, name, NULL,
+	    NULL);
+
+	return register_dissector_handle(name, handle);
+}
+
+dissector_handle_t
+new_register_dissector_with_description(const char *name,
+    const char *description, new_dissector_t dissector, const int proto)
+{
+	dissector_handle_t handle;
+
+	handle = create_new_dissector_handle(dissector, proto, name,
+	    description, NULL);
+
+	return register_dissector_handle(name, handle);
+}
+
+dissector_handle_t
+new_register_dissector_with_data(const char *name, new_dissector_t dissector,
+    const int proto, void *cb_data)
+{
+	dissector_handle_t handle;
+
+	handle = create_new_dissector_handle(dissector, proto, name,
+	    NULL, cb_data);
+
+	return register_dissector_handle(name, handle);
+}
+
 static bool
 remove_depend_dissector_from_list(depend_dissector_list_t sub_dissectors, const char *dependent)
 {
@@ -3623,11 +3759,12 @@ int
 call_dissector_only(dissector_handle_t handle, tvbuff_t *tvb,
 		    packet_info *pinfo, proto_tree *tree, void *data)
 {
-	int ret;
+	bool ret;
+	int dissected_length;
 
-	DISSECTOR_ASSERT(handle != NULL);
-	ret = call_dissector_work(handle, tvb, pinfo, tree, true, data);
-	return ret;
+	ret = call_dissector_work(handle, tvb, pinfo, tree, true, data,
+	    &dissected_length);
+	return ret ? dissected_length : 0;
 }
 
 /* Call a dissector through a handle and if this fails call the "data"
@@ -3637,17 +3774,22 @@ int
 call_dissector_with_data(dissector_handle_t handle, tvbuff_t *tvb,
 	                 packet_info *pinfo, proto_tree *tree, void *data)
 {
-	int ret;
+	bool ret;
+	int dissected_length;
 
-	ret = call_dissector_only(handle, tvb, pinfo, tree, data);
-	if (ret == 0) {
+	ret = call_dissector_work(handle, tvb, pinfo, tree, true, data,
+	    &dissected_length);
+	if (!ret) {
 		/*
 		 * The protocol was disabled, or the dissector rejected
 		 * it.  Just dissect this packet as data.
 		 */
-		return call_data_dissector(tvb, pinfo, tree);
+		DISSECTOR_ASSERT(data_handle->protocol != NULL);
+		ret = call_dissector_work(data_handle, tvb, pinfo, tree, true,
+		    NULL, &dissected_length);
+		return ret ? dissected_length : 0;
 	}
-	return ret;
+	return dissected_length;
 }
 
 int
@@ -3661,7 +3803,7 @@ int
 call_data_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	DISSECTOR_ASSERT(data_handle->protocol != NULL);
-	return call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
+	return call_dissector_with_data(data_handle, tvb, pinfo, tree, NULL);
 }
 
 /*
@@ -3699,8 +3841,7 @@ void call_heur_dissector_direct(heur_dtbl_entry_t *heur_dtbl_entry, tvbuff_t *tv
 
 	if (!heur_dtbl_entry->enabled ||
 		(heur_dtbl_entry->protocol != NULL && !proto_is_protocol_enabled(heur_dtbl_entry->protocol))) {
-		DISSECTOR_ASSERT(data_handle->protocol != NULL);
-		call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
+		call_data_dissector(tvb, pinfo, tree);
 		return;
 	}
 
@@ -3724,7 +3865,7 @@ void call_heur_dissector_direct(heur_dtbl_entry_t *heur_dtbl_entry, tvbuff_t *tv
 			remove_last_layer(pinfo, true);
 		}
 
-		call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
+		call_data_dissector(tvb, pinfo, tree);
 	}
 
 	/* XXX: Remove layers if it was accepted but didn't actually consume
