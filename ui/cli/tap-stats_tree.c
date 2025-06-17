@@ -49,13 +49,6 @@ draw_stats_tree(void *psp)
 	g_string_free(s, TRUE);
 }
 
-static void
-free_stats_tree(void *psp)
-{
-	stats_tree *st = (stats_tree *)psp;
-	stats_tree_free(st);
-}
-
 static bool
 init_stats_tree(const char *opt_arg, void *userdata _U_)
 {
@@ -99,7 +92,7 @@ init_stats_tree(const char *opt_arg, void *userdata _U_)
 					     stats_tree_reset,
 					     stats_tree_packet,
 					     draw_stats_tree,
-					     free_stats_tree);
+					     NULL);
 
 	if (error_string) {
 		report_failure("stats_tree for: %s failed to attach to the tap: %s", cfg->path, error_string->str);
