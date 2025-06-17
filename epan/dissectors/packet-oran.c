@@ -499,6 +499,7 @@ static expert_field ei_oran_st4_wrong_len_cmd;
 static expert_field ei_oran_st4_unknown_cmd;
 static expert_field ei_oran_mcot_out_of_range;
 static expert_field ei_oran_se10_unknown_beamgrouptype;
+static expert_field ei_oran_se10_not_allowed;
 static expert_field ei_oran_start_symbol_id_not_zero;
 static expert_field ei_oran_trx_control_cmd_scope;
 static expert_field ei_oran_unhandled_se;
@@ -526,6 +527,7 @@ static expert_field ei_oran_st9_not_ul;
 static expert_field ei_oran_st10_numsymbol_not_14;
 static expert_field ei_oran_st10_startsymbolid_not_0;
 static expert_field ei_oran_st10_not_ul;
+static expert_field ei_oran_se24_nothing_to_inherit;
 static expert_field ei_oran_num_sinr_per_prb_unknown;
 static expert_field ei_oran_start_symbol_id_bits_ignored;
 
@@ -812,8 +814,8 @@ static const value_string beam_type_vals[] = {
 static const value_string entry_type_vals[] = {
     { 0,  "inherit config from preceding entry (2 or 3) ueIdReset=0" },
     { 1,  "inherit config from preceding entry (2 or 3) ueIdReset=1" },
-    { 2,  "have transform precoding disabled" },
-    { 3,  "have transform precoding enabled" },
+    { 2,  "related parameters if have transform precoding disabled" },
+    { 3,  "related parameters if have transform precoding enabled" },
     { 0, NULL}
 };
 
@@ -2962,6 +2964,21 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                         /* Reserved byte */
                         proto_tree_add_item(extension_tree, hf_oran_reserved_8bits, tvb, offset, 1, ENC_NA);
                         offset++;
+
+                        /* Explain how entries are allocated */
+                        if (beam_group_type == 0x0) {
+                            proto_item_append_text(extension_ti, " (all %u ueid/Beam entries are %u)", numPortc, ueId);
+                        }
+                        else {
+                            /* 'numPortc' consecutive BeamIds from section header */
+                            proto_item_append_text(extension_ti, " (ueId/beam entries are %u -> %u)", ueId, ueId+numPortc);
+                        }
+
+                        if (sectionType == 5) {
+                            /* These types are not allowed */
+                            expert_add_info_format(pinfo, bgt_ti, &ei_oran_se10_not_allowed,
+                                                   "SE10: beamGroupType %u is not allowed for section type 5", beam_group_type);
+                        }
                         break;
 
                     case 0x2: /* beam vector listing */
@@ -3723,6 +3740,8 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                 }
                 offset += 1;
 
+                bool seen_value_to_inherit = false;
+
                 /* Dissect each entry (until run out of extlen bytes..). Not sure how this works with padding bytes though... */
                 /* TODO: how to know when have seen last entry?  Zero byte (within last 3 bytes of space) are valid... */
                 while (offset < (extension_start_offset + extlen*4)) {
@@ -3754,6 +3773,12 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                         case 0:
                         case 1:
                             /* No further fields for these */
+                            /* Error here if no previous values to inherit!! */
+                            if (!seen_value_to_inherit) {
+                                expert_add_info_format(pinfo, entry_type_ti, &ei_oran_se24_nothing_to_inherit,
+                                                       "SE24: have seen entry type %u, but no previous config (type 2 or 3) to inherit config from", entry_type);
+
+                            }
                             break;
 
                         case 2:
@@ -3821,6 +3846,9 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                             /* Reserved (16 bits) */
                             proto_tree_add_item(entry_tree, hf_oran_reserved_16bits, tvb, offset, 2, ENC_BIG_ENDIAN);
                             offset += 2;
+
+                            /* Could now see entry types 0 or 1 - they have these values to inherit */
+                            seen_value_to_inherit = true;
                             break;
                         }
 
@@ -3829,8 +3857,9 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
                             break;
                     }
 
-                    proto_item_append_text(entry_ti, " (type %u - %s)",
-                                           entry_type, val_to_str_const(entry_type, entry_type_vals, "Unknown"));
+                    proto_item_append_text(entry_ti, " (type %u - %s) (dmrsPortNumber = %u)",
+                                           entry_type, val_to_str_const(entry_type, entry_type_vals, "Unknown"),
+                                           dmrs_port_number);
                     proto_item_set_end(entry_ti, tvb, offset);
                 }
                 break;
@@ -3920,11 +3949,16 @@ static int dissect_oran_c_section(tvbuff_t *tvb, proto_tree *tree, packet_info *
 
                 /* numElements */
                 unsigned num_elements;
-                proto_tree_add_item_ret_uint(extension_tree, hf_oran_num_elements, tvb, offset, 1, ENC_BIG_ENDIAN, &num_elements);
+                proto_item *num_elements_ti = proto_tree_add_item_ret_uint(extension_tree, hf_oran_num_elements, tvb, offset, 1, ENC_BIG_ENDIAN, &num_elements);
+                if (num_elements == 0) {
+                    num_elements = 256;
+                    proto_item_append_text(num_elements_ti, " (256");
+                }
+
                 offset += 1;
 
                 /* beamId value(s) */
-                switch (num_elements) {
+                switch (beam_type) {
                     case 0:
                         for (unsigned n=0; n < num_elements; n++) {
                             /* reserved (1 bit) + beamId */
@@ -8465,6 +8499,7 @@ proto_register_oran(void)
         { &ei_oran_st4_unknown_cmd, { "oran_fh_cus.st4_unknown_cmd", PI_MALFORMED, PI_ERROR, "ST4 cmd with unknown command code", EXPFILL }},
         { &ei_oran_mcot_out_of_range, { "oran_fh_cus.mcot_out_of_range", PI_MALFORMED, PI_ERROR, "MCOT should be 1-10", EXPFILL }},
         { &ei_oran_se10_unknown_beamgrouptype, { "oran_fh_cus.se10_unknown_beamgrouptype", PI_MALFORMED, PI_WARN, "SE10 - unknown BeamGroupType value", EXPFILL }},
+        { &ei_oran_se10_not_allowed, { "oran_fh_cus.se10_not_allowed", PI_MALFORMED, PI_WARN, "SE10 - type not allowed for sectionType", EXPFILL }},
         { &ei_oran_start_symbol_id_not_zero, { "oran_fh_cus.startsymbolid_shall_be_zero", PI_MALFORMED, PI_WARN, "For ST4 commands 3&4, startSymbolId shall be 0", EXPFILL }},
         { &ei_oran_trx_control_cmd_scope, { "oran_fh_cus.trx_command.bad_cmdscope", PI_MALFORMED, PI_WARN, "TRX command must have cmdScope of ARRAY-COMMAND", EXPFILL }},
         { &ei_oran_unhandled_se, { "oran_fh_cus.se_not_handled", PI_UNDECODED, PI_WARN, "SE not recognised/handled by dissector", EXPFILL }},
@@ -8492,6 +8527,7 @@ proto_register_oran(void)
         { &ei_oran_st10_numsymbol_not_14, { "oran_fh_cus.st10_numsymbol_not_14", PI_MALFORMED, PI_WARN, "numSymbol should be 14 for Section Type 10", EXPFILL }},
         { &ei_oran_st10_startsymbolid_not_0, { "oran_fh_cus.st10_startsymbolid_not_0", PI_MALFORMED, PI_WARN, "startSymbolId should be 0 for Section Type 10", EXPFILL }},
         { &ei_oran_st10_not_ul, { "oran_fh_cus.st10_not_ul", PI_MALFORMED, PI_WARN, "Section Type 10 should only be sent in uplink direction", EXPFILL }},
+        { &ei_oran_se24_nothing_to_inherit, { "oran_fh_cus.se24_nothing_to_inherit", PI_MALFORMED, PI_WARN, "SE10 doesn't have type 2 or 3 before trying to inherit", EXPFILL }},
         { &ei_oran_num_sinr_per_prb_unknown, { "oran_fh_cus.unexpected_num_sinr_per_prb", PI_MALFORMED, PI_WARN, "invalid numSinrPerPrb value", EXPFILL }},
         { &ei_oran_start_symbol_id_bits_ignored, { "oran_fh_cus.start_symbol_id_bits_ignored", PI_MALFORMED, PI_WARN, "some startSymbolId lower bits ignored", EXPFILL }}
     };

@@ -3481,9 +3481,9 @@ mbim_dissect_tcs(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int* offse
                 *offset += tc_value_length;
                 break;
             case URSP_TC_TYPE_IPV4:
-                proto_tree_add_item(subtree, hf_mbim_ms_ursp_tc_ipv4, tvb, *offset, 4, ENC_NA);
+                proto_tree_add_item(subtree, hf_mbim_ms_ursp_tc_ipv4, tvb, *offset, 4, ENC_BIG_ENDIAN);
                 *offset += 4;
-                proto_tree_add_item(subtree, hf_mbim_ms_ursp_tc_ipv4_mask, tvb, *offset, 4, ENC_NA);
+                proto_tree_add_item(subtree, hf_mbim_ms_ursp_tc_ipv4_mask, tvb, *offset, 4, ENC_BIG_ENDIAN);
                 *offset += 4;
                 break;
             case URSP_TC_TYPE_IPV6:
@@ -4480,7 +4480,7 @@ mbim_dissect_ipv4_element(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
         expert_add_info_format(pinfo, ti, &ei_mbim_illegal_on_link_prefix_length,
                                "Illegal On Link Prefix Length %u (max is 32)", on_link_prefix_length);
     }
-    proto_tree_add_item(tree, hf_mbim_ipv4_element_ipv4_address, tvb, *offset, 4, ENC_NA);
+    proto_tree_add_item(tree, hf_mbim_ipv4_element_ipv4_address, tvb, *offset, 4, ENC_BIG_ENDIAN);
     *offset += 4;
 }
 
@@ -4556,7 +4556,7 @@ mbim_dissect_ip_configuration_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     }
     if (ipv4_gateway_offset) {
         proto_tree_add_item(tree, hf_mbim_ip_configuration_info_ipv4_gateway,
-                            tvb, base_offset + ipv4_gateway_offset, 4, ENC_NA);
+                            tvb, base_offset + ipv4_gateway_offset, 4, ENC_BIG_ENDIAN);
     }
     if (ipv6_gateway_offset) {
         proto_tree_add_item(tree, hf_mbim_ip_configuration_info_ipv6_gateway,
@@ -4566,7 +4566,7 @@ mbim_dissect_ip_configuration_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree
         offset = base_offset + ipv4_dns_offset;
         for (i = 0; i < ipv4_dns_count; i++) {
             proto_tree_add_item(tree, hf_mbim_ip_configuration_info_ipv4_dns,
-                                tvb, offset, 4, ENC_NA);
+                                tvb, offset, 4, ENC_BIG_ENDIAN);
             offset += 4;
         }
     }
@@ -6505,11 +6505,21 @@ mbim_dissect_set_lte_attach_config(tvbuff_t* tvb, packet_info* pinfo, proto_tree
 }
 
 static void
-mbim_dissect_lte_attach_status(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset)
+mbim_dissect_lte_attach_status(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, struct mbim_conv_info* mbim_conv)
 {
     int base_offset = offset;
     proto_tree_add_item(tree, hf_mbim_ms_lte_attach_state, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset += 4;
+    if (SHOULD_MBIM_EX3_AND_HIGHER_BE_APPLIED(mbim_conv)) {
+        uint32_t nw_error = tvb_get_letohl(tvb, offset);
+        if (nw_error == 0) {
+            proto_tree_add_uint_format_value(tree, hf_mbim_packet_service_info_nw_error, tvb, offset, 4, nw_error, "Success (0)");
+        }
+        else {
+            proto_tree_add_uint(tree, hf_mbim_packet_service_info_nw_error, tvb, offset, 4, nw_error);
+        }
+        offset += 4;
+    }
     mbim_dissect_lte_attach_context(tvb, pinfo, tree, offset, base_offset, false);
 }
 
@@ -9350,7 +9360,7 @@ dissect_mbim_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
                                 mbim_dissect_lte_attach_config_info(frag_tvb, pinfo, subtree, offset);
                                 break;
                             case MBIM_CID_MS_LTE_ATTACH_STATUS:
-                                mbim_dissect_lte_attach_status(frag_tvb, pinfo, subtree, offset);
+                                mbim_dissect_lte_attach_status(frag_tvb, pinfo, subtree, offset, mbim_conv);
                                 break;
                             case MBIM_CID_MS_SYS_CAPS:
                                 if (msg_type == MBIM_COMMAND_DONE) {

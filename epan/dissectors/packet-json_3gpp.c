@@ -35,6 +35,7 @@
 #include <epan/tvbparse.h>
 #include <epan/proto_data.h>
 
+#include "packet-e212.h"
 #include "packet-gtpv2.h"
 #include "packet-gsm_a_common.h"
 #include "packet-json.h"
@@ -68,6 +69,16 @@ static int hf_json_3gpp_qosrules;
 static int hf_json_3gpp_qosflowdescription;
 static int hf_json_3gpp_suppFeat;
 static int hf_json_3gpp_supportedFeatures;
+static int hf_json_3gpp_supi;
+static int hf_json_3gpp_subscriberIdentifier;
+static int hf_json_3gpp_notifyuri;
+static int hf_json_3gpp_notificationuri;
+static int hf_json_3gpp_amfStatusUri;
+static int hf_json_3gpp_n1NotifyCallbackUri;
+static int hf_json_3gpp_n2NotifyCallbackUri;
+static int hf_json_3gpp_n1n2FailureTxfNotifURI;
+static int hf_json_3gpp_ismfPduSessionUri;
+static int hf_json_3gpp_vsmfPduSessionUri;
 
 
 static int hf_json_3gpp_suppfeat;
@@ -1285,7 +1296,7 @@ dissect_3gpp_supportfeatures(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo
 	if (strcmp(path, NAF_EVENTEXPOSTURE) == 0) {
 		/* TS 29.517 ch5.8 Feature negotiation */
 		dissect_3gpp_supportfeatures_naf_eventexposure(suppfeat_tvb, sub_tree, pinfo, offset, len, hex_ascii);
-		
+
 	} else if (strcmp(path, NLMF_BROADCAST) == 0) {
 		/* TS 29.572 ch6.2.9 Feature negotiation */
 		dissect_3gpp_supportfeatures_nlmf_broadcast(suppfeat_tvb, sub_tree, pinfo, offset, len, hex_ascii);
@@ -1329,6 +1340,95 @@ dissect_3gpp_supportfeatures(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo
 	} else {
 		proto_tree_add_expert(tree, pinfo, &ei_json_3gpp_data_not_decoded, tvb, offset, -1);
 	}
+
+	return;
+}
+
+static void
+dissect_3gpp_supi(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, int offset, int len, const char* key_str _U_)
+{
+	tvbuff_t   *supi_tvb;
+	GMatchInfo *match_info;
+	static GRegex *regex = NULL;
+	char *matched_imsi = NULL;
+
+	if (len <= 0) {
+		return;
+	}
+
+	supi_tvb = tvb_new_subset_length(tvb, offset, len);
+
+	/* 3GPP TS 29.571
+	 * String identifying a Supi that shall contain either an IMSI, a network specific identifier,
+	 * a Global Cable Identifier (GCI) or a Global Line Identifier (GLI) as specified in clause 2.2A of 3GPP TS 23.003.
+	 *
+	 * We are interested in IMSI and will be formatted as follows:
+	 *   Pattern: '^imsi-[0-9]{5,15}$'
+	 */
+	if (regex == NULL) {
+		regex = g_regex_new (
+			"^imsi-([0-9]{5,15})$",
+			G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
+	}
+
+	char *supi_str = tvb_get_string_enc(pinfo->pool, supi_tvb, 0, tvb_captured_length(supi_tvb), ENC_UTF_8);
+	g_regex_match(regex, supi_str, 0, &match_info);
+
+	if (g_match_info_matches(match_info)) {
+		matched_imsi = g_match_info_fetch(match_info, 1); //will be empty string if imsi is not in supi
+		if (matched_imsi && (strcmp(matched_imsi, "") != 0)) {
+			add_assoc_imsi_item(supi_tvb, tree, matched_imsi);
+			/* Add Associate IMSI to HTTP2 stream */
+			if (proto_is_frame_protocol(pinfo->layers, "http2")) {
+				http2_set_stream_imsi(pinfo, matched_imsi);
+			}
+		}
+	}
+	g_regex_unref(regex);
+
+	return;
+}
+
+static void
+dissect_3gpp_notifyuri(tvbuff_t* tvb, proto_tree* tree _U_, packet_info* pinfo, int offset, int len, const char* key_str _U_)
+{
+	tvbuff_t   *notifyuri_tvb;
+	GMatchInfo *match_info;
+	static GRegex *regex = NULL;
+	char *matched_referenceid = NULL;
+	const char *imsi = NULL;
+
+	if (len <= 0) {
+		return;
+	}
+
+	notifyuri_tvb = tvb_new_subset_length(tvb, offset, len);
+
+	/* NotifyUri sent from different SBI interface usually has the format:
+	 *   https://<address>:<port>/some_sbi_service/referenceid/<id>
+	 */
+	if (regex == NULL) {
+		regex = g_regex_new (
+			"^.*\\/referenceid\\/(\\d+).*",
+			G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
+	}
+
+	char *notifyuri_str = tvb_get_string_enc(pinfo->pool, notifyuri_tvb, 0, tvb_captured_length(notifyuri_tvb), ENC_UTF_8);
+	g_regex_match(regex, notifyuri_str, 0, &match_info);
+
+	if (g_match_info_matches(match_info)) {
+		matched_referenceid = g_match_info_fetch(match_info, 1); //will be empty string if imsi is not in supi
+		if (matched_referenceid && (strcmp(matched_referenceid, "") != 0)) {
+			if (proto_is_frame_protocol(pinfo->layers, "http2")) {
+				imsi = http2_get_stream_imsi(pinfo);
+				if(imsi) {
+					/* Add mapping of referenceid to imsi */
+					http2_add_referenceid_imsi(matched_referenceid, imsi);
+				}
+			}
+		}
+	}
+	g_regex_unref(regex);
 
 	return;
 }
@@ -1412,6 +1512,66 @@ register_static_headers(void) {
 			{"supportedFeatures", "json.3gpp.supportedFeatures",
 				FT_STRING, BASE_NONE, NULL, 0x0,
 				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_supi,
+			{"supi", "json.3gpp.supi",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_subscriberIdentifier,
+			{"subscriberIdentifier", "json.3gpp.subscriberIdentifier",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_notifyuri,
+			{"notifyUri", "json.3gpp.notifyUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_notificationuri,
+			{"notificationUri", "json.3gpp.notificationUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_amfStatusUri,
+			{"amfStatusUri", "json.3gpp.amfStatusUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_n1NotifyCallbackUri,
+			{"n1NotifyCallbackUri", "json.3gpp.n1NotifyCallbackUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_n2NotifyCallbackUri,
+			{"n2NotifyCallbackUri", "json.3gpp.n2NotifyCallbackUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_n1n2FailureTxfNotifURI,
+			{"n1n2FailureTxfNotifURI", "json.3gpp.n1n2FailureTxfNotifURI",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_ismfPduSessionUri,
+			{"ismfPduSessionUri", "json.3gpp.ismfPduSessionUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
+		},
+		{
+			&hf_json_3gpp_vsmfPduSessionUri,
+			{"vsmfPduSessionUri", "json.3gpp.vsmfPduSessionUri",
+				FT_STRING, BASE_NONE, NULL, 0x0,
+				NULL, HFILL}
 		}
 	};
 
@@ -1431,6 +1591,18 @@ register_static_headers(void) {
 
 		dissect_3gpp_supportfeatures,   /* suppFeat */
 		dissect_3gpp_supportfeatures,   /* supportedFeatures */
+
+		dissect_3gpp_supi,			/* supi */
+		dissect_3gpp_supi,			/* subscriberIdentifier */
+
+		dissect_3gpp_notifyuri,		/* NotifyUri */
+		dissect_3gpp_notifyuri,		/* notificationUri */
+		dissect_3gpp_notifyuri,		/* amfStatusUri */
+		dissect_3gpp_notifyuri,		/* n1NotifyCallbackUri */
+		dissect_3gpp_notifyuri,		/* n2NotifyCallbackUri */
+		dissect_3gpp_notifyuri,		/* n1n2FailureTxfNotifURI */
+		dissect_3gpp_notifyuri,		/* ismfPduSessionUri */
+		dissect_3gpp_notifyuri,		/* vsmfPduSessionUri */
 
 		NULL,   /* NONE */
 	};
@@ -2429,7 +2601,6 @@ proto_register_json_3gpp(void)
 			FT_BOOLEAN, 4, NULL, 0x4,
 			NULL, HFILL }
 		},
-
 	};
 
 	static int *ett[] = {

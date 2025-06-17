@@ -263,6 +263,18 @@ dissect_hsfz_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
         }
         break;
 
+    case HSFZ_CTRLWORD_ALIVE_CHECK:
+        if (hsfz_length == 2) {
+            dissect_hsfz_address(tvb, pinfo, hsfz_tree, offset, hf_hsfz_source_address);
+            offset += 1;
+            dissect_hsfz_address(tvb, pinfo, hsfz_tree, offset, hf_hsfz_target_address);
+        } else if (hsfz_length > 2) {
+            const uint8_t *ident_data;
+            proto_tree_add_item_ret_string(hsfz_tree, hf_hsfz_ident_string, tvb, offset, hsfz_length, ENC_ASCII, pinfo->pool, &ident_data);
+            col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)", ident_data);
+        }
+        break;
+
     case HSFZ_CTRLWORD_INCORRECT_DEST_ADDRESS:
     case HSFZ_CTRLWORD_OUT_OF_MEMORY:
         if (hsfz_ctrlword == HSFZ_CTRLWORD_INCORRECT_DEST_ADDRESS || hsfz_length >= 2) {
@@ -383,15 +395,13 @@ void proto_register_hsfz(void) {
 static bool
 test_hsfz(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data)
 {
-    unsigned caplen = tvb_captured_length(tvb);
-
     // Check minimum length...
-    if (caplen < HSFZ_HDR_LEN)
+    if (tvb_captured_length_remaining(tvb, offset) < HSFZ_HDR_LEN)
         return false;
 
     // Check packet length
     unsigned msg_len = get_hsfz_message_len(pinfo, tvb, offset, data);
-    if (msg_len != caplen || msg_len > 0x000fffff)
+    if (msg_len != (unsigned)tvb_reported_length_remaining(tvb, offset) || msg_len > 0x000fffff)
         return false;
 
     // Check the control word
@@ -441,8 +451,8 @@ void proto_reg_handoff_hsfz(void) {
     dissector_add_uint_range_with_preference("udp.port", "", hsfz_handle_udp);
 
     // Register as heuristic dissector for both TCP and UDP
-    heur_dissector_add("tcp", dissect_hsfz_heur_tcp, "HSFZ over TCP", "hsfz_over_tcp", proto_hsfz, HEURISTIC_ENABLE);
-    heur_dissector_add("udp", dissect_hsfz_heur_udp, "HSFZ over UDP", "hsfz_over_udp", proto_hsfz, HEURISTIC_ENABLE);
+    heur_dissector_add("tcp", dissect_hsfz_heur_tcp, "HSFZ over TCP", "hsfz_over_tcp", proto_hsfz, HEURISTIC_DISABLE);
+    heur_dissector_add("udp", dissect_hsfz_heur_udp, "HSFZ over UDP", "hsfz_over_udp", proto_hsfz, HEURISTIC_DISABLE);
 
     uds_handle = find_dissector("uds_over_hsfz");
 }
