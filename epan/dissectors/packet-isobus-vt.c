@@ -251,6 +251,15 @@ static int hf_isobus_vt_lockunlockmask_locktimeout;
 static int hf_isobus_vt_lockunlockmask_errorcodes;
 static int hf_isobus_vt_executemacro_objectid;
 static int hf_isobus_vt_executemacro_errorcodes;
+static int hf_isobus_vt_select_active_workingset_name;
+static int hf_isobus_vt_select_active_workingset_errorcodes;
+static int hf_isobus_vt_select_active_workingset_errorcode_flags;
+static int hf_isobus_vt_select_active_workingset_errorflag_command_was_not_sent;
+static int hf_isobus_vt_select_active_workingset_errorflag_currentmask_is_alarmmask;
+static int hf_isobus_vt_select_active_workingset_errorflag_name_command_does_not_identify_wsm;
+static int hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_objectpool;
+static int hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_active_datamask;
+static int hf_isobus_vt_select_active_workingset_errorflag_any_other_error;
 static int hf_isobus_vt_getmemory_memoryrequired;
 static int hf_isobus_vt_getmemory_vtversion;
 static int hf_isobus_vt_getmemory_status;
@@ -362,6 +371,7 @@ static int hf_isobus_vt_wrksetmain_version;
 #define VT_AUXILIARY_INPUT_STATUS_TYPE_2_ENABLE 37
 #define VT_AUXILIARY_INPUT_TYPE_2_STATUS        38
 #define VT_AUXILIARY_CAPABILITIES               39
+#define VT_SELECT_ACTIVE_WORKINGSET             144
 #define VT_ESC                                  146
 #define VT_HIDE_SHOW_OBJECT                     160
 #define VT_ENABLE_DISABLE_COMMAND               161
@@ -436,6 +446,7 @@ static const value_string vt_function_code[] = {
     { VT_AUXILIARY_INPUT_STATUS_TYPE_2_ENABLE, "Auxiliary Input Status Type 2 Enable" },
     { VT_AUXILIARY_INPUT_TYPE_2_STATUS       , "Auxiliary Input Type 2 Status" },
     { VT_AUXILIARY_CAPABILITIES              , "Auxiliary Capabilities" },
+    { VT_SELECT_ACTIVE_WORKINGSET            , "Select active working set" },
     { VT_ESC                                 , "ESC" },
     { VT_HIDE_SHOW_OBJECT                    , "Hide/Show Object" },
     { VT_ENABLE_DISABLE_COMMAND              , "Enable/Disable Object" },
@@ -800,6 +811,16 @@ static const value_string draw_text_background[] = {
     { 0, NULL }
 };
 
+static int * const select_active_working_set_response_errorcodes_flag_fields[] = {
+    &hf_isobus_vt_select_active_workingset_errorflag_command_was_not_sent,
+    &hf_isobus_vt_select_active_workingset_errorflag_currentmask_is_alarmmask,
+    &hf_isobus_vt_select_active_workingset_errorflag_name_command_does_not_identify_wsm,
+    &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_objectpool,
+    &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_active_datamask,
+    &hf_isobus_vt_select_active_workingset_errorflag_any_other_error,
+    NULL
+};
+
 static value_string object_id_strings[MAX_OBJECT_ID_DB_SIZE];
 
 /* Initialize the subtree pointers */
@@ -816,6 +837,7 @@ static int ett_isobus_vt_auxiliarycapabilities_inputunit;
 static int ett_isobus_vt_auxiliarycapabilities_inputunit_set;
 static int ett_isobus_vt_auxiliaryassignmenttype2_flags;
 static int ett_isobus_vt_auxiliaryinputtype2status_operatingstate;
+static int ett_isobus_vt_select_active_workingset_errorcode_flags;
 
 static const char *object_id_translation = "";
 
@@ -1658,6 +1680,33 @@ dissect_vt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, enum vt_directio
                 }
             }
             col_append_str(pinfo->cinfo, COL_INFO, "Received Auxiliary Capabilities");
+        }
+    }
+        break;
+    case VT_SELECT_ACTIVE_WORKINGSET:
+    {
+        if(direction == ecu_to_vt)
+        {
+            col_append_str(pinfo->cinfo, COL_INFO, "Select active working set");
+            proto_tree_add_item(tree, hf_isobus_vt_select_active_workingset_name, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+        }
+        else
+        {
+            uint32_t error_codes;
+            ti = proto_tree_add_item_ret_uint(tree,
+                hf_isobus_vt_select_active_workingset_errorcodes, tvb, offset, 1, ENC_LITTLE_ENDIAN, &error_codes);
+
+            if(error_codes)
+            {
+                col_append_str(pinfo->cinfo, COL_INFO, "Working set change failed");
+                proto_tree_add_bitmask(tree, tvb, offset, hf_isobus_vt_select_active_workingset_errorcode_flags,
+                        ett_isobus_vt_select_active_workingset_errorcode_flags, select_active_working_set_response_errorcodes_flag_fields, ENC_BIG_ENDIAN);
+            }
+            else
+            {
+                col_append_str(pinfo->cinfo, COL_INFO, "Working set activated successfully");
+                proto_item_append_text(ti, ": no error");
+            }
         }
     }
         break;
@@ -5492,6 +5541,51 @@ proto_register_isobus_vt(void)
             FT_UINT8, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_isobus_vt_select_active_workingset_name,
+          { "64-bit NAME of the selected active workingset", "isobus.vt.select_active_workingset.name",
+            FT_UINT64, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorcodes,
+          { "Error Codes", "isobus.vt.select_active_workingset_response.errorcodes",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorcode_flags,
+          { "Error flags", "isobus.vt.select_active_workingset_response.errorcodes.flags",
+            FT_UINT8, BASE_HEX,
+            NULL, 0, NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_command_was_not_sent,
+          { "Command was not sent from the active WS", "isobus.vt.select_active_workingset_response.errorcodes.flags.command_was_not_sent",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_currentmask_is_alarmmask,
+          { "Currently Active mask is an Alarm Mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.currentmask_is_alarmmask",
+            FT_BOOLEAN, 8, NULL, 0x02,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_name_command_does_not_identify_wsm,
+          { "NAME in command does not identify a working set", "isobus.vt.select_active_workingset_response.errorcodes.flags.name_command_does_not_identify_wsm",
+            FT_BOOLEAN, 8, NULL, 0x04,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_objectpool,
+          { "Working set identified by NAME in command does not have an object pool on this VT", "isobus.vt.select_active_workingset_response.errorcodes.flags.wsm_does_not_have_objectpool",
+            FT_BOOLEAN, 8, NULL, 0x08,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_wsm_does_not_have_active_datamask,
+          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.wsm_does_not_have_active_datamask",
+            FT_BOOLEAN, 8, NULL, 0x10,
+            NULL, HFILL }
+        },
+        { &hf_isobus_vt_select_active_workingset_errorflag_any_other_error,
+          { "Working set identified by NAME in command does not have an active data mask", "isobus.vt.select_active_workingset_response.errorcodes.flags.any_other_error",
+            FT_BOOLEAN, 8, NULL, 0x80,
+            NULL, HFILL }
+        },
         { &hf_isobus_vt_lockunlockmask_command,
           { "Command", "isobus.vt.lock_unlock_mask.command",
             FT_UINT8, BASE_DEC, VALS(lock_unlock), 0x0,
@@ -5977,7 +6071,8 @@ proto_register_isobus_vt(void)
         &ett_isobus_vt_auxiliarycapabilities_inputunit,
         &ett_isobus_vt_auxiliarycapabilities_inputunit_set,
         &ett_isobus_vt_auxiliaryassignmenttype2_flags,
-        &ett_isobus_vt_auxiliaryinputtype2status_operatingstate
+        &ett_isobus_vt_auxiliaryinputtype2status_operatingstate,
+        &ett_isobus_vt_select_active_workingset_errorcode_flags
     };
 
     module_t *vt_module;
