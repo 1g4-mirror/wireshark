@@ -4812,12 +4812,6 @@ dissect_rtcp_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
             show_setup_info(tvb, pinfo, rtcp_tree);
         }
 
-        if (rtcp_padding_set)
-        {
-            /* Padding can't yet be set, since there is another packet */
-            expert_add_info(pinfo, padding_item, &ei_rtcp_not_final_padding);
-        }
-
         temp_byte = tvb_get_uint8( tvb, offset );
 
         proto_tree_add_item( rtcp_tree, hf_rtcp_version, tvb,
@@ -4827,6 +4821,23 @@ dissect_rtcp_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
         padding_item = proto_tree_add_boolean( rtcp_tree, hf_rtcp_padding, tvb,
                                                offset, 1, temp_byte );
+        if (rtcp_padding_set) {
+            if (tvb_reported_length_remaining(tvb, offset) >= packet_length + 4) {
+                /* Padding can't yet be set, since there is another packet */
+                expert_add_info(pinfo, padding_item, &ei_rtcp_not_final_padding);
+            } else if (tvb_bytes_exist(tvb, padding_offset, 1)) {
+                /* If we know the size of the padding, subtract it from the
+                 * packet length, so that packet types with optional extensions
+                 * of unknown length don't consume the padding.
+                 *
+                 * If the padding offset doesn't exist (possibly because the
+                 * capture was truncated), or is too large then we'll throw an
+                 * exception later either when trying to consume the remaining
+                 * opaque bytes or add the padding.
+                 */
+                packet_length -= tvb_get_uint8(tvb, padding_offset);
+            }
+        }
         elem_count = RTCP_COUNT( temp_byte );
 
         switch ( packet_type ) {
