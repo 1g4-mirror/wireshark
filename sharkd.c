@@ -576,7 +576,7 @@ sharkd_retap(void)
     wtap_rec_init(&rec, 1514);
     epan_dissect_init(&edt, cfile.epan, create_proto_tree, false);
 
-    reset_tap_listeners();
+    reset_tap_listeners(true);
 
     for (framenum = 1; framenum <= cfile.count; framenum++) {
         fdata = sharkd_get_frame(framenum);
