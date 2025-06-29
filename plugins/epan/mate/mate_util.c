@@ -278,6 +278,13 @@ extern void avp_init(void) {
 
 }
 
+extern void avp_shutdown(void) {
+
+	if (avp_strings) destroy_scs_collection(avp_strings);
+	g_free(avp_strings);
+	avp_strings = NULL;
+}
+
 /**
  * new_avp_from_finfo:
  * @param name the name the avp will have.
