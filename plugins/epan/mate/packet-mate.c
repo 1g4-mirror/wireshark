@@ -334,6 +334,14 @@ initialize_mate(void)
 }
 
 static void
+shutdown_mate(void)
+{
+        if (mc) {
+            destroy_mate_config(mc);
+        }
+}
+
+static void
 flush_mate_debug(void)
 {
 	/* Flush debug information */
@@ -361,6 +369,7 @@ proto_reg_handoff_mate(void)
 				proto_register_field_array(proto_mate, (hf_register_info*)(void *)mc->hfrs->data, mc->hfrs->len );
 				proto_register_subtree_array((int**)(void*)mc->ett->data, mc->ett->len);
 				register_init_routine(initialize_mate);
+				register_shutdown_routine(shutdown_mate);
 				register_postseq_cleanup_routine(flush_mate_debug);
 
 				/*
@@ -368,6 +377,10 @@ proto_reg_handoff_mate(void)
 				 */
 				set_postdissector_wanted_hfids(mate_handle,
 				    mc->wanted_hfids);
+				/*
+				 * "This function will take ownership of the memory."
+				 */
+				mc->wanted_hfids = NULL;
 
 				initialize_mate_runtime(mc);
 			}
