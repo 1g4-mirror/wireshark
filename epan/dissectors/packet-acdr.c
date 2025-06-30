@@ -25,7 +25,7 @@
 
 #define ACDR_VERSION_MAJOR 0
 #define ACDR_VERSION_MINOR 9
-#define PORT_AC_DR 925
+#define ACDR_PORTS "925-926"
 
 // acdr header definitions
 
@@ -2030,10 +2030,7 @@ proto_reg_handoff_acdr(void)
     xml_dissector_handle = find_dissector("xml");
     ssh_dissector_handle = create_dissector_handle(dissect_acdr_ssh, proto_acdr);
 
-    // register our port number to the underlying TCP/UDP layers so our
-    // dissector gets called for the appropriate port
-    dissector_add_uint_with_preference("udp.port", PORT_AC_DR, acdr_dissector_handle);
-    dissector_add_uint_with_preference("tcp.port", PORT_AC_DR, acdr_dissector_handle);
+    dissector_add_uint_range_with_preference("udp.port", ACDR_PORTS, acdr_dissector_handle);
 
     // Register "local" media types
     dissector_add_uint("acdr.media_type", ACDR_VoiceAI, create_dissector_handle(dissect_acdr_voiceai, proto_acdr));
