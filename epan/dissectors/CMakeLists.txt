@@ -703,6 +703,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/file-gif.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-jpeg.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-mp4.c
+	${CMAKE_CURRENT_SOURCE_DIR}/file-ogg.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-pcap.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-pcapng.c
 	${CMAKE_CURRENT_SOURCE_DIR}/file-pcapng-darwin.c
