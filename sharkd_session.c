@@ -652,7 +652,19 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
                     else if (name_array[j].type == JSMN_PRIMITIVE && name_array[j].value_type == SHARKD_JSON_UINTEGER)
                     {
                         uint32_t temp;
-                        if (!ws_strtou32(attr_value, NULL, &temp) || temp <= 0)
+                        /* Special handling for frames command's skip parameter, allow 0 */
+                        if (strcmp(name_array[j].name, "skip") == 0 && strcmp(name_array[j].parent_ctx, "frames") == 0)
+                        {
+                            if (!ws_strtou32(attr_value, NULL, &temp) || temp < 0)
+                            {
+                                sharkd_json_error(
+                                        rpcid, -32600, NULL,
+                                        "The value for %s must be a non-negative integer", name_array[j].name
+                                        );
+                                return false;
+                            }
+                        }
+                        else if (!ws_strtou32(attr_value, NULL, &temp) || temp <= 0)
                         {
                             sharkd_json_error(
                                     rpcid, -32600, NULL,
