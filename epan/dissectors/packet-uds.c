@@ -3269,7 +3269,7 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
             }
             else /* request */
             {
-                static int * const hf_uds_roe_tdc_status_mask_fields[] = {
+                static int * const uds_roe_tdc_status_mask_fields[] = {
                     &hf_uds_roe_dtc_status_mask_TF    ,
                     &hf_uds_roe_dtc_status_mask_TFTOC ,
                     &hf_uds_roe_dtc_status_mask_PDTC  ,
@@ -3287,7 +3287,7 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
                 {
                     case UDS_ROE_SUBF_ONDTCS:
                     {
-                        proto_tree_add_bitmask( uds_tree, tvb, offset, hf_uds_roe_dtc_status_mask, ett_uds_roe_dtc_status_mask, hf_uds_roe_tdc_status_mask_fields, ENC_NA);
+                        proto_tree_add_bitmask( uds_tree, tvb, offset, hf_uds_roe_dtc_status_mask, ett_uds_roe_dtc_status_mask, uds_roe_tdc_status_mask_fields, ENC_NA);
                         offset += 1;
                         break;
                     }
@@ -3324,7 +3324,7 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
                     }
                     case UDS_ROE_SUBF_RDRIODSC:
                     {
-                        proto_tree_add_bitmask( uds_tree, tvb, offset, hf_uds_roe_dtc_status_mask, ett_uds_roe_dtc_status_mask, hf_uds_roe_tdc_status_mask_fields, ENC_NA);
+                        proto_tree_add_bitmask( uds_tree, tvb, offset, hf_uds_roe_dtc_status_mask, ett_uds_roe_dtc_status_mask, uds_roe_tdc_status_mask_fields, ENC_NA);
                         offset += 1;
                         uint32_t rdtci_subfunction;
                         proto_tree_add_item_ret_uint( uds_tree, hf_uds_rdtci_subfunction, tvb, offset, 1, ENC_NA, &rdtci_subfunction);
