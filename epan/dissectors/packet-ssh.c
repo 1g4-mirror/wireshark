@@ -260,6 +260,7 @@ static int hf_ssh_mac_string;
 static int hf_ssh_mac_status;
 static int hf_ssh_seq_num;
 static int hf_ssh_direction;
+static int hf_ssh_textonly;
 
 /* Message codes */
 static int hf_ssh_msg_code;
@@ -4756,12 +4757,63 @@ ssh_dissect_userauth_specific(tvbuff_t *packet_tvb, packet_info *pinfo,
         return offset;
 }
 
+#define INITIAL_LINE_CAPACITY 8
 static void
 ssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)
 {
     tvbuff_t *next_tvb = tvb_new_subset_remaining(tvb, offset);
     if (channel->handle) {
         call_dissector(channel->handle, next_tvb, pinfo, proto_tree_get_root(tree));
+
+        // If this is the "data-text-lines" dissector, add the text field
+        if (channel->handle == data_text_lines_handle) {
+            const int tvb_len = tvb_captured_length(next_tvb);
+            int off = 0, next_off, len;
+
+            if (tvb_len <= 0)
+                return;
+
+            // Pure C dynamic array of char*
+            size_t line_capacity = INITIAL_LINE_CAPACITY;
+            size_t line_count = 0;
+            char **line_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));
+
+            while (tvb_offset_exists(next_tvb, off)) {
+                len = tvb_find_line_end(next_tvb, off, -1, &next_off, FALSE);
+                if (len == -1)
+                    break;
+
+                // Validate and copy UTF-8 line into pool
+                const char *line = tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);
+                if (line != NULL) {
+                    // Grow array if needed
+                    if (line_count >= line_capacity) {
+                        line_capacity *= 2;
+                        char **new_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));
+                        for (size_t i = 0; i < line_count; ++i) {
+                            new_array[i] = line_array[i];
+                        }
+                        line_array = new_array;
+                    }
+
+                    line_array[line_count++] = (char *)line;
+                }
+
+                off = next_off;
+            }
+
+            if (line_count > 0) {
+                // NULL-terminate the array for wmem_strjoinv()
+                char **null_terminated_array = (char **)wmem_alloc(pinfo->pool, (line_count + 1) * sizeof(char *));
+                for (size_t i = 0; i < line_count; ++i) {
+                    null_terminated_array[i] = line_array[i];
+                }
+                null_terminated_array[line_count] = NULL;
+
+                char *joined = wmem_strjoinv(pinfo->pool, "\n", null_terminated_array);
+                proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);
+            }
+        }
     } else {
         call_data_dissector(next_tvb, pinfo, proto_tree_get_root(tree));
     }
@@ -7300,6 +7352,12 @@ proto_register_ssh(void)
             FT_BYTES, BASE_NONE, NULL, 0x0,
             "Post-quantum ciphertext (server response)", HFILL }
         },
+
+        { &hf_ssh_textonly,
+          { "Text Only", "ssh.textonly",
+            FT_STRING, BASE_NONE, NULL, 0x0,
+            "Decrypted shell/exec output only", HFILL }
+        }
 
     };
 
