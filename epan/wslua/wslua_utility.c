@@ -20,6 +20,7 @@
 #include <epan/stat_tap_ui.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
+#include <epan/dissectors/packet-tls-utils.h>
 
 
 WSLUA_FUNCTION wslua_get_version(lua_State* L) { /* Gets the Wireshark version as a string. */
@@ -560,6 +561,34 @@ WSLUA_FUNCTION wslua_register_stat_cmd_arg(lua_State* L) {
     ui_info.params = NULL;
     register_stat_tap_ui(&ui_info, sc);
     return 0;
+}
+
+WSLUA_FUNCTION wslua_ssl_starttls_ack (lua_State* L) {
+    /* TLS protocol will be started after this fame */
+#define WSLUA_ARG_ssl_starttls_ack_TLS_handle 1 /* the tls dissector */
+#define WSLUA_ARG_ssl_starttls_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
+#define WSLUA_ARG_ssl_starttls_ack_APP_handle 3 /* The app dissector */
+    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_ack_TLS_handle);
+    Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_ack_PINFO);
+    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_ack_APP_handle);
+
+    ssl_starttls_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
+
+    WSLUA_RETURN(0);
+}
+
+WSLUA_FUNCTION wslua_ssl_starttls_post_ack (lua_State* L) {
+    /* TLS protocol is started with this frame */
+#define WSLUA_ARG_ssl_starttls_ack_TLS_handle 1 /* the tls dissector */
+#define WSLUA_ARG_ssl_starttls_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
+#define WSLUA_ARG_ssl_starttls_ack_APP_handle 3 /* The app dissector */
+    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_ack_TLS_handle);
+    Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_ack_PINFO);
+    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_ack_APP_handle);
+
+    ssl_starttls_post_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
+
+    WSLUA_RETURN(0);
 }
 
 /*
