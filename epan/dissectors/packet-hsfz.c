@@ -275,6 +275,7 @@ dissect_hsfz_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
         }
         break;
 
+    case HSFZ_CTRLWORD_INCORRECT_TESTER_ADDRESS:
     case HSFZ_CTRLWORD_INCORRECT_DEST_ADDRESS:
     case HSFZ_CTRLWORD_OUT_OF_MEMORY:
         if (hsfz_ctrlword == HSFZ_CTRLWORD_INCORRECT_DEST_ADDRESS || hsfz_length >= 2) {
