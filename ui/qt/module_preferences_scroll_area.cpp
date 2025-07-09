@@ -165,7 +165,7 @@ pref_show(pref_t *pref, void *user_data)
         string_le->setToolTip(tooltip);
         string_le->setProperty(pref_prop_, VariantPointer<pref_t>::asQVariant(pref));
         string_le->setMinimumWidth(string_le->fontMetrics().height() * 20);
-        string_le->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+        string_le->setEchoMode(QLineEdit::Password);
         hb->addWidget(string_le);
         hb->addSpacerItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Minimum));
         vb->addLayout(hb);
