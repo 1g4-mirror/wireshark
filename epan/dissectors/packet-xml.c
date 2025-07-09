@@ -26,12 +26,12 @@
 #include <epan/expert.h>
 #include <epan/iana_charsets.h>
 #include <epan/asn1.h>
+#include <epan/read_keytab_file.h>
 #include <wsutil/str_util.h>
 #include <wsutil/report_message.h>
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/array.h>
 #include "packet-kerberos.h"
-#include "read_keytab_file.h"
 
 #include <libxml/parser.h>
 

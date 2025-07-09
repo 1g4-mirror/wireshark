@@ -26,6 +26,7 @@
 #include <epan/show_exception.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
+#include <epan/read_keytab_file.h>
 
 #include <wsutil/array.h>
 #include <wsutil/wsgcrypt.h>
@@ -37,7 +38,6 @@
 #include "packet-dcerpc.h"
 #include "packet-gssapi.h"
 
-#include "read_keytab_file.h"
 
 #include "packet-ntlmssp.h"
 
