@@ -32,6 +32,7 @@
 #include "dfilter/dfilter-translator.h"
 #include "epan_dissect.h"
 
+#include <wsutil/filesystem.h>
 #include <wsutil/nstime.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
@@ -333,6 +334,7 @@ epan_init(register_cb cb, void *client_data, bool load_plugins)
 #endif
 
 	TRY {
+		wsutil_filesystem_init();
 		export_pdu_init();
 		tap_init();
 		prefs_init();
@@ -457,6 +459,7 @@ epan_cleanup(void)
 #endif
 
 	xmlCleanupParser();
+	wsutil_filesystem_cleanup();
 
 	except_deinit();
 	addr_resolv_cleanup();

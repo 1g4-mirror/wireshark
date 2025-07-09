@@ -23,6 +23,18 @@ extern "C" {
 #define DEFAULT_PROFILE      "Default"
 
 /**
+ * Initialize the file system handling globals of the library
+ *
+ */
+WS_DLL_PUBLIC void wsutil_filesystem_init(void);
+
+/**
+ * Clean up the file system handling globals of the library
+ *
+ */
+WS_DLL_PUBLIC void wsutil_filesystem_cleanup(void);
+
+/**
  * Initialize our configuration environment.
  *
  * Get the pathname of the directory from which the executable came,
@@ -330,6 +342,19 @@ WS_DLL_PUBLIC char *get_dirname(char *);
  *	to be a directory.
  */
 WS_DLL_PUBLIC int test_for_directory(const char *);
+
+typedef void (*ws_execute_in_directory_func)(void* param);
+
+/** Execute a function in a specific directory.
+ * This will change the current working directory, then execute
+ * the function and then restore the current working directory to
+ * its previous value
+ *
+ * @param dir The new current working directory
+ * @param func The new current working directory
+ * @param param Optional parameter to be passed into the handling function
+ */
+WS_DLL_PUBLIC void ws_execute_in_directory(const char* dir, ws_execute_in_directory_func func, void* param);
 
 /*
  * Given a pathname, return:
