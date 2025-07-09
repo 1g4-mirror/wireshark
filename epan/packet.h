@@ -63,6 +63,25 @@ typedef struct dissector_handle *dissector_handle_t;
 struct dissector_table;
 typedef struct dissector_table *dissector_table_t;
 
+/* Structure passed (by address) to new-style dissectors.
+
+   data points to arbitrary data passed to the dissector; it corresponds
+   to the data argument of old-style dissectors.
+
+   cb_data points to arbitrary data passed to "callback" dissectors;
+   it's set to the callback data pointer provided when the dissector
+   was registered.
+
+   dissector_length is initially set to the total amount of data
+   present in the tvbuff handed to the dissector; if the dissector
+   stops before dissecting all the data, it must set dissector_length
+   to the amount dissected, so the calling dissector knows what remains. */
+typedef struct {
+	void *data;
+	void *cb_data;
+	int dissected_length;
+} dissector_data_t;
+
 /*
  * Dissector that returns:
  *
@@ -74,11 +93,24 @@ typedef struct dissector_table *dissector_table_t;
  *	The negative of the amount of additional data needed, if
  *	we need more data (e.g., from subsequent TCP segments) to
  *	dissect the entire PDU.
+ *
+ * New elements should be added to the end; that allows older
+ * plugin dissectors to continue to work.
  */
 typedef int (*dissector_t)(tvbuff_t *, packet_info *, proto_tree *, void *);
 
 /* Same as dissector_t with an extra parameter for callback pointer */
 typedef int (*dissector_cb_t)(tvbuff_t *, packet_info *, proto_tree *, void *, void *);
+
+/*
+ * Dissector that returns true if the tvbuff contains a PDU for that
+ * protocol and false if it doesn't and, if it contains a PDU for that
+ * protocol, and there's additional information at the end of the tvbuff
+ * not dissected by the dissector or any subdissectors it calls, sets
+ * the dissected_length member of the dissector_data_t structure pointed
+ * by its argument.
+ */
+typedef bool (*new_dissector_t)(tvbuff_t *, packet_info *, proto_tree *, dissector_data_t *);
 
 /** Type of a heuristic dissector, used in heur_dissector_add().
  *
@@ -268,6 +300,13 @@ WS_DLL_PUBLIC int dissector_try_uint(dissector_table_t sub_dissectors,
 WS_DLL_PUBLIC int dissector_try_uint_with_data(dissector_table_t sub_dissectors,
     const uint32_t uint_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);
 
+/** Look for a given value in a given uint dissector table and, if found,
+   call the dissector with the arguments supplied, and return its return
+   value, otherwise return false. */
+WS_DLL_PUBLIC bool new_dissector_try_uint(dissector_table_t sub_dissectors,
+    const uint32_t uint_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data,
+    int *dissected_length);
+
 WS_DEPRECATED_X("Use dissector_try_uint_with_data instead")
 static inline int dissector_try_uint_new(dissector_table_t sub_dissectors,
 	const uint32_t uint_val, tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, const bool add_proto_name, void* data) \
@@ -338,6 +377,15 @@ dissector_try_string_new(dissector_table_t sub_dissectors, const char* string, \
 	tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, const bool add_proto_name, void* data) \
 { return dissector_try_string_with_data(sub_dissectors, string, tvb, pinfo, tree, add_proto_name, data); }
 
+/** Look for a given string in a given dissector table and, if found, call
+   the dissector with the arguments supplied, and return true and set
+   *disected_length to the number of bytes consumed by the dissector,
+   otherwise return false. */
+WS_DLL_PUBLIC bool new_dissector_try_string(dissector_table_t sub_dissectors,
+	const char* string, tvbuff_t* tvb, packet_info* pinfo,
+	proto_tree* tree, const bool add_proto_name, void* data,
+	int *dissected_length);
+
 
 /** Look for a given value in a given string dissector table and, if found,
  * return the current dissector handle for that value.
@@ -384,11 +432,19 @@ typedef struct _guid_key {
 WS_DLL_PUBLIC void dissector_add_guid(const char *name, guid_key* guid_val,
     dissector_handle_t handle);
 
-/** Look for a given value in a given guid dissector table and, if found,
-   call the dissector with the arguments supplied, and return true,
-   otherwise return false. */
+/* Look for a given string in a given guid dissector table and, if found,
+   call the dissector with the arguments supplied, and return the number
+   of bytes consumed, otherwise return 0. */
 WS_DLL_PUBLIC int dissector_try_guid_with_data(dissector_table_t sub_dissectors,
     guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);
+
+/** Look for a given value in a given guid dissector table and, if found,
+   call the dissector with the arguments supplied, and return true and
+   set *disected_length to the number of bytes consumed by the dissector,
+   otherwise return false. */
+WS_DLL_PUBLIC bool new_dissector_try_guid(dissector_table_t sub_dissectors,
+    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length);
 
 /* Delete a GUID from a dissector table. */
 WS_DLL_PUBLIC void dissector_delete_guid(const char *name, guid_key* guid_val,
@@ -409,6 +465,14 @@ WS_DLL_PUBLIC dissector_handle_t dissector_get_guid_handle(
    number of bytes consumed, otherwise return 0. */
 WS_DLL_PUBLIC int dissector_try_payload_with_data(dissector_table_t sub_dissectors,
     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);
+
+/** Use the currently assigned payload dissector for the dissector table and,
+   if any, call the dissector with the arguments supplied, and return true
+   and set *disected_length to the number of bytes consumed by the dissector,
+   otherwise return false. */
+WS_DLL_PUBLIC bool new_dissector_try_payload(dissector_table_t sub_dissectors,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+    const bool add_proto_name, void *data, int *dissected_length);
 
 WS_DEPRECATED_X("Use dissector_try_payload_with_data instead")
 static inline int dissector_try_payload_new(dissector_table_t sub_dissectors,
@@ -606,6 +670,15 @@ WS_DLL_PUBLIC dissector_handle_t register_dissector_with_description(const char 
 /** Register a new dissector with a callback pointer. */
 WS_DLL_PUBLIC dissector_handle_t register_dissector_with_data(const char *name, dissector_cb_t dissector, const int proto, void *cb_data);
 
+/** Register a new new-style dissector. */
+WS_DLL_PUBLIC dissector_handle_t new_register_dissector(const char *name, new_dissector_t dissector, const int proto);
+
+/** Register a new new-style dissector with a description. */
+WS_DLL_PUBLIC dissector_handle_t new_register_dissector_with_description(const char *name, const char *description, new_dissector_t dissector, const int proto);
+
+/** Register a new new-style dissector with a callback pointer. */
+WS_DLL_PUBLIC dissector_handle_t new_register_dissector_with_data(const char *name, new_dissector_t dissector, const int proto, void *cb_data);
+
 /** Deregister a dissector. */
 void deregister_dissector(const char *name);
 
@@ -682,8 +755,92 @@ WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name(dissector_t d
  */
 WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name_and_description(dissector_t dissector,
     const int proto, const char* name, const char* description);
+
+/** Create an anonymous, unregistered dissector handle that includes a
+ * pointer value to be passed to the dissector.
+ *
+ * @param dissector The dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ * @param cb_data The pointer to be passed when the dissector is called
+ *
+ * @note The protocol short name will be used as the user-visible description.
+ */
 WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_data(dissector_cb_t dissector,
     const int proto, void* cb_data);
+
+/** Create an named, unregistered dissector handle that includes a
+ * pointer value to be passed to the dissector.
+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().
+ *
+ * @param dissector The dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ * @param name a short, machine-friendly name for the dissector. Does not have
+ * to be globally unique, but should be unique for any table the handle will be
+ * registered to. Can be NULL, which creates an anonymous dissector.
+ * @param cb_data The pointer to be passed when the dissector is called
+ *
+ * @note The protocol short name will be used as the user-visible description.
+ */
+WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name_and_data(dissector_cb_t dissector,
+    const int proto, const char* name, void* cb_data);
+
+/** Create an anonymous, unregistered new-style dissector handle.
+ *
+ * @param dissector The new-style dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ *
+ * @note The protocol short name will be used as the user-visible description.
+ */
+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle(new_dissector_t dissector,
+    const int proto);
+
+/** Create an named, unregistered new-style dissector handle.
+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().
+ *
+ * @param dissector The new-style dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ * @param name a short, machine-friendly name for the dissector. Does not have
+ * to be globally unique, but should be unique for any table the handle will be
+ * registered to. Can be NULL, which creates an anonymous dissector.
+ *
+ * @note The protocol short name will be used as the user-visible description.
+ */
+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name(new_dissector_t dissector,
+    const int proto, const char* name);
+
+/** Create an named, unregistered handle new-style dissector handle with a
+ * description.
+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().
+ * The description is used to allow a user to distinguish dissectors for the
+ * same protocol, e.g. when registered to the same table.
+ *
+ * @param dissector The dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ * @param name a short, machine-friendly name for the dissector. Does not have
+ * to be globally unique, but should be unique for any table the handle will be
+ * registered to. Can be NULL, which creates an anonymous dissector.
+ * @param description Freeform text designed to be shown to a user. Must be
+ * unique for any table the dissector is registered in. Can be NULL, in which
+ * case the protocol short name is used as the user-visible description.
+ */
+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name_and_description(new_dissector_t dissector,
+    const int proto, const char* name, const char* description);
+
+/** Create an named, unregistered dissector handle that includes a
+ * pointer value to be passed to the dissector.
+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().
+ *
+ * @param dissector The dissector the handle will call
+ * @param proto The value obtained when registering the protocol
+ * @param name a short, machine-friendly name for the dissector. Does not have
+ * to be globally unique, but should be unique for any table the handle will be
+ * registered to. Can be NULL, which creates an anonymous dissector.
+ * @param cb_data The pointer to be passed when the dissector is called
+ *
+ * @note The protocol short name will be used as the user-visible description.
+ */
+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name_and_data(new_dissector_t dissector,
+    const int proto, const char* name, void* cb_data);
 
 /* Dump all registered dissectors to the standard output */
 WS_DLL_PUBLIC void dissector_dump_dissectors(void);
@@ -698,8 +855,10 @@ WS_DLL_PUBLIC void dissector_dump_dissectors(void);
  *   @param  data parameter to pass to dissector
  *   @return  If the protocol for that handle isn't enabled call the data
  *   dissector. Otherwise, if the handle refers to a new-style
- *   dissector, call the dissector and return its return value, otherwise call
- *   it and return the length of the tvbuff pointed to by the argument.
+ *   dissector, call the dissector and return the amount of data the
+ *   dissector reports that it consumed if the return value of the dissector
+ *   is true and 0 if the return value is false, otherwise call the
+ *   dissector and return its return value.
  */
 WS_DLL_PUBLIC int call_dissector_with_data(dissector_handle_t handle, tvbuff_t *tvb,
     packet_info *pinfo, proto_tree *tree, void *data);
@@ -716,10 +875,12 @@ WS_DLL_PUBLIC int call_data_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_t
  *   @param  pinfo Packet Info.
  *   @param  tree The protocol tree.
  *   @param  data parameter to pass to dissector
- *   @return  If the protocol for that handle isn't enabled, return 0 without
- *   calling the dissector. Otherwise, if the handle refers to a new-style
- *   dissector, call the dissector and return its return value, otherwise call
- *   it and return the length of the tvbuff pointed to by the argument.
+ *   @return  If the protocol for that handle isn't enabled call the data
+ *   dissector. Otherwise, if the handle refers to a new-style
+ *   dissector, call the dissector and return the amount of data the
+ *   dissector reports that it consumed if the return value of the dissector
+ *   is true and 0 if the return value is false, otherwise call the
+ *   dissector and return its return value.
  */
 WS_DLL_PUBLIC int call_dissector_only(dissector_handle_t handle, tvbuff_t *tvb,
     packet_info *pinfo, proto_tree *tree, void *data);
