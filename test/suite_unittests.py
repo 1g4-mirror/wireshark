@@ -15,6 +15,10 @@ import pytest
 
 
 class TestUnitTests:
+    def test_unit_dissector_table_test(self, program, base_env):
+        '''dissector_table_test'''
+        subprocess.check_call(program('dissector_table_test'), env=base_env)
+
     def test_unit_exntest(self, program, base_env):
         '''exntest'''
         subprocess.check_call(program('exntest'), env=base_env)
