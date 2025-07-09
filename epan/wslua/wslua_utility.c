@@ -565,12 +565,12 @@ WSLUA_FUNCTION wslua_register_stat_cmd_arg(lua_State* L) {
 
 WSLUA_FUNCTION wslua_ssl_starttls_ack (lua_State* L) {
     /* TLS protocol will be started after this fame */
-#define WSLUA_ARG_ssl_starttls_ack_TLS_handle 1 /* the tls dissector */
+#define WSLUA_ARG_ssl_starttls_ack_TLS_HANDLE 1 /* the tls dissector */
 #define WSLUA_ARG_ssl_starttls_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
-#define WSLUA_ARG_ssl_starttls_ack_APP_handle 3 /* The app dissector */
-    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_ack_TLS_handle);
+#define WSLUA_ARG_ssl_starttls_ack_APP_HANDLE 3 /* The app dissector */
+    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_ack_TLS_HANDLE);
     Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_ack_PINFO);
-    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_ack_APP_handle);
+    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_ack_APP_HANDLE);
 
     ssl_starttls_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
 
@@ -579,12 +579,12 @@ WSLUA_FUNCTION wslua_ssl_starttls_ack (lua_State* L) {
 
 WSLUA_FUNCTION wslua_ssl_starttls_post_ack (lua_State* L) {
     /* TLS protocol is started with this frame */
-#define WSLUA_ARG_ssl_starttls_post_ack_TLS_handle 1 /* the tls dissector */
+#define WSLUA_ARG_ssl_starttls_post_ack_TLS_HANDLE 1 /* the tls dissector */
 #define WSLUA_ARG_ssl_starttls_post_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
-#define WSLUA_ARG_ssl_starttls_post_ack_APP_handle 3 /* The app dissector */
-    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_post_ack_TLS_handle);
+#define WSLUA_ARG_ssl_starttls_post_ack_APP_HANDLE 3 /* The app dissector */
+    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_post_ack_TLS_HANDLE);
     Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_post_ack_PINFO);
-    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_post_ack_APP_handle);
+    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_post_ack_APP_HANDLE);
 
     ssl_starttls_post_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
 
