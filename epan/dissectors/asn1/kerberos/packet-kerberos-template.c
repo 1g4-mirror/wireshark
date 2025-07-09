@@ -735,8 +735,6 @@ bool krb_decrypt;
 /* keytab filename */
 static const char *keytab_filename = "";
 
-static void read_keytab_file(const char* filename);
-
 void
 read_keytab_file_from_preferences(void)
 {
@@ -757,7 +755,7 @@ read_keytab_file_from_preferences(void)
 	g_free(last_keytab);
 	last_keytab = g_strdup(keytab_filename);
 
-	read_keytab_file(last_keytab);
+	keytab_file_read(last_keytab);
 }
 #endif /* HAVE_KERBEROS */
 
@@ -1300,85 +1298,6 @@ krb5_fast_key(asn1_ctx_t *actx _U_, proto_tree *tree _U_, tvbuff_t *tvb _U_,
 #endif /* HAVE_KRB5_C_FX_CF2_SIMPLE */
 
 USES_APPLE_DEPRECATED_API
-void
-read_keytab_file(const char *filename)
-{
-	krb5_keytab keytab;
-	krb5_error_code ret;
-	krb5_keytab_entry key;
-	krb5_kt_cursor cursor;
-	static bool first_time=true;
-
-	if (filename == NULL || filename[0] == 0) {
-		return;
-	}
-
-	if(first_time){
-		first_time=false;
-		ret = krb5_init_context(&krb5_ctx);
-		if(ret && ret != KRB5_CONFIG_CANTOPEN){
-			return;
-		}
-	}
-
-	/* should use a file in the wireshark users dir */
-	ret = krb5_kt_resolve(krb5_ctx, filename, &keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Badly formatted keytab filename: %s", filename);
-
-		return;
-	}
-
-	ret = krb5_kt_start_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not open or could not read from keytab file: %s", filename);
-		return;
-	}
-
-	do{
-		ret = krb5_kt_next_entry(krb5_ctx, keytab, &key, &cursor);
-		if(ret==0){
-			enc_key_t *new_key;
-			int i;
-			wmem_strbuf_t* str_principal = wmem_strbuf_new(wmem_epan_scope(), "keytab principal ");
-
-			new_key = wmem_new0(wmem_epan_scope(), enc_key_t);
-			new_key->fd_num = -1;
-			new_key->id = ++kerberos_longterm_ids;
-			new_key->id_str = wmem_strdup_printf(wmem_epan_scope(), "keytab.%u", new_key->id);
-			new_key->next = enc_key_list;
-
-			/* generate origin string, describing where this key came from */
-			for(i=0;i<key.principal->length;i++){
-				wmem_strbuf_append_printf(str_principal, "%s%s",(i?"/":""),(key.principal->data[i]).data);
-			}
-			wmem_strbuf_append_printf(str_principal, "@%s",key.principal->realm.data);
-			new_key->key_origin = (char*)wmem_strbuf_get_str(str_principal);
-			new_key->keytype=key.key.enctype;
-			new_key->keylength=key.key.length;
-			memcpy(new_key->keyvalue,
-			       key.key.contents,
-			       MIN(key.key.length, KRB_MAX_KEY_LENGTH));
-
-			enc_key_list=new_key;
-			ret = krb5_free_keytab_entry_contents(krb5_ctx, &key);
-			if (ret) {
-				ws_critical("KERBEROS ERROR: Could not release the entry: %d", ret);
-				ret = 0; /* try to continue with the next entry */
-			}
-                        keytab_file_key_map_insert(keytab_file_longterm_keys, new_key);
-		}
-	}while(ret==0);
-
-	ret = krb5_kt_end_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not release the keytab cursor: %d", ret);
-	}
-	ret = krb5_kt_close(krb5_ctx, keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not close the key table handle: %d", ret);
-	}
-}
 
 struct decrypt_krb5_with_cb_state {
 	proto_tree *tree;
@@ -2719,86 +2638,6 @@ krb5_fast_key(asn1_ctx_t *actx _U_, proto_tree *tree _U_, tvbuff_t *tvb _U_,
 	      const char *origin _U_)
 {
 /* TODO: use krb5_crypto_fx_cf2() from Heimdal */
-}
-void
-read_keytab_file(const char *filename)
-{
-	krb5_keytab keytab;
-	krb5_error_code ret;
-	krb5_keytab_entry key;
-	krb5_kt_cursor cursor;
-	enc_key_t *new_key;
-	static bool first_time=true;
-
-	if (filename == NULL || filename[0] == 0) {
-		return;
-	}
-
-	if(first_time){
-		first_time=false;
-		ret = krb5_init_context(&krb5_ctx);
-		if(ret){
-			return;
-		}
-	}
-
-	/* should use a file in the wireshark users dir */
-	ret = krb5_kt_resolve(krb5_ctx, filename, &keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not open keytab file: %s", filename);
-
-		return;
-	}
-
-	ret = krb5_kt_start_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not read from keytab file: %s", filename);
-		return;
-	}
-
-	do{
-		ret = krb5_kt_next_entry(krb5_ctx, keytab, &key, &cursor);
-		if(ret==0){
-			unsigned int i;
-			wmem_strbuf_t* str_principal = wmem_strbuf_new(wmem_epan_scope(), "keytab principal ");
-
-			new_key = wmem_new0(wmem_epan_scope(), enc_key_t);
-			new_key->fd_num = -1;
-			new_key->id = ++kerberos_longterm_ids;
-			new_key->id_str = wmem_strdup_printf(wmem_epan_scope(), "keytab.%u", new_key->id);
-			new_key->next = enc_key_list;
-
-			/* generate origin string, describing where this key came from */
-			for(i=0;i<key.principal->name.name_string.len;i++){
-				wmem_strbuf_append_printf(str_principal, "%s%s",(i?"/":""),key.principal->name.name_string.val[i]));
-			}
-			wmem_strbuf_append_printf(str_principal, "@%s",key.principal->realm);
-			new_key->key_origin = (char*)wmem_strbuf_get_str(str_principal);
-			new_key->keytype=key.keyblock.keytype;
-			new_key->keylength=(int)key.keyblock.keyvalue.length;
-			memcpy(new_key->keyvalue,
-			       key.keyblock.keyvalue.data,
-			       MIN((unsigned)key.keyblock.keyvalue.length, KRB_MAX_KEY_LENGTH));
-
-			enc_key_list=new_key;
-			ret = krb5_kt_free_entry(krb5_ctx, &key);
-			if (ret) {
-				ws_critical("KERBEROS ERROR: Could not release the entry: %d", ret);
-				ret = 0; /* try to continue with the next entry */
-			}
-                        keytab_file_key_map_insert(keytab_file_longterm_keys, new_key);
-		}
-	}while(ret==0);
-
-	ret = krb5_kt_end_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not release the keytab cursor: %d", ret);
-	}
-	ret = krb5_kt_close(krb5_ctx, keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not close the key table handle: %d", ret);
-	}
-
 }
 USES_APPLE_RST
 
@@ -5989,8 +5828,6 @@ void proto_register_kerberos(void) {
 				   "The keytab file containing all the secrets",
 				   &keytab_filename, false);
 
-#if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
-#endif /* defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS) */
 #endif /* HAVE_KERBEROS */
 
 }
