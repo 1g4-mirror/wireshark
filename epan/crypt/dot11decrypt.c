@@ -29,6 +29,7 @@
 
 #include "wep-wpadefs.h"
 
+DOT11DECRYPT_CONTEXT dot11decrypt_ctx;
 
 /****************************************************************************/
 static int Dot11DecryptGetKckLen(int akm, int dh_group);
