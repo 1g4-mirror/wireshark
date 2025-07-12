@@ -104,7 +104,37 @@ class TestDfilterDouble:
         dfilter = "dvmrp.infinity == 255"
         checkDFilterCount(dfilter, 0)
 
-    def test_nan(self, checkDFilterCount):
-        # XXX - We compare NaNs oddly
+    def test_nan_eq_1(self, checkDFilterCount):
+        # NaNs compare equal to NaN only
         dfilter = "icmp.resptime == nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_eq_2(self, checkDFilterCount):
+        # NaNs compare equal to NaN only
+        dfilter = "icmp.resptime != nan"
         checkDFilterCount(dfilter, 1)
+
+    def test_nan_cmp_1(self, checkDFilterCount):
+        # Ordered comparisons with NaNs return false
+        dfilter = "icmp.resptime < nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_cmp_2(self, checkDFilterCount):
+        dfilter = "icmp.resptime > nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_cmp_3(self, checkDFilterCount):
+        dfilter = "icmp.resptime < nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_cmp_4(self, checkDFilterCount):
+        dfilter = "icmp.resptime > nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_cmp_5(self, checkDFilterCount):
+        dfilter = "icmp && icmp.resptime < nan"
+        checkDFilterCount(dfilter, 0)
+
+    def test_nan_cmp_6(self, checkDFilterCount):
+        dfilter = "icmp || icmp.resptime < nan"
+        checkDFilterCount(dfilter, 2)
