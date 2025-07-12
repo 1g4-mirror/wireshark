@@ -100,7 +100,6 @@ void proto_reg_handoff_rtcp(void);
 #define RTCP_CCFB_ATO(metric_block) ((metric_block) & 0x1FFF)
 
 #define RTCP_TRANSPORT_CC_HEADER_LENGTH   12
-static int rtcp_padding_set = 0;
 
 static dissector_handle_t rtcp_handle;
 static dissector_handle_t srtcp_handle;
@@ -1812,7 +1811,6 @@ dissect_rtcp_rtpfb_transport_cc_fci( tvbuff_t *tvb, int offset, packet_info *pin
     {
         proto_tree_add_item( recv_delta_tree, hf_rtcp_rtpfb_transport_cc_fci_recv_delta_padding, tvb, offset, padding_length, ENC_BIG_ENDIAN );
         offset += padding_length;
-        rtcp_padding_set = 0;  /* consume RTCP padding here */
     }
 
     /* delta_array / pkt_seq_array will be freed out of pinfo->pool */
@@ -3198,13 +3196,6 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
     }
 
     /* Applications specific data */
-    if (rtcp_padding_set) {
-        /* If there's padding present, we have to remove that from the data part
-        * The last octet of the packet contains the length of the padding
-        */
-        packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
-    }
-
     if (is_ascii) {
         /* See if we can handle this application type */
         if (g_ascii_strncasecmp(ascii_name, poc1_app_name_str, 4) == 0)
@@ -3217,12 +3208,6 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
             offset += 4;
             packet_len -= 4;
             /* Applications specific data */
-            if (rtcp_padding_set) {
-                /* If there's padding present, we have to remove that from the data part
-                * The last octet of the packet contains the length of the padding
-                */
-                packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
-            }
             if (packet_len == 4)
             {
                 uint16_t local_port = 0;
@@ -3257,12 +3242,6 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
                 /* found subdissector - return tvb_reported_length */
                 offset += 4;
                 packet_len -= 4;
-                if (rtcp_padding_set) {
-                    /* If there's padding present, we have to remove that from the data part
-                    * The last octet of the packet contains the length of the padding
-                    */
-                    packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
-                }
                 if ((int)(offset + packet_len) >= offset)
                     offset += packet_len;
                 return offset;
@@ -3273,12 +3252,6 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
                 offset += 4;
                 packet_len -= 4;
                 /* Applications specific data */
-                if (rtcp_padding_set) {
-                    /* If there's padding present, we have to remove that from the data part
-                    * The last octet of the packet contains the length of the padding
-                    */
-                    packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
-                }
                 if (tvb_ascii_isprint(tvb, offset, packet_len)) {
                     proto_tree_add_item(tree, hf_rtcp_app_data_str, tvb, offset, packet_len, ENC_ASCII);
                 } else {
@@ -3294,12 +3267,6 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
         offset += 4;
         packet_len -= 4;
         /* Applications specific data */
-        if (rtcp_padding_set) {
-            /* If there's padding present, we have to remove that from the data part
-            * The last octet of the packet contains the length of the padding
-            */
-            packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
-        }
         if (tvb_ascii_isprint(tvb, offset, packet_len)) {
             proto_tree_add_item(tree, hf_rtcp_app_data_str, tvb, offset, packet_len, ENC_ASCII);
         } else {
@@ -3545,13 +3512,6 @@ dissect_rtcp_xr(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree,
     if (packet_len < 4) {
         proto_tree_add_expert(tree, pinfo, &ei_rtcp_missing_sender_ssrc, tvb, offset, packet_len);
         return offset + packet_len;
-    }
-
-    if (rtcp_padding_set) {
-        /* If there's padding present, we have to remove that from the data part
-        * The last octet of the packet contains the length of the padding
-        */
-        packet_len -= tvb_get_uint8(tvb, offset + packet_len - 1);
     }
 
     /* SSRC */
@@ -4687,6 +4647,7 @@ dissect_rtcp_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     uint32_t          srtcp_index         = 0;
     uint8_t           temp_byte;
     int proto_to_use = proto_rtcp;
+    int rtcp_padding_set = 0;
 
     temp_byte = tvb_get_uint8(tvb, offset);
     /* RFC 7983 gives current best practice in demultiplexing RT[C]P packets:
