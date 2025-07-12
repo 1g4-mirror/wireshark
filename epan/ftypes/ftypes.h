@@ -273,6 +273,10 @@ ftype_can_is_negative(enum ftenum ftype);
 
 WS_DLL_PUBLIC
 bool
+ftype_can_is_nan(enum ftenum ftype);
+
+WS_DLL_PUBLIC
+bool
 ftype_can_val_to_sinteger(enum ftenum ftype);
 
 WS_DLL_PUBLIC
@@ -561,13 +565,19 @@ WS_DLL_PUBLIC
 ft_bool_t
 fvalue_matches(const fvalue_t *a, const ws_regex_t *re);
 
+/* XXX Should this just return "bool" instead? */
 WS_DLL_PUBLIC
 ft_bool_t
 fvalue_is_zero(const fvalue_t *a);
 
+/* XXX Should this just return "bool" instead? */
 WS_DLL_PUBLIC
 ft_bool_t
 fvalue_is_negative(const fvalue_t *a);
+
+WS_DLL_PUBLIC
+bool
+fvalue_is_nan(const fvalue_t *a);
 
 WS_DLL_PUBLIC
 size_t

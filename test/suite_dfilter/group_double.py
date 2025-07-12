@@ -114,27 +114,13 @@ class TestDfilterDouble:
         dfilter = "icmp.resptime != nan"
         checkDFilterCount(dfilter, 1)
 
-    def test_nan_cmp_1(self, checkDFilterCount):
-        # Ordered comparisons with NaNs return false
+    def test_nan_cmp_1(self, checkDFilterFail):
+        # Ordered comparisons with NaNs are invalid
         dfilter = "icmp.resptime < nan"
-        checkDFilterCount(dfilter, 0)
+        error = "NaN cannot be used in ordered comparisons"
+        checkDFilterFail(dfilter, error)
 
-    def test_nan_cmp_2(self, checkDFilterCount):
-        dfilter = "icmp.resptime > nan"
-        checkDFilterCount(dfilter, 0)
-
-    def test_nan_cmp_3(self, checkDFilterCount):
-        dfilter = "icmp.resptime < nan"
-        checkDFilterCount(dfilter, 0)
-
-    def test_nan_cmp_4(self, checkDFilterCount):
-        dfilter = "icmp.resptime > nan"
-        checkDFilterCount(dfilter, 0)
-
-    def test_nan_cmp_5(self, checkDFilterCount):
-        dfilter = "icmp && icmp.resptime < nan"
-        checkDFilterCount(dfilter, 0)
-
-    def test_nan_cmp_6(self, checkDFilterCount):
-        dfilter = "icmp || icmp.resptime < nan"
-        checkDFilterCount(dfilter, 2)
+    def test_nan_cmp_2(self, checkDFilterFail):
+        dfilter = "ip && icmp.resptime >= 1.0 + nan"
+        error = "NaN cannot be used in ordered comparisons"
+        checkDFilterFail(dfilter, error)

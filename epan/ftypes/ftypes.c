@@ -432,6 +432,15 @@ ftype_can_is_negative(enum ftenum ftype)
 }
 
 bool
+ftype_can_is_nan(enum ftenum ftype)
+{
+	const ftype_t	*ft;
+
+	FTYPE_LOOKUP(ftype, ft);
+	return ft->is_nan ? true : false;
+}
+
+bool
 ftype_can_val_to_sinteger(enum ftenum ftype)
 {
 	const ftype_t	*ft;
@@ -1389,6 +1398,12 @@ ft_bool_t
 fvalue_is_negative(const fvalue_t *a)
 {
 	return a->ftype->is_negative(a) ? FT_TRUE : FT_FALSE;
+}
+
+bool
+fvalue_is_nan(const fvalue_t *a)
+{
+	return a->ftype->is_nan(a);
 }
 
 static fvalue_t *

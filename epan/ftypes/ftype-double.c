@@ -170,6 +170,12 @@ val_is_negative(const fvalue_t *fv_a)
 	return fv_a->value.floating < 0;
 }
 
+static bool
+val_is_nan(const fvalue_t *fv_a)
+{
+	return isnan(fv_a->value.floating);
+}
+
 static unsigned
 val_hash(const fvalue_t *fv)
 {
@@ -208,6 +214,7 @@ ftype_register_double(void)
 		val_hash,			/* hash */
 		val_is_zero,			/* is_zero */
 		val_is_negative,		/* is_negative */
+		val_is_nan,			/* is_nan */
 		NULL,				/* len */
 		NULL,				/* slice */
 		NULL,				/* bitwise_and */
@@ -247,6 +254,7 @@ ftype_register_double(void)
 		val_hash,			/* hash */
 		val_is_zero,			/* is_zero */
 		val_is_negative,		/* is_negative */
+		val_is_nan,			/* is_nan */
 		NULL,				/* len */
 		NULL,				/* slice */
 		NULL,				/* bitwise_and */
