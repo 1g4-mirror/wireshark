@@ -565,14 +565,12 @@ WS_DLL_PUBLIC
 ft_bool_t
 fvalue_matches(const fvalue_t *a, const ws_regex_t *re);
 
-/* XXX Should this just return "bool" instead? */
 WS_DLL_PUBLIC
-ft_bool_t
+bool
 fvalue_is_zero(const fvalue_t *a);
 
-/* XXX Should this just return "bool" instead? */
 WS_DLL_PUBLIC
-ft_bool_t
+bool
 fvalue_is_negative(const fvalue_t *a);
 
 WS_DLL_PUBLIC
