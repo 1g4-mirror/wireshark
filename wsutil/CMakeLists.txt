@@ -145,6 +145,7 @@ set(WSUTIL_PUBLIC_HEADERS
 	ws_cpuid.h
 	glib-compat.h
 	ws_getopt.h
+	ws_hash_func.h
 	ws_mempbrk.h
 	ws_mempbrk_int.h
 	ws_padding_to.h
@@ -214,6 +215,7 @@ set(WSUTIL_COMMON_FILES
 	unicode-utils.c
 	version_info.c
 	ws_getopt.c
+	ws_hash_func.c
 	ws_mempbrk.c
 	ws_pipe.c
 	ws_strptime.c
