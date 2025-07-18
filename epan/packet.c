@@ -43,6 +43,7 @@
 #include <wsutil/str_util.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
+#include <wsutil/ws_hash_func.h>
 
 static int proto_malformed;
 static dissector_handle_t frame_handle;
@@ -230,7 +231,7 @@ destroy_dissector_table(void *data)
 void
 packet_init(void)
 {
-	dissector_tables = g_hash_table_new_full(g_str_hash, g_str_equal,
+	dissector_tables = g_hash_table_new_full(ws_str_hash, g_str_equal,
 			NULL, destroy_dissector_table);
 	all_tables_handles_sorted = false;
 
