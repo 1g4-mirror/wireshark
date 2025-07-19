@@ -400,14 +400,14 @@ void MainWindow::setMainWindowTitle(QString title)
         }
     }
 
-    if (prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
+    if (prefs.gui_preserve_window_title && prefs.gui_prepend_window_title && prefs.gui_prepend_window_title[0]) {
         QString custom_title = replaceWindowTitleVariables(prefs.gui_prepend_window_title);
         if (custom_title.length() > 0) {
             title.prepend(QStringLiteral("[%1] ").arg(custom_title));
         }
     }
 
-    if (prefs.gui_window_title && prefs.gui_window_title[0]) {
+    if (prefs.gui_preserve_window_title && prefs.gui_window_title && prefs.gui_window_title[0]) {
         QString custom_title = replaceWindowTitleVariables(prefs.gui_window_title);
         if (custom_title.length() > 0) {
 #ifdef __APPLE__

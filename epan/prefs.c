@@ -1564,6 +1564,9 @@ prefs_register_string_preference(module_t *module, const char *name,
                                  const char *title, const char *description,
                                  const char **var)
 {
+
+
+
 DIAG_OFF(cast-qual)
     register_string_like_preference(module, name, title, description,
                                     (char **)var, PREF_STRING, NULL, false);
@@ -3525,6 +3528,12 @@ prefs_register_modules(void)
         "%S = a conditional separator (\" - \") that only shows when surrounded by variables with values or static text\n"
         "%V = version info",
         &prefs.gui_prepend_window_title, PREF_STRING, NULL, true);
+
+    prefs_register_bool_preference(gui_module, "preserve_window_title",
+        "Preserve Window Title on Startup",
+        "Preserve the custom window title between Wireshark sessions. "
+        "If disabled, the window title will be cleared at startup unless provided by command-line.",
+        &prefs.gui_preserve_window_title);
 
     register_string_like_preference(gui_module, "start_title", "Custom start page title",
         "Custom start page title",

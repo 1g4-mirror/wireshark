@@ -39,6 +39,8 @@ MainWindowPreferencesFrame::MainWindowPreferencesFrame(QWidget *parent) :
     pref_toolbar_main_style_ = prefFromPrefPtr(&prefs.gui_toolbar_main_style);
     pref_window_title_ = prefFromPrefPtr(&prefs.gui_window_title);
     pref_prepend_window_title_ = prefFromPrefPtr(&prefs.gui_prepend_window_title);
+    pref_preserve_window_title_ = prefFromPrefPtr(&prefs.gui_preserve_window_title);
+
 
     QStyleOption style_opt;
     QString indent_ss = QStringLiteral(
@@ -148,6 +150,7 @@ void MainWindowPreferencesFrame::updateWidgets()
 
     ui->windowTitle->setText(prefs_get_string_value(pref_window_title_, pref_stashed));
     ui->prependWindowTitle->setText(prefs_get_string_value(pref_prepend_window_title_, pref_stashed));
+    ui->preserveWindowTitleCheckBox->setChecked(prefs_get_bool_value(pref_preserve_window_title_, pref_stashed));
 }
 
 void MainWindowPreferencesFrame::on_geometryCheckBox_toggled(bool checked)
@@ -235,4 +238,9 @@ void MainWindowPreferencesFrame::on_windowTitle_textEdited(const QString &new_ti
 void MainWindowPreferencesFrame::on_prependWindowTitle_textEdited(const QString &new_prefix)
 {
     prefs_set_string_value(pref_prepend_window_title_, new_prefix.toStdString().c_str(), pref_stashed);
+}
+
+void MainWindowPreferencesFrame::on_preserveWindowTitleCheckBox_toggled(bool checked)
+{
+    prefs_set_bool_value(pref_preserve_window_title_, checked, pref_stashed);
 }
