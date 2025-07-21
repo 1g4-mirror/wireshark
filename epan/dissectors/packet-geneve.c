@@ -81,12 +81,14 @@ static const range_string class_id_names[] = {
 #define GENEVE_GCP_VNID     0x013201
 #define GENEVE_GCP_ENDPOINT 0x013202
 #define GENEVE_GCP_PROFILE  0x013203
+#define GENEVE_CILIUM_FRONTEND   0x014B81
 #define GENEVE_CPACKET_METADATA  0x016400
 
 static const val64_string option_names[] = {
   { GENEVE_GCP_VNID,     "GCP Virtual Network ID" },
   { GENEVE_GCP_ENDPOINT, "GCP Endpoint ID" },
   { GENEVE_GCP_PROFILE,  "GCP Profile ID" },
+  { GENEVE_CILIUM_FRONTEND,    "Cilium Frontend" },
   { GENEVE_CPACKET_METADATA,  "cPacket Meta-data" },
   { 0, NULL }
 };
@@ -119,6 +121,9 @@ static int hf_geneve_opt_gcp_reserved;
 static int hf_geneve_opt_gcp_direction;
 static int hf_geneve_opt_gcp_endpoint;
 static int hf_geneve_opt_gcp_profile;
+static int hf_geneve_opt_cilium_frontend_ipv4;
+static int hf_geneve_opt_cilium_frontend_port;
+static int hf_geneve_opt_cilium_frontend_pad;
 static int hf_geneve_opt_cpkt_seqnum;
 static int hf_geneve_opt_cpkt_origlen;
 static int hf_geneve_opt_cpkt_reserved;
@@ -225,6 +230,16 @@ dissect_option(wmem_allocator_t *scope, tvbuff_t *tvb, proto_tree *opts_tree, in
         case GENEVE_GCP_PROFILE:
             proto_tree_add_item(opt_tree, hf_geneve_opt_gcp_profile, tvb, offset,
                                 len - 4, ENC_BIG_ENDIAN);
+            break;
+        case GENEVE_CILIUM_FRONTEND:
+            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_ipv4, tvb, offset,
+                                4, ENC_NA);
+            offset += 4;
+            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_port, tvb, offset,
+                                2, ENC_NA);
+            offset += 2;
+            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_pad, tvb, offset,
+                                2, ENC_NA);
             break;
         case GENEVE_CPACKET_METADATA:
             proto_tree_add_item(opt_tree, hf_geneve_opt_cpkt_seqnum, tvb, offset,
@@ -499,6 +514,21 @@ proto_register_geneve(void)
         { &hf_geneve_opt_gcp_profile,
           { "GCP Profile ID", "geneve.option.gcp.profile",
             FT_UINT64, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_geneve_opt_cilium_frontend_ipv4,
+          { "Cilium Frontend IPv4", "geneve.option.cilium.frontend.ipv4",
+            FT_IPv4, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_geneve_opt_cilium_frontend_port,
+          { "Cilium Frontend Port", "geneve.option.cilium.frontend.port",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_geneve_opt_cilium_frontend_pad,
+          { "Pad", "geneve.option.cilium.frontend.pad",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_geneve_opt_cpkt_seqnum,
