@@ -122,6 +122,7 @@ static int hf_geneve_opt_gcp_direction;
 static int hf_geneve_opt_gcp_endpoint;
 static int hf_geneve_opt_gcp_profile;
 static int hf_geneve_opt_cilium_frontend_ipv4;
+static int hf_geneve_opt_cilium_frontend_ipv6;
 static int hf_geneve_opt_cilium_frontend_port;
 static int hf_geneve_opt_cilium_frontend_pad;
 static int hf_geneve_opt_cpkt_seqnum;
@@ -232,14 +233,34 @@ dissect_option(wmem_allocator_t *scope, tvbuff_t *tvb, proto_tree *opts_tree, in
                                 len - 4, ENC_BIG_ENDIAN);
             break;
         case GENEVE_CILIUM_FRONTEND:
-            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_ipv4, tvb, offset,
-                                4, ENC_NA);
-            offset += 4;
-            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_port, tvb, offset,
-                                2, ENC_NA);
-            offset += 2;
-            proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_pad, tvb, offset,
-                                2, ENC_NA);
+            switch (len) {
+                case 12: {
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_ipv4, tvb, offset,
+                                        4, ENC_NA);
+                    offset += 4;
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_port, tvb, offset,
+                                        2, ENC_NA);
+                    offset += 2;
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_pad, tvb, offset,
+                                        2, ENC_NA);
+                }
+                break;
+                case 24: {
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_ipv6, tvb, offset,
+                                        16, ENC_NA);
+                    offset += 16;
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_port, tvb, offset,
+                                        2, ENC_NA);
+                    offset += 2;
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_cilium_frontend_pad, tvb, offset,
+                                        2, ENC_NA);
+                }
+                break;
+                default:
+                    proto_tree_add_item(opt_tree, hf_geneve_opt_unknown_data, tvb, offset,
+                                        len - 4, ENC_NA);
+                break;
+            }
             break;
         case GENEVE_CPACKET_METADATA:
             proto_tree_add_item(opt_tree, hf_geneve_opt_cpkt_seqnum, tvb, offset,
@@ -519,6 +540,11 @@ proto_register_geneve(void)
         { &hf_geneve_opt_cilium_frontend_ipv4,
           { "Cilium Frontend IPv4", "geneve.option.cilium.frontend.ipv4",
             FT_IPv4, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_geneve_opt_cilium_frontend_ipv6,
+          { "Cilium Frontend IPv4", "geneve.option.cilium.frontend.ipv6",
+            FT_IPv6, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_geneve_opt_cilium_frontend_port,
