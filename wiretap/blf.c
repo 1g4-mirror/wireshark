@@ -2400,6 +2400,16 @@ blf_read_linmessage(blf_params_t* params, int* err, char** err_info, int64_t blo
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
     len = sizeof(tmpbuf) + payload_length;
 
+    /* make sure that the payload is 4 or 8 bytes long */
+    const uint8_t padding[4] = { 0, 0, 0, 0 };
+    if (payload_length < 4) {
+        ws_buffer_append(&params->rec->data, padding, 4 - payload_length);
+        len += 4 - payload_length;
+    } else if (payload_length > 4 && payload_length < 8) {
+        ws_buffer_append(&params->rec->data, padding, 8 - payload_length);
+        len += 8 - payload_length;
+    }
+
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, len, len);
     blf_add_direction_option(params, linmessage.dir);
 
@@ -2426,7 +2436,7 @@ blf_read_linrcverror(blf_params_t* params, int* err, char** err_info, int64_t bl
     linmessage.dlc &= 0x0f;
     linmessage.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2438,9 +2448,12 @@ blf_read_linrcverror(blf_params_t* params, int* err, char** err_info, int64_t bl
      * For now we always treat it as framing error,
      * but in the future we should expand it. */
     tmpbuf[7] = LIN_ERROR_FRAMING_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
-
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, sizeof(tmpbuf), sizeof(tmpbuf));
 
     return true;
@@ -2466,7 +2479,7 @@ blf_read_linsenderror(blf_params_t* params, int* err, char** err_info, int64_t b
     linmessage.dlc &= 0x0f;
     linmessage.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2475,9 +2488,12 @@ blf_read_linsenderror(blf_params_t* params, int* err, char** err_info, int64_t b
     tmpbuf[5] = linmessage.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = 0; /* checksum */
     tmpbuf[7] = LIN_ERROR_NO_SLAVE_RESPONSE; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
-
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, sizeof(tmpbuf), sizeof(tmpbuf));
 
     return true;
@@ -2574,6 +2590,16 @@ blf_read_linmessage2(blf_params_t* params, int* err, char** err_info, int64_t bl
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
     len = sizeof(tmpbuf) + payload_length;
 
+    /* make sure that the payload is 4 or 8 bytes long */
+    const uint8_t padding[4] = { 0, 0, 0, 0 };
+    if (payload_length < 4) {
+        ws_buffer_append(&params->rec->data, padding, 4 - payload_length);
+        len += 4 - payload_length;
+    } else if (payload_length > 4 && payload_length < 8) {
+        ws_buffer_append(&params->rec->data, padding, 8 - payload_length);
+        len += 8 - payload_length;
+    }
+
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.linDataByteTimestampEvent.linMessageDescriptor.linSynchFieldEvent.linBusEvent.channel, UINT16_MAX, len, len);
     blf_add_direction_option(params, linmessage.dir);
 
@@ -2605,7 +2631,7 @@ blf_read_lincrcerror2(blf_params_t* params, int* err, char** err_info, int64_t b
 
     payload_length = MIN(linmessage.linDataByteTimestampEvent.linMessageDescriptor.dlc, 8);
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2626,6 +2652,10 @@ blf_read_lincrcerror2(blf_params_t* params, int* err, char** err_info, int64_t b
     tmpbuf[5] = linmessage.linDataByteTimestampEvent.linMessageDescriptor.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = (uint8_t)(linmessage.crc & 0xff); /* checksum */
     tmpbuf[7] = LIN_ERROR_CHECKSUM_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
@@ -2667,7 +2697,7 @@ blf_read_linrcverror2(blf_params_t* params, int* err, char** err_info, int64_t b
         payload_length = 0;
     }
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2691,6 +2721,10 @@ blf_read_linrcverror2(blf_params_t* params, int* err, char** err_info, int64_t b
      * For now we always treat it as framing error,
      * but in the future we should expand it. */
     tmpbuf[7] = LIN_ERROR_FRAMING_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
     if (payload_length > 0) {
@@ -2723,7 +2757,7 @@ blf_read_linsenderror2(blf_params_t* params, int* err, char** err_info, int64_t 
     linmessage.linMessageDescriptor.dlc &= 0x0f;
     linmessage.linMessageDescriptor.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2744,6 +2778,10 @@ blf_read_linsenderror2(blf_params_t* params, int* err, char** err_info, int64_t 
     tmpbuf[5] = linmessage.linMessageDescriptor.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = 0; /* checksum */
     tmpbuf[7] = LIN_ERROR_NO_SLAVE_RESPONSE; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
 
