@@ -79,6 +79,11 @@ There is no updated file format support in this release.
 // === New and Updated Capture Interfaces support
 
 // === New and Updated Codec support
+* DNP 3 (Distributed Network Protocol 3) is now supported in the Conversations
+  and Endpoints table dialogs.
+
+* The Windows installers now ship with Npcap 1.80.
+  They previously shipped with Npcap 1.79.
 
 // === Major API Changes
 
