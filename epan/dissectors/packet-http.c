@@ -1424,7 +1424,7 @@ dissect_http_message(tvbuff_t *tvb, int offset, packet_info *pinfo,
 			 * Put the first line from the buffer into the summary
 			 * (but leave out the line terminator).
 			 */
-			col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", format_text(pinfo->pool, firstline, first_linelen));
+			col_add_fstr(pinfo->cinfo, COL_INFO, "%s", format_text(pinfo->pool, firstline, first_linelen));
 		}
 
 		/*
@@ -2630,6 +2630,7 @@ basic_response_dissector(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
 	char response_code_chars[4];
 	proto_item *r_ti;
 	http_info_value_t *stat_info = p_get_proto_data(pinfo->pool, pinfo, proto_http, HTTP_PROTO_DATA_INFO);
+	const gchar* status_code_desc;
 
 	/*
 	 * The first token is the HTTP Version.
@@ -2665,9 +2666,10 @@ basic_response_dissector(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
 	proto_tree_add_uint(tree, hf_http_response_code, tvb, offset, 3,
 			    stat_info->response_code);
 
+	status_code_desc = val_to_str(stat_info->response_code, vals_http_status_code, "Unknown (%d)");
+
 	r_ti = proto_tree_add_string(tree, hf_http_response_code_desc,
-		tvb, offset, 3, val_to_str(stat_info->response_code,
-		vals_http_status_code, "Unknown (%d)"));
+		tvb, offset, 3, status_code_desc);
 
 	proto_item_set_generated(r_ti);
 
@@ -2682,6 +2684,9 @@ basic_response_dissector(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
 	if (tokenlen >= 1) {
 		proto_tree_add_item(tree, hf_http_response_phrase, tvb, offset,
 				tokenlen, ENC_ASCII);
+	} else {
+		/* Append the status_code_desc if the Reason-Phrase field is missing. */
+		col_append_fstr(pinfo->cinfo, COL_INFO, "(%s)", status_code_desc);
 	}
 }
 
