@@ -37719,13 +37719,6 @@ dissect_ieee80211_block_ack_details(tvbuff_t *tvb, packet_info *pinfo _U_,
     break;
 
   case COMPRESSED_BLOCK_ACK:
-    /*
-     * FIXME: For 802.11ax, the block ack bitmap can be 8 or 32 bytes
-     * depending on the values of the fragment number subfield in the
-     * SSC! All values other that 0 and 2 in bits B1 & B2 are reserved.
-     *
-     *  802.11be allows the block ack bitmap to be 64 or 128 bytes as well.
-     */
     ssn = tvb_get_letohs(tvb, offset);
     frag_num = ssn & 0x0F;
     ssn >>= 4;
