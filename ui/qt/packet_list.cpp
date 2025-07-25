@@ -2432,7 +2432,12 @@ void PacketList::resizeAllColumns(bool onlyTimeFormatted)
         return;
 
     for (int col = 0; col < cap_file_->cinfo.num_cols; col++) {
-        if (! onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) {
+        // Skip resizing the "Info" column to avoid it becoming too wide
+        if (col_fmt_to_col_type(cap_file_->cinfo.col_fmt[col]) == COL_INFO) {
+            continue;
+        }
+
+        if (!onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) {
             resizeColumnToContents(col);
         }
     }
