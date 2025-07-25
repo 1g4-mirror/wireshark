@@ -43632,7 +43632,7 @@ proto_register_ieee80211(void)
       NULL, HFILL }},
 
     {&hf_ieee80211_block_ack_bitmap_missing_frame,
-     {"Missing frame", "wlan.ba.bm.missing_frame",
+     {"Not acknowledged frame", "wlan.ba.bm.missing_frame",
       FT_UINT32, BASE_DEC, NULL, 0,
       NULL, HFILL }},
 
