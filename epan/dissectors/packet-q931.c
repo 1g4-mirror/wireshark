@@ -3965,6 +3965,9 @@ proto_register_q931(void)
         &g931_iso_iec_cause);
     /* Register for tapping */
     q931_tap = register_tap("q931");
+
+    vs_register_external_value_string_ext("q931_cause_code_vals_ext", &q931_cause_code_vals_ext);
+    vs_register_external_value_string("q931_message_type_vals", q931_message_type_vals);
 }
 
 void

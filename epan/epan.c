@@ -276,6 +276,10 @@ epan_init(register_cb cb, void *client_data, bool load_plugins)
 	/* initialize memory allocation subsystem */
 	wmem_init_scopes();
 
+	/* initialize the tables that store value_strings for
+	   outside of dissectors */
+	vs_externals_init();
+
 	/* initialize the GUID to name mapping table */
 	guids_init();
 
@@ -467,6 +471,7 @@ epan_cleanup(void)
 	plugins_cleanup(libwireshark_plugins);
 	libwireshark_plugins = NULL;
 #endif
+	vs_externals_cleanup();
 }
 
 struct epan_session {

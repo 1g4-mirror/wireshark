@@ -354,7 +354,25 @@ WS_DLL_PUBLIC
 const char *
 try_bytesprefix_to_str(const uint8_t *haystack, const size_t haystack_len, const bytes_string *bs);
 
+WS_DLL_PUBLIC
+void vs_register_external_value_string(const char* name, const value_string* vs);
+
+WS_DLL_PUBLIC
+value_string* vs_get_external_value_string(const char* name);
+
+WS_DLL_PUBLIC
+void vs_register_external_value_string_ext(const char* name, const value_string_ext* vse);
+
+WS_DLL_PUBLIC
+value_string_ext* vs_get_external_value_string_ext(const char* name);
+
 /* MISC (generally do not use) */
+
+WS_DLL_LOCAL
+void vs_externals_init(void);
+
+WS_DLL_LOCAL
+void vs_externals_cleanup(void);
 
 WS_DLL_LOCAL
 bool
