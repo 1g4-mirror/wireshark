@@ -320,6 +320,7 @@ static void dissect_mqttsn_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
                 break;
 
             case MQTTSN_UNSUBSCRIBE:
+                mqttsn_topic_id_type = tvb_get_uint8(tvb, offset) & MQTTSN_MASK_TOPIC_ID_TYPE;
                 proto_tree_add_bitmask(mqttsn_msg_tree, tvb, offset, hf_mqttsn_flags, ett_mqttsn_flags, unsubscribe_flags, ENC_BIG_ENDIAN);
                 offset += 1;
                 break;
