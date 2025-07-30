@@ -20,7 +20,6 @@
 
 #include <epan/packet.h>
 #include <epan/tvbparse.h>
-#include <epan/dtd.h>
 #include <epan/proto_data.h>
 #include <wsutil/filesystem.h>
 #include <epan/prefs.h>
@@ -254,6 +253,26 @@ static const char *default_media_types[] = {
     "message/imdn+xml",                         /*RFC5438*/
 };
 
+typedef struct _dtd_named_list_t {
+        char* name;
+        GPtrArray* list;
+} dtd_named_list_t;
+
+typedef struct _dtd_build_data_t {
+        char* filename;
+
+        char* proto_name;
+        char* media_type;
+        char* description;
+        char* proto_root;
+        bool recursion;
+
+        GPtrArray* elements;
+        GPtrArray* attributes;
+
+        GString* error;
+} dtd_build_data_t;
+
 static void insert_xml_frame(xml_frame_t *parent, xml_frame_t *new_child)
 {
     new_child->first_child  = NULL;
@@ -314,18 +333,14 @@ get_char_encoding(tvbuff_t* tvb, packet_info* pinfo, char** ret_encoding_name) {
     return ws_encoding_id;
 }
 
+static void register_dtd(dtd_build_data_t *dtd_data);
+
 static gboolean
-register_dtd_fields_and_remove(void *key, void *value _U_, void *user_data)
+register_dtd_fields_and_remove(void *key _U_, void *value, void *user_data _U_)
 {
-    // If necessary this will call dtd_register_fields, which will also remove
-    // it from the prefixes-to-register table. (The prefix function might have
-    // already been called once, e.g. from putting the prefix in the display
-    // filter combobox.)
-    //
-    // XXX - Perhaps it would be easier to just have a function to
-    // call a prefix initializer directly by the prefix?
-    char *cdata_name = wmem_strdup_printf((wmem_allocator_t*)user_data, "%s.cdata", (char*)key);
-    proto_registrar_get_byname(cdata_name);
+    dtd_build_data_t *dtd_data = (dtd_build_data_t*)value;
+
+    register_dtd(dtd_data);
 
     // Always remove it from the map, so this only happens once.
     return TRUE;
@@ -348,7 +363,7 @@ dissect_xml(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     }
 
     // Now all the other protocols
-    wmem_map_foreach_remove(dtd_proto_files, register_dtd_fields_and_remove, pinfo->pool);
+    wmem_map_foreach_remove(dtd_proto_files, register_dtd_fields_and_remove, NULL);
 
     if (stack != NULL)
         g_ptr_array_free(stack, true);
@@ -1251,6 +1266,7 @@ static void add_xmlpi_namespace(void *k _U_, void *v, void *p)
 
 static void destroy_dtd_data(dtd_build_data_t *dtd_data)
 {
+    g_free(dtd_data->filename);
     g_free(dtd_data->proto_name);
     g_free(dtd_data->media_type);
     g_free(dtd_data->description);
@@ -1422,7 +1438,7 @@ static void free_elements(void *k _U_, void *v, void *p _U_)
     g_ptr_array_free(e->element_names, true);
 }
 
-static void register_dtd(dtd_build_data_t *dtd_data, GString *errors)
+static void register_dtd(dtd_build_data_t *dtd_data)
 {
     wmem_map_t *elements      = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     char       *root_name     = NULL;
@@ -1432,6 +1448,7 @@ static void register_dtd(dtd_build_data_t *dtd_data, GString *errors)
     GPtrArray  *hier;
     char       *curr_name;
     GPtrArray  *element_names = g_ptr_array_new();
+    GString    *errors = g_string_new("");
 
     /* we first populate elements with the those coming from the parser */
     while(dtd_data->elements->len) {
@@ -1649,13 +1666,19 @@ static void register_dtd(dtd_build_data_t *dtd_data, GString *errors)
     wmem_map_insert(xml_ns.elements, root_element->name, root_element);
     wmem_map_foreach(elements, free_elements, NULL);
 
-    destroy_dtd_data(dtd_data);
     wmem_free(wmem_epan_scope(), root_name);
+
+    if (errors->len) {
+        report_failure("Dtd Registration in file: %s: %s",
+                       dtd_data->filename, errors->str);
+    }
+    destroy_dtd_data(dtd_data);
+    g_string_free(errors, true);
 }
 
 static void register_dtd_fields(const char *unused _U_);
 
-static void register_dtd_proto(dtd_build_data_t *dtd_data, const char *fullpath, GString *errors _U_)
+static void register_dtd_proto(dtd_build_data_t *dtd_data, GString *errors _U_)
 {
     /*
      * if we were given a proto_name the namespace will be registered
@@ -1681,12 +1704,12 @@ static void register_dtd_proto(dtd_build_data_t *dtd_data, const char *fullpath,
         /* Register the prefix so that the fields under this prefix get
          * automatically registered when requested. */
         proto_register_prefix(short_name, register_dtd_fields);
-        wmem_map_insert(dtd_proto_files, short_name, wmem_strdup(wmem_epan_scope(), fullpath));
+        wmem_map_insert(dtd_proto_files, short_name, dtd_data);
 
     } else {
         /* These fields will have a "xml." prefix and need to be registered
          * along with that prefix. */
-        wmem_list_append(dtd_noproto_files, wmem_strdup(wmem_epan_scope(), fullpath));
+        wmem_list_append(dtd_noproto_files, dtd_data);
     }
 
     /* If there's a media type, add it to the map so that the generic XML
@@ -1705,8 +1728,6 @@ static void register_dtd_proto(dtd_build_data_t *dtd_data, const char *fullpath,
         char* media_type = wmem_strdup(wmem_epan_scope(), dtd_data->media_type);
         wmem_map_insert(media_types, media_type, &xml_ns /* root_element */);
     }
-
-    destroy_dtd_data(dtd_data);
 }
 
 static dtd_build_data_t *g_build_data;
@@ -1728,23 +1749,26 @@ static void dtd_pi_cb(void *ctx _U_, const xmlChar *target, const xmlChar *data)
             {
                 for (xmlAttrPtr attr = fake_doc->children->properties; attr != NULL; attr = attr->next)
                 {
+                    xmlChar* value = xmlNodeListGetString(fake_doc, attr->children, 1);
                     if (xmlStrcmp(attr->name, (const xmlChar*)"proto_name") == 0) {
-                        g_build_data->proto_name = xmlNodeListGetString(fake_doc, attr->children, 1);
+                        g_build_data->proto_name = wmem_strdup(NULL, value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"media") == 0) {
-                        g_build_data->media_type = xmlNodeListGetString(fake_doc, attr->children, 1);
+                        g_build_data->media_type = wmem_strdup(NULL, value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"description") == 0) {
-                        g_build_data->description = xmlNodeListGetString(fake_doc, attr->children, 1);
+                        g_build_data->description = wmem_strdup(NULL, value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"root") == 0) {
-                        g_build_data->proto_root = xmlNodeListGetString(fake_doc, attr->children, 1);
+                        g_build_data->proto_root = wmem_strdup(NULL, value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"hierarchy") == 0) {
-                        xmlChar* value = xmlNodeListGetString(fake_doc, attr->children, 1);
                         g_build_data->recursion = (g_ascii_strcasecmp(value, "yes") == 0) ? true : false;
-                        xmlFree(value);
+                    } else {
+                        g_string_append_printf(g_build_data->error,
+                            "error in wireshark-protocol xmpi: unknown parameter \"%s\"", attr->name);
                     }
+                    xmlFree(value);
                 }
             }
 
@@ -1758,9 +1782,9 @@ static void dtd_pi_cb(void *ctx _U_, const xmlChar *target, const xmlChar *data)
 static void dtd_internalSubset_cb(void *ctx _U_, const xmlChar *name, const xmlChar *publicId _U_, const xmlChar *systemId _U_)
 {
     g_free(g_build_data->proto_root);
-    g_build_data->proto_root = g_ascii_strdown((const char*)name, -1);
+    g_build_data->proto_root = wmem_ascii_strdown(NULL, (const char*)name, -1);
     if (!g_build_data->proto_name) {
-        g_build_data->proto_name = g_strdup(g_build_data->proto_root);
+        g_build_data->proto_name = wmem_strdup(NULL, g_build_data->proto_root);
     }
 
 }
@@ -1771,12 +1795,12 @@ static void dtd_elementDecl_add_list(GPtrArray* list, xmlElementContent* content
     if (content != NULL) {
         if (content->c1 != NULL) {
             if (content->c1->name != NULL)
-                g_ptr_array_add(list, g_ascii_strdown((const char*)content->c1->name, -1));
+                g_ptr_array_add(list, wmem_ascii_strdown(NULL, (const char*)content->c1->name, -1));
             dtd_elementDecl_add_list(list, content->c1);
         }
         if (content->c2 != NULL) {
             if (content->c2->name != NULL)
-                g_ptr_array_add(list, g_ascii_strdown((const char*)content->c2->name, -1));
+                g_ptr_array_add(list, wmem_ascii_strdown(NULL, (const char*)content->c2->name, -1));
 
             dtd_elementDecl_add_list(list, content->c2);
         }
@@ -1787,17 +1811,17 @@ static void dtd_elementDecl_cb(void *ctx _U_, const xmlChar *name, int type _U_,
 {
     /* we will use the first element found as root in case no other one was given. */
     if (!g_build_data->proto_root) {
-        g_build_data->proto_root = g_ascii_strdown((const char*)name, -1);
+        g_build_data->proto_root = wmem_ascii_strdown(NULL, (const char*)name, -1);
     }
 
     dtd_named_list_t* new_element = g_new0(dtd_named_list_t, 1);
 
-    new_element->name = g_ascii_strdown((const char*)name, -1);
+    new_element->name = wmem_ascii_strdown(NULL, (const char*)name, -1);
     new_element->list = g_ptr_array_new();
 
     //Make list
     if ((content != NULL) && (content->name != NULL))
-        g_ptr_array_add(new_element->list, g_ascii_strdown((const char*)content->name, -1));
+        g_ptr_array_add(new_element->list, wmem_ascii_strdown(NULL, (const char*)content->name, -1));
 
     dtd_elementDecl_add_list(new_element->list, content);
 
@@ -1895,7 +1919,7 @@ dtd_parse_libxml2(const char* filename)
     // XXX - Eventually make these wmem_epan_scope. We could use a wmem
     // PtrArray here (and in wmem_map).
     g_build_data = g_new0(dtd_build_data_t, 1);
-    //g_build_data->filename = g_strdup(filename);
+    g_build_data->filename = g_strdup(filename);
     g_build_data->elements = g_ptr_array_new();
     g_build_data->attributes = g_ptr_array_new();
     g_build_data->error = g_string_new("");
@@ -1916,7 +1940,7 @@ dtd_parse_libxml2(const char* filename)
          * possibly lacking any tags? */
         destroy_dtd_data(g_build_data);
         g_build_data = g_new0(dtd_build_data_t, 1);
-        //g_build_data->filename = g_strdup(filename);
+        g_build_data->filename = g_strdup(filename);
         g_build_data->elements = g_ptr_array_new();
         g_build_data->attributes = g_ptr_array_new();
         g_build_data->error = g_string_new("");
@@ -2020,7 +2044,7 @@ static void init_xml_names(void)
                         continue;
                     }
                     g_string_truncate(errors, 0);
-                    register_dtd_proto(dtd_data, fullpath, errors);
+                    register_dtd_proto(dtd_data, errors);
                     if (errors->len) {
                         report_failure("Dtd Registration in file: %s: %s",
                                        fullpath, errors->str);
@@ -2044,11 +2068,6 @@ static void init_xml_names(void)
 static void
 register_dtd_fields(const char *field_name)
 {
-    const char   *fullpath;
-
-    GString *errors = g_string_new("");
-
-    GString *preparsed;
     dtd_build_data_t *dtd_data;
 
     /* prefix initializers get called with the field name; get the prefix. */
@@ -2060,90 +2079,29 @@ register_dtd_fields(const char *field_name)
     } else {
         prefix = wmem_strdup(wmem_epan_scope(), field_name);
     }
-    fullpath = wmem_map_lookup(dtd_proto_files, prefix);
-    if (!fullpath) {
-        ws_warning("DTD proto name %s not found!", prefix);
-        wmem_free(wmem_epan_scope(), prefix);
-        goto cleanup;
-    }
+    dtd_data = wmem_map_remove(dtd_proto_files, prefix);
+    DISSECTOR_ASSERT(dtd_data);
     wmem_free(wmem_epan_scope(), prefix);
-    preparsed = dtd_preparse(fullpath, errors);
 
-    if (errors->len) {
-        report_failure("Dtd Preparser in file %s: %s",
-                       fullpath, errors->str);
-        goto cleanup;
-    }
-
-    dtd_data = dtd_parse(preparsed);
-
-    g_string_free(preparsed, true);
-
-    if (dtd_data->error->len) {
-        report_failure("Dtd Parser in file %s: %s",
-                       fullpath, dtd_data->error->str);
-        destroy_dtd_data(dtd_data);
-        goto cleanup;
-    }
-
-    register_dtd(dtd_data, errors);
-
-    if (errors->len) {
-        report_failure("Dtd Registration in file: %s: %s",
-                       fullpath, errors->str);
-    }
-
-cleanup:
-    g_string_free(errors, true);
+    register_dtd(dtd_data);
 }
 
 static void
 register_xml_fields(const char *unused _U_)
 {
-    const char   *fullpath;
-
     // Register any fields from DTDs that don't register their own protocol
     // They will get added to the globals hf_array and ett_array
-    GString *errors = g_string_new("");
-
-    GString *preparsed;
     dtd_build_data_t *dtd_data;
 
-    for (wmem_list_frame_t *iter = wmem_list_head(dtd_noproto_files);
-        iter; iter = wmem_list_frame_next(iter)) {
+    wmem_list_frame_t *iter;
+    while ((iter = wmem_list_head(dtd_noproto_files)) != NULL) {
+        dtd_data = wmem_list_frame_data(iter);
+        DISSECTOR_ASSERT(dtd_data);
 
-        fullpath = wmem_list_frame_data(iter);
-        DISSECTOR_ASSERT(fullpath);
+        register_dtd(dtd_data);
 
-        g_string_truncate(errors, 0);
-        preparsed = dtd_preparse(fullpath, errors);
-
-        if (errors->len) {
-            report_failure("Dtd Preparser in file %s: %s",
-                           fullpath, errors->str);
-            continue;
-        }
-
-        dtd_data = dtd_parse(preparsed);
-
-        g_string_free(preparsed, true);
-
-        if (dtd_data->error->len) {
-            report_failure("Dtd Parser in file %s: %s",
-                           fullpath, dtd_data->error->str);
-            destroy_dtd_data(dtd_data);
-            continue;
-        }
-
-        register_dtd(dtd_data, errors);
-
-        if (errors->len) {
-            report_failure("Dtd Registration in file: %s: %s",
-                           fullpath, errors->str);
-        }
+        wmem_list_remove_frame(dtd_noproto_files, iter);
     }
-
-    g_string_free(errors, true);
 
     expert_module_t* expert_xml;
 
@@ -2161,9 +2119,27 @@ register_xml_fields(const char *unused _U_)
     g_array_free(ett_arr, true);
 }
 
+static gboolean
+dtd_data_map_remove(void *key, void *value, void *user_data _U_) {
+
+    destroy_dtd_data((dtd_build_data_t*)value);
+    wmem_free(wmem_epan_scope(), (char*)key);
+
+    return TRUE;
+}
+
+static void
+dtd_data_list_remove(void *data, void *user_data _U_) {
+
+    destroy_dtd_data((dtd_build_data_t*)data);
+}
+
 static void
 xml_shutdown_protocol(void) {
     g_regex_unref(encoding_pattern);
+
+    wmem_map_foreach_remove(dtd_proto_files, dtd_data_map_remove, NULL);
+    wmem_list_foreach(dtd_noproto_files, dtd_data_list_remove, NULL);
 }
 
 void
