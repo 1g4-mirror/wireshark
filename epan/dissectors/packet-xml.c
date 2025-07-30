@@ -1709,116 +1709,134 @@ static void register_dtd_proto(dtd_build_data_t *dtd_data, const char *fullpath,
     destroy_dtd_data(dtd_data);
 }
 
-struct _proto_xmlpi_attr {
-        const char* name;
-        void (*act)(char*);
-};
-
 static dtd_build_data_t *g_build_data;
-
-static void set_proto_name (char* val) { g_free(g_build_data->proto_name); g_build_data->proto_name = g_ascii_strdown(val, -1); }
-static void set_media_type (char* val) { g_free(g_build_data->media_type); g_build_data->media_type = g_strdup(val); }
-static void set_proto_root (char* val) { g_free(g_build_data->proto_root); g_build_data->proto_root = g_ascii_strdown(val, -1); }
-static void set_description (char* val) { g_free(g_build_data->description); g_build_data->description = g_strdup(val); }
-static void set_recursive (char* val) { g_build_data->recursion = ( g_ascii_strcasecmp(val,"yes") == 0 ) ? true : false; }
-
-#define SKIP_WSP(p) \
-    while (g_ascii_isspace(*p)) { \
-        p++; \
-    }
 
 static void dtd_pi_cb(void *ctx _U_, const xmlChar *target, const xmlChar *data)
 {
-    if (strcmp(target, "wireshark-protocol") == 0) {
+    if (strcmp((const char*)target, "wireshark-protocol") == 0) {
 
-        struct _proto_xmlpi_attr* pa;
-        static struct _proto_xmlpi_attr proto_attrs[] =
+        xmlDocPtr fake_doc;
+        char* fake_element;
+
+        //libxml2 doesn't parse this content into attributes, so create a dummy element
+        //to parse out the Wireshark data
+        fake_element = wmem_strdup_printf(NULL, "<fake_root %s />", data);
+        fake_doc = xmlReadMemory(fake_element, (int)strlen(fake_element), NULL, NULL, 0);
+        if (fake_doc != NULL)
         {
-                { "proto_name", set_proto_name },
-                { "media", set_media_type },
-                { "root", set_proto_root },
-                { "description", set_description },
-                { "hierarchy", set_recursive },
-                {NULL,NULL}
-        };
-
-        const xmlChar* endp;
-        // libxml2 will skip all the whitespace between the PITarget and data,
-        // but not internal to the data (as expected).
-        // https://www.w3.org/TR/xml/#NT-PI
-        // Processing instructions character data can be nearly anything and
-        // is defined by us. It's been defined as a set of key value pairs.
-        // The restrictions on the Name and Value characters has not been
-        // exactly the same as that in the XML spec.
-        while (*data) {
-            bool got_it = false;
-            endp = data;
-            while (g_ascii_isalnum(*endp) || *endp == '_' || *endp == '-') {
-                endp++;
-            }
-            char *keyval = g_strndup(data, endp - data);
-            data = endp;
-            SKIP_WSP(data);
-            if (*data != '=') {
-                g_string_append_printf(g_build_data->error,
-                    "error in wireshark-protocol xmpl: could not find attribute value!");
-                g_free(keyval);
-                return;
-            }
-            data++;
-            SKIP_WSP(data);
-            if (*data != '"') {
-                g_string_append_printf(g_build_data->error,
-                    "error in wireshark-protocol xmpl: could not find attribute value!");
-                g_free(keyval);
-                return;
-            }
-            data++;
-            endp = strchr(data, '"');
-            if (endp == NULL) {
-                g_string_append_printf(g_build_data->error,
-                    "error in wireshark-protocol xmpl: could not find attribute value!");
-                g_free(keyval);
-                return;
-            }
-            char *value = g_strndup(data, endp - data);
-            for (pa = proto_attrs; pa->name; pa++) {
-                if (g_ascii_strcasecmp(keyval, pa->name) == 0) {
-                    pa->act(value);
-                    got_it = true;
-                    break;
+            if (fake_doc->children != NULL)
+            {
+                for (xmlAttrPtr attr = fake_doc->children->properties; attr != NULL; attr = attr->next)
+                {
+                    if (xmlStrcmp(attr->name, (const xmlChar*)"proto_name") == 0) {
+                        g_build_data->proto_name = xmlNodeListGetString(fake_doc, attr->children, 1);
+                    }
+                    else if (xmlStrcmp(attr->name, (const xmlChar*)"media") == 0) {
+                        g_build_data->media_type = xmlNodeListGetString(fake_doc, attr->children, 1);
+                    }
+                    else if (xmlStrcmp(attr->name, (const xmlChar*)"description") == 0) {
+                        g_build_data->description = xmlNodeListGetString(fake_doc, attr->children, 1);
+                    }
+                    else if (xmlStrcmp(attr->name, (const xmlChar*)"root") == 0) {
+                        g_build_data->proto_root = xmlNodeListGetString(fake_doc, attr->children, 1);
+                    }
+                    else if (xmlStrcmp(attr->name, (const xmlChar*)"hierarchy") == 0) {
+                        xmlChar* value = xmlNodeListGetString(fake_doc, attr->children, 1);
+                        g_build_data->recursion = (g_ascii_strcasecmp(value, "yes") == 0) ? true : false;
+                        xmlFree(value);
+                    }
                 }
             }
-            g_free(value);
-            if (!got_it) {
-                g_string_append_printf(g_build_data->error,
-                    "error in wireshark-protocol xmpl: no such parameter %s!", keyval);
-                g_free(keyval);
-                return;
-            }
-            g_free(keyval);
-            data = endp + 1; // skip past quote
-            SKIP_WSP(data);
+
+            //TODO: Error checking for required attributes?
         }
+        xmlFreeDoc(fake_doc);
+        wmem_free(NULL, fake_element);
     }
 }
 
 static void dtd_internalSubset_cb(void *ctx _U_, const xmlChar *name, const xmlChar *publicId _U_, const xmlChar *systemId _U_)
 {
     g_free(g_build_data->proto_root);
-    g_build_data->proto_root = g_ascii_strdown(name, -1);
+    g_build_data->proto_root = g_ascii_strdown((const char*)name, -1);
     if (!g_build_data->proto_name) {
-        g_build_data->proto_name = g_ascii_strdown(name, -1);
+        g_build_data->proto_name = g_strdup(g_build_data->proto_root);
     }
 
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static void dtd_elementDecl_add_list(GPtrArray* list, xmlElementContent* content)
+{
+    if (content != NULL) {
+        if (content->c1 != NULL) {
+            if (content->c1->name != NULL)
+                g_ptr_array_add(list, g_ascii_strdown((const char*)content->c1->name, -1));
+            dtd_elementDecl_add_list(list, content->c1);
+        }
+        if (content->c2 != NULL) {
+            if (content->c2->name != NULL)
+                g_ptr_array_add(list, g_ascii_strdown((const char*)content->c2->name, -1));
+
+            dtd_elementDecl_add_list(list, content->c2);
+        }
+    }
 }
 
 static void dtd_elementDecl_cb(void *ctx _U_, const xmlChar *name, int type _U_, xmlElementContent *content _U_)
 {
     /* we will use the first element found as root in case no other one was given. */
     if (!g_build_data->proto_root) {
-        g_build_data->proto_root = g_ascii_strdown(name, -1);
+        g_build_data->proto_root = g_ascii_strdown((const char*)name, -1);
     }
+
+    dtd_named_list_t* new_element = g_new0(dtd_named_list_t, 1);
+
+    new_element->name = g_ascii_strdown((const char*)name, -1);
+    new_element->list = g_ptr_array_new();
+
+    //Make list
+    if ((content != NULL) && (content->name != NULL))
+        g_ptr_array_add(new_element->list, g_ascii_strdown((const char*)content->name, -1));
+
+    dtd_elementDecl_add_list(new_element->list, content);
+
+    g_ptr_array_add(g_build_data->elements, new_element);
+}
+
+static void dtd_attributeDecl_cb(void* ctx _U_, const xmlChar* elem, const xmlChar* fullname, int type _U_, int def _U_,
+                                    const xmlChar* defaultValue _U_, xmlEnumerationPtr tree)
+{
+    /* See https://www.w3.org/TR/xml/#attdecls
+     * elem is the name of the parent Element, which may not exist:
+     * "At user option, an XML processor MAY issue a warning if attributes
+     * are declared for an element type not itself declared, but this is
+     * not an error... When more than one AttlistDecl is provided for a given
+     * element type, the contents of all those provided are merged."
+     */
+    dtd_named_list_t *attribute;
+    bool found = false;
+    char *elem_down = g_ascii_strdown((const char*)elem, -1);
+    for (unsigned i = g_build_data->attributes->len; i > 0; i--) {
+        attribute = g_build_data->attributes->pdata[i - 1];
+        if (strcmp(attribute->name, elem_down) == 0) {
+            found = true;
+            g_free(elem_down);
+            break;
+        }
+    }
+    if (!found) {
+        attribute = g_new0(dtd_named_list_t, 1);
+        attribute->name = elem_down;
+        attribute->list = g_ptr_array_new();
+        g_ptr_array_add(g_build_data->attributes, attribute);
+    }
+
+    g_ptr_array_add(attribute->list, g_ascii_strdown((const char*)fullname, -1));
+    // We don't use this. We're allowed to free it, as the default SAX2 handler
+    // here does and it's not used after this by the main parser.
+    if (tree != NULL)
+        xmlFreeEnumeration(tree);
 }
 
 static void dtd_error_cb(void *ctx _U_, const char *msg, ...)
@@ -1854,6 +1872,87 @@ static void dtd_error_cb(void *ctx _U_, const char *msg, ...)
         g_string_append_vprintf(g_build_data->error, msg, args2);
     }
     va_end(args2);
+}
+
+static dtd_build_data_t*
+dtd_parse_libxml2(const char* filename)
+{
+    xmlSAXHandler saxHandler;
+    xmlSAXVersion(&saxHandler, 2);
+    saxHandler.processingInstruction = dtd_pi_cb;
+    saxHandler.internalSubset = dtd_internalSubset_cb;
+    saxHandler.elementDecl = dtd_elementDecl_cb;
+    saxHandler.attributeDecl = dtd_attributeDecl_cb;
+    saxHandler.error = dtd_error_cb;
+
+    xmlParserInputBuffer *buffer;
+
+    xmlDtdPtr dtd;
+    xmlDocPtr doc;
+    xmlParserCtxt *ctxt;
+
+    // Initialize the (global) build data
+    // XXX - Eventually make these wmem_epan_scope. We could use a wmem
+    // PtrArray here (and in wmem_map).
+    g_build_data = g_new0(dtd_build_data_t, 1);
+    //g_build_data->filename = g_strdup(filename);
+    g_build_data->elements = g_ptr_array_new();
+    g_build_data->attributes = g_ptr_array_new();
+    g_build_data->error = g_string_new("");
+
+    buffer = xmlParserInputBufferCreateFilename(filename, XML_CHAR_ENCODING_UTF8);
+
+    // xmlCtxtParseDtd is introduced in 2.14.0; before that
+    // there's no way to parse a DTD using a xmlParserCtxt
+    // or userData, just with a saxHandler directly. That
+    // also means that instead of using a dtd_build_data_t
+    // as user data, we just use a global.
+    dtd = xmlIOParseDTD(&saxHandler, buffer, XML_CHAR_ENCODING_UTF8);
+    /* Is it a regular standalone external DTD? */
+    if (dtd) {
+        xmlFreeDtd(dtd);
+    } else {
+        /* OK, it is a XML document with an internal DTD but
+         * possibly lacking any tags? */
+        destroy_dtd_data(g_build_data);
+        g_build_data = g_new0(dtd_build_data_t, 1);
+        //g_build_data->filename = g_strdup(filename);
+        g_build_data->elements = g_ptr_array_new();
+        g_build_data->attributes = g_ptr_array_new();
+        g_build_data->error = g_string_new("");
+
+#if LIBXML_VERSION >= 21100
+        ctxt = xmlNewSAXParserCtxt(&saxHandler, NULL /*g_build_data*/);
+#else
+        ctxt = xmlNewParserCtxt();
+        if (ctxt->sax != NULL) {
+            xmlFree(ctxt->sax);
+        }
+        ctxt->sax = &saxHandler;
+        //ctxt->userData = g_build_data;
+#endif
+        // We don't actually want the document here, so
+        // we could use xmlParseDocument, but we need
+        // to set the input (use xmlCreateURLParserCtxt
+        // from parserInternals.h?)
+        doc = xmlCtxtReadFile(ctxt, filename, NULL, 0);
+        // We don't need XML_PARSE_DTDLOAD because we don't
+        // want *external* DTDs or entities. We might need
+        // XML_PARSE_NOENT eventually though.
+        xmlFreeDoc(doc);
+#if LIBXML_VERSION < 21100
+        // sax not copied here, so remove it so it doesn't get
+        // freed (it was declared on the stack).
+        ctxt->sax = NULL;
+#endif
+        xmlFreeParserCtxt(ctxt);
+    }
+
+    // xmlIOParseDTD: "input will be freed by the function"
+    // (even on error), so no need for
+    // xmlFreeParserInputBuffer(buffer);
+
+    return g_build_data;
 }
 
 #  define DIRECTORY_T GDir
@@ -1902,73 +2001,17 @@ static void init_xml_names(void)
         if ((dir = OPENDIR_OP(dirname)) != NULL) {
             GString *errors = g_string_new("");
 
-            xmlSAXHandler saxHandler;
-            xmlSAXVersion(&saxHandler, 2);
-            saxHandler.processingInstruction = dtd_pi_cb;
-            saxHandler.internalSubset = dtd_internalSubset_cb;
-            saxHandler.elementDecl = dtd_elementDecl_cb;
-            saxHandler.attributeDecl = NULL;
-            saxHandler.error = dtd_error_cb;
-
-            xmlParserInputBuffer *buffer;
-
-            xmlDtdPtr dtd;
-            xmlDocPtr doc;
-            xmlParserCtxt *ctxt;
-
             while ((file = DIRGETNEXT_OP(dir)) != NULL) {
                 unsigned namelen;
                 filename = GETFNAME_OP(file);
 
                 namelen = (int)strlen(filename);
                 if ( namelen > 4 && ( g_ascii_strcasecmp(filename+(namelen-4), ".dtd")  == 0 ) ) {
-                    g_build_data = g_new0(dtd_build_data_t, 1);
-                    g_build_data->elements = g_ptr_array_new();
-                    g_build_data->attributes = g_ptr_array_new();
-                    g_build_data->error = g_string_new("");
-                    char * fullpath = g_build_filename(dirname, filename, NULL);
-                    buffer = xmlParserInputBufferCreateFilename(fullpath, XML_CHAR_ENCODING_UTF8);
-                    // xmlCtxtParseDtd is introduced in 2.14.0; before that
-                    // there's no way to parse a DTD using a xmlParserCtxt
-                    // or userData, just with a saxHandler directly. That
-                    // also means that instead of using a dtd_build_data_t
-                    // as user data, we just use a global.
-                    dtd = xmlIOParseDTD(&saxHandler, buffer, XML_CHAR_ENCODING_UTF8);
-                    /* Is it a regular standalone external DTD? */
-                    if (dtd) {
-                        xmlFreeDtd(dtd);
-                    } else {
-                        /* OK, it is a XML document with an internal DTD but
-                         * possibly lacking any tags? */
-#if LIBXML_VERSION >= 21100
-                        ctxt = xmlNewSAXParserCtxt(&saxHandler, NULL /*g_build_data*/);
-#else
-                        ctxt = xmlNewParserCtxt();
-                        if (ctxt->sax != NULL) {
-                            xmlFree(ctxt->sax);
-                        }
-                        ctxt->sax = &saxHandler;
-                        //ctxt->userData = g_build_data;
-#endif
-                        // We don't actually want the document here, so
-                        // we could use xmlParseDocument, but we need
-                        // to set the input (use xmlCreateURLParserCtxt
-                        // from parserInternals.h?)
-                        doc = xmlCtxtReadFile(ctxt, fullpath, NULL, 0);
-                        // We don't need XML_PARSE_DTDLOAD because we don't
-                        // want *external* DTDs or entities. We might need
-                        // XML_PARSE_NOENT eventually though.
-                        xmlFreeDoc(doc);
-#if LIBXML_VERSION < 21100
-                        // sax not copied here, so remove it so it doesn't get
-                        // freed (it was declared on the stack).
-                        ctxt->sax = NULL;
-#endif
-                        xmlFreeParserCtxt(ctxt);
-                    }
-                    // xmlIOParseDTD: "input will be freed by the function"
-                    // (even on error), so no need for
-                    // xmlFreeParserInputBuffer(buffer);
+                    dtd_build_data_t* dtd_data;
+
+                    char* fullpath = g_build_filename(dirname, filename, NULL);
+                    dtd_data = dtd_parse_libxml2(fullpath);
+
                     if (g_build_data->error->len) {
                         report_failure("DTD Parser in file %s: %s",
                                        fullpath, g_build_data->error->str);
@@ -1977,7 +2020,7 @@ static void init_xml_names(void)
                         continue;
                     }
                     g_string_truncate(errors, 0);
-                    register_dtd_proto(g_build_data, fullpath, errors);
+                    register_dtd_proto(dtd_data, fullpath, errors);
                     if (errors->len) {
                         report_failure("Dtd Registration in file: %s: %s",
                                        fullpath, errors->str);
