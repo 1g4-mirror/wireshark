@@ -224,7 +224,7 @@ bool SyntaxLineEdit::checkDisplayFilter(QString filter)
             header_field_info *hfi = proto_registrar_get_byalias(token_str);
             if (hfi)
                 syntax_error_message_ = tr("\"%1\" is deprecated in favour of \"%2\". "
-                                           "See Help section 6.4.8 for details.").arg(token_str).arg(hfi->abbrev);
+                                           "See WSUG section 6.4.12 for details.").arg(token_str).arg(hfi->abbrev);
             else
                 // The token_str is the message.
                 syntax_error_message_ = tr("%1").arg(token_str);
