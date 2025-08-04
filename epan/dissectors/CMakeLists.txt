@@ -1597,6 +1597,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nas_5gs.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nas_eps.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nasdaq-itch.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-bist-itch.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nasdaq-soup.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nat-pmp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-navitrol.c
