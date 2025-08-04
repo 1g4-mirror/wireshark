@@ -1,16 +1,15 @@
 //
 /* packet-bist-itch.c
- * Routines for PROTONAME dissection
+ * Routines for BIST-ITCH dissection
  * Copyright 2025, Sadettin Er <sadettin.er@b-ulltech.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * SPDX-License-Identifier: LICENSE
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
-// -----------------------------------------------------------------------------
-//  packet-bist-itch.c  –  BIST (Borsa Istanbul) TotalView‑ITCH dissector for Wireshark ≥ 4.0
+//
 //  Documentation:
 //  https://www.borsaistanbul.com/files/bistech-itch-protocol-specification.pdf
 
