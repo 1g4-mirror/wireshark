@@ -3647,7 +3647,12 @@ tcp_sequence_number_analysis_print_contiguous_flow(packet_info * pinfo _U_,
                           struct tcp_analysis *tcpd
                         )
 {
-    if(!tcpd)
+    /* Ignore this analysis if all conditions aren't met, particularly
+     * switching between profiles (from !tcp_analyze_seq to tcp_analyze_seq)
+     * is known to trigger an issue when accessing tcpd->fwd->tcp_analyze_seq_info
+     * on the first packet before cleanup_dissection/conversation_epan_reset.
+     */
+    if(!(tcp_analyze_seq && tcpd && tcpd->fwd->tcp_analyze_seq_info))
         return;
 
     uint8_t count_client, count_server;
