@@ -105,7 +105,7 @@ static int add_uint(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, int 
 
 static int add_string(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, int len)
 {
-    proto_tree_add_item(tree, hf_id, tvb, offset, len, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_id, tvb, offset, len, ENC_ASCII);
     return offset + len;
 }
 
@@ -119,16 +119,15 @@ static int add_price(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset)
 
 static int dissect_timestamp(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
-    guint32 ns = tvb_get_ntohl(tvb, offset);
-    proto_tree_add_uint(tree, hf_bist_nanosecond, tvb, offset, 4, ns);
+    proto_tree_add_item(tree, hf_bist_nanosecond, tvb, offset, 4, ENC_BIG_ENDIAN);
     return offset + 4;
 }
 
 static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             int offset, guint len)
 {
-    guint64 q = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
-    proto_tree_add_uint64(tree, hf_bist_quantity, tvb, offset, len, q);
+    guint64 q;
+    proto_tree_add_item_ret_uint64(tree, hf_bist_quantity, tvb, offset, len, ENC_BIG_ENDIAN, &q);
     col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" G_GUINT64_FORMAT " ", q);
     return offset + len;
 }
@@ -136,8 +135,8 @@ static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             int offset)
 {
-    guint64 oid = tvb_get_ntoh64(tvb, offset);
-    proto_tree_add_uint64(tree, hf_bist_order_id, tvb, offset, 8, oid);
+    guint64 oid;
+    proto_tree_add_item_ret_uint64(tree, hf_bist_order_id, tvb, offset, 8, ENC_BIG_ENDIAN, &oid);
     col_append_fstr(pinfo->cinfo, COL_INFO, "%" G_GUINT64_FORMAT " ", oid);
     return offset + 8;
 }
@@ -171,13 +170,11 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         proto_tree_add_uint(bist_tree, hf_bist_message_type, tvb, 0, 1, type);
     offset += 1;
 
-    if (type == 'T') {
-        offset = add_uint(bist_tree, hf_bist_second, tvb, offset, 4);
-        goto done;
-    }
-
-    /* ------------------------------------------------------------------ */
     switch (type) {
+    case 'T': {
+            offset = add_uint(bist_tree, hf_bist_second, tvb, offset, 4);
+            break;
+    }
     case 'R': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = add_uint  (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
@@ -227,7 +224,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
         offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         NEED(4);
         offset = add_uint (bist_tree, hf_bist_ranking_seq, tvb, offset, 4);
@@ -245,7 +242,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
         offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
@@ -259,7 +256,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
         offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
@@ -267,9 +264,9 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         NEED(14);
         offset += 14;
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
-        proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII);
         offset += 1;
-        proto_tree_add_item(bist_tree, hf_bist_printable, tvb, offset, 1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_printable, tvb, offset, 1, ENC_ASCII);
         offset += 1;
         break;
     }
@@ -277,7 +274,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
         offset = add_uint(bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         break;
     }
@@ -290,16 +287,16 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
         offset = add_uint (bist_tree, hf_bist_combo_group, tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
         NEED(14);
         offset += 14;
-        proto_tree_add_item(bist_tree, hf_bist_printable, tvb, offset, 1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_printable, tvb, offset, 1, ENC_ASCII);
         offset += 1;
-        proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII);
         offset += 1;
         break;
     }
@@ -307,7 +304,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = add_uint(bist_tree, hf_bist_combo_orderbook_id, tvb, offset, 4);
         offset = add_uint(bist_tree, hf_bist_leg_order_book,   tvb, offset, 4);
-        proto_tree_add_item(bist_tree, hf_bist_leg_side, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_leg_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = add_uint(bist_tree, hf_bist_leg_ratio,       tvb, offset, 4);
         break;
@@ -359,9 +356,8 @@ void proto_register_bist(void)
         HF_ENTRY(ranking_time,        "Ranking Time (ns)",       "ranking_time",            FT_UINT64, BASE_DEC,    NULL,                     NULL),
         HF_ENTRY(order_attributes,    "Order Attributes",        "order_attributes",        FT_UINT16, BASE_HEX,    NULL,                     NULL),
         HF_ENTRY(lot_type,            "Lot Type",                "lot_type",                FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(price_decimals,      "Price Decimals",          "price_decimals",          FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(nominal_decimals,    "Nominal Decimals",        "nominal_decimals",        FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(odd_lot_size,        "Odd‑Lot Size",            "odd_lot_size",            FT_UINT32, BASE_DEC,    NULL,                     NULL),
+        HF_ENTRY(price_decimals,      "Price Decimals",          "price_decimals",          FT_UINT16, BASE_DEC,    NULL,                     NULL),
+        HF_ENTRY(nominal_decimals,    "Nominal Decimals",        "nominal_decimals",        FT_UINT16, BASE_DEC,    NULL,                     NULL),HF_ENTRY(odd_lot_size,        "Odd‑Lot Size",            "odd_lot_size",            FT_UINT32, BASE_DEC,    NULL,                     NULL),
         HF_ENTRY(round_lot_size,      "Round‑Lot Size",          "round_lot_size",          FT_UINT32, BASE_DEC,    NULL,                     NULL),
         HF_ENTRY(block_lot_size,      "Block‑Lot Size",          "block_lot_size",          FT_UINT32, BASE_DEC,    NULL,                     NULL),
         HF_ENTRY(nominal_value,       "Nominal Value",           "nominal_value",           FT_UINT64, BASE_DEC,    NULL,                     NULL),
