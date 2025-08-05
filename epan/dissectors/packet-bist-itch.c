@@ -1,4 +1,3 @@
-//
 /* packet-bist-itch.c
  * Routines for PROTONAME dissection
  * Copyright 2025, Sadettin Er <sadettin.er@b-ulltech.com>
@@ -16,13 +15,14 @@
 
 #include "config.h"
 
+#include <stdbool.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/column-utils.h>
+#include <wsutil/to_str.h>
 #include <wsutil/type_util.h>
 #include <wsutil/wmem/wmem.h>
 
@@ -60,59 +60,65 @@ static const value_string bist_itch_event_vals[] = {
 };
 
 
-#define DECLARE_HF(x) static int hf_bist_##x
-DECLARE_HF(message);                DECLARE_HF(version);
-DECLARE_HF(message_type);           DECLARE_HF(nanosecond);
-DECLARE_HF(second);                 DECLARE_HF(orderbook_id);
-DECLARE_HF(order_id);               DECLARE_HF(side);
-DECLARE_HF(quantity);               DECLARE_HF(price);
-DECLARE_HF(match_id);               DECLARE_HF(combo_group);
-DECLARE_HF(printable);              DECLARE_HF(occurred_cross);
-DECLARE_HF(event_code);             DECLARE_HF(symbol);
-DECLARE_HF(isin);                   DECLARE_HF(financial_product);
-DECLARE_HF(trading_currency);       DECLARE_HF(tick_size);
-DECLARE_HF(price_from);             DECLARE_HF(price_to);
-DECLARE_HF(leg_order_book);         DECLARE_HF(leg_side);
-DECLARE_HF(leg_ratio);              DECLARE_HF(short_sell_status);
-DECLARE_HF(state_name);             DECLARE_HF(bid_qty);
-DECLARE_HF(ask_qty);                DECLARE_HF(best_bid_price);
-DECLARE_HF(best_ask_price);         DECLARE_HF(best_bid_qty);
-DECLARE_HF(ranking_seq);            DECLARE_HF(ranking_time);
-DECLARE_HF(order_attributes);       DECLARE_HF(lot_type);
-DECLARE_HF(long_name);              DECLARE_HF(price_decimals);
-DECLARE_HF(nominal_decimals);       DECLARE_HF(odd_lot_size);
-DECLARE_HF(round_lot_size);         DECLARE_HF(block_lot_size);
-DECLARE_HF(nominal_value);          DECLARE_HF(number_of_leg);
-DECLARE_HF(underlying_orderbook_id);DECLARE_HF(strike_price);
-DECLARE_HF(expiration_date);        DECLARE_HF(strike_price_decimals);
-DECLARE_HF(put_or_call);            DECLARE_HF(ranking_type);
-DECLARE_HF(combo_orderbook_id);
-#undef DECLARE_HF
+static int hf_bist_message;
+static int hf_bist_version;
+static int hf_bist_message_type;
+static int hf_bist_nanosecond;
+static int hf_bist_second;
+static int hf_bist_orderbook_id;
+static int hf_bist_order_id;
+static int hf_bist_side;
+static int hf_bist_quantity;
+static int hf_bist_price;
+static int hf_bist_match_id;
+static int hf_bist_combo_group;
+static int hf_bist_printable;
+static int hf_bist_occurred_cross;
+static int hf_bist_event_code;
+static int hf_bist_symbol;
+static int hf_bist_isin;
+static int hf_bist_financial_product;
+static int hf_bist_trading_currency;
+static int hf_bist_tick_size;
+static int hf_bist_price_from;
+static int hf_bist_price_to;
+static int hf_bist_leg_order_book;
+static int hf_bist_leg_side;
+static int hf_bist_leg_ratio;
+static int hf_bist_short_sell_status;
+static int hf_bist_state_name;
+static int hf_bist_bid_qty;
+static int hf_bist_ask_qty;
+static int hf_bist_best_bid_price;
+static int hf_bist_best_ask_price;
+static int hf_bist_best_bid_qty;
+static int hf_bist_ranking_seq;
+static int hf_bist_ranking_time;
+static int hf_bist_order_attributes;
+static int hf_bist_lot_type;
+static int hf_bist_long_name;
+static int hf_bist_price_decimals;
+static int hf_bist_nominal_decimals;
+static int hf_bist_odd_lot_size;
+static int hf_bist_round_lot_size;
+static int hf_bist_block_lot_size;
+static int hf_bist_nominal_value;
+static int hf_bist_number_of_leg;
+static int hf_bist_underlying_orderbook_id;
+static int hf_bist_strike_price;
+static int hf_bist_expiration_date;
+static int hf_bist_strike_price_decimals;
+static int hf_bist_put_or_call;
+static int hf_bist_ranking_type;
+static int hf_bist_combo_orderbook_id;
 
 static int  proto_bist;
-static gint ett_bist_itch;
-
-
-static int add_uint(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, int len)
-{
-    guint64 v = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
-    if (len == 8)
-        proto_tree_add_uint64(tree, hf_id, tvb, offset, len, v);
-    else
-        proto_tree_add_uint  (tree, hf_id, tvb, offset, len, (guint32)v);
-    return offset + len;
-}
-
-static int add_string(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, int len)
-{
-    proto_tree_add_item(tree, hf_id, tvb, offset, len, ENC_ASCII);
-    return offset + len;
-}
+static int ett_bist_itch;
 
 static int add_price(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset)
 {
-    guint32 raw = tvb_get_ntohl(tvb, offset);
-    gdouble val = bist_show_bigint_price ? (raw / 10000.0) : (gdouble)raw;
+    uint32_t raw = tvb_get_ntohl(tvb, offset);
+    double val = bist_show_bigint_price ? raw / 10000.0 : (double)raw;
     proto_tree_add_double(tree, hf_id, tvb, offset, 4, val);
     return offset + 4;
 }
@@ -124,20 +130,20 @@ static int dissect_timestamp(tvbuff_t *tvb, proto_tree *tree, int offset)
 }
 
 static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                            int offset, guint len)
+                            int offset, unsigned len)
 {
-    guint64 q;
-    proto_tree_add_item_ret_uint64(tree, hf_bist_quantity, tvb, offset, len, ENC_BIG_ENDIAN, &q);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" G_GUINT64_FORMAT " ", q);
-    return offset + len;
+    uint64_t q = tvb_get_ntoh64(tvb, offset);
+    proto_tree_add_item(tree, hf_bist_quantity, tvb, offset, (int)len, ENC_BIG_ENDIAN);
+    col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" PRIu64 " ", q);
+    return offset + (int)len;
 }
 
 static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             int offset)
 {
-    guint64 oid;
-    proto_tree_add_item_ret_uint64(tree, hf_bist_order_id, tvb, offset, 8, ENC_BIG_ENDIAN, &oid);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%" G_GUINT64_FORMAT " ", oid);
+    uint64_t oid = tvb_get_ntoh64(tvb, offset);
+    proto_tree_add_item(tree, hf_bist_order_id, tvb, offset, 8, ENC_BIG_ENDIAN);
+    col_append_fstr(pinfo->cinfo, COL_INFO, "%" PRIu64 " ", oid);
     return offset + 8;
 }
 
@@ -151,12 +157,12 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 {
     proto_item *ti;
     proto_tree *bist_tree = NULL;
-    gint        offset    = 0;
-    guint8      type      = tvb_get_uint8(tvb, offset);
+    int        offset    = 0;
+    uint8_t      type      = tvb_get_uint8(tvb, offset);
 
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "bist‑ITCH");
-    const gchar *type_desc = val_to_str(type, message_types_val, "Unknown (0x%02x)");
+    const char *type_desc = val_to_str(type, message_types_val, "Unknown (0x%02x)");
     col_clear(pinfo->cinfo, COL_INFO);
     col_add_str(pinfo->cinfo,   COL_INFO,  type_desc);
 
@@ -172,82 +178,82 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
     switch (type) {
     case 'T': {
-            offset = add_uint(bist_tree, hf_bist_second, tvb, offset, 4);
+            proto_tree_add_item(bist_tree, hf_bist_second, tvb, offset, 4, ENC_BIG_ENDIAN);
+            offset += 4;
             break;
     }
     case 'R': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint  (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        offset = add_string(bist_tree, hf_bist_symbol,       tvb, offset, 32);
-        offset = add_string(bist_tree, hf_bist_long_name,    tvb, offset, 32);
-        offset = add_string(bist_tree, hf_bist_isin,         tvb, offset, 12);
-        offset = add_uint  (bist_tree, hf_bist_financial_product, tvb, offset, 1);
-        offset = add_string(bist_tree, hf_bist_trading_currency,  tvb, offset, 3);
-        offset = add_uint  (bist_tree, hf_bist_price_decimals,     tvb, offset, 2);
-        offset = add_uint  (bist_tree, hf_bist_nominal_decimals,   tvb, offset, 2);
-        offset = add_uint  (bist_tree, hf_bist_odd_lot_size,       tvb, offset, 4);
-        offset = add_uint  (bist_tree, hf_bist_round_lot_size,     tvb, offset, 4);
-        offset = add_uint  (bist_tree, hf_bist_block_lot_size,     tvb, offset, 4);
-        offset = add_uint  (bist_tree, hf_bist_nominal_value,      tvb, offset, 8);
-        offset = add_uint  (bist_tree, hf_bist_number_of_leg,      tvb, offset, 1);
-        offset = add_uint  (bist_tree, hf_bist_underlying_orderbook_id, tvb, offset, 4);
-        offset = add_price (bist_tree, hf_bist_strike_price,       tvb, offset);
-        offset = add_uint  (bist_tree, hf_bist_expiration_date,    tvb, offset, 4);
-        offset = add_uint  (bist_tree, hf_bist_strike_price_decimals, tvb, offset, 2);
-        offset = add_uint  (bist_tree, hf_bist_put_or_call,        tvb, offset, 1);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_symbol,       tvb, offset, 32, ENC_ASCII);     offset += 32;
+        proto_tree_add_item(bist_tree, hf_bist_long_name,    tvb, offset, 32, ENC_ASCII);     offset += 32;
+        proto_tree_add_item(bist_tree, hf_bist_isin,         tvb, offset, 12, ENC_ASCII);     offset += 12;
+        proto_tree_add_item(bist_tree, hf_bist_financial_product, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(bist_tree, hf_bist_trading_currency,  tvb, offset, 3, ENC_ASCII); offset += 3;
+        proto_tree_add_item(bist_tree, hf_bist_price_decimals,    tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
+        proto_tree_add_item(bist_tree, hf_bist_nominal_decimals,  tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
+        proto_tree_add_item(bist_tree, hf_bist_odd_lot_size,      tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_round_lot_size,    tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_block_lot_size,    tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_nominal_value,     tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_number_of_leg,     tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(bist_tree, hf_bist_underlying_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        offset = add_price(bist_tree, hf_bist_strike_price, tvb, offset);
+        proto_tree_add_item(bist_tree, hf_bist_expiration_date, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_strike_price_decimals, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
+        proto_tree_add_item(bist_tree, hf_bist_put_or_call, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
         NEED(1);
-        offset = add_uint  (bist_tree, hf_bist_ranking_type,       tvb, offset, 1);
+        proto_tree_add_item(bist_tree, hf_bist_ranking_type, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
         break;
     }
     case 'L': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        offset = add_uint (bist_tree, hf_bist_tick_size,    tvb, offset, 8);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_tick_size,    tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         offset = add_price(bist_tree, hf_bist_price_from,   tvb, offset);
         offset = add_price(bist_tree, hf_bist_price_to,     tvb, offset);
         break;
     }
     case 'V': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_short_sell_status, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         break;
     }
     case 'O': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint  (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
-        offset = add_string(bist_tree, hf_bist_state_name,   tvb, offset, 20);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_state_name,   tvb, offset, 20, ENC_ASCII);     offset += 20;
         break;
     }
     case 'A': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         NEED(4);
-        offset = add_uint (bist_tree, hf_bist_ranking_seq, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_ranking_seq, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         NEED(8);
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
-        offset = add_uint (bist_tree, hf_bist_order_attributes, tvb, offset, 2);
+        proto_tree_add_item(bist_tree, hf_bist_order_attributes, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
         proto_tree_add_item(bist_tree, hf_bist_lot_type, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         NEED(8);
-        offset = add_uint (bist_tree, hf_bist_ranking_time, tvb, offset, 8);
+        proto_tree_add_item(bist_tree, hf_bist_ranking_time, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         break;
     }
     case 'E': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_combo_group, tvb, offset, 4);
-        /* Skip 14 reserved bytes */
+        proto_tree_add_item(bist_tree, hf_bist_match_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         NEED(14);
         offset += 14;
         break;
@@ -255,12 +261,12 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     case 'C': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_combo_group, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_match_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         NEED(14);
         offset += 14;
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
@@ -273,24 +279,24 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     case 'D': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
         offset = dissect_order_id(tvb, pinfo, bist_tree, offset);
-        offset = add_uint(bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         break;
     }
     case 'Y': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint(bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         break;
     }
     case 'P': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint (bist_tree, hf_bist_match_id, tvb, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_combo_group, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_match_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
-        offset = add_uint (bist_tree, hf_bist_orderbook_id, tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
         NEED(14);
         offset += 14;
@@ -302,11 +308,11 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     }
     case 'M': {
         offset = dissect_timestamp(tvb, bist_tree, offset);
-        offset = add_uint(bist_tree, hf_bist_combo_orderbook_id, tvb, offset, 4);
-        offset = add_uint(bist_tree, hf_bist_leg_order_book,   tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_combo_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_leg_order_book,     tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_leg_side, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
-        offset = add_uint(bist_tree, hf_bist_leg_ratio,       tvb, offset, 4);
+        proto_tree_add_item(bist_tree, hf_bist_leg_ratio, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         break;
     }
     default: {
@@ -322,63 +328,61 @@ done:
     return tvb_captured_length(tvb);
 }
 
-#define HF_ENTRY(id, name, abbr, type, base, vals, blurb) \
-    { &hf_bist_##id, { name, "bist-itch." abbr, type, base, vals, 0x0, blurb, HFILL } }
-
 void proto_register_bist(void)
 {
     static hf_register_info hf_bist[] = {
-        HF_ENTRY(version,             "Version",                 "version",                 FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(message_type,        "Message Type",            "message_type",            FT_UINT8,  BASE_HEX,    VALS(message_types_val),  NULL),
-        HF_ENTRY(second,              "Second",                  "second",                  FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(nanosecond,          "Nanosecond",              "nanosecond",              FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(orderbook_id,        "Order Book ID",           "orderbook_id",            FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(order_id,            "Order ID",                "order_id",                FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(side,                "Side",                    "side",                    FT_UINT8,  BASE_HEX,    VALS(bist_itch_side_vals), NULL),
-        HF_ENTRY(quantity,            "Quantity",                "quantity",                FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(price,               "Price",                   "price",                   FT_DOUBLE, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(match_id,            "Match ID",                "match_id",                FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(combo_group,         "Combo Group ID",          "combo_group",             FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(printable,           "Printable",               "printable",               FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(occurred_cross,       "Occurred at Cross",       "occurred_cross",           FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(event_code,          "Event Code",              "event_code",              FT_UINT8,  BASE_HEX,    VALS(bist_itch_event_vals), NULL),
-        HF_ENTRY(symbol,              "Symbol",                  "symbol",                  FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(long_name,           "Long Name",               "long_name",               FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(isin,                "ISIN",                    "isin",                    FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(financial_product,   "Financial Product",       "financial_product",       FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(trading_currency,    "Trading Currency",        "trading_currency",        FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(tick_size,           "Tick Size",               "tick_size",               FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(price_from,          "Price From",              "price_from",              FT_DOUBLE, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(price_to,            "Price To",                "price_to",                FT_DOUBLE, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(short_sell_status,   "Short Sell Status",       "short_sell_status",       FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(state_name,          "State Name",              "state_name",              FT_STRING, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(ranking_seq,         "Ranking Sequence #",      "ranking_seq",             FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(ranking_time,        "Ranking Time (ns)",       "ranking_time",            FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(order_attributes,    "Order Attributes",        "order_attributes",        FT_UINT16, BASE_HEX,    NULL,                     NULL),
-        HF_ENTRY(lot_type,            "Lot Type",                "lot_type",                FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(price_decimals,      "Price Decimals",          "price_decimals",          FT_UINT16, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(nominal_decimals,    "Nominal Decimals",        "nominal_decimals",        FT_UINT16, BASE_DEC,    NULL,                     NULL),HF_ENTRY(odd_lot_size,        "Odd‑Lot Size",            "odd_lot_size",            FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(round_lot_size,      "Round‑Lot Size",          "round_lot_size",          FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(block_lot_size,      "Block‑Lot Size",          "block_lot_size",          FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(nominal_value,       "Nominal Value",           "nominal_value",           FT_UINT64, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(number_of_leg,       "Number of Legs",          "number_of_leg",           FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(underlying_orderbook_id,"Underlying Orderbook", "underlying_orderbook_id", FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(strike_price,        "Strike Price",            "strike_price",            FT_DOUBLE, BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(expiration_date,     "Expiration Date",         "expiration_date",         FT_UINT32, BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(strike_price_decimals,"Strike Price Decimals",  "strike_price_decimals",   FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(put_or_call,         "Put/Call",                "put_or_call",             FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(ranking_type,        "Ranking Type",            "ranking_type",            FT_UINT8,  BASE_DEC,    NULL,                     NULL),
-        HF_ENTRY(message,             "Raw Message",             "message",                 FT_BYTES,  BASE_NONE,   NULL,                     NULL),
-        HF_ENTRY(leg_order_book,   "Leg Order Book ID", "leg_order_book", FT_UINT32,  BASE_DEC, NULL, NULL),
-        HF_ENTRY(leg_side,         "Leg Side",          "leg_side",       FT_UINT8,   BASE_HEX, VALS(bist_itch_side_vals), NULL),
-        HF_ENTRY(leg_ratio,        "Leg Ratio",         "leg_ratio",      FT_UINT32,  BASE_DEC, NULL, NULL),
-        HF_ENTRY(bid_qty,          "Best Bid Qty",      "bid_qty",        FT_UINT64,  BASE_DEC, NULL, NULL),
-        HF_ENTRY(ask_qty,          "Best Ask Qty",      "ask_qty", FT_UINT64,  BASE_DEC, NULL, NULL),
-        HF_ENTRY(best_bid_price,   "Best Bid Price",    "best_bid_price", FT_DOUBLE,  BASE_NONE, NULL, NULL),
-        HF_ENTRY(best_ask_price,   "Best Ask Price",    "best_ask_price", FT_DOUBLE,  BASE_NONE, NULL, NULL),
-        HF_ENTRY(best_bid_qty,     "Next-Level Bid Qty","best_bid_qty",  FT_UINT64,  BASE_DEC, NULL, NULL),
-     };
-    static gint *ett[] = { &ett_bist_itch };
+        { &hf_bist_version,              { "Version",                 "bist-itch.version",                 FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_message_type,         { "Message Type",            "bist-itch.message_type",            FT_UINT8,  BASE_HEX,  VALS(message_types_val), 0x0, NULL, HFILL } },
+        { &hf_bist_second,               { "Second",                  "bist-itch.second",                  FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_nanosecond,           { "Nanosecond",              "bist-itch.nanosecond",              FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_orderbook_id,         { "Order Book ID",           "bist-itch.orderbook_id",            FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_order_id,             { "Order ID",                "bist-itch.order_id",                FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_side,                 { "Side",                    "bist-itch.side",                    FT_UINT8,  BASE_HEX,  VALS(bist_itch_side_vals), 0x0, NULL, HFILL } },
+        { &hf_bist_quantity,             { "Quantity",                "bist-itch.quantity",                FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_price,                { "Price",                   "bist-itch.price",                   FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_match_id,             { "Match ID",                "bist-itch.match_id",                FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_combo_group,          { "Combo Group ID",          "bist-itch.combo_group",             FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_printable,            { "Printable",               "bist-itch.printable",               FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_occurred_cross,       { "Occurred at Cross",       "bist-itch.occurred_cross",          FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_event_code,           { "Event Code",              "bist-itch.event_code",              FT_UINT8,  BASE_HEX,  VALS(bist_itch_event_vals), 0x0, NULL, HFILL } },
+        { &hf_bist_symbol,               { "Symbol",                  "bist-itch.symbol",                  FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_long_name,            { "Long Name",               "bist-itch.long_name",               FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_isin,                 { "ISIN",                    "bist-itch.isin",                    FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_financial_product,    { "Financial Product",       "bist-itch.financial_product",       FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_trading_currency,     { "Trading Currency",        "bist-itch.trading_currency",        FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_tick_size,            { "Tick Size",               "bist-itch.tick_size",               FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_price_from,           { "Price From",              "bist-itch.price_from",              FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_price_to,             { "Price To",                "bist-itch.price_to",                FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_short_sell_status,    { "Short Sell Status",       "bist-itch.short_sell_status",       FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_state_name,           { "State Name",              "bist-itch.state_name",              FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_ranking_seq,          { "Ranking Sequence #",      "bist-itch.ranking_seq",             FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_ranking_time,         { "Ranking Time (ns)",       "bist-itch.ranking_time",            FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_order_attributes,     { "Order Attributes",        "bist-itch.order_attributes",        FT_UINT16, BASE_HEX,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_lot_type,             { "Lot Type",                "bist-itch.lot_type",                FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_price_decimals,       { "Price Decimals",          "bist-itch.price_decimals",          FT_UINT16, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_nominal_decimals,     { "Nominal Decimals",        "bist-itch.nominal_decimals",        FT_UINT16, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_odd_lot_size,         { "Odd-Lot Size",            "bist-itch.odd_lot_size",            FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_round_lot_size,       { "Round-Lot Size",          "bist-itch.round_lot_size",          FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_block_lot_size,       { "Block-Lot Size",          "bist-itch.block_lot_size",          FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_nominal_value,        { "Nominal Value",           "bist-itch.nominal_value",           FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_number_of_leg,        { "Number of Legs",          "bist-itch.number_of_leg",           FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_underlying_orderbook_id, { "Underlying Orderbook", "bist-itch.underlying_orderbook_id", FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_strike_price,         { "Strike Price",            "bist-itch.strike_price",            FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_expiration_date,      { "Expiration Date",         "bist-itch.expiration_date",         FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_strike_price_decimals,{ "Strike Price Decimals",   "bist-itch.strike_price_decimals",   FT_UINT16, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_put_or_call,          { "Put/Call",                "bist-itch.put_or_call",             FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_ranking_type,         { "Ranking Type",            "bist-itch.ranking_type",            FT_UINT8,  BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_message,              { "Raw Message",             "bist-itch.message",                 FT_BYTES,  BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_leg_order_book,       { "Leg Order Book ID",       "bist-itch.leg_order_book",          FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_leg_side,             { "Leg Side",                "bist-itch.leg_side",                FT_UINT8,  BASE_HEX,  VALS(bist_itch_side_vals), 0x0, NULL, HFILL } },
+        { &hf_bist_leg_ratio,            { "Leg Ratio",               "bist-itch.leg_ratio",               FT_UINT32, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_bid_qty,              { "Best Bid Qty",            "bist-itch.bid_qty",                 FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_ask_qty,              { "Best Ask Qty",            "bist-itch.ask_qty",                 FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_best_bid_price,       { "Best Bid Price",          "bist-itch.best_bid_price",          FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_best_ask_price,       { "Best Ask Price",          "bist-itch.best_ask_price",          FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_best_bid_qty,         { "Next-Level Bid Qty",      "bist-itch.best_bid_qty",            FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+    };
+    static int *ett[] = { &ett_bist_itch };
 
     proto_bist = proto_register_protocol("BIST ITCH", "BIST‑ITCH", "bist_itch");
     proto_register_field_array(proto_bist, hf_bist, array_length(hf_bist));
