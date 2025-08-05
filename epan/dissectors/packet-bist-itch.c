@@ -398,4 +398,3 @@ void proto_reg_handoff_bist(void)
     dissector_add_for_decode_as("moldudp64.payload", bist_handle);
     dissector_add_for_decode_as("moldudp.payload",   bist_handle);
 }
-
