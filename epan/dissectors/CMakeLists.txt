@@ -817,6 +817,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bhttp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bicc_mst.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bier.c
+	${CMAKE_CURRENT_SOURCE_DIR}/packet-bist-itch.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bitcoin.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bittorrent.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-bjnp.c
@@ -1597,7 +1598,6 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nas_5gs.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nas_eps.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nasdaq-itch.c
-	${CMAKE_CURRENT_SOURCE_DIR}/packet-bist-itch.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nasdaq-soup.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-nat-pmp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-navitrol.c
