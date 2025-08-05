@@ -1,4 +1,3 @@
-//
 /* packet-bist-itch.c
  * Routines for BIST-ITCH dissection
  * Copyright 2025, Sadettin Er <sadettin.er@b-ulltech.com>
