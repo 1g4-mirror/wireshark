@@ -112,7 +112,7 @@ static int add_string(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, in
 static int add_price(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset)
 {
     guint32 raw = tvb_get_ntohl(tvb, offset);
-    gdouble val = bist_show_bigint_price ? raw / 10000.0 : (gdouble)raw;
+    gdouble val = bist_show_bigint_price ? (raw / 10000.0) : (gdouble)raw;
     proto_tree_add_double(tree, hf_id, tvb, offset, 4, val);
     return offset + 4;
 }
