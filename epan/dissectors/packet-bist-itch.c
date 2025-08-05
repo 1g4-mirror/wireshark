@@ -88,16 +88,16 @@ DECLARE_HF(combo_orderbook_id);
 #undef DECLARE_HF
 
 static int  proto_bist;
-static gint ett_bist_itch;
+static int ett_bist_itch;
 
 
 static int add_uint(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, int len)
 {
-    guint64 v = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
+    uint64_t v = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
     if (len == 8)
         proto_tree_add_uint64(tree, hf_id, tvb, offset, len, v);
     else
-        proto_tree_add_uint  (tree, hf_id, tvb, offset, len, (guint32)v);
+        proto_tree_add_uint  (tree, hf_id, tvb, offset, len, (uint32_t)v);
     return offset + len;
 }
 
@@ -109,7 +109,7 @@ static int add_string(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset, in
 
 static int add_price(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset)
 {
-    guint32 raw = tvb_get_ntohl(tvb, offset);
+    uint32_t raw = tvb_get_ntohl(tvb, offset);
     gdouble val = bist_show_bigint_price ? raw / 10000.0 : (gdouble)raw;
     proto_tree_add_double(tree, hf_id, tvb, offset, 4, val);
     return offset + 4;
@@ -117,26 +117,26 @@ static int add_price(proto_tree *tree, int hf_id, tvbuff_t *tvb, int offset)
 
 static int dissect_timestamp(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
-    guint32 ns = tvb_get_ntohl(tvb, offset);
+    uint32_t ns = tvb_get_ntohl(tvb, offset);
     proto_tree_add_uint(tree, hf_bist_nanosecond, tvb, offset, 4, ns);
     return offset + 4;
 }
 
 static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                            int offset, guint len)
+                            int offset, unsigned int len)
 {
-    guint64 q = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
+    uint64_t q = tvb_get_bits64(tvb, offset*8, len*8, ENC_BIG_ENDIAN);
     proto_tree_add_uint64(tree, hf_bist_quantity, tvb, offset, len, q);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" G_GUINT64_FORMAT " ", q);
+    col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" PRIu64 " ", q);
     return offset + len;
 }
 
 static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                             int offset)
 {
-    guint64 oid = tvb_get_ntoh64(tvb, offset);
+    uint64_t oid = tvb_get_ntoh64(tvb, offset);
     proto_tree_add_uint64(tree, hf_bist_order_id, tvb, offset, 8, oid);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%" G_GUINT64_FORMAT " ", oid);
+    col_append_fstr(pinfo->cinfo, COL_INFO, "%" PRIu64 " ", oid);
     return offset + 8;
 }
 
@@ -151,11 +151,11 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     proto_item *ti;
     proto_tree *bist_tree = NULL;
     gint        offset    = 0;
-    guint8      type      = tvb_get_uint8(tvb, offset);
+    uint8_t      type      = tvb_get_uint8(tvb, offset);
 
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "bist‑ITCH");
-    const gchar *type_desc = val_to_str(type, message_types_val, "Unknown (0x%02x)");
+    const char *type_desc = val_to_str(type, message_types_val, "Unknown (0x%02x)");
     col_clear(pinfo->cinfo, COL_INFO);
     col_add_str(pinfo->cinfo,   COL_INFO,  type_desc);
 
@@ -380,7 +380,7 @@ void proto_register_bist(void)
         HF_ENTRY(best_ask_price,   "Best Ask Price",    "best_ask_price", FT_DOUBLE,  BASE_NONE, NULL, NULL),
         HF_ENTRY(best_bid_qty,     "Next-Level Bid Qty","best_bid_qty",  FT_UINT64,  BASE_DEC, NULL, NULL),
      };
-    static gint *ett[] = { &ett_bist_itch };
+    static int *ett[] = { &ett_bist_itch };
 
     proto_bist = proto_register_protocol("BIST ITCH", "BIST‑ITCH", "bist_itch");
     proto_register_field_array(proto_bist, hf_bist, array_length(hf_bist));
