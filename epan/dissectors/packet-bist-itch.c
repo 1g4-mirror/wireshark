@@ -1,5 +1,5 @@
 /* packet-bist-itch.c
- * Routines for PROTONAME dissection
+ * Routines for BIST-ITCH dissection
  * Copyright 2025, Sadettin Er <sadettin.er@b-ulltech.com>
  *
  * Wireshark - Network traffic analyzer
@@ -166,14 +166,10 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     col_clear(pinfo->cinfo, COL_INFO);
     col_add_str(pinfo->cinfo,   COL_INFO,  type_desc);
 
-    if (tree) {
-        ti = proto_tree_add_protocol_format(tree, proto_bist, tvb, 0, -1,
-                                            "bist ITCH, %s", type_desc);
-        bist_tree = proto_item_add_subtree(ti, ett_bist_itch);
-    }
-
-    if (bist_tree)
-        proto_tree_add_uint(bist_tree, hf_bist_message_type, tvb, 0, 1, type);
+    ti = proto_tree_add_protocol_format(tree, proto_bist, tvb, 0, -1,
+                                    "bist ITCH, %s", type_desc);
+    bist_tree = proto_item_add_subtree(ti, ett_bist_itch);
+    proto_tree_add_uint(bist_tree, hf_bist_message_type, tvb, 0, 1, type);
     offset += 1;
 
     switch (type) {
@@ -316,8 +312,7 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         break;
     }
     default: {
-        if (bist_tree)
-            proto_tree_add_item(bist_tree, hf_bist_message, tvb, offset, -1, ENC_NA);
+        proto_tree_add_item(bist_tree, hf_bist_message, tvb, offset, -1, ENC_NA);
         offset = tvb_captured_length(tvb);
         break;
     }
