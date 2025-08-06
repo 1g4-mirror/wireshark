@@ -113,6 +113,8 @@ static int hf_bist_ranking_type;
 static int hf_bist_combo_orderbook_id;
 static int hf_bist_eq_bid_qty;
 static int hf_bist_eq_ask_qty;
+static int hf_bist_reserved1;
+static int hf_bist_reserved2;
 
 static int  proto_bist;
 static int ett_bist_itch;
@@ -269,9 +271,8 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset += 1;
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         proto_tree_add_item(bist_tree, hf_bist_match_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-        proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-        NEED(14);
-        offset += 14;
+        proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;proto_tree_add_item(bist_tree, hf_bist_reserved1, tvb, offset, 7, ENC_NA); offset += 7;
+        proto_tree_add_item(bist_tree, hf_bist_reserved2, tvb, offset, 7, ENC_NA); offset += 7;
         break;
     }
     case 'C': {
@@ -283,8 +284,8 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         proto_tree_add_item(bist_tree, hf_bist_match_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         proto_tree_add_item(bist_tree, hf_bist_combo_group, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-        NEED(14);
-        offset += 14;
+        proto_tree_add_item(bist_tree, hf_bist_reserved1, tvb, offset, 7, ENC_NA); offset += 7;
+        proto_tree_add_item(bist_tree, hf_bist_reserved2, tvb, offset, 7, ENC_NA); offset += 7;
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
         proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII);
         offset += 1;
@@ -314,8 +315,8 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_quantity(tvb, pinfo, bist_tree, offset, 8);
         proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         offset = add_price(bist_tree, hf_bist_price, tvb, offset);
-        NEED(14);
-        offset += 14;
+        proto_tree_add_item(bist_tree, hf_bist_reserved1, tvb, offset, 7, ENC_NA); offset += 7;
+        proto_tree_add_item(bist_tree, hf_bist_reserved2, tvb, offset, 7, ENC_NA); offset += 7;
         proto_tree_add_item(bist_tree, hf_bist_printable, tvb, offset, 1, ENC_ASCII);
         offset += 1;
         proto_tree_add_item(bist_tree, hf_bist_occurred_cross, tvb, offset, 1, ENC_ASCII);
@@ -398,6 +399,8 @@ void proto_register_bist(void)
         { &hf_bist_best_bid_qty,         { "Next-Level Bid Qty",      "bist-itch.best_bid_qty",            FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
         { &hf_bist_eq_bid_qty, { "Avail Bid Qty at Equilibrium", "bist-itch.eq_bid_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_bist_eq_ask_qty, { "Avail Ask Qty @ Equilibrium", "bist-itch.eq_ask_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_reserved1, { "Reserved", "bist-itch.reserved1", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_reserved2, { "Reserved", "bist-itch.reserved2", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
     };
     static int *ett[] = { &ett_bist_itch };
 
