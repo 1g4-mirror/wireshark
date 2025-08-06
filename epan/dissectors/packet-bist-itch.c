@@ -111,6 +111,8 @@ static int hf_bist_strike_price_decimals;
 static int hf_bist_put_or_call;
 static int hf_bist_ranking_type;
 static int hf_bist_combo_orderbook_id;
+static int hf_bist_eq_bid_qty;
+static int hf_bist_eq_ask_qty;
 
 static int  proto_bist;
 static int ett_bist_itch;
@@ -221,6 +223,24 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         offset = dissect_timestamp(tvb, bist_tree, offset);
         proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(bist_tree, hf_bist_state_name,   tvb, offset, 20, ENC_ASCII);     offset += 20;
+        break;
+    }
+    case 'Z': {
+        offset = dissect_timestamp(tvb, bist_tree, offset);
+        proto_tree_add_item(bist_tree, hf_bist_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(bist_tree, hf_bist_eq_bid_qty,  tvb, offset, 8, ENC_BIG_ENDIAN);   offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_eq_ask_qty,  tvb, offset, 8, ENC_BIG_ENDIAN);   offset += 8;
+        offset = add_price(bist_tree, hf_bist_price,         tvb, offset);
+        offset = add_price(bist_tree, hf_bist_best_bid_price,tvb, offset);
+        offset = add_price(bist_tree, hf_bist_best_ask_price,tvb, offset);
+        proto_tree_add_item(bist_tree, hf_bist_bid_qty,      tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(bist_tree, hf_bist_ask_qty,      tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        break;
+    }
+    case 'S': {
+        offset = dissect_timestamp(tvb, bist_tree, offset);                  // 1..4
+        proto_tree_add_item(bist_tree, hf_bist_event_code, tvb, offset, 1, ENC_BIG_ENDIAN); // 'O' or 'C'
+        offset += 1;
         break;
     }
     case 'A': {
@@ -376,6 +396,8 @@ void proto_register_bist(void)
         { &hf_bist_best_bid_price,       { "Best Bid Price",          "bist-itch.best_bid_price",          FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_bist_best_ask_price,       { "Best Ask Price",          "bist-itch.best_ask_price",          FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_bist_best_bid_qty,         { "Next-Level Bid Qty",      "bist-itch.best_bid_qty",            FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_eq_bid_qty, { "Avail Bid Qty at Equilibrium", "bist-itch.eq_bid_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_eq_ask_qty, { "Avail Ask Qty @ Equilibrium", "bist-itch.eq_ask_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
     };
     static int *ett[] = { &ett_bist_itch };
 
