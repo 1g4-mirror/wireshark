@@ -150,7 +150,8 @@ static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     col_append_fstr(pinfo->cinfo, COL_INFO, "%" PRIu64 " ", oid);
     return offset + 8;
 }
-
+/* Guard for optional/trailing bytes: if remaining < len, bail out (goto done). */
+/* Avoids malformed on omitted reserved fields; don’t use for required fields. */
 #define NEED(len) do { \
     if (tvb_reported_length_remaining(tvb, offset) < (len)) \
         goto done; \
