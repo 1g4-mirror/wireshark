@@ -131,20 +131,20 @@ static int dissect_timestamp(tvbuff_t *tvb, proto_tree *tree, int offset)
     return offset + 4;
 }
 
-static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                            int offset, unsigned len)
+static int dissect_quantity(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, unsigned int len)
 {
-    uint64_t q = tvb_get_ntoh64(tvb, offset);
-    proto_tree_add_item(tree, hf_bist_quantity, tvb, offset, (int)len, ENC_BIG_ENDIAN);
+    uint64_t q;
+    proto_tree_add_item_ret_uint64(tree, hf_bist_quantity, tvb,
+                                   offset, (int)len, ENC_BIG_ENDIAN, &q);
     col_append_fstr(pinfo->cinfo, COL_INFO, "qty %" PRIu64 " ", q);
     return offset + (int)len;
 }
 
-static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                            int offset)
+static int dissect_order_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
-    uint64_t oid = tvb_get_ntoh64(tvb, offset);
-    proto_tree_add_item(tree, hf_bist_order_id, tvb, offset, 8, ENC_BIG_ENDIAN);
+    uint64_t oid;
+    proto_tree_add_item_ret_uint64(tree, hf_bist_order_id, tvb,
+                                   offset, 8, ENC_BIG_ENDIAN, &oid);
     col_append_fstr(pinfo->cinfo, COL_INFO, "%" PRIu64 " ", oid);
     return offset + 8;
 }
