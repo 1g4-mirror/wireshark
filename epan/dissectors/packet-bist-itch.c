@@ -115,6 +115,7 @@ static int hf_bist_eq_bid_qty;
 static int hf_bist_eq_ask_qty;
 static int hf_bist_reserved1;
 static int hf_bist_reserved2;
+static int hf_bist_unexpected;
 
 static int  proto_bist;
 static int ett_bist_itch;
@@ -339,7 +340,12 @@ dissect_bist_itch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     }
     }
 
-
+    /* Show any trailing/extra bytes for this message type. */
+    if (bist_tree) {
+        int rem = tvb_reported_length_remaining(tvb, offset);
+        if (rem > 0)
+            proto_tree_add_item(bist_tree, hf_bist_unexpected, tvb, offset, rem, ENC_NA);
+    }
 done:
     return tvb_captured_length(tvb);
 }
@@ -399,8 +405,9 @@ void proto_register_bist(void)
         { &hf_bist_best_bid_qty,         { "Next-Level Bid Qty",      "bist-itch.best_bid_qty",            FT_UINT64, BASE_DEC,  NULL, 0x0, NULL, HFILL } },
         { &hf_bist_eq_bid_qty, { "Avail Bid Qty at Equilibrium", "bist-itch.eq_bid_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_bist_eq_ask_qty, { "Avail Ask Qty @ Equilibrium", "bist-itch.eq_ask_qty", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL } },
-    { &hf_bist_reserved1, { "Reserved", "bist-itch.reserved1", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
-    { &hf_bist_reserved2, { "Reserved", "bist-itch.reserved2", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_reserved1, { "Reserved", "bist-itch.reserved1", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_reserved2, { "Reserved", "bist-itch.reserved2", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_bist_unexpected, { "Unexpected Bytes", "bist-itch.unexpected", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
     };
     static int *ett[] = { &ett_bist_itch };
 
