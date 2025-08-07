@@ -198,6 +198,7 @@ typedef struct _e_prefs {
   bool         gui_find_wrap;
   char        *gui_window_title;
   char        *gui_prepend_window_title;
+  gboolean     gui_preserve_window_title;
   char        *gui_start_title;
   version_info_e gui_version_placement;
   unsigned     gui_max_export_objects;
@@ -265,6 +266,8 @@ typedef struct _e_prefs {
   bool         gui_packet_list_show_minimap;
   bool         gui_packet_list_sortable;
   unsigned     gui_packet_list_cached_rows_max;
+  bool         gui_expert_info_no_bgcolor;
+  bool gui_expert_info_disable_background_color;
   int          gui_decimal_places1; /* Used for type 1 calculations */
   int          gui_decimal_places2; /* Used for type 2 calculations */
   int          gui_decimal_places3; /* Used for type 3 calculations */
