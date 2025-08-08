@@ -2320,7 +2320,7 @@ proto_register_zbee_nwk_gp(void)
                 0x0, NULL, HFILL }},
 
         { &hf_zbee_nwk_gp_cmd_zcl_tunnel_command_id,
-            { "Zigbee Command ID", "zbee_nwk_gp.cmd.zcl_tunnel.command_id", FT_UINT8, BASE_HEX | BASE_EXT_STRING, NULL, 0x0,
+            { "Zigbee Command ID", "zbee_nwk_gp.cmd.zcl_tunnel.command_id", FT_UINT8, BASE_HEX, NULL, 0x0,
                 NULL, HFILL }},
 
         { &hf_zbee_nwk_gp_cmd_zcl_tunnel_payload_len,
