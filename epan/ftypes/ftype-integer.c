@@ -387,46 +387,52 @@ sint64_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_m
 	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_MAX, INT64_MIN);
 }
 
+/* The display filter value is always saved to a literal as a positive value. If there's a negative sign, it is dealt
+with later in the processing.  Therefore, for INT16, the value of -32768 is saved as 32768, which is now out of range of the
+INT16_MAX. Add 1 to the max, so we can include all in-range values. Let later processing deal with the +32768 case.
+Same work around applied for INT8, INT24, INT32, INT40, INT48, INT56.
+*/
+
 static bool
 sint56_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFFFFFF), INT64_C(-0x80000000000000));
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFFFFFF+1), INT64_C(-0x80000000000000));
 }
 
 static bool
 sint48_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFFFF), INT64_C(-0x800000000000));
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFFFF+1), INT64_C(-0x800000000000));
 }
 
 static bool
 sint40_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFF), INT64_C(-0x8000000000));
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(0x7FFFFFFFFF+1), INT64_C(-0x8000000000));
 }
 
 static bool
 sint32_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT32_MAX, INT32_MIN);
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT64_C(INT32_MAX+1), INT32_MIN);
 }
 
 static bool
 sint24_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, 0x7FFFFF, -0x800000);
+	return _sint64_from_uinteger64(fv, s, value, err_msg, 0x7FFFFF+1, -0x800000);
 }
 
 static bool
 sint16_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT16_MAX, INT16_MIN);
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT16_MAX+1, INT16_MIN);
 }
 
 static bool
 sint8_from_uinteger64(fvalue_t *fv, const char *s, uint64_t value, char **err_msg)
 {
-	return _sint64_from_uinteger64(fv, s, value, err_msg, INT8_MAX, INT8_MIN);
+	return _sint64_from_uinteger64(fv, s, value, err_msg, INT8_MAX+1, INT8_MIN);
 }
 
  static bool
