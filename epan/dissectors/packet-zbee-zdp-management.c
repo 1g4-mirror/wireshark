@@ -160,8 +160,12 @@ zdp_parse_routing_table_entry(proto_tree *tree, tvbuff_t *tvb, unsigned *offset)
     dest = tvb_get_letohs(tvb, *offset + len);
     len += 2;
 
+    /* The next byte is 3 status bits, 3 flag bits and 2 reserved bits */
     proto_tree_add_item(field_tree, hf_zbee_zdp_rtg_status, tvb, *offset + len , 1, ENC_LITTLE_ENDIAN);
-    status = tvb_get_uint8(tvb, *offset + len);
+    status = tvb_get_uint8(tvb, *offset + len) & 0x07;
+    proto_tree_add_item(field_tree, hf_zbee_zdp_rtg_mem_constrained_flag, tvb, *offset + len, 1, ENC_NA);
+    proto_tree_add_item(field_tree, hf_zbee_zdp_rtg_mto_flag, tvb, *offset + len, 1, ENC_NA);
+    proto_tree_add_item(field_tree, hf_zbee_zdp_rtg_rrec_req_flag, tvb, *offset + len, 1, ENC_NA);
     len += 1;
 
     proto_tree_add_item(field_tree, hf_zbee_zdp_rtg_next_hop, tvb, *offset + len , 2, ENC_LITTLE_ENDIAN);
