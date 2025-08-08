@@ -3314,7 +3314,7 @@ void proto_register_zbee_tlv(void)
                 NULL, 0x0, NULL, HFILL }
         },
         { &hf_zbee_tlv_local_type_lk_features_capabilities_aps_fc_sync,
-            { "Frame Counter Synchronization Support", "zbee_tlv.lk_features_capabilities.aps_fc_sync", FT_BOOLEAN, BASE_DEC,
+            { "Frame Counter Synchronization Support", "zbee_tlv.lk_features_capabilities.aps_fc_sync", FT_BOOLEAN, 8,
                 NULL, ZBEE_TLV_LK_FEATURES_CAPABILITIES_FC_SYNC_SUPPORTED, NULL, HFILL }
         },
         { &hf_zbee_tlv_local_comm_network_status_map,
