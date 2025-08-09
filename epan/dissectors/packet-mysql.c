@@ -2175,11 +2175,17 @@ mysql_dissect_login(tvbuff_t *tvb, packet_info *pinfo, int offset,
 	}
 
 	/* password: asciiz or length+ascii */
-	/* XXX - CAPS_SC is essentially always set if CAPS_CU (_PROTOCOL_41)
-	 * is set. MySQL since 8.0 has called this _RESERVED2. It might at
-	 * some point stop setting the bit, in which case we should just use
-	 * the value of MYSQL_CAPS_CU instead. */
-	if (conn_data->clnt_caps & MYSQL_CAPS_SC) {
+	if (conn_data->clnt_caps & MYSQL_CAPS_AL) {
+		/* Note the only difference between this case and the
+		 * next is when the authentication data is > 250 bytes. */
+		uint64_t lenstr64;
+		offset += tvb_get_fle(tvb, login_tree, offset, &lenstr64, NULL);
+		lenstr = (uint32_t)lenstr64;
+	} else if (conn_data->clnt_caps & MYSQL_CAPS_SC) {
+		/* Since MySQL 8.0, the documents say to always treat CAPS_SC as
+		 * set if PROTOCOL_41 is in use, and call the bit _RESERVED2.
+		 * At some point clients might stop setting the bit, in which
+		 * case we'd still want to do this if PROTOCOL_41 is in use. */
 		lenstr = tvb_get_uint8(tvb, offset);
 		offset += 1;
 	} else {
@@ -2715,11 +2721,17 @@ mysql_dissect_request(tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *
 		proto_tree_add_item(req_tree, hf_mysql_user, tvb,  offset, lenstr, ENC_ASCII);
 		offset += lenstr;
 
-		/* XXX - CAPS_SC is essentially always set if CAPS_CU (_PROTOCOL_41)
-		 * is set. MySQL since 8.0 has called this _RESERVED2. It might at
-		 * some point stop setting the bit, in which case we should just use
-		 * the value of MYSQL_CAPS_CU instead. */
-		if (conn_data->clnt_caps & MYSQL_CAPS_SC) {
+		if (conn_data->clnt_caps & MYSQL_CAPS_AL) {
+			/* Note the only difference between this case and the
+			 * next is when the authentication data is > 250 bytes. */
+			uint64_t lenstr64;
+			offset += tvb_get_fle(tvb, req_tree, offset, &lenstr64, NULL);
+			lenstr = (uint32_t)lenstr64;
+		} else if (conn_data->clnt_caps & MYSQL_CAPS_SC) {
+			/* Since MySQL 8.0, the documents say to always treat CAPS_SC as
+			 * set if PROTOCOL_41 is in use, and call the bit _RESERVED2.
+			 * At some point clients might stop setting the bit, in which
+			 * case we'd still want to do this if PROTOCOL_41 is in use. */
 			lenstr = tvb_get_uint8(tvb, offset);
 			offset += 1;
 		} else {
@@ -4150,7 +4162,7 @@ mysql_dissect_binlog_event_heartbeat_v2(tvbuff_t *tvb, packet_info *pinfo, int o
 	proto_item_append_text(parent_item, " OTW_HB_LOG_FILENAME_FIELD");
 	offset += 1;
 
-	fle = tvb_get_fle(tvb, hb_v2_subtree, offset, &num, ENC_NA);
+	fle = tvb_get_fle(tvb, hb_v2_subtree, offset, &num, NULL);
 	offset += fle;
 
 	proto_tree_add_item(hb_v2_subtree, hf_mysql_binlog_hb_event_filename, tvb, offset, (int) num, ENC_ASCII);
