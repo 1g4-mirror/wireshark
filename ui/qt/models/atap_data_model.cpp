@@ -35,6 +35,28 @@ static QString formatString(qlonglong value, bool machineReadable)
         QLocale().formattedDataSize(value, 0, QLocale::DataSizeSIFormat);
 }
 
+static QString fromStrPtr(char* strPtr)
+{
+    QString qStr(strPtr);
+    wmem_free(nullptr, strPtr);
+    return qStr;
+}
+
+static QString getConversationAddress(address *addr, bool resolveNames)
+{
+    return fromStrPtr(get_conversation_address(nullptr, addr, resolveNames));
+}
+
+static QString getConversationPort(uint32_t port, conversation_type ctype, bool resolveNames)
+{
+    return fromStrPtr(get_conversation_port(nullptr, port, ctype, resolveNames));
+}
+
+static QString getEndpointPort(endpoint_item_t *item, bool resolveNames)
+{
+    return fromStrPtr(get_endpoint_port(nullptr, item, resolveNames));
+}
+
 ATapDataModel::ATapDataModel(dataModelType type, int protoId, QString filter, QObject *parent):
     QAbstractListModel(parent)
 {
@@ -356,8 +378,12 @@ QVariant EndpointDataModel::headerData(int section, Qt::Orientation orientation,
         switch (section) {
             case ENDP_COLUMN_ADDR:
                 return tr("Address"); break;
+            case ENDP_COLUMN_RESOLVED_ADDR:
+                return tr("Resolved Address"); break;
             case ENDP_COLUMN_PORT:
                 return tr("Port"); break;
+            case ENDP_COLUMN_RESOLVED_PORT:
+                return tr("Resolved Port"); break;
             case ENDP_COLUMN_PACKETS:
                 return tr("Packets"); break;
             case ENDP_COLUMN_BYTES:
@@ -390,6 +416,7 @@ QVariant EndpointDataModel::headerData(int section, Qt::Orientation orientation,
     } else if (role == Qt::TextAlignmentRole) {
         switch (section) {
         case ENDP_COLUMN_ADDR:
+        case ENDP_COLUMN_RESOLVED_ADDR:
         case ENDP_COLUMN_GEO_COUNTRY:
         case ENDP_COLUMN_GEO_CITY:
         case ENDP_COLUMN_GEO_AS_ORG:
@@ -429,21 +456,14 @@ QVariant EndpointDataModel::data(const QModelIndex &idx, int role) const
 
     if (role == Qt::DisplayRole || role == ATapDataModel::UNFORMATTED_DISPLAYDATA) {
         switch (idx.column()) {
-        case ENDP_COLUMN_ADDR: {
-            char* addr_str = get_conversation_address(NULL, &item->myaddress, _resolveNames);
-            QString q_addr_str(addr_str);
-            wmem_free(NULL, addr_str);
-            return q_addr_str;
-        }
+        case ENDP_COLUMN_ADDR:
+            return getConversationAddress(&item->myaddress, false);
+        case ENDP_COLUMN_RESOLVED_ADDR:
+            return getConversationAddress(&item->myaddress, true);
         case ENDP_COLUMN_PORT:
-            if (_resolveNames) {
-                char* port_str = get_endpoint_port(NULL, item, _resolveNames);
-                QString q_port_str(port_str);
-                wmem_free(NULL, port_str);
-                return q_port_str;
-            } else {
-                return quint32(item->port);
-            }
+            return quint32(item->port);
+        case ENDP_COLUMN_RESOLVED_PORT:
+            return getEndpointPort(item, true);
         case ENDP_COLUMN_PACKETS:
         {
             qlonglong packets = (qlonglong)(item->tx_frames + item->rx_frames);
@@ -519,6 +539,7 @@ QVariant EndpointDataModel::data(const QModelIndex &idx, int role) const
     } else if (role == Qt::TextAlignmentRole) {
         switch (idx.column()) {
         case ENDP_COLUMN_ADDR:
+        case ENDP_COLUMN_RESOLVED_ADDR:
         case ENDP_COLUMN_GEO_COUNTRY:
         case ENDP_COLUMN_GEO_CITY:
         case ENDP_COLUMN_GEO_AS_ORG:
@@ -641,12 +662,20 @@ QVariant ConversationDataModel::headerData(int section, Qt::Orientation orientat
         switch (section) {
         case CONV_COLUMN_SRC_ADDR:
             return tr("Address A"); break;
+        case CONV_COLUMN_RESOLVED_SRC_ADDR:
+            return tr("Resolved Address A"); break;
         case CONV_COLUMN_SRC_PORT:
             return tr("Port A"); break;
+        case CONV_COLUMN_RESOLVED_SRC_PORT:
+            return tr("Resolved Port A"); break;
         case CONV_COLUMN_DST_ADDR:
             return tr("Address B"); break;
+        case CONV_COLUMN_RESOLVED_DST_ADDR:
+            return tr("Resolved Address B"); break;
         case CONV_COLUMN_DST_PORT:
             return tr("Port B"); break;
+        case CONV_COLUMN_RESOLVED_DST_PORT:
+            return tr("Resolved Port B"); break;
         case CONV_COLUMN_PACKETS:
             return tr("Packets"); break;
         case CONV_COLUMN_BYTES:
@@ -712,37 +741,21 @@ QVariant ConversationDataModel::data(const QModelIndex &idx, int role) const
     if (role == Qt::DisplayRole || role == ATapDataModel::UNFORMATTED_DISPLAYDATA) {
         switch(idx.column()) {
         case CONV_COLUMN_SRC_ADDR:
-            {
-            char* addr_str = get_conversation_address(NULL, &conv_item->src_address, _resolveNames);
-            QString q_addr_str(addr_str);
-            wmem_free(NULL, addr_str);
-            return q_addr_str;
-            }
+            return getConversationAddress(&conv_item->src_address, false);
+        case CONV_COLUMN_RESOLVED_SRC_ADDR:
+            return getConversationAddress(&conv_item->src_address, true);
         case CONV_COLUMN_SRC_PORT:
-            if (_resolveNames) {
-                char* port_str = get_conversation_port(NULL, conv_item->src_port, conv_item->ctype, _resolveNames);
-                QString q_port_str(port_str);
-                wmem_free(NULL, port_str);
-                return q_port_str;
-            } else {
-                return quint32(conv_item->src_port);
-            }
+            return quint32(conv_item->src_port);
+        case CONV_COLUMN_RESOLVED_SRC_PORT:
+            return getConversationPort(conv_item->src_port, conv_item->ctype, true);
         case CONV_COLUMN_DST_ADDR:
-            {
-            char* addr_str = get_conversation_address(NULL, &conv_item->dst_address, _resolveNames);
-            QString q_addr_str(addr_str);
-            wmem_free(NULL, addr_str);
-            return q_addr_str;
-            }
+            return getConversationAddress(&conv_item->dst_address, false);
+        case CONV_COLUMN_RESOLVED_DST_ADDR:
+            return getConversationAddress(&conv_item->dst_address, true);
         case CONV_COLUMN_DST_PORT:
-            if (_resolveNames) {
-                char* port_str = get_conversation_port(NULL, conv_item->dst_port, conv_item->ctype, _resolveNames);
-                QString q_port_str(port_str);
-                wmem_free(NULL, port_str);
-                return q_port_str;
-            } else {
-                return quint32(conv_item->dst_port);
-            }
+            return quint32(conv_item->dst_port);
+        case CONV_COLUMN_RESOLVED_DST_PORT:
+            return getConversationPort(conv_item->dst_port, conv_item->ctype, true);
         case CONV_COLUMN_PACKETS:
         {
             qlonglong packets = conv_item->tx_frames + conv_item->rx_frames;
