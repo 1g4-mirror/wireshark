@@ -278,7 +278,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         }
         break;
     }
-
     case 'U': { /* Replace Order vs  Order Replaced */
         const int mlen = tvb_reported_length(tvb);
         if (mlen >= 145) {
@@ -297,19 +296,16 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         }
         break;
     }
-
     case 'X': { /* Cancel Order */
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
         break;
     }
-
     case 'Y': { /* Cancel by Order ID */
         proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         proto_tree_add_item(pt, hf_ouch_side, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
         proto_tree_add_item(pt, hf_ouch_order_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         break;
     }
-
     case 'Q': { /* Mass Quote */
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
         proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
@@ -331,8 +327,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         }
         break;
     }
-
-
     case 'A': { /* Order Accepted */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14; 
@@ -356,14 +350,12 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         proto_tree_add_item(pt, hf_ouch_smp_id, tvb, offset,  3, ENC_ASCII); offset += 3;
         break;
     }
-
     case 'J': { /* Order Rejected */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset,14, ENC_ASCII); offset += 14;
         proto_tree_add_item(pt, hf_ouch_reject_code, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         break;
     }
-
     case 'C': { /* Order Canceled */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset,14, ENC_ASCII); offset += 14;
@@ -373,7 +365,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         proto_tree_add_item(pt, hf_ouch_cancel_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
         break;
     }
-
 	case 'E': { /* Order Executed */
 	proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
 	proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
@@ -386,8 +377,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	proto_tree_add_item(pt, hf_ouch_reserved, tvb, offset, 16, ENC_NA); offset += 16;
 	break;
 	}
-
-
 	case 'K': { /* Mass Quote Ack */
 	proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
 	proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII);      offset += 14;
@@ -399,7 +388,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	proto_tree_add_item(pt, hf_ouch_quote_status, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
 	break;
 	}
-
     case 'R': { /* Mass Quote Rejection */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII); offset += 14;
@@ -415,7 +403,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         }
         break;
     }
-
     default: {
         int rem = tvb_captured_length_remaining(tvb, offset);
         if (rem > 0) proto_tree_add_item(pt, hf_ouch_raw, tvb, offset, rem, ENC_NA);
