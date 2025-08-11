@@ -366,11 +366,11 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         break;
     }
 	case 'E': { /* Order Executed */
-	    proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-    	proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
-	    proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-	    proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset, 8, ENC_BIG_ENDIAN);
-	    col_append_fstr(pinfo->cinfo, COL_INFO, ", TradedQty=%" PRIu64, tvb_get_ntoh64(tvb, offset)); offset += 8;
+        proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
+        proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset, 8, ENC_BIG_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, ", TradedQty=%" PRIu64, tvb_get_ntoh64(tvb, offset)); offset += 8;
 	    offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
 	    proto_tree_add_item(pt, hf_ouch_match_id, tvb, offset, 12, ENC_NA); offset += 12;
 	    proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
