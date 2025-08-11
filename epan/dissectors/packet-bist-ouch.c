@@ -423,21 +423,22 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     return tvb_captured_length(tvb);
 }
 
-static bool dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo,
-                                   proto_tree *tree, void *data _U_)
+static bool dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     if (tvb_captured_length(tvb) < 1)
         return false;
 
-    guint8 msg_type = tvb_get_guint8(tvb, 0);
-    int idx = try_val_to_str_idx(msg_type, ouch_msg_types);
-    if (idx >= 0) {
+    uint8_t msg_type = tvb_get_uint8(tvb, 0);
+
+    int idx = -1;
+    const char *s = try_val_to_str_idx(msg_type, ouch_msg_types, &idx);
+    if (s != NULL) {
         dissect_bist_ouch(tvb, pinfo, tree, NULL);
         return true;
     }
-
     return false;
 }
+
 
 void proto_register_bist_ouch(void)
 {
