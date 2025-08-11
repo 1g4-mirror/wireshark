@@ -14,17 +14,10 @@
 //  https://www.borsaistanbul.com/files/OUCH_ProtSpec_BIST_va2413.pdf
 
 #include "config.h"
-
-#include <stdbool.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <wireshark.h>
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/column-utils.h>
-#include <wsutil/type_util.h>
-#include <wsutil/wmem/wmem.h>
 
 #define PNAME  "BIST OUCH"
 #define PSHORT "BIST-OUCH"
@@ -82,30 +75,68 @@ static const value_string ouch_client_cat_vals[] = {
 };
 
 static const value_string ouch_cancel_reason_vals[] = {
-    { 1,  "Canceled by user/other user" }, { 3,  "Trade" }, { 4,  "Inactivate" },
-    { 5,  "Replaced by User" }, { 6,  "New" }, { 8,  "Converted by System" },
-    { 9,  "Canceled by System" }, { 10, "Canceled by Proxy" }, { 11, "Bait Recalculated" },
-    { 12, "Triggered by System" }, { 13, "Refreshed by System" }, { 15, "Canceled by System Limit Change" },
-    { 17, "Linked Leg Canceled" }, { 18, "Linked Leg Modified" }, { 19, "Expired" },
-    { 20, "Canceled Due to ISS" }, { 21, "Inactivated Due to ISS" }, { 23, "Inactivated Due to Purge" },
-    { 24, "Inactivated Day Order" }, { 25, "Inactivated Due to DeList" }, { 26, "Inactivated Due to Expiry" },
-    { 27, "Inactivated Due to Outside Limits" }, { 28, "Transfer of Ownership" }, { 29, "New Inactive" },
-    { 30, "Reloaded" }, { 31, "Reloaded Intraday" }, { 34, "Canceled After Auction" },
-    { 35, "Inactivated Due to Outside Price Limits" }, { 36, "Activated Due to Outside Limits" },
-    { 37, "Trigger on Session Order Triggered" }, { 39, "Undisclosed Qty Order Converted" },
-    { 40, "Inactivated Due to Order Value" }, { 41, "System Delta Protection" }, { 42, "System Quantity Protection" },
-    { 43, "Internal Crossing Delete" }, { 44, "Participant Block on Market" }, { 45, "Inactivated Due to Participant Block" },
-    { 46, "Order deleted due to SMP" }, { 52, "Paused" }, { 53, "Activated Paused Order" },
-    { 56, "Linked Leg Activated" }, { 115, "PTRM misc" }, { 116, "PTRM user limits auto" },
-    { 117, "PTRM user limits manual" }, { 118, "PTRM market limits" }, { 119, "PTRM investor limits" },
-    { 120, "PTRM margin breach" }, { 121, "PTRM participant suspension" }, { 122, "PTRM mra suspension" },
-    { 123, "PTRM mca suspension" }, { 124, "PTRM ta suspension" }, { 125, "Canceled: Investor Position Value Limit" },
+    { 1,  "Canceled by user/other user" },
+    { 3,  "Trade" },
+    { 4,  "Inactivate" },
+    { 5,  "Replaced by User" }, 
+    { 6,  "New" }, 
+    { 8,  "Converted by System" },
+    { 9,  "Canceled by System" }, 
+    { 10, "Canceled by Proxy" }, 
+    { 11, "Bait Recalculated" },
+    { 12, "Triggered by System" }, 
+    { 13, "Refreshed by System" }, 
+    { 15, "Canceled by System Limit Change" },
+    { 17, "Linked Leg Canceled" }, 
+    { 18, "Linked Leg Modified" }, 
+    { 19, "Expired" },
+    { 20, "Canceled Due to ISS" }, 
+    { 21, "Inactivated Due to ISS" }, 
+    { 23, "Inactivated Due to Purge" },
+    { 24, "Inactivated Day Order" }, 
+    { 25, "Inactivated Due to DeList" }, 
+    { 26, "Inactivated Due to Expiry" },
+    { 27, "Inactivated Due to Outside Limits" }, 
+    { 28, "Transfer of Ownership" }, 
+    { 29, "New Inactive" },
+    { 30, "Reloaded" }, 
+    { 31, "Reloaded Intraday" }, 
+    { 34, "Canceled After Auction" },
+    { 35, "Inactivated Due to Outside Price Limits" }, 
+    { 36, "Activated Due to Outside Limits" },
+    { 37, "Trigger on Session Order Triggered" }, 
+    { 39, "Undisclosed Qty Order Converted" },
+    { 40, "Inactivated Due to Order Value" }, 
+    { 41, "System Delta Protection" }, 
+    { 42, "System Quantity Protection" },
+    { 43, "Internal Crossing Delete" }, 
+    { 44, "Participant Block on Market" }, 
+    { 45, "Inactivated Due to Participant Block" },
+    { 46, "Order deleted due to SMP" }, 
+    { 52, "Paused" }, 
+    { 53, "Activated Paused Order" },
+    { 56, "Linked Leg Activated" }, 
+    { 115, "PTRM misc" }, 
+    { 116, "PTRM user limits auto" },
+    { 117, "PTRM user limits manual" }, 
+    { 118, "PTRM market limits" }, 
+    { 119, "PTRM investor limits" },
+    { 120, "PTRM margin breach" }, 
+    { 121, "PTRM participant suspension" }, 
+    { 122, "PTRM mra suspension" },
+    { 123, "PTRM mca suspension" }, 
+    { 124, "PTRM ta suspension" }, 
+    { 125, "Canceled: Investor Position Value Limit" },
     { 0,   NULL }
 };
 
 static const value_string ouch_quote_status_vals[] = {
-    { 0, "Accept" }, { 1, "Updated" }, { 2, "Canceled" },
-    { 3, "Unsolicited update" }, { 4, "Unsolicited cancel" }, { 5, "Traded" },
+    { 0, "Accept" }, 
+    { 1, "Updated" },
+    { 2, "Canceled" },
+    { 3, "Unsolicited update" },
+    { 4, "Unsolicited cancel" },
+    { 5, "Traded" },
     { 0, NULL }
 };
 
@@ -166,40 +197,40 @@ static int add_price(proto_tree *tree, int hf_int, int hf_double, tvbuff_t *tvb,
 
 static int dissect_u_replace_order(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, int offset)
 {
-    proto_tree_add_item(pt, hf_ouch_order_token,      tvb, offset, 14, ENC_ASCII);      offset += 14; /* existing token */
+    proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII);      offset += 14; /* existing token */
     proto_tree_add_item(pt, hf_ouch_repl_order_token, tvb, offset, 14, ENC_ASCII);      offset += 14;
-    proto_tree_add_item(pt, hf_ouch_quantity,         tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
     offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
-    proto_tree_add_item(pt, hf_ouch_openclose,        tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-    proto_tree_add_item(pt, hf_ouch_client_account,   tvb, offset, 16, ENC_ASCII);      offset += 16;
-    proto_tree_add_item(pt, hf_ouch_customer_info,    tvb, offset, 15, ENC_ASCII);      offset += 15;
-    proto_tree_add_item(pt, hf_ouch_exchange_info,    tvb, offset, 32, ENC_ASCII);      offset += 32;
-    proto_tree_add_item(pt, hf_ouch_display_qty,      tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
-    proto_tree_add_item(pt, hf_ouch_client_category,  tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-    proto_tree_add_item(pt, hf_ouch_reserved,         tvb, offset,  8, ENC_NA);         offset += 8;
+    proto_tree_add_item(pt, hf_ouch_openclose, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_client_account, tvb, offset, 16, ENC_ASCII);      offset += 16;
+    proto_tree_add_item(pt, hf_ouch_customer_info, tvb, offset, 15, ENC_ASCII);      offset += 15;
+    proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 32, ENC_ASCII);      offset += 32;
+    proto_tree_add_item(pt, hf_ouch_display_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_reserved, tvb, offset,  8, ENC_NA);         offset += 8;
     col_append_str(pinfo->cinfo, COL_INFO, ", Replace Order");
     return offset;
 }
 
 static int dissect_u_order_replaced(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, int offset)
 {
-    proto_tree_add_item(pt, hf_ouch_timestamp_ns,     tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
     proto_tree_add_item(pt, hf_ouch_repl_order_token, tvb, offset, 14, ENC_ASCII);      offset += 14;
     proto_tree_add_item(pt, hf_ouch_prev_order_token, tvb, offset, 14, ENC_ASCII);      offset += 14;
-    proto_tree_add_item(pt, hf_ouch_orderbook_id,     tvb, offset,  4, ENC_BIG_ENDIAN); offset += 4;
-    proto_tree_add_item(pt, hf_ouch_side,             tvb, offset,  1, ENC_BIG_ENDIAN);      offset += 1;
-    proto_tree_add_item(pt, hf_ouch_order_id,         tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
-    proto_tree_add_item(pt, hf_ouch_quantity,         tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset,  4, ENC_BIG_ENDIAN); offset += 4;
+    proto_tree_add_item(pt, hf_ouch_side, tvb, offset,  1, ENC_BIG_ENDIAN);      offset += 1;
+    proto_tree_add_item(pt, hf_ouch_order_id, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
     offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
-    proto_tree_add_item(pt, hf_ouch_tif,              tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-    proto_tree_add_item(pt, hf_ouch_openclose,        tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-    proto_tree_add_item(pt, hf_ouch_client_account,   tvb, offset, 16, ENC_ASCII);      offset += 16;
-    proto_tree_add_item(pt, hf_ouch_order_state,      tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-    proto_tree_add_item(pt, hf_ouch_customer_info,    tvb, offset, 15, ENC_ASCII);      offset += 15;
-    proto_tree_add_item(pt, hf_ouch_exchange_info,    tvb, offset, 32, ENC_ASCII);      offset += 32;
-    proto_tree_add_item(pt, hf_ouch_pretrade_qty,     tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
-    proto_tree_add_item(pt, hf_ouch_display_qty,      tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
-    proto_tree_add_item(pt, hf_ouch_client_category,  tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_tif, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_openclose, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_client_account, tvb, offset, 16, ENC_ASCII);      offset += 16;
+    proto_tree_add_item(pt, hf_ouch_order_state, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+    proto_tree_add_item(pt, hf_ouch_customer_info, tvb, offset, 15, ENC_ASCII);      offset += 15;
+    proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 32, ENC_ASCII);      offset += 32;
+    proto_tree_add_item(pt, hf_ouch_pretrade_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_display_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+    proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
     col_append_str(pinfo->cinfo, COL_INFO, ", Order Replaced");
     return offset;
 }
@@ -211,22 +242,12 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, PSHORT);
     col_clear(pinfo->cinfo, COL_INFO);
-    {
-        const char *desc = try_val_to_str(type, ouch_msg_types);
-        col_set_str(pinfo->cinfo, COL_INFO, desc ? desc : "Unknown");
-    }
+    col_set_str(pinfo->cinfo, COL_INFO, try_val_to_str(type, ouch_msg_types) ?: "Unknown");
 
-    proto_item *ti;
-    {
-        const char *desc = try_val_to_str(type, ouch_msg_types);
-        if (desc) {
-            ti = proto_tree_add_protocol_format(tree, proto_bist_ouch, tvb, 0, -1,
-                "%s, %s", PNAME, desc);
-        } else {
-            ti = proto_tree_add_protocol_format(tree, proto_bist_ouch, tvb, 0, -1,
-                "%s, Unknown (0x%02x)", PNAME, type);
-        }
-    }
+    const char *desc = try_val_to_str(type, ouch_msg_types);
+    proto_item *ti = desc
+        ? proto_tree_add_protocol_format(tree, proto_bist_ouch, tvb, 0, -1, "%s, %s", PNAME, desc)
+        : proto_tree_add_protocol_format(tree, proto_bist_ouch, tvb, 0, -1, "%s, Unknown (0x%02x)", PNAME, type);
     proto_tree *pt = proto_item_add_subtree(ti, ett_bist_ouch);
 
     proto_tree_add_uint(pt, hf_ouch_msg_type, tvb, 0, 1, type);
@@ -235,26 +256,25 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     switch (type) {
 
     case 'O': { /* Enter Order */
-        proto_tree_add_item(pt, hf_ouch_order_token,     tvb, offset, 14, ENC_ASCII);        offset += 14;
-        proto_tree_add_item(pt, hf_ouch_orderbook_id,    tvb, offset,  4, ENC_BIG_ENDIAN);   offset += 4;
-        proto_tree_add_item(pt, hf_ouch_side,            tvb, offset,  1, ENC_BIG_ENDIAN);        offset += 1;
-        proto_tree_add_item(pt, hf_ouch_quantity,        tvb, offset,  8, ENC_BIG_ENDIAN);
-        col_append_fstr(pinfo->cinfo, COL_INFO, ", Qty=%" PRIu64, tvb_get_ntoh64(tvb, offset));
-        offset += 8;
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
+        proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset,  4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(pt, hf_ouch_side, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset,  8, ENC_BIG_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, ", Qty=%" PRIu64, tvb_get_ntoh64(tvb, offset)); offset += 8;
         offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
-        proto_tree_add_item(pt, hf_ouch_tif,             tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_openclose,       tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_client_account,  tvb, offset, 16, ENC_ASCII);        offset += 16;
-        proto_tree_add_item(pt, hf_ouch_customer_info,   tvb, offset, 15, ENC_ASCII);        offset += 15;
-        proto_tree_add_item(pt, hf_ouch_exchange_info,   tvb, offset, 32, ENC_ASCII);        offset += 32;
-        proto_tree_add_item(pt, hf_ouch_display_qty,     tvb, offset,  8, ENC_BIG_ENDIAN);   offset += 8;
-        proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_offhours,        tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_smp_level,       tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_smp_method,      tvb, offset,  1, ENC_BIG_ENDIAN);   offset += 1;
-        proto_tree_add_item(pt, hf_ouch_smp_id,          tvb, offset,  3, ENC_ASCII);        offset += 3;
+        proto_tree_add_item(pt, hf_ouch_tif, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_openclose, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_client_account, tvb, offset, 16, ENC_ASCII); offset += 16;
+        proto_tree_add_item(pt, hf_ouch_customer_info, tvb, offset, 15, ENC_ASCII); offset += 15;
+        proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 32, ENC_ASCII); offset += 32;
+        proto_tree_add_item(pt, hf_ouch_display_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_offhours, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_level, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_method, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_id, tvb, offset,  3, ENC_ASCII); offset += 3;
         if (tvb_captured_length_remaining(tvb, offset) >= 2) {
-            proto_tree_add_item(pt, hf_ouch_reserved,    tvb, offset,  2, ENC_NA);           offset += 2;
+            proto_tree_add_item(pt, hf_ouch_reserved,    tvb, offset,  2, ENC_NA); offset += 2;
         }
         break;
     }
@@ -285,16 +305,16 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
     case 'Y': { /* Cancel by Order ID */
         proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-        proto_tree_add_item(pt, hf_ouch_side,         tvb, offset, 1, ENC_BIG_ENDIAN);      offset += 1;
-        proto_tree_add_item(pt, hf_ouch_order_id,     tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(pt, hf_ouch_side, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_order_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         break;
     }
 
     case 'Q': { /* Mass Quote */
-        proto_tree_add_item(pt, hf_ouch_order_token,     tvb, offset, 14, ENC_ASCII);      offset += 14;
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
         proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
-        proto_tree_add_item(pt, hf_ouch_client_account,  tvb, offset, 16, ENC_ASCII);      offset += 16;
-        proto_tree_add_item(pt, hf_ouch_exchange_info,   tvb, offset, 16, ENC_ASCII);      offset += 16;
+        proto_tree_add_item(pt, hf_ouch_client_account, tvb, offset, 16, ENC_ASCII); offset += 16;
+        proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 16, ENC_ASCII); offset += 16;
         if (tvb_captured_length_remaining(tvb, offset) < 2) break;
         uint16_t num_entries = tvb_get_ntohs(tvb, offset);
         proto_tree_add_item(pt, hf_ouch_no_quote_entries, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
@@ -303,55 +323,54 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
             proto_item *entry_item = proto_tree_add_item(pt, hf_ouch_raw, tvb, offset, 28, ENC_NA);
             proto_item_set_text(entry_item, "Quote Entry %u", i+1);
             proto_tree *entry_tree = proto_item_add_subtree(entry_item, ett_bist_ouch_quote);
-
             proto_tree_add_item(entry_tree, hf_ouch_q_entry_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-            offset = add_price(entry_tree, hf_ouch_q_entry_bid_px_int,   hf_ouch_price_double, tvb, offset);
+            offset = add_price(entry_tree, hf_ouch_q_entry_bid_px_int, hf_ouch_price_double, tvb, offset);
             offset = add_price(entry_tree, hf_ouch_q_entry_offer_px_int, hf_ouch_price_double, tvb, offset);
-            proto_tree_add_item(entry_tree, hf_ouch_q_entry_bid_sz,      tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-            proto_tree_add_item(entry_tree, hf_ouch_q_entry_offer_sz,    tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+            proto_tree_add_item(entry_tree, hf_ouch_q_entry_bid_sz, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+            proto_tree_add_item(entry_tree, hf_ouch_q_entry_offer_sz, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
         }
         break;
     }
 
 
     case 'A': { /* Order Accepted */
-        proto_tree_add_item(pt, hf_ouch_timestamp_ns,  tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   /* 1..8  */
-        proto_tree_add_item(pt, hf_ouch_order_token,   tvb, offset, 14, ENC_ASCII);      offset += 14;  /* 9..22 */
-        proto_tree_add_item(pt, hf_ouch_orderbook_id,  tvb, offset,  4, ENC_BIG_ENDIAN); offset += 4;   /* 23..26 */
-        proto_tree_add_item(pt, hf_ouch_side,          tvb, offset,  1, ENC_BIG_ENDIAN);      offset += 1;   /* 27 */
-        proto_tree_add_item(pt, hf_ouch_order_id,      tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   /* 28..35 */
-        proto_tree_add_item(pt, hf_ouch_quantity,      tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   /* 36..43 */
-        offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);                    /* 44..47 */
-        proto_tree_add_item(pt, hf_ouch_tif,           tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 48 */
-        proto_tree_add_item(pt, hf_ouch_openclose,     tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 49 */
-        proto_tree_add_item(pt, hf_ouch_client_account,tvb, offset, 16, ENC_ASCII);      offset += 16;  /* 50..65 */
-        proto_tree_add_item(pt, hf_ouch_order_state,   tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 66 */
-        proto_tree_add_item(pt, hf_ouch_customer_info, tvb, offset, 15, ENC_ASCII);      offset += 15;  /* 67..81 */
-        proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 32, ENC_ASCII);      offset += 32;  /* 82..113 */
-        proto_tree_add_item(pt, hf_ouch_pretrade_qty,  tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   /* 114..121 */
-        proto_tree_add_item(pt, hf_ouch_display_qty,   tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   /* 122..129 */
-        proto_tree_add_item(pt, hf_ouch_client_category,tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;   /* 130 */
-        proto_tree_add_item(pt, hf_ouch_offhours,      tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 131 */
-        proto_tree_add_item(pt, hf_ouch_smp_level,     tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 132 */
-        proto_tree_add_item(pt, hf_ouch_smp_method,    tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   /* 133 */
-        proto_tree_add_item(pt, hf_ouch_smp_id,        tvb, offset,  3, ENC_ASCII);      offset += 3;   /* 134..136 */
+        proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14; 
+        proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset,  4, ENC_BIG_ENDIAN); offset += 4;   
+        proto_tree_add_item(pt, hf_ouch_side, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   
+        proto_tree_add_item(pt, hf_ouch_order_id, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;   
+        proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;  
+        offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);                   
+        proto_tree_add_item(pt, hf_ouch_tif, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   
+        proto_tree_add_item(pt, hf_ouch_openclose, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;   
+        proto_tree_add_item(pt, hf_ouch_client_account,tvb, offset, 16, ENC_ASCII); offset += 16;  
+        proto_tree_add_item(pt, hf_ouch_order_state, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;  
+        proto_tree_add_item(pt, hf_ouch_customer_info, tvb, offset, 15, ENC_ASCII); offset += 15; 
+        proto_tree_add_item(pt, hf_ouch_exchange_info, tvb, offset, 32, ENC_ASCII); offset += 32; 
+        proto_tree_add_item(pt, hf_ouch_pretrade_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;  
+        proto_tree_add_item(pt, hf_ouch_display_qty, tvb, offset,  8, ENC_BIG_ENDIAN); offset += 8;  
+        proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_offhours, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_level, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_method, tvb, offset,  1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_smp_id, tvb, offset,  3, ENC_ASCII); offset += 3;
         break;
     }
 
     case 'J': { /* Order Rejected */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-        proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII);      offset += 14;
-        proto_tree_add_item(pt, hf_ouch_reject_code,  tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset,14, ENC_ASCII); offset += 14;
+        proto_tree_add_item(pt, hf_ouch_reject_code, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         break;
     }
 
     case 'C': { /* Order Canceled */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-        proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII);      offset += 14;
+        proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset,14, ENC_ASCII); offset += 14;
         proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-        proto_tree_add_item(pt, hf_ouch_side,         tvb, offset, 1, ENC_BIG_ENDIAN);      offset += 1;
-        proto_tree_add_item(pt, hf_ouch_order_id,     tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-        proto_tree_add_item(pt, hf_ouch_cancel_reason,tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_side, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
+        proto_tree_add_item(pt, hf_ouch_order_id, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+        proto_tree_add_item(pt, hf_ouch_cancel_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
         break;
     }
 
@@ -360,8 +379,7 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII); offset += 14;
 	proto_tree_add_item(pt, hf_ouch_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
 	proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset, 8, ENC_BIG_ENDIAN);
-	col_append_fstr(pinfo->cinfo, COL_INFO, ", TradedQty=%" PRIu64, tvb_get_ntoh64(tvb, offset));
-	offset += 8;
+	col_append_fstr(pinfo->cinfo, COL_INFO, ", TradedQty=%" PRIu64, tvb_get_ntoh64(tvb, offset)); offset += 8;
 	offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
 	proto_tree_add_item(pt, hf_ouch_match_id, tvb, offset, 12, ENC_NA); offset += 12;
 	proto_tree_add_item(pt, hf_ouch_client_category, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
@@ -374,17 +392,17 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
 	proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII);      offset += 14;
 	proto_tree_add_item(pt, hf_ouch_q_entry_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
-	proto_tree_add_item(pt, hf_ouch_quantity,     tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
+	proto_tree_add_item(pt, hf_ouch_quantity, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
 	proto_tree_add_item(pt, hf_ouch_traded_qty, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
 	offset = add_price(pt, hf_ouch_price_int, hf_ouch_price_double, tvb, offset);
-	proto_tree_add_item(pt, hf_ouch_side,         tvb, offset, 1, ENC_BIG_ENDIAN);      offset += 1;
+	proto_tree_add_item(pt, hf_ouch_side, tvb, offset, 1, ENC_BIG_ENDIAN); offset += 1;
 	proto_tree_add_item(pt, hf_ouch_quote_status, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
 	break;
 	}
 
     case 'R': { /* Mass Quote Rejection */
         proto_tree_add_item(pt, hf_ouch_timestamp_ns, tvb, offset, 8, ENC_BIG_ENDIAN); offset += 8;
-        proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII);      offset += 14;
+        proto_tree_add_item(pt, hf_ouch_order_token,  tvb, offset,14, ENC_ASCII); offset += 14;
         if (tvb_captured_length_remaining(tvb, offset) >= 4) {
             proto_tree_add_item(pt, hf_ouch_q_entry_orderbook_id, tvb, offset, 4, ENC_BIG_ENDIAN); offset += 4;
         }
@@ -410,18 +428,19 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     return tvb_captured_length(tvb);
 }
 
-static bool dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo,
+                                   proto_tree *tree, void *data _U_)
 {
-    guint len = tvb_captured_length(tvb);
-    if (len < 1) return false;
+    if (tvb_captured_length(tvb) < 1)
+        return false;
 
-    uint8_t msg_type = tvb_get_uint8(tvb, 0);
-    for (const value_string *vs = ouch_msg_types; vs->strptr != NULL; vs++) {
-        if (vs->value == msg_type) {
-            dissect_bist_ouch(tvb, pinfo, tree, NULL);
-            return true;
-        }
+    guint8 msg_type = tvb_get_guint8(tvb, 0);
+    int idx = try_val_to_str_idx(msg_type, ouch_msg_types);
+    if (idx >= 0) {
+        dissect_bist_ouch(tvb, pinfo, tree, NULL);
+        return true;
     }
+
     return false;
 }
 
@@ -485,10 +504,7 @@ void proto_register_bist_ouch(void)
 
 void proto_reg_handoff_bist_ouch(void)
 {
-    heur_dissector_add("soupbintcp", dissect_bist_ouch_heur, "BIST OUCH over SoupBinTCP","bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
+    heur_dissector_add("soupbintcp", dissect_bist_ouch_heur, "BIST OUCH over SoupBinTCP", "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
     dissector_add_string("soupbintcp.message", "ouch", bist_ouch_handle);
-    dissector_add_string("soupbintcp.payload", "ouch", bist_ouch_handle);
-    dissector_add_string("soupbintcp",         "ouch", bist_ouch_handle);
-
     dissector_add_uint_range_with_preference("tcp.port", "", bist_ouch_handle);
 }
