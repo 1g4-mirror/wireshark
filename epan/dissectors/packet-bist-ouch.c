@@ -227,6 +227,7 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
                 "%s, Unknown (0x%02x)", PNAME, type);
         }
     }
+    proto_tree *pt = proto_item_add_subtree(ti, ett_bist_ouch);
 
     proto_tree_add_uint(pt, hf_ouch_msg_type, tvb, 0, 1, type);
     offset = 1;
