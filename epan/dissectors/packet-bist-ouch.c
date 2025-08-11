@@ -27,25 +27,25 @@ static bool bist_ouch_show_decimal_price = false;
 static dissector_handle_t bist_ouch_handle;
 
 static const value_string ouch_msg_types[] = {
-    { 'O', "Enter Order"                  }, /* inbound */
-    { 'U', "Replace/Order Replaced"       }, /* inbound/outbound */
-    { 'X', "Cancel Order"                 }, /* inbound */
-    { 'Y', "Cancel by Order ID"           }, /* inbound */
-    { 'Q', "Mass Quote"                   }, /* inbound */
-    { 'A', "Order Accepted"               }, /* outbound */
-    { 'J', "Order Rejected"               }, /* outbound */
-    { 'C', "Order Canceled"               }, /* outbound */
-    { 'E', "Order Executed"               }, /* outbound */
-    { 'K', "Mass Quote Ack"               }, /* outbound */
-    { 'R', "Mass Quote Rejection"         }, /* outbound */
-    {  0,  NULL }
+    { 'O', "Enter Order" }, /* inbound */
+    { 'U', "Replace/Order Replaced" }, /* inbound/outbound */
+    { 'X', "Cancel Order" }, /* inbound */
+    { 'Y', "Cancel by Order ID" }, /* inbound */
+    { 'Q', "Mass Quote" }, /* inbound */
+    { 'A', "Order Accepted" }, /* outbound */
+    { 'J', "Order Rejected" }, /* outbound */
+    { 'C', "Order Canceled" }, /* outbound */
+    { 'E', "Order Executed" }, /* outbound */
+    { 'K', "Mass Quote Ack" }, /* outbound */
+    { 'R', "Mass Quote Rejection" }, /* outbound */
+    {  0, NULL }
 };
 
 static const value_string ouch_side_vals[] = {
-    { 'B', "Buy"  },
+    { 'B', "Buy" },
     { 'S', "Sell" },
     { 'T', "Short" },
-    { 0,   NULL   }
+    { 0, NULL }
 };
 
 static const value_string ouch_tif_vals[] = {
@@ -78,60 +78,60 @@ static const value_string ouch_cancel_reason_vals[] = {
     { 1,  "Canceled by user/other user" },
     { 3,  "Trade" },
     { 4,  "Inactivate" },
-    { 5,  "Replaced by User" }, 
-    { 6,  "New" }, 
+    { 5,  "Replaced by User" },
+    { 6,  "New" },
     { 8,  "Converted by System" },
-    { 9,  "Canceled by System" }, 
-    { 10, "Canceled by Proxy" }, 
+    { 9,  "Canceled by System" },
+    { 10, "Canceled by Proxy" },
     { 11, "Bait Recalculated" },
-    { 12, "Triggered by System" }, 
-    { 13, "Refreshed by System" }, 
+    { 12, "Triggered by System" },
+    { 13, "Refreshed by System" },
     { 15, "Canceled by System Limit Change" },
-    { 17, "Linked Leg Canceled" }, 
-    { 18, "Linked Leg Modified" }, 
+    { 17, "Linked Leg Canceled" },
+    { 18, "Linked Leg Modified" },
     { 19, "Expired" },
-    { 20, "Canceled Due to ISS" }, 
-    { 21, "Inactivated Due to ISS" }, 
+    { 20, "Canceled Due to ISS" },
+    { 21, "Inactivated Due to ISS" },
     { 23, "Inactivated Due to Purge" },
-    { 24, "Inactivated Day Order" }, 
-    { 25, "Inactivated Due to DeList" }, 
+    { 24, "Inactivated Day Order" },
+    { 25, "Inactivated Due to DeList" },
     { 26, "Inactivated Due to Expiry" },
-    { 27, "Inactivated Due to Outside Limits" }, 
-    { 28, "Transfer of Ownership" }, 
+    { 27, "Inactivated Due to Outside Limits" },
+    { 28, "Transfer of Ownership" },
     { 29, "New Inactive" },
-    { 30, "Reloaded" }, 
-    { 31, "Reloaded Intraday" }, 
+    { 30, "Reloaded" },
+    { 31, "Reloaded Intraday" },
     { 34, "Canceled After Auction" },
-    { 35, "Inactivated Due to Outside Price Limits" }, 
+    { 35, "Inactivated Due to Outside Price Limits" },
     { 36, "Activated Due to Outside Limits" },
-    { 37, "Trigger on Session Order Triggered" }, 
+    { 37, "Trigger on Session Order Triggered" },
     { 39, "Undisclosed Qty Order Converted" },
-    { 40, "Inactivated Due to Order Value" }, 
-    { 41, "System Delta Protection" }, 
+    { 40, "Inactivated Due to Order Value" },
+    { 41, "System Delta Protection" },
     { 42, "System Quantity Protection" },
-    { 43, "Internal Crossing Delete" }, 
-    { 44, "Participant Block on Market" }, 
+    { 43, "Internal Crossing Delete" },
+    { 44, "Participant Block on Market" },
     { 45, "Inactivated Due to Participant Block" },
-    { 46, "Order deleted due to SMP" }, 
-    { 52, "Paused" }, 
+    { 46, "Order deleted due to SMP" },
+    { 52, "Paused" },
     { 53, "Activated Paused Order" },
-    { 56, "Linked Leg Activated" }, 
-    { 115, "PTRM misc" }, 
+    { 56, "Linked Leg Activated" },
+    { 115, "PTRM misc" },
     { 116, "PTRM user limits auto" },
-    { 117, "PTRM user limits manual" }, 
-    { 118, "PTRM market limits" }, 
+    { 117, "PTRM user limits manual" },
+    { 118, "PTRM market limits" },
     { 119, "PTRM investor limits" },
-    { 120, "PTRM margin breach" }, 
-    { 121, "PTRM participant suspension" }, 
+    { 120, "PTRM margin breach" },
+    { 121, "PTRM participant suspension" },
     { 122, "PTRM mra suspension" },
-    { 123, "PTRM mca suspension" }, 
-    { 124, "PTRM ta suspension" }, 
+    { 123, "PTRM mca suspension" },
+    { 124, "PTRM ta suspension" },
     { 125, "Canceled: Investor Position Value Limit" },
     { 0,   NULL }
 };
 
 static const value_string ouch_quote_status_vals[] = {
-    { 0, "Accept" }, 
+    { 0, "Accept" },
     { 1, "Updated" },
     { 2, "Canceled" },
     { 3, "Unsolicited update" },
