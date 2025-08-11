@@ -502,5 +502,4 @@ void proto_reg_handoff_bist_ouch(void)
 {
     heur_dissector_add("soupbintcp", dissect_bist_ouch_heur, "BIST OUCH over SoupBinTCP", "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
     dissector_add_string("soupbintcp.message", "ouch", bist_ouch_handle);
-    dissector_add_uint_range_with_preference("tcp.port", "", bist_ouch_handle);
 }
