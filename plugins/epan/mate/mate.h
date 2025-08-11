@@ -349,6 +349,7 @@ extern void mate_analyze_frame(mate_config *mc, packet_info *pinfo, proto_tree* 
 
 /* from mate_setup.c */
 extern mate_config* mate_make_config(const char* filename, int mate_hfid);
+extern void destroy_mate_config(mate_config* mc);
 
 extern mate_cfg_pdu* new_pducfg(mate_config* mc, char* name);
 extern mate_cfg_gop* new_gopcfg(mate_config* mc, char* name);
