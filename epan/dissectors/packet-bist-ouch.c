@@ -235,8 +235,6 @@ static int dissect_u_order_replaced(tvbuff_t *tvb, packet_info *pinfo, proto_tre
     return offset;
 }
 
-/* --------- message-level dissector (no TCP concerns) --------- */
-
 static int
 dissect_bist_ouch_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
