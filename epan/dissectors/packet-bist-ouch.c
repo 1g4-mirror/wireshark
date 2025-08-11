@@ -1,5 +1,5 @@
-/* packet-bist-itch.c
- * Routines for BIST-ITCH dissection
+/* packet-bist-ouch.c
+ * Routines for BIST-OUCH dissection
  * Copyright 2025, Sadettin Er <sadettin.er@b-ulltech.com>
  *
  * Wireshark - Network traffic analyzer
