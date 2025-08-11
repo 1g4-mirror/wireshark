@@ -356,59 +356,7 @@ void WirelessFrame::setInterfaceInfo()
  */
 int WirelessFrame::getCenterFrequency(int control_frequency, int bandwidth)
 {
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(ar) (sizeof(ar)/sizeof(ar[0]))
-#endif
-    int cf1 = -1;
-    size_t j;
-    int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745,
-                   5955, 6035, 6115, 6195, 6275, 6355,
-                   6435, 6515, 6595, 6675, 6755, 6835,
-                   6195, 6995 };
-    int bw160[] = { 5180, 5500, 5955, 6115, 6275, 6435,
-                    6595, 6755, 6915 };
-    /* based on 11be D2 E.1 Country information and operating classes */
-    int bw320[] = {5955, 6115, 6275, 6435, 6595, 6755};
-
-    switch (bandwidth) {
-    case 80:
-        for (j = 0; j < ARRAY_SIZE(bw80); j++) {
-            if (control_frequency >= bw80[j] && control_frequency < bw80[j] + 80)
-                break;
-        }
-
-        if (j == ARRAY_SIZE(bw80))
-            break;
-
-        cf1 = bw80[j] + 30;
-        break;
-    case 160:
-        for (j = 0; j < ARRAY_SIZE(bw160); j++) {
-            if (control_frequency >= bw160[j] && control_frequency < bw160[j] + 160)
-                break;
-        }
-
-        if (j == ARRAY_SIZE(bw160))
-            break;
-
-        cf1 = bw160[j] + 70;
-        break;
-    case 320:
-        for (j = 0; j < ARRAY_SIZE(bw320); j++) {
-            if (control_frequency >= bw320[j] && control_frequency < bw320[j] + 160)
-                break;
-        }
-
-        if (j == ARRAY_SIZE(bw320))
-            break;
-
-        cf1 = bw320[j] + 150;
-        break;
-    default:
-        break;
-    }
-
-    return cf1;
+    return ws80211_get_center_frequency(control_frequency, bandwidth);
 }
 
 int WirelessFrame::getBandwidthFromChanType(int chan_type)
