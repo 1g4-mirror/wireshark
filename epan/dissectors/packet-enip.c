@@ -2831,7 +2831,7 @@ static void dissect_item_enip_identity(packet_info* pinfo, tvbuff_t* tvb, int of
 }
 
 // offset - Starts at the "Host Name" field.
-static void dissect_item_hostname(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree)
+static void dissect_item_hostname(tvbuff_t* tvb, int offset, proto_tree* item_tree)
 {
    /* Host Name Length */
    uint32_t name_length;
@@ -3500,7 +3500,7 @@ dissect_cpf(enip_request_key_t *request_key, int command, tvbuff_t *tvb,
                break;
 
             case CPF_ITEM_HOSTNAME:
-               dissect_item_hostname(pinfo, tvb, offset, item_tree);
+               dissect_item_hostname(tvb, offset, item_tree);
                break;
 
             case CPF_ITEM_SOCK_ADR_INFO_OT:  // Optional 3rd item for: Unconnected Messages
