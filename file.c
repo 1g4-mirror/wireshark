@@ -593,6 +593,10 @@ cf_read(capture_file *cf, bool reloading)
         cksum = g_checksum_new(G_CHECKSUM_SHA256);
     }
 
+    /* Find how many DSBs we had at the start of the file, before the
+     * first packet. */
+    unsigned num_dsbs = wtap_file_get_num_dsbs(cf->provider.wth);
+
     g_timer_start(prog_timer);
 
     wtap_rec_init(&rec, 1514);
@@ -680,6 +684,17 @@ cf_read(capture_file *cf, bool reloading)
 #endif
     }
     ENDTRY;
+
+    /* Did we encounter any DSBs in the middle of the file? */
+    if (wtap_file_get_num_dsbs(cf->provider.wth) != num_dsbs) {
+        /* Yes, so we have unsaved changes (saving the file will move
+         * the DSBs to the start.) */
+        cf->unsaved_changes = true;
+        /* As a DSB in the middle of the file could be after the
+         * relevant packets, so queue a redissection. */
+        /* XXX - Add a pref, either advanced or under Protocols? */
+        cf->redissection_queued = RESCAN_REDISSECT;
+    }
 
     // If we're ignoring duplicate frames, clear the data structures.
     // We really could look at prefs.ignore_dup_frames here, but it's even
