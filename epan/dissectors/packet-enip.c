@@ -90,6 +90,12 @@ void proto_reg_handoff_enip(void);
 #define CPF_ITEM_SEQUENCED_ADDRESS    0x8002
 #define CPF_ITEM_UNCONNECTED_MSG_DTLS 0x8003
 
+/* jkb ipv6 */
+#define CPF_ITEM_ENIP_IDENTITY 0x000D
+#define CPF_ITEM_IPV6_ADR_TO 0x8004
+#define CPF_ITEM_IPV6_ADR_OT 0x8005
+#define CPF_ITEM_HOSTNAME 0x0089
+
 /* Initialize the protocol and registered fields */
 static int proto_enip;
 static int proto_cipio;
@@ -110,6 +116,9 @@ static int hf_enip_sinzero;
 static int hf_enip_timeout;
 static int hf_enip_encap_data;
 
+static int hf_enip_addr6port;
+static int hf_enip_addr6addr;
+
 static int hf_enip_lir_vendor;
 static int hf_enip_lir_devtype;
 static int hf_enip_lir_prodcode;
@@ -118,6 +127,9 @@ static int hf_enip_lir_serial;
 static int hf_enip_lir_namelen;
 static int hf_enip_lir_name;
 static int hf_enip_lir_state;
+
+static int hf_enip_hostname_len;
+static int hf_enip_hostname_hostname;
 
 static int hf_enip_lsr_capaflags;
 static int hf_enip_lsr_tcp;
@@ -579,9 +591,11 @@ static const value_string encap_status_vals[] = {
 static const value_string cpf_type_vals[] = {
    { CPF_ITEM_NULL,                 "Null Address Item"        },
    { CPF_ITEM_CIP_IDENTITY,         "CIP Identity"             },
+   { CPF_ITEM_ENIP_IDENTITY,        "EtherNet/IP Identity"     },
    { CPF_ITEM_CIP_SECURITY,         "CIP Security Information" },
    { CPF_ITEM_ENIP_CAPABILITY,      "EtherNet/IP Capability"   },
    { CPF_ITEM_ENIP_USAGE,           "EtherNet/IP Usage"        },
+   { CPF_ITEM_HOSTNAME,             "Host Name"                },
    { CPF_ITEM_CONNECTED_ADDRESS,    "Connected Address Item"   },
    { CPF_ITEM_CONNECTED_DATA,       "Connected Data Item"      },
    { CPF_ITEM_UNCONNECTED_DATA,     "Unconnected Data Item"    },
@@ -590,6 +604,8 @@ static const value_string cpf_type_vals[] = {
    { CPF_ITEM_SOCK_ADR_INFO_TO,     "Socket Address Info T->O" },
    { CPF_ITEM_SEQUENCED_ADDRESS,    "Sequenced Address Item"   },
    { CPF_ITEM_UNCONNECTED_MSG_DTLS, "Unconnected Message over UDP" },
+   { CPF_ITEM_IPV6_ADR_OT,          "IPv6 Address O->T" },
+   { CPF_ITEM_IPV6_ADR_TO,          "IPv6 Address T->O" },
 
    { 0,                    NULL }
 };
@@ -2776,6 +2792,58 @@ static void dissect_item_list_identity(packet_info* pinfo, tvbuff_t* tvb, int of
    proto_tree_add_item(item_tree, hf_enip_lir_state, tvb, offset + name_length + 33, 1, ENC_LITTLE_ENDIAN);
 }
 
+// offset - Starts at the "Encapsulation Protocol Version" field.
+static void dissect_item_enip_identity(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree)
+{
+   /* Encapsulation version */
+   proto_tree_add_item(item_tree, hf_enip_encapver, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+
+   /* Vendor ID */
+   proto_tree_add_item(item_tree, hf_enip_lir_vendor, tvb, offset + 2, 2, ENC_LITTLE_ENDIAN);
+
+   /* Device Type */
+   proto_tree_add_item(item_tree, hf_enip_lir_devtype, tvb, offset + 4, 2, ENC_LITTLE_ENDIAN);
+
+   /* Product Code */
+   proto_tree_add_item(item_tree, hf_enip_lir_prodcode, tvb, offset + 6, 2, ENC_LITTLE_ENDIAN);
+
+   /* Revision */
+   proto_tree_add_item(item_tree, hf_enip_lir_revision, tvb, offset + 8, 2, ENC_BIG_ENDIAN);
+
+   /* Status */
+   dissect_cip_id_status(pinfo, item_tree, NULL, tvb, offset + 10, 2);
+
+   /* Serial Number */
+   proto_tree_add_item(item_tree, hf_enip_lir_serial, tvb, offset + 12, 4, ENC_LITTLE_ENDIAN);
+
+   /* Product Name Length */
+   uint32_t name_length;
+   proto_tree_add_item_ret_uint(item_tree, hf_enip_lir_namelen, tvb, offset + 16, 1, ENC_LITTLE_ENDIAN, &name_length);
+
+   /* Product Name */
+   proto_tree_add_item(item_tree, hf_enip_lir_name, tvb, offset + 17, name_length, ENC_ASCII);
+
+   /* Append product name to info column */
+   col_append_fstr(pinfo->cinfo, COL_INFO, ", %s", tvb_format_text(pinfo->pool, tvb, offset + 17, name_length));
+
+   /* State */
+   proto_tree_add_item(item_tree, hf_enip_lir_state, tvb, offset + name_length + 17, 1, ENC_LITTLE_ENDIAN);
+}
+
+// offset - Starts at the "Host Name" field.
+static void dissect_item_hostname(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree)
+{
+   /* Host Name Length */
+   uint32_t name_length;
+   proto_tree_add_item_ret_uint(item_tree, hf_enip_hostname_len, tvb, offset, 1, ENC_LITTLE_ENDIAN, &name_length);
+
+   /* Host Name */
+   proto_tree_add_item(item_tree, hf_enip_hostname_hostname, tvb, offset + 1, name_length, ENC_ASCII);
+
+   /* Append host name to info column */
+   col_append_fstr(pinfo->cinfo, COL_INFO, ", %s", tvb_format_text(pinfo->pool, tvb, offset + 1, name_length));
+}
+
 // offset - Starts at the "Security Profiles" field.
 static void dissect_item_cip_security_information(tvbuff_t* tvb, int offset, proto_tree* item_tree)
 {
@@ -3079,7 +3147,7 @@ static void dissect_cip_class23_data(packet_info* pinfo, tvbuff_t* tvb, int offs
 }
 
 // offset - Starts at the sin_family field.
-static void dissect_item_sockaddr_info(packet_info *pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree,
+static void dissect_item_sockaddr_info(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree,
    uint32_t item_type_id, bool is_fwd_open)
 {
    /* Socket address struct - sin_family */
@@ -3096,7 +3164,7 @@ static void dissect_item_sockaddr_info(packet_info *pinfo, tvbuff_t* tvb, int of
 
    if (is_fwd_open)
    {
-      enip_request_info_t* request_info = (enip_request_info_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_enip, ENIP_REQUEST_INFO);
+      enip_request_info_t* request_info = (enip_request_info_t*)p_get_proto_data(wmem_file_scope(), pinfo, proto_enip, ENIP_REQUEST_INFO);
       if (request_info != NULL)
       {
          if (item_type_id == CPF_ITEM_SOCK_ADR_INFO_OT)
@@ -3114,6 +3182,38 @@ static void dissect_item_sockaddr_info(packet_info *pinfo, tvbuff_t* tvb, int of
       }
    }
 }
+
+// offset - Starts at the Port field.
+static void dissect_item_ipv6_address(packet_info* pinfo, tvbuff_t* tvb, int offset, proto_tree* item_tree,
+   uint32_t item_type_id, bool is_fwd_open)
+{
+   /* Port */
+   proto_tree_add_item(item_tree, hf_enip_addr6port, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+
+   /* IPv6 Address */
+   proto_tree_add_item(item_tree, hf_enip_addr6addr, tvb, offset + 4, 16, ENC_NA);
+
+   if (is_fwd_open)
+   {
+      enip_request_info_t* request_info = (enip_request_info_t*)p_get_proto_data(wmem_file_scope(), pinfo, proto_enip, ENIP_REQUEST_INFO);
+      if (request_info != NULL)
+      {
+         if (item_type_id == CPF_ITEM_IPV6_ADR_OT)
+         {
+            request_info->cip_info->connInfo->O2T.port = tvb_get_ntohs(tvb, offset + 2);
+            alloc_address_tvb(wmem_file_scope(), &request_info->cip_info->connInfo->O2T.ipaddress,
+               AT_IPv6, 16, tvb, offset + 4);
+         }
+         else
+         {
+            request_info->cip_info->connInfo->T2O.port = tvb_get_ntohs(tvb, offset + 2);
+            alloc_address_tvb(wmem_file_scope(), &request_info->cip_info->connInfo->T2O.ipaddress,
+               AT_IPv6, 16, tvb, offset + 4);
+         }
+      }
+   }
+}
+
 
 // offset - Starts at the Connection ID
 // Returns: connid_type, conn_info
@@ -3394,8 +3494,16 @@ dissect_cpf(enip_request_key_t *request_key, int command, tvbuff_t *tvb,
                dissect_item_list_identity(pinfo, tvb, offset, item_tree);
                break;
 
+            case CPF_ITEM_ENIP_IDENTITY:
+               dissect_item_enip_identity(pinfo, tvb, offset, item_tree);
+               break;
+
             case CPF_ITEM_CIP_SECURITY:
                dissect_item_cip_security_information(tvb, offset, item_tree);
+               break;
+
+            case CPF_ITEM_HOSTNAME:
+               dissect_item_hostname(pinfo, tvb, offset, item_tree);
                break;
 
             case CPF_ITEM_SOCK_ADR_INFO_OT:  // Optional 3rd item for: Unconnected Messages
@@ -3403,6 +3511,14 @@ dissect_cpf(enip_request_key_t *request_key, int command, tvbuff_t *tvb,
             {
                bool is_fwd_open = (FwdOpenRequest == true) || (FwdOpenReply == true);
                dissect_item_sockaddr_info(pinfo, tvb, offset, item_tree, item_type_id, is_fwd_open);
+               break;
+            }
+
+            case CPF_ITEM_IPV6_ADR_OT:  // Optional 3rd item for: Unconnected Messages
+            case CPF_ITEM_IPV6_ADR_TO:
+            {
+               bool is_fwd_open = (FwdOpenRequest == true) || (FwdOpenReply == true);
+               dissect_item_ipv6_address(pinfo, tvb, offset, item_tree, item_type_id, is_fwd_open);
                break;
             }
 
@@ -3915,6 +4031,16 @@ proto_register_enip(void)
           FT_IPv4, BASE_NONE, NULL, 0,
           "Socket Address.Sin Addr", HFILL }},
 
+      { &hf_enip_addr6port,
+        { "sin_port", "enip.addr6.port",
+          FT_UINT16, BASE_DEC, NULL, 0,
+          "IPv6 Address: Port", HFILL }},
+
+      { &hf_enip_addr6addr,
+        { "sin_addr", "enip.addr6.addr",
+          FT_IPv6, BASE_NONE, NULL, 0,
+          "IPv6 Address: Address", HFILL }},
+
       { &hf_enip_sinzero,
         { "sin_zero", "enip.sinzero",
           FT_BYTES, BASE_NONE, NULL, 0,
@@ -4009,6 +4135,16 @@ proto_register_enip(void)
         { "Product Name", "enip.lir.name",
           FT_STRING, BASE_NONE, NULL, 0,
           "ListIdentity Reply: Product Name", HFILL }},
+
+      { &hf_enip_hostname_len,
+        { "Product Name Length", "enip.hostname.len",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          "Host Name Length", HFILL } },
+
+      { &hf_enip_hostname_hostname,
+        { "Product Name", "enip.hostname.hostname",
+          FT_STRING, BASE_NONE, NULL, 0,
+          "Host Name", HFILL } },
 
       { &hf_enip_lir_state,
         { "State", "enip.lir.state",
