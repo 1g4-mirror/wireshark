@@ -4134,12 +4134,12 @@ proto_register_enip(void)
           "ListIdentity Reply: Product Name", HFILL }},
 
       { &hf_enip_hostname_len,
-        { "Product Name Length", "enip.hostname.len",
+        { "Host Name Length", "enip.hostname.len",
           FT_UINT8, BASE_DEC, NULL, 0,
           "Host Name Length", HFILL } },
 
       { &hf_enip_hostname_hostname,
-        { "Product Name", "enip.hostname.hostname",
+        { "Host Name", "enip.hostname.hostname",
           FT_STRING, BASE_NONE, NULL, 0,
           "Host Name", HFILL } },
 
