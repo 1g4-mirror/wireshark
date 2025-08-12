@@ -2839,9 +2839,6 @@ static void dissect_item_hostname(packet_info* pinfo, tvbuff_t* tvb, int offset,
 
    /* Host Name */
    proto_tree_add_item(item_tree, hf_enip_hostname_hostname, tvb, offset + 1, name_length, ENC_ASCII);
-
-   /* Append host name to info column */
-   col_append_fstr(pinfo->cinfo, COL_INFO, ", %s", tvb_format_text(pinfo->pool, tvb, offset + 1, name_length));
 }
 
 // offset - Starts at the "Security Profiles" field.
