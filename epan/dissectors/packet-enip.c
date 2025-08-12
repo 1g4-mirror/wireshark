@@ -3188,10 +3188,10 @@ static void dissect_item_ipv6_address(packet_info* pinfo, tvbuff_t* tvb, int off
    uint32_t item_type_id, bool is_fwd_open)
 {
    /* Port */
-   proto_tree_add_item(item_tree, hf_enip_addr6port, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+   proto_tree_add_item(item_tree, hf_enip_addr6port, tvb, offset, 2, ENC_BIG_ENDIAN);
 
    /* IPv6 Address */
-   proto_tree_add_item(item_tree, hf_enip_addr6addr, tvb, offset + 4, 16, ENC_NA);
+   proto_tree_add_item(item_tree, hf_enip_addr6addr, tvb, offset + 2, 16, ENC_NA);
 
    if (is_fwd_open)
    {
@@ -3200,13 +3200,13 @@ static void dissect_item_ipv6_address(packet_info* pinfo, tvbuff_t* tvb, int off
       {
          if (item_type_id == CPF_ITEM_IPV6_ADR_OT)
          {
-            request_info->cip_info->connInfo->O2T.port = tvb_get_ntohs(tvb, offset + 2);
+            request_info->cip_info->connInfo->O2T.port = tvb_get_ntohs(tvb, offset);
             alloc_address_tvb(wmem_file_scope(), &request_info->cip_info->connInfo->O2T.ipaddress,
                AT_IPv6, 16, tvb, offset + 4);
          }
          else
          {
-            request_info->cip_info->connInfo->T2O.port = tvb_get_ntohs(tvb, offset + 2);
+            request_info->cip_info->connInfo->T2O.port = tvb_get_ntohs(tvb, offset);
             alloc_address_tvb(wmem_file_scope(), &request_info->cip_info->connInfo->T2O.ipaddress,
                AT_IPv6, 16, tvb, offset + 4);
          }
