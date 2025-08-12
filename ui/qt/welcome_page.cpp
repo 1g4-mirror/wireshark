@@ -228,18 +228,31 @@ void WelcomePage::captureFilterTextEdited(const QString)
 // Must not change any interface data.
 void WelcomePage::interfaceSelected()
 {
-    QPair <const QString, bool> sf_pair = CaptureFilterEdit::getSelectedFilter();
+    // Filter suggested by selection and if there is a conflict between interfaces
+    QPair<const QString, bool> sf_pair = CaptureFilterEdit::getSelectedFilter();
     const QString user_filter = sf_pair.first;
-    bool conflict = sf_pair.second;
+    const bool conflict = sf_pair.second;
+
+    // Current edit line and whether the user has already typed something
+    QLineEdit* line = welcome_ui_->captureFilterComboBox->lineEdit();
+    const bool userHasTyped = line && !line->text().isEmpty();
 
     if (conflict) {
-        welcome_ui_->captureFilterComboBox->lineEdit()->clear();
+        // Just mark the conflict. Do not delete what the user has written..
         welcome_ui_->captureFilterComboBox->setConflict(true);
+        // Do not touch existing text.
     } else {
-        welcome_ui_->captureFilterComboBox->lineEdit()->setText(user_filter);
+        // Removes conflict status.
+        welcome_ui_->captureFilterComboBox->setConflict(false);
+
+        // Only autocomplete if the user hasn't typed anything yet.
+        if (!userHasTyped) {
+            line->setText(user_filter);
+        }
+        // If you have already written, respect your text and do not overwrite it..
     }
 
-    // Notify others (capture options dialog) that the selection has changed.
+    // Notify other components that the selection has changed.
     emit interfacesChanged();
 }
 
