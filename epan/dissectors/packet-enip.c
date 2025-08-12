@@ -4032,12 +4032,12 @@ proto_register_enip(void)
           "Socket Address.Sin Addr", HFILL }},
 
       { &hf_enip_addr6port,
-        { "sin_port", "enip.addr6.port",
+        { "Port", "enip.addr6.port",
           FT_UINT16, BASE_DEC, NULL, 0,
           "IPv6 Address: Port", HFILL }},
 
       { &hf_enip_addr6addr,
-        { "sin_addr", "enip.addr6.addr",
+        { "Address", "enip.addr6.addr",
           FT_IPv6, BASE_NONE, NULL, 0,
           "IPv6 Address: Address", HFILL }},
 
