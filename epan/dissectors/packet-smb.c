@@ -921,8 +921,9 @@ static const fragment_items smb_frag_items = {
 
 static proto_tree *top_tree_global;     /* ugly */
 
-uint16_t  last_fnum = 0;
-bool	  mult_cmds = false;
+static uint16_t last_fnum = 0;
+static bool mult_cmds = false;
+static uint16_t current_pass_fnum = 0;
 
 
 static int dissect_smb_command(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *smb_tree, uint8_t cmd, smb_info_t *si);
@@ -18735,13 +18736,21 @@ dissect_smb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	 */
 	si->request = !(flags&SMB_FLAGS_DIRN);
 
-	if (pinfo->num == last_fnum) {
-		mult_cmds = true;
-	} else {
+	if (!pinfo->fd->visited) {
+	    /* First pass: reset tracking for this frame */
+	    if (pinfo->fd->num != current_pass_fnum) {
+		last_fnum = 0;
 		mult_cmds = false;
+		current_pass_fnum = pinfo->fd->num;
+	    }
 	}
 
-	last_fnum = pinfo->num;
+	if (pinfo->fd->num == last_fnum) {
+	    mult_cmds = true;
+	} else {
+	    mult_cmds = false;
+	    last_fnum = pinfo->fd->num;
+	}
 
 	flags2 = tvb_get_letohs(tvb, offset+10);
 	if (flags2 & 0x8000) {
