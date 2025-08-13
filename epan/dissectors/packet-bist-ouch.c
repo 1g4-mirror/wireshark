@@ -595,8 +595,7 @@ void proto_register_bist_ouch(void)
 
 void proto_reg_handoff_bist_ouch(void)
 {
-    dissector_add_string("soupbintcp.message", "ouch", bist_ouch_stream_handle);
     heur_dissector_add("soupbintcp", dissect_bist_ouch_heur,
-                       "BIST OUCH over SoupBinTCP (heuristic)",
-                       "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
+        "BIST OUCH over SoupBinTCP (heuristic)",
+        "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
 }
