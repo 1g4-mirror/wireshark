@@ -26,7 +26,6 @@
 #define PNAME  "BIST OUCH"
 #define PSHORT "BIST-OUCH"
 #define PFILT  "bist_ouch"
-#define DEFAULT_BIST_OUCH_TCP_PORTS "0"
 
 static bool bist_ouch_show_decimal_price = false;
 
@@ -483,40 +482,30 @@ ouch_get_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _
     if (tvb_captured_length_remaining(tvb, offset) < 1)
         return 0;
 
-    const uint8_t t = tvb_get_uint8(tvb, offset);
+    uint8_t t = tvb_get_uint8(tvb, offset);
 
-    int idx = -1;
-    if (!try_val_to_str_idx(t, ouch_msg_types, &idx))
-        return 0;
-
-    const int fixed = ouch_fixed_len_from_type(t);
+    int fixed = ouch_fixed_len_from_type(t);
     if (fixed > 0)
         return (unsigned int)fixed;
 
-    switch (t) {
-    case 'U':
+    /* U: variable length */
+    if (t == 'U') {
         return (unsigned int)tvb_reported_length_remaining(tvb, offset);
-
-    case 'Q': {
-        const int header_need = 1 + 14 + 1 + 16 + 16 + 2;
-        if (tvb_captured_length_remaining(tvb, offset) < header_need)
-            return 0;
-
-        const int off_no = offset + 1 + 14 + 1 + 16 + 16;
-        const uint16_t n = tvb_get_ntohs(tvb, off_no);
-
-        if (n > 2048)
-            return 0;
-
-        return (unsigned int)(header_need + (n * 28));
     }
 
-    case 'R':
-        return (unsigned int)tvb_reported_length_remaining(tvb, offset);
-
-    default:
-        break;
+    /* Q: compute from NoQuoteEntries */
+    if (t == 'Q') {
+        const int need = 1 + 14 + 1 + 16 + 16 + 2;
+        if (tvb_captured_length_remaining(tvb, offset) < need)
+            return 0;
+        int off = offset + 1 + 14 + 1 + 16 + 16;
+        uint16_t n = tvb_get_ntohs(tvb, off);
+        return (unsigned int)(1 + 14 + 1 + 16 + 16 + 2 + (n * 28));
     }
+    if (t == 'R') {
+        return (unsigned int)tvb_reported_length_remaining(tvb, offset);
+    }
+
     return 0;
 }
 
@@ -530,6 +519,19 @@ dissect_bist_ouch_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                      dissect_bist_ouch_msg,
                      NULL);
     return tvb_captured_length(tvb);
+}
+
+static bool
+dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    if (tvb_captured_length(tvb) < 1) return false;
+    const uint8_t msg_type = tvb_get_uint8(tvb, 0);
+    int idx = -1;
+    if (try_val_to_str_idx(msg_type, ouch_msg_types, &idx)) {
+        dissect_bist_ouch_msg(tvb, pinfo, tree, NULL);
+        return true;
+    }
+    return false;
 }
 
 void proto_register_bist_ouch(void)
@@ -594,7 +596,7 @@ void proto_register_bist_ouch(void)
 void proto_reg_handoff_bist_ouch(void)
 {
     dissector_add_string("soupbintcp.message", "ouch", bist_ouch_stream_handle);
-
-    dissector_add_uint_range_with_preference("tcp.port",
-        DEFAULT_BIST_OUCH_TCP_PORTS, bist_ouch_stream_handle);
+    heur_dissector_add("soupbintcp", dissect_bist_ouch_heur,
+                       "BIST OUCH over SoupBinTCP (heuristic)",
+                       "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
 }
