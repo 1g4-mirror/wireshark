@@ -241,7 +241,6 @@ static int dissect_bist_ouch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     uint8_t type = tvb_get_uint8(tvb, 0);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, PSHORT);
-    col_clear(pinfo->cinfo, COL_INFO);
     col_set_str(pinfo->cinfo, COL_INFO, try_val_to_str(type, ouch_msg_types) ?: "Unknown");
 
     const char *desc = try_val_to_str(type, ouch_msg_types);
@@ -433,7 +432,11 @@ static bool dissect_bist_ouch_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree
         return false;
 
     uint8_t msg_type = tvb_get_uint8(tvb, 0);
-
+    /* It would make sense to sanity-check the tvb length against the expected
+     length for this msg_type (as done in packet-ouch.c) before claiming the
+     packet, to reduce false positives. Also, several OUCH msg_type values
+     are shared with other OUCH dialects, so keep the heuristic conservative.
+    */
     int idx = -1;
     const char *s = try_val_to_str_idx(msg_type, ouch_msg_types, &idx);
     if (s != NULL) {
