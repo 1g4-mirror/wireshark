@@ -92,8 +92,8 @@ void proto_reg_handoff_enip(void);
 
 /* jkb ipv6 */
 #define CPF_ITEM_ENIP_IDENTITY 0x000D
-#define CPF_ITEM_IPV6_ADR_TO 0x8004
-#define CPF_ITEM_IPV6_ADR_OT 0x8005
+#define CPF_ITEM_IPV6_ADR_OT 0x8004
+#define CPF_ITEM_IPV6_ADR_TO 0x8005
 #define CPF_ITEM_HOSTNAME 0x0089
 
 /* Initialize the protocol and registered fields */
