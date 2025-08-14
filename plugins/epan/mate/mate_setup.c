@@ -29,6 +29,22 @@ static void report_error(mate_config* mc, const char* fmt, ...) {
 
 }
 
+static void free_pducfg(mate_cfg_pdu* cfg)
+{
+	g_free(cfg->name);
+	if (cfg->transforms)
+		g_ptr_array_unref(cfg->transforms);
+	g_hash_table_unref(cfg->my_hfids);
+	g_hash_table_unref(cfg->hfids_attr);
+	if (cfg->transport_ranges)
+		g_ptr_array_unref(cfg->transport_ranges);
+	if (cfg->payload_ranges)
+		g_ptr_array_unref(cfg->payload_ranges);
+	if (cfg->criterium)
+		delete_avpl(cfg->criterium, true);
+	g_free(cfg);
+}
+
 /* creates a blank pdu config
      is going to be called only by the grammar
 	 which will set all those elements that aren't set here */
@@ -44,7 +60,7 @@ extern mate_cfg_pdu* new_pducfg(mate_config* mc, char* name) {
 	cfg->hfid_pdu_rel_time = -1;
 	cfg->hfid_pdu_time_in_gop = -1;
 
-	cfg->my_hfids = g_hash_table_new(g_str_hash,g_str_equal);
+	cfg->my_hfids = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, g_free);
 
 	cfg->ett = -1;
 	cfg->ett_attr = -1;
@@ -56,9 +72,21 @@ extern mate_cfg_pdu* new_pducfg(mate_config* mc, char* name) {
 	g_ptr_array_add(mc->pducfglist,(void *) cfg);
 	g_hash_table_insert(mc->pducfgs,(void *) cfg->name,(void *) cfg);
 
-	cfg->hfids_attr = g_hash_table_new(g_int_hash,g_int_equal);
+	cfg->hfids_attr = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
 
 	return cfg;
+}
+
+static void free_gopcfg(mate_cfg_gop* cfg)
+{
+	g_free(cfg->name);
+	delete_avpl(cfg->key, true);
+	delete_avpl(cfg->extra, true);
+	delete_avpl(cfg->start, true);
+	if (cfg->transforms)
+		g_ptr_array_unref(cfg->transforms);
+	g_hash_table_unref(cfg->my_hfids);
+	g_free(cfg);
 }
 
 extern mate_cfg_gop* new_gopcfg(mate_config* mc, char* name) {
@@ -84,11 +112,27 @@ extern mate_cfg_gop* new_gopcfg(mate_config* mc, char* name) {
 	cfg->hfid_gop_pdu = -1;
 	cfg->hfid_gop_num_pdus = -1;
 
-	cfg->my_hfids = g_hash_table_new(g_str_hash,g_str_equal);
+	cfg->my_hfids = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, g_free);
 
 	g_hash_table_insert(mc->gopcfgs,(void *) cfg->name, (void *) cfg);
 
 	return cfg;
+}
+
+static void free_gogcfg(mate_cfg_gog* cfg)
+{
+	g_free(cfg->name);
+	delete_avpl(cfg->extra, true);
+
+	if (cfg->transforms)
+		g_ptr_array_unref(cfg->transforms);
+	if (cfg->keys)
+		delete_loal(cfg->keys, true, true);
+	g_hash_table_unref(cfg->my_hfids);
+}
+
+static void destroy_loal(LoAL* loal) {
+	delete_loal(loal, true, true);
 }
 
 extern mate_cfg_gog* new_gogcfg(mate_config* mc, char* name) {
@@ -274,7 +318,7 @@ static void analyze_pdu_config(mate_config* mc, mate_cfg_pdu* cfg) {
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.RelativeTime",cfg->name);
 	hfri.hfinfo.type = FT_DOUBLE;
 	hfri.hfinfo.display = BASE_NONE;
-	hfri.hfinfo.blurb = "Seconds passed since the start of capture";
+	hfri.hfinfo.blurb = g_strdup("Seconds passed since the start of capture");
 
 	g_array_append_val(mc->hfrs,hfri);
 
@@ -283,7 +327,7 @@ static void analyze_pdu_config(mate_config* mc, mate_cfg_pdu* cfg) {
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.TimeInGop",cfg->name);
 	hfri.hfinfo.type = FT_DOUBLE;
 	hfri.hfinfo.display = BASE_NONE;
-	hfri.hfinfo.blurb = "Seconds passed since the start of the GOP";
+	hfri.hfinfo.blurb = g_strdup("Seconds passed since the start of the GOP");
 
 	g_array_append_val(mc->hfrs,hfri);
 
@@ -444,7 +488,7 @@ static void analyze_gog_config(void *k _U_, void *v, void *p) {
 	g_array_append_val(mc->hfrs,hfri);
 
 	hfri.p_id = &(cfg->hfid_gog_num_of_gops);
-	hfri.hfinfo.name = "number of GOPs";
+	hfri.hfinfo.name = g_strdup("number of GOPs");
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.NumOfGops",cfg->name);
 	hfri.hfinfo.type = FT_UINT32;
 	hfri.hfinfo.display = BASE_DEC;
@@ -453,7 +497,7 @@ static void analyze_gog_config(void *k _U_, void *v, void *p) {
 	g_array_append_val(mc->hfrs,hfri);
 
 	hfri.p_id = &(cfg->hfid_gog_gopstart);
-	hfri.hfinfo.name = "GopStart frame";
+	hfri.hfinfo.name = g_strdup("GopStart frame");
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.GopStart",cfg->name);
 	hfri.hfinfo.type = FT_FRAMENUM;
 	hfri.hfinfo.display = BASE_NONE;
@@ -462,7 +506,7 @@ static void analyze_gog_config(void *k _U_, void *v, void *p) {
 	g_array_append_val(mc->hfrs,hfri);
 
 	hfri.p_id = &(cfg->hfid_gog_gopstop);
-	hfri.hfinfo.name = "GopStop frame";
+	hfri.hfinfo.name = g_strdup("GopStop frame");
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.GopStop",cfg->name);
 	hfri.hfinfo.type = FT_FRAMENUM;
 	hfri.hfinfo.display = BASE_NONE;
@@ -487,7 +531,7 @@ static void analyze_gog_config(void *k _U_, void *v, void *p) {
 
 	/* this might become mate.gogname.gopname */
 	hfri.p_id = &(cfg->hfid_gog_gop);
-	hfri.hfinfo.name = "a GOP";
+	hfri.hfinfo.name = g_strdup("a GOP");
 	hfri.hfinfo.abbrev = ws_strdup_printf("mate.%s.Gop",cfg->name);
 	hfri.hfinfo.type = FT_STRING;
 	hfri.hfinfo.display = BASE_NONE;
@@ -563,12 +607,56 @@ static void analyze_config(mate_config* mc) {
 
 }
 
+static void deregister_header_fields(GArray *hfrs)
+{
+	int proto_mate = proto_get_id_by_filter_name("mate");
+	ws_assert(proto_mate != -1);
+	if (hfrs) {
+		for (unsigned i = 0; i < hfrs->len; ++i) {
+			hf_register_info *hf = &g_array_index(hfrs, hf_register_info, i);
+			proto_deregister_field(proto_mate, *(hf->p_id));
+			// Some of these we not allocated as pointers to ints
+			// but inside a larger struct.
+			//g_free(hf->p_id);
+		}
+		proto_add_deregistered_data(g_array_free(hfrs, FALSE));
+	}
+}
+
+extern void destroy_mate_config(mate_config *mc)
+{
+	if (mc->wanted_hfids)
+		g_array_unref(mc->wanted_hfids);
+
+	if (mc->mate_lib_path)
+		g_free(mc->mate_lib_path);
+
+	deregister_header_fields(mc->hfrs);
+	g_array_unref(mc->ett);
+
+	g_ptr_array_unref(mc->pducfglist);
+	g_hash_table_unref(mc->gops_by_pduname);
+	g_hash_table_unref(mc->gogs_by_gopname);
+
+	g_hash_table_unref(mc->pducfgs);
+	g_hash_table_unref(mc->gopcfgs);
+	g_hash_table_unref(mc->gogcfgs);
+	g_hash_table_unref(mc->transfs);
+
+	// config_stack is created and destroyed in mate_parser.l
+	g_string_free(mc->config_error, true);
+
+	avp_shutdown();
+
+	g_free(mc);
+}
+
 extern mate_config* mate_make_config(const char* filename, int mate_hfid) {
 	mate_config* mc;
 	int* ett;
 	avp_init();
 
-	mc = g_new(mate_config, 1);
+	mc = g_new0(mate_config, 1);
 
 	mc->hfid_mate = mate_hfid;
 
@@ -579,14 +667,15 @@ extern mate_config* mate_make_config(const char* filename, int mate_hfid) {
 
 	mc->mate_lib_path = ws_strdup_printf("%s%c%s%c",get_datafile_dir(),DIR_SEP,DEFAULT_MATE_LIB_PATH,DIR_SEP);
 
-	mc->pducfgs = g_hash_table_new(g_str_hash,g_str_equal);
-	mc->gopcfgs = g_hash_table_new(g_str_hash,g_str_equal);
-	mc->gogcfgs = g_hash_table_new(g_str_hash,g_str_equal);
-	mc->transfs = g_hash_table_new(g_str_hash,g_str_equal);
+	mc->pducfgs = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)free_pducfg);
+	mc->gopcfgs = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)free_gopcfg);
+	mc->gogcfgs = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)free_gogcfg);
+	mc->transfs = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)delete_avpl_transform);
 
+	// No free function because this has the same entries as pducfgs
 	mc->pducfglist = g_ptr_array_new();
 	mc->gops_by_pduname = g_hash_table_new(g_str_hash,g_str_equal);
-	mc->gogs_by_gopname = g_hash_table_new(g_str_hash,g_str_equal);
+	mc->gogs_by_gopname = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)destroy_loal);
 
 	mc->ett_root = -1;
 
@@ -630,14 +719,14 @@ extern mate_config* mate_make_config(const char* filename, int mate_hfid) {
 					   "It is recommended that you fix your config and restart Wireshark.\n"
 					   "The reported error is:\n%s\n",mc->config_error->str);
 
-		/* if (mc) destroy_mate_config(mc,false); */
+		if (mc) destroy_mate_config(mc);
 		return NULL;
 	}
 
 	if (mc->num_fields_wanted == 0) {
 		/* We have no interest in any fields, so we have no
 		   work to do. */
-		/*destroy_mate_config(mc,false);*/
+		destroy_mate_config(mc);
 		return NULL;
 	}
 
