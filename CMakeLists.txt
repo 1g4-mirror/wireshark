@@ -1798,6 +1798,7 @@ if(ENABLE_PLUGINS)
 	add_custom_target(plugins)
 	set_target_properties(plugins PROPERTIES FOLDER "Plugins")
 	set(PLUGIN_SRC_DIRS
+		plugins/epan/eaf1
 		plugins/epan/ethercat
 		plugins/epan/gryphon
 		plugins/epan/irda
