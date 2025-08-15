@@ -1517,7 +1517,7 @@ sharkd_session_process_analyse(void)
 
     sharkd_json_array_open("protocols");
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     for (uint32_t framenum = 1; framenum <= cfile.count; framenum++)
     {
@@ -1789,7 +1789,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
     sharkd_json_result_array_prologue(rpcid);
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     for (uint32_t framenum = 1; framenum <= cfile.count; framenum++)
     {
@@ -5056,7 +5056,7 @@ sharkd_session_process_frame(char *buf, const jsmntok_t *tokens, int count)
 
     req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     status = sharkd_dissect_request(framenum, ref_frame_num, prev_dis_num,
             &rec, cinfo, dissect_flags,
