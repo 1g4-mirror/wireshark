@@ -44,6 +44,8 @@ private:
     pref_t *pref_toolbar_main_style_;
     pref_t *pref_window_title_;
     pref_t *pref_prepend_window_title_;
+    pref_t *pref_preserve_window_title_;
+
     void updateWidgets();
 
 private slots:
