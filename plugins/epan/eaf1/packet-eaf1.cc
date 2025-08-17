@@ -266,10 +266,15 @@ static int hf_eaf1_tyresets_tyreset_visualtyrecompound;
 static int hf_eaf1_tyresets_tyreset_wear;
 static int hf_eaf1_tyresets_tyreset_available;
 static int hf_eaf1_tyresets_tyreset_recommendedsession;
-static int hf_eaf1_tyresets_tyreset_lifeSpan;
-static int hf_eaf1_tyresets_tyreset_usableLife;
-static int hf_eaf1_tyresets_tyreset_lapDeltaTime;
+static int hf_eaf1_tyresets_tyreset_lifespan;
+static int hf_eaf1_tyresets_tyreset_usablelife;
+static int hf_eaf1_tyresets_tyreset_lapdeltatime;
 static int hf_eaf1_tyresets_tyreset_fitted;
+
+static int hf_eaf1_lappositions_numlaps;
+static int hf_eaf1_lappositions_lapstart;
+static int hf_eaf1_lappositions_lap;
+static int hf_eaf1_lappositions_position;
 
 static int ett_eaf1;
 static int ett_eaf1_version;
@@ -293,6 +298,7 @@ static int ett_eaf1_cardamage_brakesdamage;
 static int ett_eaf1_cardamage_tyreblisters;
 static int ett_eaf1_tyresets_vehicleindex;
 static int ett_eaf1_tyresets_tyreset;
+static int ett_eaf1_lappositions_lap;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -1482,6 +1488,49 @@ static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_t
 			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_usablelife, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_usableLife), sizeof(F125::TyreSetData::m_usableLife), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lapdeltatime, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_lapDeltaTime), sizeof(F125::TyreSetData::m_lapDeltaTime), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_fitted, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_fitted), sizeof(F125::TyreSetData::m_fitted), ENC_LITTLE_ENDIAN);
+		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLapPositionsData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Lap positions"));
+
+		uint32_t num_laps;
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_lappositions_numlaps, tvb, offsetof(F125::PacketLapPositionsData, m_numLaps), sizeof(F125::PacketLapPositionsData::m_numLaps), ENC_LITTLE_ENDIAN, &num_laps);
+
+		uint32_t lap_start;
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_lappositions_lapstart, tvb, offsetof(F125::PacketLapPositionsData, m_lapStart), sizeof(F125::PacketLapPositionsData::m_lapStart), ENC_LITTLE_ENDIAN, &lap_start);
+
+		for (std::remove_const<decltype(F125::cs_maxNumLapsInLapPositionsHistoryPacket)>::type lap = 0; lap < num_laps; lap++)
+		{
+			auto lap_offset = offsetof(F125::PacketLapPositionsData, m_positionForVehicleIdx) + lap * sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0]);
+
+			auto lap_ti = proto_tree_add_string(tree,
+												hf_eaf1_lappositions_lap,
+												tvb,
+												lap_offset,
+												sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0]),
+												wmem_strdup_printf(pinfo->pool, "Lap %d", lap_start + lap + 1));
+			auto lap_tree = proto_item_add_subtree(lap_ti, ett_eaf1_lappositions_lap);
+
+			for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type vehicle_index = 0; vehicle_index < F125::cs_maxNumCarsInUDPData; vehicle_index++)
+			{
+				auto position = tvb_get_uint8(tvb, lap_offset + vehicle_index * sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0][0]));
+
+				proto_tree_add_string(lap_tree,
+									  hf_eaf1_lappositions_position,
+									  tvb,
+									  lap_offset + vehicle_index * sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0][0]),
+									  sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0][0]),
+									  wmem_strdup_printf(pinfo->pool, "%s: %d", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index), position));
+			}
 		}
 
 		return tvb_captured_length(tvb);
@@ -4952,6 +5001,64 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// LapPositions packet
+
+			{
+				&hf_eaf1_lappositions_numlaps,
+				{
+					"Lap positions num laps",
+					"eaf1.lappositions.numlaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Lap positions num laps",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lappositions_lapstart,
+				{
+					"Lap positions lap start",
+					"eaf1.lappositions.lapstart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Lap positions lap start",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lappositions_lap,
+				{
+					"Lap positions lap",
+					"eaf1.lappositions.lap",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Lap positions lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lappositions_position,
+				{
+					"Lap positions position",
+					"eaf1.lappositions.position",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Lap positions position",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
@@ -4979,6 +5086,7 @@ extern "C"
 				&ett_eaf1_cardamage_tyreblisters,
 				&ett_eaf1_tyresets_vehicleindex,
 				&ett_eaf1_tyresets_tyreset,
+				&ett_eaf1_lappositions_lap,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -5028,5 +5136,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSession, create_dissector_handle(dissect_eaf1_2025_session, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarDamage, create_dissector_handle(dissect_eaf1_2025_cardamage, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdTyreSets, create_dissector_handle(dissect_eaf1_2025_tyresets, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLapPositions, create_dissector_handle(dissect_eaf1_2025_lappositions, proto_eaf1));
 	}
 }
