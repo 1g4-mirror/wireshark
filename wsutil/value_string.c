@@ -9,13 +9,11 @@
  */
 
 #include "config.h"
-#define WS_LOG_DOMAIN LOG_DOMAIN_EPAN
+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL
 
 #include <stdio.h>
 #include <string.h>
 
-#include <epan/wmem_scopes.h>
-#include "proto.h"
 #include "to_str.h"
 #include "value_string.h"
 #include <wsutil/ws_assert.h>
@@ -54,7 +52,8 @@ val_to_str(wmem_allocator_t *scope, const uint32_t val, const value_string *vs, 
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_val_to_str(val, vs);
     if (ret != NULL)
@@ -72,7 +71,8 @@ val_to_str_const(const uint32_t val, const value_string *vs,
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(unknown_str != NULL);
+    if (unknown_str == NULL)
+        ws_warn_badarg("unknown_str cannot be NULL");
 
     ret = try_val_to_str(val, vs);
     if (ret != NULL)
@@ -90,7 +90,8 @@ try_val_to_str_idx(const uint32_t val, const value_string *vs, int *idx)
 {
     int i = 0;
 
-    DISSECTOR_ASSERT(idx != NULL);
+    if (idx == NULL)
+        ws_warn_badarg("idx cannot be NULL");
 
     if(vs) {
         while (vs[i].strptr) {
@@ -121,7 +122,8 @@ val64_to_str_wmem(wmem_allocator_t* scope, const uint64_t val, const val64_strin
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_val64_to_str(val, vs);
     if (ret != NULL)
@@ -136,7 +138,8 @@ val64_to_str_const(const uint64_t val, const val64_string *vs,
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(unknown_str != NULL);
+    if (unknown_str == NULL)
+        ws_warn_badarg("unknown_str cannot be NULL");
 
     ret = try_val64_to_str(val, vs);
     if (ret != NULL)
@@ -150,7 +153,8 @@ try_val64_to_str_idx(const uint64_t val, const val64_string *vs, int *idx)
 {
     int i = 0;
 
-    DISSECTOR_ASSERT(idx != NULL);
+    if (idx == NULL)
+        ws_warn_badarg("idx cannot be NULL");
 
     if(vs) {
         while (vs[i].strptr) {
@@ -258,12 +262,14 @@ value_string_ext_new(const value_string *vs, unsigned vs_tot_num_entries,
 {
     value_string_ext *vse;
 
-    DISSECTOR_ASSERT (vs_name != NULL);
-    DISSECTOR_ASSERT (vs_tot_num_entries > 0);
-    /* Null-terminated value-string ? */
-    DISSECTOR_ASSERT (vs[vs_tot_num_entries-1].strptr == NULL);
+    if (vs_name == NULL)
+        ws_warn_badarg("vs_name cannot be NULL");
+    if (vs_tot_num_entries == 0)
+        ws_warn_badarg("vs_tot_num_entries cannot be 0");
+    if (vs[vs_tot_num_entries - 1].strptr != NULL)
+        ws_warn_badarg("vs must have a NULL entry");
 
-    vse                  = wmem_new(wmem_epan_scope(), value_string_ext);
+    vse                  = wmem_new(NULL, value_string_ext);
     vse->_vs_p           = vs;
     vse->_vs_num_entries = vs_tot_num_entries - 1;
     /* We set our 'match' function to the init function, which finishes by
@@ -280,7 +286,7 @@ value_string_ext_new(const value_string *vs, unsigned vs_tot_num_entries,
 void
 value_string_ext_free(value_string_ext *vse)
 {
-    wmem_free(wmem_epan_scope(), vse);
+    wmem_free(NULL, vse);
 }
 
 /* Like try_val_to_str for extended value strings */
@@ -319,7 +325,8 @@ val_to_str_ext(wmem_allocator_t *scope, const uint32_t val, value_string_ext *vs
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_val_to_str_ext(val, vse);
     if (ret != NULL)
@@ -335,7 +342,8 @@ val_to_str_ext_const(const uint32_t val, value_string_ext *vse,
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(unknown_str != NULL);
+    if (unknown_str == NULL)
+        ws_warn_badarg("unknown_str cannot be NULL");
 
     ret = try_val_to_str_ext(val, vse);
     if (ret != NULL)
@@ -431,15 +439,17 @@ _try_val_to_str_ext_init(const uint32_t val, value_string_ext *vse)
     uint32_t first_value;
     unsigned   i;
 
-    DISSECTOR_ASSERT((vs_p[vs_num_entries].value  == 0) &&
-                     (vs_p[vs_num_entries].strptr == NULL));
+    if ((vs_p[vs_num_entries].value != 0) ||
+        (vs_p[vs_num_entries].strptr != NULL))
+        ws_warn_badarg("vse must end with {0, NULL}");
 
     vse->_vs_first_value = vs_p[0].value;
     first_value          = vs_p[0].value;
     prev_value           = first_value;
 
     for (i = 0; i < vs_num_entries; i++) {
-        DISSECTOR_ASSERT(vs_p[i].strptr != NULL);
+        if (vs_p[i].strptr == NULL)
+            ws_warning("vse[%u].strptr cannot be NULL!", i);
         if ((type == VS_INDEX) && (vs_p[i].value != (i + first_value))) {
             type = VS_BIN_SEARCH;
         }
@@ -525,12 +535,14 @@ val64_string_ext_new(const val64_string *vs, unsigned vs_tot_num_entries,
 {
     val64_string_ext *vse;
 
-    DISSECTOR_ASSERT (vs_name != NULL);
-    DISSECTOR_ASSERT (vs_tot_num_entries > 0);
-    /* Null-terminated value-string ? */
-    DISSECTOR_ASSERT (vs[vs_tot_num_entries-1].strptr == NULL);
+    if (vs_name == NULL)
+        ws_warn_badarg("vs_name cannot be NULL");
+    if (vs_tot_num_entries == 0)
+        ws_warn_badarg("vs_tot_num_entries cannot be 0");
+    if (vs[vs_tot_num_entries - 1].strptr != NULL)
+        ws_warn_badarg("vs must have a NULL entry");
 
-    vse                  = wmem_new(wmem_epan_scope(), val64_string_ext);
+    vse                  = wmem_new(NULL, val64_string_ext);
     vse->_vs_p           = vs;
     vse->_vs_num_entries = vs_tot_num_entries - 1;
     /* We set our 'match' function to the init function, which finishes by
@@ -547,7 +559,7 @@ val64_string_ext_new(const val64_string *vs, unsigned vs_tot_num_entries,
 void
 val64_string_ext_free(val64_string_ext *vse)
 {
-    wmem_free(wmem_epan_scope(), vse);
+    wmem_free(NULL, vse);
 }
 
 /* Like try_val_to_str for extended value strings */
@@ -585,7 +597,8 @@ val64_to_str_ext_wmem(wmem_allocator_t *scope, const uint64_t val, val64_string_
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_val64_to_str_ext(val, vse);
     if (ret != NULL)
@@ -601,7 +614,8 @@ val64_to_str_ext_const(const uint64_t val, val64_string_ext *vse,
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(unknown_str != NULL);
+    if (unknown_str == NULL)
+        ws_warn_badarg("unknown_str cannot be NULL");
 
     ret = try_val64_to_str_ext(val, vse);
     if (ret != NULL)
@@ -697,15 +711,17 @@ _try_val64_to_str_ext_init(const uint64_t val, val64_string_ext *vse)
     uint64_t first_value;
     unsigned   i;
 
-    DISSECTOR_ASSERT((vs_p[vs_num_entries].value  == 0) &&
-                     (vs_p[vs_num_entries].strptr == NULL));
+    if ((vs_p[vs_num_entries].value != 0) ||
+        (vs_p[vs_num_entries].strptr != NULL))
+        ws_warn_badarg("vse must end with {0, NULL}");
 
     vse->_vs_first_value = vs_p[0].value;
     first_value          = vs_p[0].value;
     prev_value           = first_value;
 
     for (i = 0; i < vs_num_entries; i++) {
-        DISSECTOR_ASSERT(vs_p[i].strptr != NULL);
+        if (vs_p[i].strptr == NULL)
+            ws_warning("vse[%u].strptr cannot be NULL!", i);
         if ((type == VS_INDEX) && (vs_p[i].value != (i + first_value))) {
             type = VS_BIN_SEARCH;
         }
@@ -759,7 +775,8 @@ str_to_str_wmem(wmem_allocator_t* scope, const char *val, const string_string *v
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_str_to_str(val, vs);
     if (ret != NULL)
@@ -807,7 +824,8 @@ rval_to_str_wmem(wmem_allocator_t* scope, const uint32_t val, const range_string
 {
     const char *ret = NULL;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_rval_to_str(val, rs);
     if(ret != NULL)
@@ -823,7 +841,8 @@ rval_to_str_const(const uint32_t val, const range_string *rs,
 {
     const char *ret = NULL;
 
-    DISSECTOR_ASSERT(unknown_str != NULL);
+    if (unknown_str == NULL)
+        ws_warn_badarg("unknown_str cannot be NULL");
 
     ret = try_rval_to_str(val, rs);
     if(ret != NULL)
@@ -919,7 +938,8 @@ bytesval_to_str_wmem(wmem_allocator_t* scope, const uint8_t *val, const size_t v
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_bytesval_to_str(val, val_len, bs);
     if (ret != NULL)
@@ -958,7 +978,8 @@ bytesprefix_to_str(wmem_allocator_t* scope, const uint8_t *haystack, const size_
 {
     const char *ret;
 
-    DISSECTOR_ASSERT(fmt != NULL);
+    if (fmt == NULL)
+        ws_warn_badarg("fmt cannot be NULL");
 
     ret = try_bytesprefix_to_str(haystack, haystack_len, bs);
     if (ret != NULL)
@@ -1011,7 +1032,8 @@ value_string*
 vs_get_external_value_string(const char* name)
 {
     value_string* ret = (value_string*)g_hash_table_lookup(registered_vs, name);
-    DISSECTOR_ASSERT(ret != NULL);
+    if (ret == NULL)
+        ws_warn_badarg("value_string name not found");
     return ret;
 }
 
@@ -1025,7 +1047,8 @@ value_string_ext*
 get_external_value_string_ext(const char* name)
 {
     value_string_ext* ret = (value_string_ext*)g_hash_table_lookup(registered_vs_ext, name);
-    DISSECTOR_ASSERT(ret != NULL);
+    if (ret == NULL)
+        ws_warn_badarg("value_string name not found");
     return ret;
 }
 
