@@ -218,6 +218,46 @@ static int hf_eaf1_session_sessionsinweekend_sessiontype;
 static int hf_eaf1_session_sector2lapdistancestart;
 static int hf_eaf1_session_sector3lapdistancestart;
 
+static int hf_eaf1_cardamage_drivername;
+static int hf_eaf1_cardamage_tyrewear;
+static int hf_eaf1_cardamage_tyrewear_rearleft;
+static int hf_eaf1_cardamage_tyrewear_rearright;
+static int hf_eaf1_cardamage_tyrewear_frontleft;
+static int hf_eaf1_cardamage_tyrewear_frontright;
+static int hf_eaf1_cardamage_tyredamage;
+static int hf_eaf1_cardamage_tyredamage_rearleft;
+static int hf_eaf1_cardamage_tyredamage_rearright;
+static int hf_eaf1_cardamage_tyredamage_frontleft;
+static int hf_eaf1_cardamage_tyredamage_frontright;
+static int hf_eaf1_cardamage_brakesdamage;
+static int hf_eaf1_cardamage_brakesdamage_rearleft;
+static int hf_eaf1_cardamage_brakesdamage_rearright;
+static int hf_eaf1_cardamage_brakesdamage_frontleft;
+static int hf_eaf1_cardamage_brakesdamage_frontright;
+static int hf_eaf1_cardamage_tyreblisters;
+static int hf_eaf1_cardamage_tyreblisters_rearleft;
+static int hf_eaf1_cardamage_tyreblisters_rearright;
+static int hf_eaf1_cardamage_tyreblisters_frontleft;
+static int hf_eaf1_cardamage_tyreblisters_frontright;
+static int hf_eaf1_cardamage_frontleftwingdamage;
+static int hf_eaf1_cardamage_frontrightwingdamage;
+static int hf_eaf1_cardamage_rearwingdamage;
+static int hf_eaf1_cardamage_floordamage;
+static int hf_eaf1_cardamage_diffuserdamage;
+static int hf_eaf1_cardamage_sidepoddamage;
+static int hf_eaf1_cardamage_drsfault;
+static int hf_eaf1_cardamage_ersfault;
+static int hf_eaf1_cardamage_gearboxdamage;
+static int hf_eaf1_cardamage_enginedamage;
+static int hf_eaf1_cardamage_enginemguhwear;
+static int hf_eaf1_cardamage_engineeswear;
+static int hf_eaf1_cardamage_enginecewear;
+static int hf_eaf1_cardamage_engineicewear;
+static int hf_eaf1_cardamage_enginemgukwear;
+static int hf_eaf1_cardamage_enginetcwear;
+static int hf_eaf1_cardamage_engineblown;
+static int hf_eaf1_cardamage_engineseized;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -233,6 +273,11 @@ static int ett_eaf1_session_marshalzone;
 static int ett_eaf1_session_numweatherforecastsamples;
 static int ett_eaf1_session_weatherforecastsample;
 static int ett_eaf1_session_numsessionsinweekend;
+static int ett_eaf1_cardamage_drivername;
+static int ett_eaf1_cardamage_tyrewear;
+static int ett_eaf1_cardamage_tyredamage;
+static int ett_eaf1_cardamage_brakesdamage;
+static int ett_eaf1_cardamage_tyreblisters;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -1276,6 +1321,77 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 		proto_tree_add_item(tree, hf_eaf1_session_sector2lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector2LapDistanceStart), sizeof(F125::PacketSessionData::m_sector2LapDistanceStart), ENC_LITTLE_ENDIAN);
 		proto_tree_add_item(tree, hf_eaf1_session_sector3lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector3LapDistanceStart), sizeof(F125::PacketSessionData::m_sector3LapDistanceStart), ENC_LITTLE_ENDIAN);
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketCarDamageData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Car damage"));
+
+		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
+		{
+			auto participant_offset = offsetof(F125::PacketCarDamageData, m_carDamageData) + participant * sizeof(F125::CarDamageData);
+
+			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_cardamage_drivername, pinfo, tvb, participant);
+			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_cardamage_drivername);
+
+			auto tyre_wear_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyrewear, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			auto tyre_wear_tree = proto_item_add_subtree(tyre_wear_ti, ett_eaf1_cardamage_tyrewear);
+
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 0 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 1 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 2 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 3 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
+
+			auto tyre_damage_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyredamage, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			auto tyre_damage_tree = proto_item_add_subtree(tyre_damage_ti, ett_eaf1_cardamage_tyredamage);
+
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 0 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 1 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 2 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 3 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
+
+			auto brakes_damage_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_brakesdamage, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			auto brakes_damage_tree = proto_item_add_subtree(brakes_damage_ti, ett_eaf1_cardamage_brakesdamage);
+
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 0 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 1 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 2 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 3 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
+
+			auto tyre_blisters_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyreblisters, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			auto tyre_blisters_tree = proto_item_add_subtree(tyre_blisters_ti, ett_eaf1_cardamage_tyreblisters);
+
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 0 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 1 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 2 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 3 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontleftwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_frontLeftWingDamage), sizeof(F125::CarDamageData::m_frontLeftWingDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontrightwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_frontRightWingDamage), sizeof(F125::CarDamageData::m_frontRightWingDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_rearwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_rearWingDamage), sizeof(F125::CarDamageData::m_rearWingDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_floordamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_floorDamage), sizeof(F125::CarDamageData::m_floorDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_diffuserdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_diffuserDamage), sizeof(F125::CarDamageData::m_diffuserDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_sidepoddamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_sidepodDamage), sizeof(F125::CarDamageData::m_sidepodDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_drsfault, tvb, participant_offset + offsetof(F125::CarDamageData, m_drsFault), sizeof(F125::CarDamageData::m_drsFault), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_ersfault, tvb, participant_offset + offsetof(F125::CarDamageData, m_ersFault), sizeof(F125::CarDamageData::m_ersFault), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_gearboxdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_gearBoxDamage), sizeof(F125::CarDamageData::m_gearBoxDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginedamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineDamage), sizeof(F125::CarDamageData::m_engineDamage), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemguhwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineMGUHWear), sizeof(F125::CarDamageData::m_engineMGUHWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineeswear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineESWear), sizeof(F125::CarDamageData::m_engineESWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginecewear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineCEWear), sizeof(F125::CarDamageData::m_engineCEWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineicewear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineICEWear), sizeof(F125::CarDamageData::m_engineICEWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemgukwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineMGUKWear), sizeof(F125::CarDamageData::m_engineMGUKWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginetcwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineTCWear), sizeof(F125::CarDamageData::m_engineTCWear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineblown, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineBlown), sizeof(F125::CarDamageData::m_engineBlown), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineseized, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineSeized), sizeof(F125::CarDamageData::m_engineSeized), ENC_LITTLE_ENDIAN);
+		}
 
 		return tvb_captured_length(tvb);
 	}
@@ -4028,9 +4144,557 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// CarDamage packet
+
+			{
+				&hf_eaf1_cardamage_drivername,
+				{
+					"Car damage driver name",
+					"eaf1.cardamage.drivername",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Car damage driver name",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyrewear,
+				{
+					"Car damage tyre wear",
+					"eaf1.cardamage.tyrewear",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Car damage tyre wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyrewear_rearleft,
+				{
+					"Car damage tyre wear rear left",
+					"eaf1.cardamage.tyrewear.rearleft",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre wear rear left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyrewear_rearright,
+				{
+					"Car damage tyre wear rear right",
+					"eaf1.cardamage.tyrewear.rearright",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre wear rear right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyrewear_frontleft,
+				{
+					"Car damage tyre wear front left",
+					"eaf1.cardamage.tyrewear.frontleft",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre wear front left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyrewear_frontright,
+				{
+					"Car damage tyre wear front right",
+					"eaf1.cardamage.tyrewear.frontright",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre wear front right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyredamage,
+				{
+					"Car damage tyre damage",
+					"eaf1.cardamage.tyredamage",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Car damage tyre damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyredamage_rearleft,
+				{
+					"Car damage tyre damage rear left",
+					"eaf1.cardamage.tyredamage.rearleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre damage rear left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyredamage_rearright,
+				{
+					"Car damage tyre damage rear right",
+					"eaf1.cardamage.tyredamage.rearright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre damage rear right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyredamage_frontleft,
+				{
+					"Car damage tyre damage front left",
+					"eaf1.cardamage.tyredamage.frontleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre damage front left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyredamage_frontright,
+				{
+					"Car damage tyre damage front right",
+					"eaf1.cardamage.tyredamage.frontright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre damage front right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_brakesdamage,
+				{
+					"Car damage brakes damage",
+					"eaf1.cardamage.brakesdamage",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Car damage brakes damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_brakesdamage_rearleft,
+				{
+					"Car damage brakes damage rear left",
+					"eaf1.cardamage.brakesdamage.rearleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage brakes damage rear left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_brakesdamage_rearright,
+				{
+					"Car damage brakes damage rear right",
+					"eaf1.cardamage.brakesdamage.rearright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage brakes damage rear right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_brakesdamage_frontleft,
+				{
+					"Car damage brakes damage front left",
+					"eaf1.cardamage.brakesdamage.frontleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage brakes damage front left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_brakesdamage_frontright,
+				{
+					"Car damage brakes damage front right",
+					"eaf1.cardamage.brakesdamage.frontright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage brakes damage front right",
+					HFILL,
+				},
+			},
+			{
+				&hf_eaf1_cardamage_tyreblisters,
+				{
+					"Car damage tyre blisters",
+					"eaf1.cardamage.tyreblisters",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Car damage tyre blisters",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyreblisters_rearleft,
+				{
+					"Car damage tyre blisters rear left",
+					"eaf1.cardamage.tyreblisters.rearleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre blisters rear left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyreblisters_rearright,
+				{
+					"Car damage tyre blisters rear right",
+					"eaf1.cardamage.tyreblisters.rearright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre blisters rear right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyreblisters_frontleft,
+				{
+					"Car damage tyre blisters front left",
+					"eaf1.cardamage.tyreblisters.frontleft",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre blisters front left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_tyreblisters_frontright,
+				{
+					"Car damage tyre blisters front right",
+					"eaf1.cardamage.tyreblisters.frontright",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage tyre blisters front right",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_frontleftwingdamage,
+				{
+					"Car damage front left wing damage",
+					"eaf1.cardamage.frontleftwingdamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage front left wing damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_frontrightwingdamage,
+				{
+					"Car damage front right wing damage",
+					"eaf1.cardamage.frontrightwingdamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage front right wing damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_rearwingdamage,
+				{
+					"Car damage rear wing damage",
+					"eaf1.cardamage.rearwingdamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage rear wing damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_floordamage,
+				{
+					"Car damage floor damage",
+					"eaf1.cardamage.floordamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage floor damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_diffuserdamage,
+				{
+					"Car damage diffuser damage",
+					"eaf1.cardamage.diffuserdamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage diffuser damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_sidepoddamage,
+				{
+					"Car damage sidepod damage",
+					"eaf1.cardamage.sidepoddamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage sidepod damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_drsfault,
+				{
+					"Car damage DRS fault",
+					"eaf1.cardamage.drsfault",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage DRS fault",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_ersfault,
+				{
+					"Car damage ERS fault",
+					"eaf1.cardamage.ersfault",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage ERS fault",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_gearboxdamage,
+				{
+					"Car damage gearbox damage",
+					"eaf1.cardamage.gearboxdamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage gearbox damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_enginedamage,
+				{
+					"Car damage engine damage",
+					"eaf1.cardamage.enginedamage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_enginemguhwear,
+				{
+					"Car damage engine MGUH wear",
+					"eaf1.cardamage.enginemguhwear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine MGUH wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_engineeswear,
+				{
+					"Car damage engine ES wear",
+					"eaf1.cardamage.engineeswear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine ES wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_enginecewear,
+				{
+					"Car damage engine CE wear",
+					"eaf1.cardamage.enginecewear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine CE wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_engineicewear,
+				{
+					"Car damage engine ICE wear",
+					"eaf1.cardamage.engineicewear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine ICE wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_enginemgukwear,
+				{
+					"Car damage engine MGUK wear",
+					"eaf1.cardamage.enginemgukwear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine MGUK wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_enginetcwear,
+				{
+					"Car damage engine TC wear",
+					"eaf1.cardamage.enginetcwear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine TC wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_engineblown,
+				{
+					"Car damage engine blown",
+					"eaf1.cardamage.engineblown",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine blown",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_cardamage_engineseized,
+				{
+					"Car damage engine seized",
+					"eaf1.cardamage.engineseized",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Car damage engine seized",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
+
 		static int *ett[] =
 			{
 				&ett_eaf1,
@@ -4047,6 +4711,11 @@ extern "C"
 				&ett_eaf1_session_numweatherforecastsamples,
 				&ett_eaf1_session_weatherforecastsample,
 				&ett_eaf1_session_numsessionsinweekend,
+				&ett_eaf1_cardamage_drivername,
+				&ett_eaf1_cardamage_tyrewear,
+				&ett_eaf1_cardamage_tyredamage,
+				&ett_eaf1_cardamage_brakesdamage,
+				&ett_eaf1_cardamage_tyreblisters,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -4094,5 +4763,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdEvent, create_dissector_handle(dissect_eaf1_2025_event, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdParticipants, create_dissector_handle(dissect_eaf1_2025_participants, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSession, create_dissector_handle(dissect_eaf1_2025_session, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarDamage, create_dissector_handle(dissect_eaf1_2025_cardamage, proto_eaf1));
 	}
 }

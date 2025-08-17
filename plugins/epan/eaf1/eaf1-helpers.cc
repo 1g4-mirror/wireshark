@@ -24,7 +24,7 @@ static const char *lookup_driver_name(int proto, uint32_t packet_number, const a
 	return ret;
 }
 
-void add_vehicle_index_and_name(int proto, proto_tree *tree, int header_field, packet_info *pinfo, tvbuff_t *tvb, int offset)
+proto_item *add_vehicle_index_and_name(int proto, proto_tree *tree, int header_field, packet_info *pinfo, tvbuff_t *tvb, int offset)
 {
 	uint32_t vehicle_index;
 	auto ti_vehicle_index = proto_tree_add_item_ret_uint(tree, header_field, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN, &vehicle_index);
@@ -34,4 +34,19 @@ void add_vehicle_index_and_name(int proto, proto_tree *tree, int header_field, p
 	{
 		proto_item_append_text(ti_vehicle_index, " (%s)", driver_name);
 	}
+
+	return ti_vehicle_index;
+}
+
+proto_item *add_driver_name(int proto, proto_tree *tree, int header_field, packet_info *pinfo, tvbuff_t *tvb, uint8_t participant_index)
+{
+	auto ti_driver_name = proto_tree_add_item(tree, header_field, tvb, 0, 0, ENC_UTF_8);
+
+	const char *driver_name = lookup_driver_name(proto, pinfo->num, pinfo->src, pinfo->srcport, participant_index);
+	if (driver_name)
+	{
+		proto_item_set_text(ti_driver_name, "%d - '%s'", participant_index, driver_name);
+	}
+
+	return ti_driver_name;
 }
