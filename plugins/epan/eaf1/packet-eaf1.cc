@@ -112,6 +112,23 @@ static int hf_eaf1_event_collision_vehicle1index;
 static int hf_eaf1_event_collision_vehicle2index;
 
 static int hf_eaf1_participants_activecars;
+static int hf_eaf1_participants_aicontrolled;
+static int hf_eaf1_participants_driverid;
+static int hf_eaf1_participants_networkid;
+static int hf_eaf1_participants_teamid;
+static int hf_eaf1_participants_myteam;
+static int hf_eaf1_participants_racenumber;
+static int hf_eaf1_participants_nationality;
+static int hf_eaf1_participants_name;
+static int hf_eaf1_participants_yourtelemetry;
+static int hf_eaf1_participants_showonlinenames;
+static int hf_eaf1_participants_techlevel;
+static int hf_eaf1_participants_platform;
+static int hf_eaf1_participants_numcolours;
+static int hf_eaf1_participants_liverycolour;
+static int hf_eaf1_participants_liverycolour_red;
+static int hf_eaf1_participants_liverycolour_green;
+static int hf_eaf1_participants_liverycolour_blue;
 
 static int ett_eaf1;
 static int ett_eaf1_version;
@@ -120,6 +137,9 @@ static int ett_eaf1_lobbyinfo_numplayers;
 static int ett_eaf1_lobbyinfo_player_name;
 static int ett_eaf1_event_eventcode;
 static int ett_eaf1_event_buttonstatus;
+static int ett_eaf1_participants_player_name;
+static int ett_eaf1_participants_numcolours;
+static int ett_eaf1_participants_livery_colour;
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
@@ -448,6 +468,48 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 		proto_tree_add_item_ret_uint(tree, hf_eaf1_participants_activecars, tvb, offsetof(F125::PacketParticipantsData, m_numActiveCars), 1, ENC_LITTLE_ENDIAN, &active_cars);
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Participants: %d active", active_cars));
+
+		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
+		{
+			auto participant_offset = offsetof(F125::PacketParticipantsData, m_participants) + participant * sizeof(F125::ParticipantData);
+
+			auto player_name_ti = proto_tree_add_item(tree, hf_eaf1_participants_name, tvb, participant_offset + offsetof(F125::ParticipantData, m_name), F125::cs_maxParticipantNameLen, ENC_UTF_8);
+			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_participants_player_name);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_aicontrolled, tvb, participant_offset + offsetof(F125::ParticipantData, m_aiControlled), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_driverid, tvb, participant_offset + offsetof(F125::ParticipantData, m_driverId), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_networkid, tvb, participant_offset + offsetof(F125::ParticipantData, m_networkId), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_teamid, tvb, participant_offset + offsetof(F125::ParticipantData, m_teamId), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_myteam, tvb, participant_offset + offsetof(F125::ParticipantData, m_myTeam), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_racenumber, tvb, participant_offset + offsetof(F125::ParticipantData, m_raceNumber), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_nationality, tvb, participant_offset + offsetof(F125::ParticipantData, m_nationality), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_yourtelemetry, tvb, participant_offset + offsetof(F125::ParticipantData, m_yourTelemetry), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_showonlinenames, tvb, participant_offset + offsetof(F125::ParticipantData, m_showOnlineNames), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_techlevel, tvb, participant_offset + offsetof(F125::ParticipantData, m_techLevel), sizeof(uint16), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_platform, tvb, participant_offset + offsetof(F125::ParticipantData, m_platform), sizeof(uint8), ENC_LITTLE_ENDIAN);
+
+			uint32_t num_colours;
+			auto num_colours_ti = proto_tree_add_item_ret_uint(eaf1_player_name_tree, hf_eaf1_participants_numcolours, tvb, participant_offset + offsetof(F125::ParticipantData, m_numColours), sizeof(uint8), ENC_LITTLE_ENDIAN, &num_colours);
+			proto_tree *eaf1_num_colours_tree = proto_item_add_subtree(num_colours_ti, ett_eaf1_participants_numcolours);
+
+			for (uint32_t colour = 0; colour < num_colours; colour++)
+			{
+				auto livery_offset = participant_offset + offsetof(F125::ParticipantData, m_liveryColours) + colour * sizeof(F125::LiveryColour);
+
+				auto livery_colour_ti = proto_tree_add_item(eaf1_num_colours_tree, hf_eaf1_participants_liverycolour, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+				proto_tree *eaf1_livery_colour_tree = proto_item_add_subtree(livery_colour_ti, ett_eaf1_participants_livery_colour);
+
+				uint32_t red;
+				uint32_t green;
+				uint32_t blue;
+
+				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_red, tvb, livery_offset + offsetof(F125::LiveryColour, red), sizeof(uint8), ENC_LITTLE_ENDIAN, &red);
+				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_green, tvb, livery_offset + offsetof(F125::LiveryColour, green), sizeof(uint8), ENC_LITTLE_ENDIAN, &green);
+				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_blue, tvb, livery_offset + offsetof(F125::LiveryColour, blue), sizeof(uint8), ENC_LITTLE_ENDIAN, &blue);
+
+				proto_item_append_text(livery_colour_ti, " (0x%02x%02x%02x)", red, green, blue);
+			}
+		}
 
 		return tvb_captured_length(tvb);
 	}
@@ -2025,6 +2087,244 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			{
+				&hf_eaf1_participants_aicontrolled,
+				{
+					"Participants AI controlled",
+					"eaf1.participants.aicontrolled",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants AI controlled",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_driverid,
+				{
+					"Participants driver id",
+					"eaf1.participants.driverid",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants driver id",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_networkid,
+				{
+					"Participants network id",
+					"eaf1.participants.networkid",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants network id",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_teamid,
+				{
+					"Participants team id",
+					"eaf1.participants.teamid",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(teamidnames),
+					0x0,
+					"Participants team id",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_myteam,
+				{
+					"Participants my team",
+					"eaf1.participants.myteam",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants my team",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_racenumber,
+				{
+					"Participants race number",
+					"eaf1.participants.racenumber",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants race number",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_nationality,
+				{
+					"Participants nationality",
+					"eaf1.participants.nationality",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(nationalityidnames),
+					0x0,
+					"Participants nationality",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_name,
+				{
+					"Participants name",
+					"eaf1.participants.name",
+					FT_STRINGZ,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Participants name",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_yourtelemetry,
+				{
+					"Participants your tTelemetry",
+					"eaf1.participants.yourtelemetry",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants your telemetry",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_showonlinenames,
+				{
+					"Participants show online names",
+					"eaf1.participants.showonlinenames",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants show online names",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_techlevel,
+				{
+					"Participants tech level",
+					"eaf1.participants.techlevel",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants tech level",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_platform,
+				{
+					"Participants platform",
+					"eaf1.participants.platform",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants platform",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_numcolours,
+				{
+					"Participants num livery colours",
+					"eaf1.participants.numcolours",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Participants num livery colours",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_liverycolour,
+				{
+					"Participants livery colour",
+					"eaf1.participants.liverycolour",
+					FT_NONE,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Participants livery colour",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_liverycolour_red,
+				{
+					"Participants livery colour red",
+					"eaf1.participants.liverycolour.red",
+					FT_UINT8,
+					BASE_HEX,
+					NULL,
+					0x0,
+					"Participants livery colour red",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_liverycolour_green,
+				{
+					"Participants livery colour green",
+					"eaf1.participants.liverycolour.green",
+					FT_UINT8,
+					BASE_HEX,
+					NULL,
+					0x0,
+					"Participants livery colour green",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_participants_liverycolour_blue,
+				{
+					"Participants livery colour blue",
+					"eaf1.participants.liverycolour.blue",
+					FT_UINT8,
+					BASE_HEX,
+					NULL,
+					0x0,
+					"Participants livery colour blue",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
@@ -2037,6 +2337,8 @@ extern "C"
 				&ett_eaf1_lobbyinfo_player_name,
 				&ett_eaf1_event_eventcode,
 				&ett_eaf1_event_buttonstatus,
+				&ett_eaf1_participants_player_name,
+				&ett_eaf1_participants_livery_colour,
 			};
 
 		proto_eaf1 = proto_register_protocol(
