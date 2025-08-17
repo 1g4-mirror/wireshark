@@ -130,6 +130,94 @@ static int hf_eaf1_participants_liverycolour_red;
 static int hf_eaf1_participants_liverycolour_green;
 static int hf_eaf1_participants_liverycolour_blue;
 
+static int hf_eaf1_session_weather;
+static int hf_eaf1_session_tracktemperature;
+static int hf_eaf1_session_airtemperature;
+static int hf_eaf1_session_totallaps;
+static int hf_eaf1_session_tracklength;
+static int hf_eaf1_session_sessiontype;
+static int hf_eaf1_session_trackid;
+static int hf_eaf1_session_formula;
+static int hf_eaf1_session_sessiontimeleft;
+static int hf_eaf1_session_sessionduration;
+static int hf_eaf1_session_pitspeedlimit;
+static int hf_eaf1_session_gamepaused;
+static int hf_eaf1_session_isspectating;
+static int hf_eaf1_session_spectatorcarindex;
+static int hf_eaf1_session_slipronativesupport;
+static int hf_eaf1_session_nummarshalzones;
+static int hf_eaf1_session_marshalzone;
+static int hf_eaf1_session_marshalzone_start;
+static int hf_eaf1_session_marshalzone_flag;
+static int hf_eaf1_session_safetycarstatus;
+static int hf_eaf1_session_networkgame;
+static int hf_eaf1_session_numweatherforecastsamples;
+static int hf_eaf1_session_weatherforecastsample;
+static int hf_eaf1_session_weatherforecastsample_sessiontype;
+static int hf_eaf1_session_weatherforecastsample_timeoffset;
+static int hf_eaf1_session_weatherforecastsample_weather;
+static int hf_eaf1_session_weatherforecastsample_tracktemperature;
+static int hf_eaf1_session_weatherforecastsample_tracktemperaturechange;
+static int hf_eaf1_session_weatherforecastsample_airtemperature;
+static int hf_eaf1_session_weatherforecastsample_airtemperaturechange;
+static int hf_eaf1_session_weatherforecastsample_rainpercentage;
+static int hf_eaf1_session_forecastaccuracy;
+static int hf_eaf1_session_aidifficulty;
+static int hf_eaf1_session_seasonlinkidentifier;
+static int hf_eaf1_session_weekendlinkidentifier;
+static int hf_eaf1_session_sessionlinkidentifier;
+static int hf_eaf1_session_pitstopwindowideallap;
+static int hf_eaf1_session_pitstopwindowlatestlap;
+static int hf_eaf1_session_pitstoprejoinposition;
+static int hf_eaf1_session_steeringassist;
+static int hf_eaf1_session_brakingassist;
+static int hf_eaf1_session_gearboxassist;
+static int hf_eaf1_session_pitassist;
+static int hf_eaf1_session_pitreleaseassist;
+static int hf_eaf1_session_ersassist;
+static int hf_eaf1_session_drsassist;
+static int hf_eaf1_session_dynamicracingline;
+static int hf_eaf1_session_dynamicracinglinetype;
+static int hf_eaf1_session_gamemode;
+static int hf_eaf1_session_ruleset;
+static int hf_eaf1_session_timeofday;
+static int hf_eaf1_session_sessionlength;
+static int hf_eaf1_session_speedunitsleadplayer;
+static int hf_eaf1_session_temperatureunitsleadplayer;
+static int hf_eaf1_session_speedunitssecondaryplayer;
+static int hf_eaf1_session_temperatureunitssecondaryplayer;
+static int hf_eaf1_session_numsafetycarperiods;
+static int hf_eaf1_session_numvirtualsafetycarperiods;
+static int hf_eaf1_session_numredflagperiods;
+static int hf_eaf1_session_equalcarperformance;
+static int hf_eaf1_session_recoverymode;
+static int hf_eaf1_session_flashbacklimit;
+static int hf_eaf1_session_surfacetype;
+static int hf_eaf1_session_lowfuelmode;
+static int hf_eaf1_session_racestarts;
+static int hf_eaf1_session_tyretemperature;
+static int hf_eaf1_session_pitlanetyresim;
+static int hf_eaf1_session_cardamage;
+static int hf_eaf1_session_cardamagerate;
+static int hf_eaf1_session_collisions;
+static int hf_eaf1_session_collisionsoffforfirstlaponly;
+static int hf_eaf1_session_mpunsafepitrelease;
+static int hf_eaf1_session_mpoffforgriefing;
+static int hf_eaf1_session_cornercuttingstringency;
+static int hf_eaf1_session_parcfermerules;
+static int hf_eaf1_session_pitstopexperience;
+static int hf_eaf1_session_safetycar;
+static int hf_eaf1_session_safetycarexperience;
+static int hf_eaf1_session_formationlap;
+static int hf_eaf1_session_formationlapexperience;
+static int hf_eaf1_session_redflags;
+static int hf_eaf1_session_affectslicencelevelsolo;
+static int hf_eaf1_session_affectslicencelevelmp;
+static int hf_eaf1_session_numsessionsinweekend;
+static int hf_eaf1_session_sessionsinweekend_sessiontype;
+static int hf_eaf1_session_sector2lapdistancestart;
+static int hf_eaf1_session_sector3lapdistancestart;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -140,6 +228,547 @@ static int ett_eaf1_event_buttonstatus;
 static int ett_eaf1_participants_player_name;
 static int ett_eaf1_participants_numcolours;
 static int ett_eaf1_participants_livery_colour;
+static int ett_eaf1_session_nummarshalzones;
+static int ett_eaf1_session_marshalzone;
+static int ett_eaf1_session_numweatherforecastsamples;
+static int ett_eaf1_session_weatherforecastsample;
+static int ett_eaf1_session_numsessionsinweekend;
+
+static const value_string packetidnames[] = {
+	{0, "Motion"},
+	{1, "Session"},
+	{2, "LapData"},
+	{3, "Event"},
+	{4, "Participants"},
+	{5, "CarSetups"},
+	{6, "CarTelemetry"},
+	{7, "CarStatus"},
+	{8, "FinalClassification"},
+	{9, "LobbyInfo"},
+	{10, "CarDamage"},
+	{11, "SessionHistory"},
+	{12, "TyreSets"},
+	{13, "MotionEx"},
+	{14, "TimeTrial"},
+	{15, "LapPositions"},
+	{0, NULL},
+};
+
+static const value_string teamidnames[] = {
+	{0, "Mercedes"},
+	{1, "Ferrari"},
+	{2, "Red Bull Racing"},
+	{3, "Williams"},
+	{4, "Aston Martin"},
+	{5, "Alpine"},
+	{6, "RB"},
+	{7, "Haas"},
+	{8, "McLaren"},
+	{9, "Sauber"},
+	{41, "F1 Generic"},
+	{104, "F1 Custom Team"},
+	{143, "Art GP '23"},
+	{144, "Campos '23"},
+	{145, "Carlin '23"},
+	{146, "PHM '23"},
+	{147, "Dams '23"},
+	{148, "Hitech '23"},
+	{149, "MP Motorsport '23"},
+	{150, "Prema '23"},
+	{151, "Trident '23"},
+	{152, "Van Amersfoort Racing '23"},
+	{153, "Virtuosi '23"},
+	{0, NULL},
+};
+
+static const value_string nationalityidnames[] = {
+	{0, "Not set"},
+	{1, "American"},
+	{2, "Argentinean"},
+	{3, "Australian"},
+	{4, "Austrian"},
+	{5, "Azerbaijani"},
+	{6, "Bahraini"},
+	{7, "Belgian"},
+	{8, "Bolivian"},
+	{9, "Brazilian"},
+	{10, "British"},
+	{11, "Bulgarian"},
+	{12, "Cameroonian"},
+	{13, "Canadian"},
+	{14, "Chilean"},
+	{15, "Chinese"},
+	{16, "Colombian"},
+	{17, "Costa Rican"},
+	{18, "Croatian"},
+	{19, "Cypriot"},
+	{20, "Czech"},
+	{21, "Danish"},
+	{22, "Dutch"},
+	{23, "Ecuadorian"},
+	{24, "English"},
+	{25, "Emirian"},
+	{26, "Estonian"},
+	{27, "Finnish"},
+	{28, "French"},
+	{29, "German"},
+	{30, "Ghanaian"},
+	{31, "Greek"},
+	{32, "Guatemalan"},
+	{33, "Honduran"},
+	{34, "Hong Konger"},
+	{35, "Hungarian"},
+	{36, "Icelander"},
+	{37, "Indian"},
+	{38, "Indonesian"},
+	{39, "Irish"},
+	{40, "Israeli"},
+	{41, "Italian"},
+	{42, "Jamaican"},
+	{43, "Japanese"},
+	{44, "Jordanian"},
+	{45, "Kuwaiti"},
+	{46, "Latvian"},
+	{47, "Lebanese"},
+	{48, "Lithuanian"},
+	{49, "Luxembourger"},
+	{50, "Malaysian"},
+	{51, "Maltese"},
+	{52, "Mexican"},
+	{53, "Monegasque"},
+	{54, "New Zealander"},
+	{55, "Nicaraguan"},
+	{56, "Northern Irish"},
+	{57, "Norwegian"},
+	{58, "Omani"},
+	{59, "Pakistani"},
+	{60, "Panamanian"},
+	{61, "Paraguayan"},
+	{62, "Peruvian"},
+	{63, "Polish"},
+	{64, "Portuguese"},
+	{65, "Qatari"},
+	{66, "Romanian"},
+	{68, "Salvadoran"},
+	{69, "Saudi"},
+	{70, "Scottish"},
+	{71, "Serbian"},
+	{72, "Singaporean"},
+	{73, "Slovakian"},
+	{74, "Slovenian"},
+	{75, "South Korean"},
+	{76, "South African"},
+	{77, "Spanish"},
+	{78, "Swedish"},
+	{79, "Swiss"},
+	{80, "Thai"},
+	{81, "Turkish"},
+	{82, "Uruguayan"},
+	{83, "Ukrainian"},
+	{84, "Venezuelan"},
+	{85, "Barbadian"},
+	{86, "Welsh"},
+	{87, "Vietnamese"},
+	{88, "Algerian"},
+	{89, "Bosnian"},
+	{90, "Filipino"},
+	{0, NULL},
+};
+
+static const value_string platformidnames[] = {
+	{1, "Steam"},
+	{3, "PlayStation"},
+	{4, "Xbox"},
+	{6, "Origin"},
+	{255, "unknown"},
+	{0, NULL},
+};
+
+static const value_string yourtelemetrynames[] = {
+	{0, "Restricted"},
+	{1, "Public"},
+	{0, NULL},
+};
+
+static const value_string showonlinenames[] = {
+	{0, "Off"},
+	{1, "On"},
+	{0, NULL},
+};
+
+static const value_string readystatusnames[] = {
+	{0, "Not ready"},
+	{1, "Ready"},
+	{2, "Spectating"},
+	{0, NULL},
+};
+
+static const value_string flagnames[] = {
+	{(uint32_t)-1, "Invalid / unknown"},
+	{0, "None"},
+	{1, "Green"},
+	{2, "Blue"},
+	{3, "Yellow"},
+};
+
+static const value_string networkgamenames[] = {
+	{0, "Offline"},
+	{1, "Online"},
+};
+
+static const value_string safetycartypenames[] = {
+	{0, "No Safety Car"},
+	{1, "Full Safety Car"},
+	{2, "Virtual Safety Car"},
+	{3, "Formation Lap"},
+};
+
+static const value_string safetycareventtypenames[] = {
+	{0, "Deployed"},
+	{1, "Returning"},
+	{2, "Returned"},
+	{3, "Resume Race"},
+};
+
+static const value_string retirementreasonnames[] = {
+	{0, "Invalid"},
+	{1, "Retired"},
+	{2, "Finished"},
+	{3, "Terminal damage"},
+	{4, "Inactive"},
+	{5, "Not enough laps completed"},
+	{6, "Black flagged"},
+	{7, "Red flagged"},
+	{8, "Mechanical failure"},
+	{9, "Session skipped"},
+	{10, "Session simulated"},
+};
+
+static const value_string drsdisabledreasonnames[] = {
+	{0, "Wet track"},
+	{1, "Safety car deployed"},
+	{2, "Red flag"},
+	{3, "Min lap not reached"},
+};
+
+static const value_string penaltytypenames[] = {
+	{0, "Drive through"},
+	{1, "Stop Go"},
+	{2, "Grid penalty"},
+	{3, "Penalty reminder"},
+	{4, "Time penalty"},
+	{5, "Warning"},
+	{6, "Disqualified"},
+	{7, "Removed from formation lap"},
+	{8, "Parked too long timer"},
+	{9, "Tyre regulations"},
+	{10, "This lap invalidated"},
+	{11, "This and next lap invalidated"},
+	{12, "This lap invalidated without reason"},
+	{13, "This and next lap invalidated without reason"},
+	{14, "This and previous lap invalidated"},
+	{15, "This and previous lap invalidated without reason"},
+	{16, "Retired"},
+	{17, "Black flag timer"},
+};
+
+static const value_string infringementtypenames[] = {
+	{0, "Blocking by slow driving"},
+	{1, "Blocking by wrong way driving"},
+	{2, "Reversing off the start line"},
+	{3, "Big Collision"},
+	{4, "Small Collision"},
+	{5, "Collision failed to hand back position single"},
+	{6, "Collision failed to hand back position multiple"},
+	{7, "Corner cutting gained time"},
+	{8, "Corner cutting overtake single"},
+	{9, "Corner cutting overtake multiple"},
+	{10, "Crossed pit exit lane"},
+	{11, "Ignoring blue flags"},
+	{12, "Ignoring yellow flags"},
+	{13, "Ignoring drive through"},
+	{14, "Too many drive throughs"},
+	{15, "Drive through reminder serve within n laps"},
+	{16, "Drive through reminder serve this lap"},
+	{17, "Pit lane speeding"},
+	{18, "Parked for too long"},
+	{19, "Ignoring tyre regulations"},
+	{20, "Too many penalties"},
+	{21, "Multiple warnings"},
+	{22, "Approaching disqualification"},
+	{23, "Tyre regulations select single"},
+	{24, "Tyre regulations select multiple"},
+	{25, "Lap invalidated corner cutting"},
+	{26, "Lap invalidated running wide"},
+	{27, "Corner cutting ran wide gained time minor"},
+	{28, "Corner cutting ran wide gained time significant"},
+	{29, "Corner cutting ran wide gained time extreme"},
+	{30, "Lap invalidated wall riding"},
+	{31, "Lap invalidated flashback used"},
+	{32, "Lap invalidated reset to track"},
+	{33, "Blocking the pitlane"},
+	{34, "Jump start"},
+	{35, "Safety car to car collision"},
+	{36, "Safety car illegal overtake"},
+	{37, "Safety car exceeding allowed pace"},
+	{38, "Virtual safety car exceeding allowed pace"},
+	{39, "Formation lap below allowed speed"},
+	{40, "Formation lap parking"},
+	{41, "Retired mechanical failure"},
+	{42, "Retired terminally damaged"},
+	{43, "Safety car falling too far back"},
+	{44, "Black flag timer"},
+	{45, "Unserved stop go penalty"},
+	{46, "Unserved drive through penalty"},
+	{47, "Engine component change"},
+	{48, "Gearbox change"},
+	{49, "Parc Fermé change"},
+	{50, "League grid penalty"},
+	{51, "Retry penalty"},
+	{52, "Illegal time gain"},
+	{53, "Mandatory pitstop"},
+	{54, "Attribute assigned"},
+};
+
+static const value_string weathernames[] = {
+	{0, "Clear"},
+	{1, "Light cloud"},
+	{2, "Overcast"},
+	{3, "Light rain"},
+	{4, "Heavy rain"},
+	{5, "Storm"},
+};
+
+static const value_string sessiontypenames[] = {
+	{0, "Unknown"},
+	{1, "Practice 1"},
+	{2, "Practice 2"},
+	{3, "Practice 3"},
+	{4, "Short Practice"},
+	{5, "Qualifying 1"},
+	{6, "Qualifying 2"},
+	{7, "Qualifying 3"},
+	{8, "Short Qualifying"},
+	{9, "One - Shot Qualifying"},
+	{10, "Sprint Shootout 1"},
+	{11, "Sprint Shootout 2"},
+	{12, "Sprint Shootout 3"},
+	{13, "Short Sprint Shootout"},
+	{14, "One - Shot Sprint Shootout"},
+	{15, "Race"},
+	{16, "Race 2"},
+	{17, "Race 3"},
+	{18, "Time Trial"},
+};
+
+static const value_string tracknames[] = {
+	{0, "Melbourne"},
+	{2, "Shanghai"},
+	{3, "Sakhir (Bahrain)"},
+	{4, "Catalunya"},
+	{5, "Monaco"},
+	{6, "Montreal"},
+	{7, "Silverstone"},
+	{9, "Hungaroring"},
+	{10, "Spa"},
+	{11, "Monza"},
+	{12, "Singapore"},
+	{13, "Suzuka"},
+	{14, "Abu Dhabi"},
+	{15, "Texas"},
+	{16, "Brazil"},
+	{17, "Austria"},
+	{19, "Mexico"},
+	{20, "Baku (Azerbaijan)"},
+	{26, "Zandvoort"},
+	{27, "Imola"},
+	{29, "Jeddah"},
+	{30, "Miami"},
+	{31, "Las Vegas"},
+	{32, "Losail"},
+	{39, "Silverstone (Reverse)"},
+	{40, "Austria (Reverse)"},
+	{41, "Zandvoort (Reverse)"},
+};
+
+static const value_string formulanames[] = {
+	{0, "F1 Modern"},
+	{1, "F1 Classic"},
+	{2, "F2"},
+	{3, "F1 Generic"},
+	{4, "Beta"},
+	{6, "Esports"},
+	{8, "F1 World"},
+	{9, "F1 Elimination"},
+};
+
+static const value_string forecastaccuracynames[] = {
+	{0, "Perfect"},
+	{1, "Approximate"},
+};
+
+static const value_string brakingassistnames[] = {
+	{0, "Off"},
+	{1, "Low"},
+	{2, "Medium"},
+	{3, "High"},
+};
+
+static const value_string gearboxassistnames[] = {
+	{1, "Manual"},
+	{2, "Manual & suggested gear"},
+	{3, "Auto"},
+};
+
+static const value_string dynamicracinglinenames[] = {
+	{0, "Off"},
+	{1, "Corners only"},
+	{2, "Full"},
+};
+
+static const value_string dynamicracinglinetypenames[] = {
+	{0, "2D"},
+	{1, "3D"},
+};
+
+static const value_string gamemodenames[] = {
+	{4, "Grand Prix ‘23"},
+	{5, "Time Trial"},
+	{6, "Splitscreen"},
+	{7, "Online Custom"},
+	{15, "Online Weekly Event"},
+	{17, "Story Mode (Braking Point)"},
+	{27, "My Team Career ‘25"},
+	{28, "Driver Career ‘25"},
+	{29, "Career ’25 Online"},
+	{30, "Challenge Career ‘25"},
+	{75, "Story Mode (APXGP)"},
+	{127, "Benchmark"},
+};
+
+static const value_string rulesetnames[] = {
+	{0, "Practice & Qualifying"},
+	{1, "Race"},
+	{2, "Time Trial"},
+	{12, "Elimination"},
+};
+
+static const value_string sessionlengthnames[] = {
+	{0, "None"},
+	{2, "Very short"},
+	{3, "Short"},
+	{4, "Medium"},
+	{5, "Medium Long"},
+	{6, "Long"},
+	{7, "Full"},
+};
+
+static const value_string speedunitsnames[] = {
+	{0, "MPH"},
+	{1, "KPH"},
+};
+
+static const value_string temperatureunitsnames[] = {
+	{0, "Celsius"},
+	{1, "Fahrenheit"},
+};
+
+static const value_string recoverymodenames[] = {
+	{0, "None"},
+	{1, "Flashbacks"},
+	{2, "Auto - recovery"},
+};
+
+static const value_string flashbacklimitnames[] = {
+	{0, "Low"},
+	{1, "Medium"},
+	{2, "High"},
+	{3, "Unlimited"},
+};
+
+static const value_string surfacetypenames[] = {
+	{0, "Simplified"},
+	{1, "Realistic"},
+};
+
+static const value_string lowfuelmodenames[] = {
+	{0, "Easy"},
+	{1, "Hard"},
+};
+
+static const value_string racestartsnames[] = {
+	{0, "Manual"},
+	{1, "Assisted"},
+};
+
+static const value_string tyretemperaturenames[] = {
+	{0, "Surface only"},
+	{1, "Surface & Carcass"},
+};
+
+static const value_string pitlanetyresimnames[] = {
+	{0, "On"},
+	{1, "Off"},
+};
+
+static const value_string cardamagenames[] = {
+	{0, "Off"},
+	{1, "Reduced"},
+	{2, "Standard"},
+	{3, "Simulation"},
+};
+
+static const value_string cardamageratenames[] = {
+	{0, "Reduced"},
+	{1, "Standard"},
+	{2, "Simulation"},
+};
+
+static const value_string collisionsnames[] = {
+	{0, "Off"},
+	{1, "Player - to - Player Off"},
+	{2, "On"},
+};
+
+static const value_string mpunsafepitreleasenames[] = {
+	{0, "On"},
+	{1, "Off (Multiplayer)"},
+};
+
+static const value_string cornercuttingstringencynames[] = {
+	{0, "Regular"},
+	{1, "Strict"},
+};
+
+static const value_string pitstopexperiencenames[] = {
+	{0, "Automatic"},
+	{1, "Broadcast"},
+	{2, "Immersive"},
+};
+
+static const value_string safetycarnames[] = {
+	{0, "Off"},
+	{1, "Reduced"},
+	{2, "Standard"},
+	{3, "Increased"},
+};
+
+static const value_string safetycarexperiencenames[] = {
+	{0, "Broadcast"},
+	{1, "Immersive"},
+};
+
+static const value_string formationlapexperiencenames[] = {
+	{0, "Broadcast"},
+	{1, "Immersive"},
+};
+
+static const value_string redflagnames[] = {
+	{0, "Off"},
+	{1, "Reduced"},
+	{2, "Standard"},
+	{3, "Increased"},
+};
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
@@ -517,293 +1146,147 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 	return 0;
 }
 
+static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketSessionData))
+	{
+		proto_tree_add_item(tree, hf_eaf1_session_weather, tvb, offsetof(F125::PacketSessionData, m_weather), sizeof(F125::PacketSessionData::m_weather), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_tracktemperature, tvb, offsetof(F125::PacketSessionData, m_trackTemperature), sizeof(F125::PacketSessionData::m_trackTemperature), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_airtemperature, tvb, offsetof(F125::PacketSessionData, m_airTemperature), sizeof(F125::PacketSessionData::m_airTemperature), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_totallaps, tvb, offsetof(F125::PacketSessionData, m_totalLaps), sizeof(F125::PacketSessionData::m_totalLaps), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_tracklength, tvb, offsetof(F125::PacketSessionData, m_trackLength), sizeof(F125::PacketSessionData::m_trackLength), ENC_LITTLE_ENDIAN);
+
+		uint32_t session_type;
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_session_sessiontype, tvb, offsetof(F125::PacketSessionData, m_sessionType), sizeof(F125::PacketSessionData::m_sessionType), ENC_LITTLE_ENDIAN, &session_type);
+
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session (%s)", val_to_str(session_type, sessiontypenames, "Invalid session %u")));
+
+		proto_tree_add_item(tree, hf_eaf1_session_trackid, tvb, offsetof(F125::PacketSessionData, m_trackId), sizeof(F125::PacketSessionData::m_trackId), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_formula, tvb, offsetof(F125::PacketSessionData, m_formula), sizeof(F125::PacketSessionData::m_formula), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sessiontimeleft, tvb, offsetof(F125::PacketSessionData, m_sessionTimeLeft), sizeof(F125::PacketSessionData::m_sessionTimeLeft), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sessionduration, tvb, offsetof(F125::PacketSessionData, m_sessionDuration), sizeof(F125::PacketSessionData::m_sessionDuration), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitspeedlimit, tvb, offsetof(F125::PacketSessionData, m_pitSpeedLimit), sizeof(F125::PacketSessionData::m_pitSpeedLimit), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_gamepaused, tvb, offsetof(F125::PacketSessionData, m_gamePaused), sizeof(F125::PacketSessionData::m_gamePaused), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_isspectating, tvb, offsetof(F125::PacketSessionData, m_isSpectating), sizeof(F125::PacketSessionData::m_isSpectating), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_spectatorcarindex, tvb, offsetof(F125::PacketSessionData, m_spectatorCarIndex), sizeof(F125::PacketSessionData::m_spectatorCarIndex), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_slipronativesupport, tvb, offsetof(F125::PacketSessionData, m_sliProNativeSupport), sizeof(F125::PacketSessionData::m_sliProNativeSupport), ENC_LITTLE_ENDIAN);
+
+		uint32_t num_marshal_zones;
+
+		auto num_marshal_zones_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_nummarshalzones, tvb, offsetof(F125::PacketSessionData, m_numMarshalZones), sizeof(F125::PacketSessionData::m_numMarshalZones), ENC_LITTLE_ENDIAN, &num_marshal_zones);
+		auto num_marshal_zones_tree = proto_item_add_subtree(num_marshal_zones_ti, ett_eaf1_session_nummarshalzones);
+
+		for (uint32_t zone = 0; zone < num_marshal_zones; zone++)
+		{
+			auto zone_offset = offsetof(F125::PacketSessionData, m_marshalZones) + zone * sizeof(F125::MarshalZone);
+
+			auto marshal_zone_ti = proto_tree_add_item(num_marshal_zones_tree, hf_eaf1_session_marshalzone, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			proto_tree *marshal_zone_tree = proto_item_add_subtree(marshal_zone_ti, ett_eaf1_session_marshalzone);
+
+			proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_start, tvb, zone_offset + offsetof(F125::MarshalZone, m_zoneStart), sizeof(F125::MarshalZone::m_zoneStart), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_flag, tvb, zone_offset + offsetof(F125::MarshalZone, m_zoneFlag), sizeof(F125::MarshalZone::m_zoneFlag), ENC_LITTLE_ENDIAN);
+		}
+
+		proto_tree_add_item(tree, hf_eaf1_session_safetycarstatus, tvb, offsetof(F125::PacketSessionData, m_safetyCarStatus), sizeof(F125::PacketSessionData::m_safetyCarStatus), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_networkgame, tvb, offsetof(F125::PacketSessionData, m_networkGame), sizeof(F125::PacketSessionData::m_networkGame), ENC_LITTLE_ENDIAN);
+
+		uint32_t num_weather_forecast_samples;
+		auto num_weather_forecast_samples_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numweatherforecastsamples, tvb, offsetof(F125::PacketSessionData, m_numWeatherForecastSamples), sizeof(F125::PacketSessionData::m_numWeatherForecastSamples), ENC_LITTLE_ENDIAN, &num_weather_forecast_samples);
+		auto num_weather_forecast_samples_tree = proto_item_add_subtree(num_weather_forecast_samples_ti, ett_eaf1_session_numweatherforecastsamples);
+
+		for (uint32_t sample = 0; sample < num_weather_forecast_samples; sample++)
+		{
+			auto sample_offset = offsetof(F125::PacketSessionData, m_weatherForecastSamples) + sample * sizeof(F125::WeatherForecastSample);
+
+			auto weather_sample_ti = proto_tree_add_item(num_weather_forecast_samples_tree, hf_eaf1_session_weatherforecastsample, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+			proto_tree *weather_sample_tree = proto_item_add_subtree(weather_sample_ti, ett_eaf1_session_weatherforecastsample);
+
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_sessiontype, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_sessionType), sizeof(F125::WeatherForecastSample::m_sessionType), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_timeoffset, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_timeOffset), sizeof(F125::WeatherForecastSample::m_timeOffset), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_weather, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_weather), sizeof(F125::WeatherForecastSample::m_weather), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperature, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_trackTemperature), sizeof(F125::WeatherForecastSample::m_trackTemperature), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperaturechange, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_trackTemperatureChange), sizeof(F125::WeatherForecastSample::m_trackTemperatureChange), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperature, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_airTemperature), sizeof(F125::WeatherForecastSample::m_airTemperature), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperaturechange, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_airTemperatureChange), sizeof(F125::WeatherForecastSample::m_airTemperatureChange), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_rainpercentage, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_rainPercentage), sizeof(F125::WeatherForecastSample::m_rainPercentage), ENC_LITTLE_ENDIAN);
+		}
+
+		proto_tree_add_item(tree, hf_eaf1_session_forecastaccuracy, tvb, offsetof(F125::PacketSessionData, m_forecastAccuracy), sizeof(F125::PacketSessionData::m_forecastAccuracy), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_aidifficulty, tvb, offsetof(F125::PacketSessionData, m_aiDifficulty), sizeof(F125::PacketSessionData::m_aiDifficulty), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_seasonlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_seasonLinkIdentifier), sizeof(F125::PacketSessionData::m_seasonLinkIdentifier), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_weekendlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_weekendLinkIdentifier), sizeof(F125::PacketSessionData::m_weekendLinkIdentifier), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sessionlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_sessionLinkIdentifier), sizeof(F125::PacketSessionData::m_sessionLinkIdentifier), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowideallap, tvb, offsetof(F125::PacketSessionData, m_pitStopWindowIdealLap), sizeof(F125::PacketSessionData::m_pitStopWindowIdealLap), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowlatestlap, tvb, offsetof(F125::PacketSessionData, m_pitStopWindowLatestLap), sizeof(F125::PacketSessionData::m_pitStopWindowLatestLap), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitstoprejoinposition, tvb, offsetof(F125::PacketSessionData, m_pitStopRejoinPosition), sizeof(F125::PacketSessionData::m_pitStopRejoinPosition), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_steeringassist, tvb, offsetof(F125::PacketSessionData, m_steeringAssist), sizeof(F125::PacketSessionData::m_steeringAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_brakingassist, tvb, offsetof(F125::PacketSessionData, m_brakingAssist), sizeof(F125::PacketSessionData::m_brakingAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_gearboxassist, tvb, offsetof(F125::PacketSessionData, m_gearboxAssist), sizeof(F125::PacketSessionData::m_gearboxAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitassist, tvb, offsetof(F125::PacketSessionData, m_pitAssist), sizeof(F125::PacketSessionData::m_pitAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitreleaseassist, tvb, offsetof(F125::PacketSessionData, m_pitReleaseAssist), sizeof(F125::PacketSessionData::m_pitReleaseAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_ersassist, tvb, offsetof(F125::PacketSessionData, m_ERSAssist), sizeof(F125::PacketSessionData::m_ERSAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_drsassist, tvb, offsetof(F125::PacketSessionData, m_DRSAssist), sizeof(F125::PacketSessionData::m_DRSAssist), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_dynamicracingline, tvb, offsetof(F125::PacketSessionData, m_dynamicRacingLine), sizeof(F125::PacketSessionData::m_dynamicRacingLine), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_dynamicracinglinetype, tvb, offsetof(F125::PacketSessionData, m_dynamicRacingLineType), sizeof(F125::PacketSessionData::m_dynamicRacingLineType), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_gamemode, tvb, offsetof(F125::PacketSessionData, m_gameMode), sizeof(F125::PacketSessionData::m_gameMode), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_ruleset, tvb, offsetof(F125::PacketSessionData, m_ruleSet), sizeof(F125::PacketSessionData::m_ruleSet), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_timeofday, tvb, offsetof(F125::PacketSessionData, m_timeOfDay), sizeof(F125::PacketSessionData::m_timeOfDay), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sessionlength, tvb, offsetof(F125::PacketSessionData, m_sessionLength), sizeof(F125::PacketSessionData::m_sessionLength), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_speedunitsleadplayer, tvb, offsetof(F125::PacketSessionData, m_speedUnitsLeadPlayer), sizeof(F125::PacketSessionData::m_speedUnitsLeadPlayer), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitsleadplayer, tvb, offsetof(F125::PacketSessionData, m_temperatureUnitsLeadPlayer), sizeof(F125::PacketSessionData::m_temperatureUnitsLeadPlayer), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_speedunitssecondaryplayer, tvb, offsetof(F125::PacketSessionData, m_speedUnitsSecondaryPlayer), sizeof(F125::PacketSessionData::m_speedUnitsSecondaryPlayer), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitssecondaryplayer, tvb, offsetof(F125::PacketSessionData, m_temperatureUnitsSecondaryPlayer), sizeof(F125::PacketSessionData::m_temperatureUnitsSecondaryPlayer), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_numsafetycarperiods, tvb, offsetof(F125::PacketSessionData, m_numSafetyCarPeriods), sizeof(F125::PacketSessionData::m_numSafetyCarPeriods), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_numvirtualsafetycarperiods, tvb, offsetof(F125::PacketSessionData, m_numVirtualSafetyCarPeriods), sizeof(F125::PacketSessionData::m_numVirtualSafetyCarPeriods), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_numredflagperiods, tvb, offsetof(F125::PacketSessionData, m_numRedFlagPeriods), sizeof(F125::PacketSessionData::m_numRedFlagPeriods), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_equalcarperformance, tvb, offsetof(F125::PacketSessionData, m_equalCarPerformance), sizeof(F125::PacketSessionData::m_equalCarPerformance), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_recoverymode, tvb, offsetof(F125::PacketSessionData, m_recoveryMode), sizeof(F125::PacketSessionData::m_recoveryMode), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_flashbacklimit, tvb, offsetof(F125::PacketSessionData, m_flashbackLimit), sizeof(F125::PacketSessionData::m_flashbackLimit), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_surfacetype, tvb, offsetof(F125::PacketSessionData, m_surfaceType), sizeof(F125::PacketSessionData::m_surfaceType), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_lowfuelmode, tvb, offsetof(F125::PacketSessionData, m_lowFuelMode), sizeof(F125::PacketSessionData::m_lowFuelMode), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_racestarts, tvb, offsetof(F125::PacketSessionData, m_raceStarts), sizeof(F125::PacketSessionData::m_raceStarts), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_tyretemperature, tvb, offsetof(F125::PacketSessionData, m_tyreTemperature), sizeof(F125::PacketSessionData::m_tyreTemperature), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitlanetyresim, tvb, offsetof(F125::PacketSessionData, m_pitLaneTyreSim), sizeof(F125::PacketSessionData::m_pitLaneTyreSim), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_cardamage, tvb, offsetof(F125::PacketSessionData, m_carDamage), sizeof(F125::PacketSessionData::m_carDamage), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_cardamagerate, tvb, offsetof(F125::PacketSessionData, m_carDamageRate), sizeof(F125::PacketSessionData::m_carDamageRate), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_collisions, tvb, offsetof(F125::PacketSessionData, m_collisions), sizeof(F125::PacketSessionData::m_collisions), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_collisionsoffforfirstlaponly, tvb, offsetof(F125::PacketSessionData, m_collisionsOffForFirstLapOnly), sizeof(F125::PacketSessionData::m_collisionsOffForFirstLapOnly), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_mpunsafepitrelease, tvb, offsetof(F125::PacketSessionData, m_mpUnsafePitRelease), sizeof(F125::PacketSessionData::m_mpUnsafePitRelease), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_mpoffforgriefing, tvb, offsetof(F125::PacketSessionData, m_mpOffForGriefing), sizeof(F125::PacketSessionData::m_mpOffForGriefing), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_cornercuttingstringency, tvb, offsetof(F125::PacketSessionData, m_cornerCuttingStringency), sizeof(F125::PacketSessionData::m_cornerCuttingStringency), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_parcfermerules, tvb, offsetof(F125::PacketSessionData, m_parcFermeRules), sizeof(F125::PacketSessionData::m_parcFermeRules), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopexperience, tvb, offsetof(F125::PacketSessionData, m_pitStopExperience), sizeof(F125::PacketSessionData::m_pitStopExperience), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_safetycar, tvb, offsetof(F125::PacketSessionData, m_safetyCar), sizeof(F125::PacketSessionData::m_safetyCar), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_safetycarexperience, tvb, offsetof(F125::PacketSessionData, m_safetyCarExperience), sizeof(F125::PacketSessionData::m_safetyCarExperience), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_formationlap, tvb, offsetof(F125::PacketSessionData, m_formationLap), sizeof(F125::PacketSessionData::m_formationLap), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_formationlapexperience, tvb, offsetof(F125::PacketSessionData, m_formationLapExperience), sizeof(F125::PacketSessionData::m_formationLapExperience), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_redflags, tvb, offsetof(F125::PacketSessionData, m_redFlags), sizeof(F125::PacketSessionData::m_redFlags), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelsolo, tvb, offsetof(F125::PacketSessionData, m_affectsLicenceLevelSolo), sizeof(F125::PacketSessionData::m_affectsLicenceLevelSolo), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelmp, tvb, offsetof(F125::PacketSessionData, m_affectsLicenceLevelMP), sizeof(F125::PacketSessionData::m_affectsLicenceLevelMP), ENC_LITTLE_ENDIAN);
+
+		uint32_t num_sessions_in_weekend;
+		auto num_sessions_in_weekend_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numsessionsinweekend, tvb, offsetof(F125::PacketSessionData, m_numSessionsInWeekend), sizeof(F125::PacketSessionData::m_numSessionsInWeekend), ENC_LITTLE_ENDIAN, &num_sessions_in_weekend);
+		auto num_sessions_in_weekend_tree = proto_item_add_subtree(num_sessions_in_weekend_ti, ett_eaf1_session_numsessionsinweekend);
+
+		for (uint32_t session = 0; session < num_sessions_in_weekend; session++)
+		{
+			auto session_offset = offsetof(F125::PacketSessionData, m_weekendStructure) + session * sizeof(F125::PacketSessionData::m_weekendStructure[0]);
+			proto_tree_add_item(num_sessions_in_weekend_tree, hf_eaf1_session_sessionsinweekend_sessiontype, tvb, session_offset, sizeof(F125::PacketSessionData::m_weekendStructure[0]), ENC_LITTLE_ENDIAN);
+		}
+
+		proto_tree_add_item(tree, hf_eaf1_session_sector2lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector2LapDistanceStart), sizeof(F125::PacketSessionData::m_sector2LapDistanceStart), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sector3lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector3LapDistanceStart), sizeof(F125::PacketSessionData::m_sector3LapDistanceStart), ENC_LITTLE_ENDIAN);
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
 extern "C"
 {
 	void proto_register_eaf1(void)
 	{
-		static const value_string packetidnames[] = {
-			{0, "Motion"},
-			{1, "Session"},
-			{2, "LapData"},
-			{3, "Event"},
-			{4, "Participants"},
-			{5, "CarSetups"},
-			{6, "CarTelemetry"},
-			{7, "CarStatus"},
-			{8, "FinalClassification"},
-			{9, "LobbyInfo"},
-			{10, "CarDamage"},
-			{11, "SessionHistory"},
-			{12, "TyreSets"},
-			{13, "MotionEx"},
-			{14, "TimeTrial"},
-			{15, "LapPositions"},
-			{0, NULL},
-		};
-
-		static const value_string teamidnames[] = {
-			{0, "Mercedes"},
-			{1, "Ferrari"},
-			{2, "Red Bull Racing"},
-			{3, "Williams"},
-			{4, "Aston Martin"},
-			{5, "Alpine"},
-			{6, "RB"},
-			{7, "Haas"},
-			{8, "McLaren"},
-			{9, "Sauber"},
-			{41, "F1 Generic"},
-			{104, "F1 Custom Team"},
-			{143, "Art GP '23"},
-			{144, "Campos '23"},
-			{145, "Carlin '23"},
-			{146, "PHM '23"},
-			{147, "Dams '23"},
-			{148, "Hitech '23"},
-			{149, "MP Motorsport '23"},
-			{150, "Prema '23"},
-			{151, "Trident '23"},
-			{152, "Van Amersfoort Racing '23"},
-			{153, "Virtuosi '23"},
-			{0, NULL},
-		};
-
-		static const value_string nationalityidnames[] = {
-			{0, "Not set"},
-			{1, "American"},
-			{2, "Argentinean"},
-			{3, "Australian"},
-			{4, "Austrian"},
-			{5, "Azerbaijani"},
-			{6, "Bahraini"},
-			{7, "Belgian"},
-			{8, "Bolivian"},
-			{9, "Brazilian"},
-			{10, "British"},
-			{11, "Bulgarian"},
-			{12, "Cameroonian"},
-			{13, "Canadian"},
-			{14, "Chilean"},
-			{15, "Chinese"},
-			{16, "Colombian"},
-			{17, "Costa Rican"},
-			{18, "Croatian"},
-			{19, "Cypriot"},
-			{20, "Czech"},
-			{21, "Danish"},
-			{22, "Dutch"},
-			{23, "Ecuadorian"},
-			{24, "English"},
-			{25, "Emirian"},
-			{26, "Estonian"},
-			{27, "Finnish"},
-			{28, "French"},
-			{29, "German"},
-			{30, "Ghanaian"},
-			{31, "Greek"},
-			{32, "Guatemalan"},
-			{33, "Honduran"},
-			{34, "Hong Konger"},
-			{35, "Hungarian"},
-			{36, "Icelander"},
-			{37, "Indian"},
-			{38, "Indonesian"},
-			{39, "Irish"},
-			{40, "Israeli"},
-			{41, "Italian"},
-			{42, "Jamaican"},
-			{43, "Japanese"},
-			{44, "Jordanian"},
-			{45, "Kuwaiti"},
-			{46, "Latvian"},
-			{47, "Lebanese"},
-			{48, "Lithuanian"},
-			{49, "Luxembourger"},
-			{50, "Malaysian"},
-			{51, "Maltese"},
-			{52, "Mexican"},
-			{53, "Monegasque"},
-			{54, "New Zealander"},
-			{55, "Nicaraguan"},
-			{56, "Northern Irish"},
-			{57, "Norwegian"},
-			{58, "Omani"},
-			{59, "Pakistani"},
-			{60, "Panamanian"},
-			{61, "Paraguayan"},
-			{62, "Peruvian"},
-			{63, "Polish"},
-			{64, "Portuguese"},
-			{65, "Qatari"},
-			{66, "Romanian"},
-			{68, "Salvadoran"},
-			{69, "Saudi"},
-			{70, "Scottish"},
-			{71, "Serbian"},
-			{72, "Singaporean"},
-			{73, "Slovakian"},
-			{74, "Slovenian"},
-			{75, "South Korean"},
-			{76, "South African"},
-			{77, "Spanish"},
-			{78, "Swedish"},
-			{79, "Swiss"},
-			{80, "Thai"},
-			{81, "Turkish"},
-			{82, "Uruguayan"},
-			{83, "Ukrainian"},
-			{84, "Venezuelan"},
-			{85, "Barbadian"},
-			{86, "Welsh"},
-			{87, "Vietnamese"},
-			{88, "Algerian"},
-			{89, "Bosnian"},
-			{90, "Filipino"},
-			{0, NULL},
-		};
-
-		static const value_string platformidnames[] = {
-			{1, "Steam"},
-			{3, "PlayStation"},
-			{4, "Xbox"},
-			{6, "Origin"},
-			{255, "unknown"},
-			{0, NULL},
-		};
-
-		static const value_string yourtelemetrynames[] = {
-			{0, "Restricted"},
-			{1, "Public"},
-			{0, NULL},
-		};
-
-		static const value_string showonlinenames[] = {
-			{0, "Off"},
-			{1, "On"},
-			{0, NULL},
-		};
-
-		static const value_string readystatusnames[] = {
-			{0, "Not ready"},
-			{1, "Ready"},
-			{2, "Spectating"},
-			{0, NULL},
-		};
-
-		static const value_string safetycartypenames[] = {
-			{0, "No Safety Car"},
-			{1, "Full Safety Car"},
-			{2, "Virtual Safety Car"},
-			{3, "Formation Lap Safety Car"},
-		};
-
-		static const value_string safetycareventtypenames[] = {
-			{0, "Deployed"},
-			{1, "Returning"},
-			{2, "Returned"},
-			{3, "Resume Race"},
-		};
-
-		static const value_string retirementreasonnames[] = {
-			{0, "Invalid"},
-			{1, "Retired"},
-			{2, "Finished"},
-			{3, "Terminal damage"},
-			{4, "Inactive"},
-			{5, "Not enough laps completed"},
-			{6, "Black flagged"},
-			{7, "Red flagged"},
-			{8, "Mechanical failure"},
-			{9, "Session skipped"},
-			{10, "Session simulated"},
-		};
-
-		static const value_string drsdisabledreasonnames[] = {
-			{0, "Wet track"},
-			{1, "Safety car deployed"},
-			{2, "Red flag"},
-			{3, "Min lap not reached"},
-		};
-
-		static const value_string penaltytypenames[] = {
-			{0, "Drive through"},
-			{1, "Stop Go"},
-			{2, "Grid penalty"},
-			{3, "Penalty reminder"},
-			{4, "Time penalty"},
-			{5, "Warning"},
-			{6, "Disqualified"},
-			{7, "Removed from formation lap"},
-			{8, "Parked too long timer"},
-			{9, "Tyre regulations"},
-			{10, "This lap invalidated"},
-			{11, "This and next lap invalidated"},
-			{12, "This lap invalidated without reason"},
-			{13, "This and next lap invalidated without reason"},
-			{14, "This and previous lap invalidated"},
-			{15, "This and previous lap invalidated without reason"},
-			{16, "Retired"},
-			{17, "Black flag timer"},
-		};
-
-		static const value_string infringementtypenames[] = {
-			{0, "Blocking by slow driving"},
-			{1, "Blocking by wrong way driving"},
-			{2, "Reversing off the start line"},
-			{3, "Big Collision"},
-			{4, "Small Collision"},
-			{5, "Collision failed to hand back position single"},
-			{6, "Collision failed to hand back position multiple"},
-			{7, "Corner cutting gained time"},
-			{8, "Corner cutting overtake single"},
-			{9, "Corner cutting overtake multiple"},
-			{10, "Crossed pit exit lane"},
-			{11, "Ignoring blue flags"},
-			{12, "Ignoring yellow flags"},
-			{13, "Ignoring drive through"},
-			{14, "Too many drive throughs"},
-			{15, "Drive through reminder serve within n laps"},
-			{16, "Drive through reminder serve this lap"},
-			{17, "Pit lane speeding"},
-			{18, "Parked for too long"},
-			{19, "Ignoring tyre regulations"},
-			{20, "Too many penalties"},
-			{21, "Multiple warnings"},
-			{22, "Approaching disqualification"},
-			{23, "Tyre regulations select single"},
-			{24, "Tyre regulations select multiple"},
-			{25, "Lap invalidated corner cutting"},
-			{26, "Lap invalidated running wide"},
-			{27, "Corner cutting ran wide gained time minor"},
-			{28, "Corner cutting ran wide gained time significant"},
-			{29, "Corner cutting ran wide gained time extreme"},
-			{30, "Lap invalidated wall riding"},
-			{31, "Lap invalidated flashback used"},
-			{32, "Lap invalidated reset to track"},
-			{33, "Blocking the pitlane"},
-			{34, "Jump start"},
-			{35, "Safety car to car collision"},
-			{36, "Safety car illegal overtake"},
-			{37, "Safety car exceeding allowed pace"},
-			{38, "Virtual safety car exceeding allowed pace"},
-			{39, "Formation lap below allowed speed"},
-			{40, "Formation lap parking"},
-			{41, "Retired mechanical failure"},
-			{42, "Retired terminally damaged"},
-			{43, "Safety car falling too far back"},
-			{44, "Black flag timer"},
-			{45, "Unserved stop go penalty"},
-			{46, "Unserved drive through penalty"},
-			{47, "Engine component change"},
-			{48, "Gearbox change"},
-			{49, "Parc Fermé change"},
-			{50, "League grid penalty"},
-			{51, "Retry penalty"},
-			{52, "Illegal time gain"},
-			{53, "Mandatory pitstop"},
-			{54, "Attribute assigned"},
-		};
-
 		static hf_register_info hf[] = {
 			// Header
 
@@ -2325,6 +2808,1226 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// Session packet
+
+			{
+				&hf_eaf1_session_weather,
+				{
+					"Session weather",
+					"eaf1.session.weather",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(weathernames),
+					0x0,
+					"Session weather",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_tracktemperature,
+				{
+					"Session track temperature",
+					"eaf1.session.tracktemperature",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session track temperature",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_airtemperature,
+				{
+					"Session air temperature",
+					"eaf1.session.airtemperature",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session air temperature",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_totallaps,
+				{
+					"Session total laps",
+					"eaf1.session.totallaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session total laps",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_tracklength,
+				{
+					"Session track length",
+					"eaf1.session.tracklength",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session track length",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessiontype,
+				{
+					"Session type",
+					"eaf1.session.sessiontype",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sessiontypenames),
+					0x0,
+					"Session type",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_trackid,
+				{
+					"Session track id",
+					"eaf1.session.trackid",
+					FT_INT8,
+					BASE_DEC,
+					VALS(tracknames),
+					0x0,
+					"Session track id",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_formula,
+				{
+					"Session formula",
+					"eaf1.session.formula",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(formulanames),
+					0x0,
+					"Session formula",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessiontimeleft,
+				{
+					"Session time left",
+					"eaf1.session.sessiontimeleft",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session time left",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessionduration,
+				{
+					"Session duration",
+					"eaf1.session.sessionduration",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session duration",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitspeedlimit,
+				{
+					"Session pit speed limit",
+					"eaf1.session.pitspeedlimit",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"pitSpeedLimit",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_gamepaused,
+				{
+					"Session game paused",
+					"eaf1.session.gamepaused",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session game paused",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_isspectating,
+				{
+					"Session is spectating",
+					"eaf1.session.isspectating",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session is spectating",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_spectatorcarindex,
+				{
+					"Session spectator car index",
+					"eaf1.session.spectatorcarindex",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session spectator car index",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_slipronativesupport,
+				{
+					"Session SLI Pro native support",
+					"eaf1.session.slipronativesupport",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session SLI Pro native support",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_nummarshalzones,
+				{
+					"Session num marshal zones",
+					"eaf1.session.nummarshalzones",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num marshal zones",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_marshalzone,
+				{
+					"Session marshal zone",
+					"eaf1.session.marshalzone",
+					FT_NONE,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session marshal zone",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_marshalzone_start,
+				{
+					"Session marshal zone start",
+					"eaf1.session.marshalzone.start",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session marshal zone start",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_marshalzone_flag,
+				{
+					"Session marshal zone flag",
+					"eaf1.session.marshalzone.flag",
+					FT_INT8,
+					BASE_DEC,
+					VALS(flagnames),
+					0x0,
+					"Session marshal zone flag",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_safetycarstatus,
+				{
+					"Session safety car status",
+					"eaf1.session.safetycarstatus",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(safetycartypenames),
+					0x0,
+					"Session safety car status",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_networkgame,
+				{
+					"Session network game",
+					"eaf1.session.networkgame",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(networkgamenames),
+					0x0,
+					"Session network game",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_numweatherforecastsamples,
+				{
+					"Session num weather forecast samples",
+					"eaf1.session.numweatherforecastsamples",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num weather forecast samples",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample,
+				{
+					"Session weather forecast sample",
+					"eaf1.session.weatherforecastsample",
+					FT_NONE,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session weather forecast sample",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_sessiontype,
+				{
+					"sessionType",
+					"eaf1.session.weatherforecastsample.sessionType",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sessiontypenames),
+					0x0,
+					"sessionType",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_timeoffset,
+				{
+					"timeOffset",
+					"eaf1.session.weatherforecastsample.timeOffset",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"timeOffset",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_weather,
+				{
+					"weather",
+					"eaf1.session.weatherforecastsample.weather",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(weathernames),
+					0x0,
+					"weather",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_tracktemperature,
+				{
+					"trackTemperature",
+					"eaf1.session.weatherforecastsample.trackTemperature",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"trackTemperature",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_tracktemperaturechange,
+				{
+					"trackTemperatureChange",
+					"eaf1.session.weatherforecastsample.trackTemperatureChange",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"trackTemperatureChange",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_airtemperature,
+				{
+					"airTemperature",
+					"eaf1.session.weatherforecastsample.airTemperature",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"airTemperature",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_airtemperaturechange,
+				{
+					"airTemperatureChange",
+					"eaf1.session.weatherforecastsample.airTemperatureChange",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"airTemperatureChange",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weatherforecastsample_rainpercentage,
+				{
+					"rainPercentage",
+					"eaf1.session.weatherforecastsample.rainPercentage",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"rainPercentage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_forecastaccuracy,
+				{
+					"Session forecast accuracy",
+					"eaf1.session.forecastaccuracy",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(forecastaccuracynames),
+					0x0,
+					"Session forecast accuracy",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_aidifficulty,
+				{
+					"Session AI difficulty",
+					"eaf1.session.aidifficulty",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session AI difficulty",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_seasonlinkidentifier,
+				{
+					"Session season link identifier",
+					"eaf1.session.seasonlinkidentifier",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session season link identifier",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_weekendlinkidentifier,
+				{
+					"Session weekend link identifier",
+					"eaf1.session.weekendlinkidentifier",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session weekend link identifier",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessionlinkidentifier,
+				{
+					"Session session link identifier",
+					"eaf1.session.sessionlinkidentifier",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session session link identifier",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitstopwindowideallap,
+				{
+					"Session pit stop window ideal lap",
+					"eaf1.session.pitstopwindowideallap",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session pit stop window ideal lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitstopwindowlatestlap,
+				{
+					"Session pit stop window latest lap",
+					"eaf1.session.pitstopwindowlatestlap",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session pit stop window latest lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitstoprejoinposition,
+				{
+					"Session pit stop rejoin position",
+					"eaf1.session.pitstoprejoinposition",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session pit stop rejoin position",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_steeringassist,
+				{
+					"Session steering assist",
+					"eaf1.session.steeringassist",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session steering assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_brakingassist,
+				{
+					"Session braking assist",
+					"eaf1.session.brakingassist",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(brakingassistnames),
+					0x0,
+					"Session braking assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_gearboxassist,
+				{
+					"Session gearbox assist",
+					"eaf1.session.gearboxassist",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(gearboxassistnames),
+					0x0,
+					"Session gearbox assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitassist,
+				{
+					"Session pit assist",
+					"eaf1.session.pitassist",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session pit assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitreleaseassist,
+				{
+					"Session pit release assist",
+					"eaf1.session.pitreleaseassist",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session pit release assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_ersassist,
+				{
+					"Session ERS assist",
+					"eaf1.session.ersassist",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session ERS assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_drsassist,
+				{
+					"Session DRS assist",
+					"eaf1.session.drsassist",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session DRS assist",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_dynamicracingline,
+				{
+					"Session dynamic racing line",
+					"eaf1.session.dynamicracingline",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(dynamicracinglinenames),
+					0x0,
+					"Session dynamic racing line",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_dynamicracinglinetype,
+				{
+					"Session dynamic racing line type",
+					"eaf1.session.dynamicracinglinetype",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(dynamicracinglinetypenames),
+					0x0,
+					"Session dynamic racing line type",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_gamemode,
+				{
+					"Session game mode",
+					"eaf1.session.gamemode",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(gamemodenames),
+					0x0,
+					"Session game mode",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_ruleset,
+				{
+					"Session rule set",
+					"eaf1.session.ruleset",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(rulesetnames),
+					0x0,
+					"Session rule set",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_timeofday,
+				{
+					"Session time Of day",
+					"eaf1.session.timeofday",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session time of day",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessionlength,
+				{
+					"Session session length",
+					"eaf1.session.sessionlength",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sessionlengthnames),
+					0x0,
+					"Session session length",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_speedunitsleadplayer,
+				{
+					"Session speed units lead player",
+					"eaf1.session.speedunitsleadplayer",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(speedunitsnames),
+					0x0,
+					"Session speed units lead player",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_temperatureunitsleadplayer,
+				{
+					"Session temperature units lead player",
+					"eaf1.session.temperatureunitsleadplayer",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(temperatureunitsnames),
+					0x0,
+					"Session temperature units lead player",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_speedunitssecondaryplayer,
+				{
+					"Session speed units secondary player",
+					"eaf1.session.speedunitssecondaryplayer",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(speedunitsnames),
+					0x0,
+					"Session speed units secondary player",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_temperatureunitssecondaryplayer,
+				{
+					"Session temperature units secondary player",
+					"eaf1.session.temperatureunitssecondaryplayer",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(temperatureunitsnames),
+					0x0,
+					"Session temperature units secondary player",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_numsafetycarperiods,
+				{
+					"Session num safety car periods",
+					"eaf1.session.numsafetycarperiods",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num safety car periods",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_numvirtualsafetycarperiods,
+				{
+					"Session num virtual safety car periods",
+					"eaf1.session.numvirtualsafetycarperiods",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num virtual safety car periods",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_numredflagperiods,
+				{
+					"Session num red flag periods",
+					"eaf1.session.numredflagperiods",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num red flag periods",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_equalcarperformance,
+				{
+					"Session equal car performance",
+					"eaf1.session.equalcarperformance",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session equal car performance",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_recoverymode,
+				{
+					"Session recovery mode",
+					"eaf1.session.recoverymode",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(recoverymodenames),
+					0x0,
+					"Session recovery mode",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_flashbacklimit,
+				{
+					"Session flashback limit",
+					"eaf1.session.flashbacklimit",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(flashbacklimitnames),
+					0x0,
+					"Session flashback limit",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_surfacetype,
+				{
+					"Session surface type",
+					"eaf1.session.surfacetype",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(surfacetypenames),
+					0x0,
+					"Session surface type",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_lowfuelmode,
+				{
+					"Session low fuel mode",
+					"eaf1.session.lowfuelmode",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(lowfuelmodenames),
+					0x0,
+					"Session low fuel mode",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_racestarts,
+				{
+					"Session race starts",
+					"eaf1.session.racestarts",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(racestartsnames),
+					0x0,
+					"Session race starts",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_tyretemperature,
+				{
+					"Session tyre temperature",
+					"eaf1.session.tyretemperature",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(tyretemperaturenames),
+					0x0,
+					"Session tyre temperature",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitlanetyresim,
+				{
+					"Session pit lane tyre sim",
+					"eaf1.session.pitlanetyresim",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(pitlanetyresimnames),
+					0x0,
+					"Session pit lane tyre sim",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_cardamage,
+				{
+					"Session car damage",
+					"eaf1.session.cardamage",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(cardamagenames),
+					0x0,
+					"Session car damage",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_cardamagerate,
+				{
+					"Session car damage rate",
+					"eaf1.session.cardamagerate",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(cardamageratenames),
+					0x0,
+					"Session car damage rate",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_collisions,
+				{
+					"Session collisions",
+					"eaf1.session.collisions",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(collisionsnames),
+					0x0,
+					"Session collisions",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_collisionsoffforfirstlaponly,
+				{
+					"Session collisions off for first lap only",
+					"eaf1.session.collisionsoffforfirstlaponly",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session collisions off for first lap only",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_mpunsafepitrelease,
+				{
+					"Session MP unsafe pit release",
+					"eaf1.session.mpunsafepitrelease",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(mpunsafepitreleasenames),
+					0x0,
+					"Session MP unsafe pit release",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_mpoffforgriefing,
+				{
+					"Session MP off for griefing",
+					"eaf1.session.mpoffforgriefing",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session MP off for griefing",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_cornercuttingstringency,
+				{
+					"Session corner cutting stringency",
+					"eaf1.session.cornercuttingstringency",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(cornercuttingstringencynames),
+					0x0,
+					"Session corner cutting stringency",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_parcfermerules,
+				{
+					"Session parc ferme rules",
+					"eaf1.session.parcfermerules",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session parc ferme rules",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_pitstopexperience,
+				{
+					"Session pit stop experience",
+					"eaf1.session.pitstopexperience",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(pitstopexperiencenames),
+					0x0,
+					"Session pit stop experience",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_safetycar,
+				{
+					"Session safety car",
+					"eaf1.session.safetycar",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(safetycarnames),
+					0x0,
+					"Session safety car",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_safetycarexperience,
+				{
+					"Session safety car experience",
+					"eaf1.session.safetycarexperience",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(safetycarexperiencenames),
+					0x0,
+					"Session safety car experience",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_formationlap,
+				{
+					"Session formation lap",
+					"eaf1.session.formationlap",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session formation lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_formationlapexperience,
+				{
+					"Session formation lap experience",
+					"eaf1.session.formationlapexperience",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(formationlapexperiencenames),
+					0x0,
+					"Session formation lap experience",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_redflags,
+				{
+					"Session red flags",
+					"eaf1.session.redflags",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(redflagnames),
+					0x0,
+					"Session red flags",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_affectslicencelevelsolo,
+				{
+					"Session affects licence level solo",
+					"eaf1.session.affectslicencelevelsolo",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session affects licence level solo",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_affectslicencelevelmp,
+				{
+					"Session affects licence level MP",
+					"eaf1.session.affectslicencelevelmp",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session affects licence level MP",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_numsessionsinweekend,
+				{
+					"Session num sessions in weekend",
+					"eaf1.session.numsessionsinweekend",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session num sessions in weekend",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sessionsinweekend_sessiontype,
+				{
+					"Session session in weekend session type",
+					"eaf1.session.sessionsinweekend.sessiontype",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sessiontypenames),
+					0x0,
+					"Session session in weekend session type",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sector2lapdistancestart,
+				{
+					"Session sector 2 lap distance start",
+					"eaf1.session.sector2lapdistancestart",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session sector 2 lap distance start",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_session_sector3lapdistancestart,
+				{
+					"Session sector 3 lap distance start",
+					"eaf1.session.sector3lapdistancestart",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session sector 3 lap distance start",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
@@ -2339,6 +4042,11 @@ extern "C"
 				&ett_eaf1_event_buttonstatus,
 				&ett_eaf1_participants_player_name,
 				&ett_eaf1_participants_livery_colour,
+				&ett_eaf1_session_nummarshalzones,
+				&ett_eaf1_session_marshalzone,
+				&ett_eaf1_session_numweatherforecastsamples,
+				&ett_eaf1_session_weatherforecastsample,
+				&ett_eaf1_session_numsessionsinweekend,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -2385,5 +4093,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLobbyInfo, create_dissector_handle(dissect_eaf1_2025_lobbyinfo, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdEvent, create_dissector_handle(dissect_eaf1_2025_event, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdParticipants, create_dissector_handle(dissect_eaf1_2025_participants, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSession, create_dissector_handle(dissect_eaf1_2025_session, proto_eaf1));
 	}
 }
