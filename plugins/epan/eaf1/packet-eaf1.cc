@@ -897,7 +897,9 @@ static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_,
 								eaf1_packet_format, tvb, pinfo, eaf1_packetid_tree,
 								false, eaf1_packetid_tree))
 	{
-		call_data_dissector(tvb, pinfo, tree);
+		auto next_tvb = tvb_new_subset_remaining(tvb, sizeof(F125::PacketHeader));
+
+		call_data_dissector(next_tvb, pinfo, tree);
 	}
 
 	return tvb_captured_length(tvb);
@@ -928,7 +930,9 @@ static int dissect_eaf1_2025(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 								eaf1_packet_id, tvb, pinfo, tree,
 								false, tree))
 	{
-		call_data_dissector(tvb, pinfo, tree);
+		auto next_tvb = tvb_new_subset_remaining(tvb, sizeof(F125::PacketHeader));
+
+		call_data_dissector(next_tvb, pinfo, tree);
 	}
 
 	return tvb_captured_length(tvb);
