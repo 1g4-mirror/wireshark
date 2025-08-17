@@ -3373,12 +3373,6 @@ finished_checking_retransmission_type:
         ual->frame=pinfo->num;
         ual->seq=seq;
         ual->ts=pinfo->abs_ts;
-        if(tcpd->ta && tcpd->ta->flags & TCP_A_LOST_PACKET) {
-            ual->a_lost_packet=true;
-        }
-        else {
-            ual->a_lost_packet=false;
-        }
         ual->a_lost_packet = (tcpd->ta && tcpd->ta->flags & TCP_A_LOST_PACKET);
 
         /* next sequence number is seglen bytes away, plus SYN/FIN which counts as one byte */
