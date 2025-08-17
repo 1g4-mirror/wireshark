@@ -4,7 +4,7 @@
 
 #include "F1Telemetry.h"
 
-static const char *lookup_driver_name(int proto, uint32_t packet_number, const address &src_addr, uint32_t src_port, uint8_t vehicle_index)
+const char *lookup_driver_name(int proto, uint32_t packet_number, const address &src_addr, uint32_t src_port, uint8_t vehicle_index)
 {
 	const char *ret = NULL;
 

@@ -258,6 +258,19 @@ static int hf_eaf1_cardamage_enginetcwear;
 static int hf_eaf1_cardamage_engineblown;
 static int hf_eaf1_cardamage_engineseized;
 
+static int hf_eaf1_tyresets_vehicleindex;
+static int hf_eaf1_tyresets_fittedindex;
+static int hf_eaf1_tyresets_tyreset;
+static int hf_eaf1_tyresets_tyreset_actualtyrecompound;
+static int hf_eaf1_tyresets_tyreset_visualtyrecompound;
+static int hf_eaf1_tyresets_tyreset_wear;
+static int hf_eaf1_tyresets_tyreset_available;
+static int hf_eaf1_tyresets_tyreset_recommendedsession;
+static int hf_eaf1_tyresets_tyreset_lifeSpan;
+static int hf_eaf1_tyresets_tyreset_usableLife;
+static int hf_eaf1_tyresets_tyreset_lapDeltaTime;
+static int hf_eaf1_tyresets_tyreset_fitted;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -278,6 +291,8 @@ static int ett_eaf1_cardamage_tyrewear;
 static int ett_eaf1_cardamage_tyredamage;
 static int ett_eaf1_cardamage_brakesdamage;
 static int ett_eaf1_cardamage_tyreblisters;
+static int ett_eaf1_tyresets_vehicleindex;
+static int ett_eaf1_tyresets_tyreset;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -813,6 +828,40 @@ static const value_string redflagnames[] = {
 	{1, "Reduced"},
 	{2, "Standard"},
 	{3, "Increased"},
+};
+
+static const value_string actualtyrecompoundnames[] = {
+	{16, "C5"},
+	{17, "C4"},
+	{18, "C3"},
+	{19, "C2"},
+	{20, "C1"},
+	{21, "C0"},
+	{22, "C6"},
+	{7, "inter"},
+	{8, "wet"},
+	{9, "dry"},
+	{10, "wet"},
+	{11, "super soft"},
+	{12, "soft"},
+	{13, "medium"},
+	{14, "hard"},
+	{15, "wet"},
+};
+
+static const value_string visualtyrecompoundnames[] = {
+	{16, "soft"},
+	{17, "medium"},
+	{18, "hard"},
+	{7, "inter"},
+	{8, "wet"},
+	{9, "dry"},
+	{10, "wet"},
+	{15, "wet"},
+	{19, "super soft"},
+	{20, "soft"},
+	{21, "medium"},
+	{22, "hard"},
 };
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -1391,6 +1440,44 @@ static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_
 			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginetcwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineTCWear), sizeof(F125::CarDamageData::m_engineTCWear), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineblown, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineBlown), sizeof(F125::CarDamageData::m_engineBlown), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineseized, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineSeized), sizeof(F125::CarDamageData::m_engineSeized), ENC_LITTLE_ENDIAN);
+		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketTyreSetsData))
+	{
+		auto tyresets_data = (F125::PacketTyreSetsData *)tvb_memdup(pinfo->pool, tvb, 0, tvb_captured_length(tvb));
+		auto vehicle_index = tyresets_data->m_carIdx;
+
+		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_tyresets_vehicleindex, pinfo, tvb, offsetof(F125::PacketTyreSetsData, m_carIdx));
+		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_tyresets_vehicleindex);
+
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Tyre sets (%s)", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index)));
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_tyresets_fittedindex, tvb, offsetof(F125::PacketTyreSetsData, m_fittedIdx), sizeof(F125::PacketTyreSetsData::m_fittedIdx), ENC_LITTLE_ENDIAN);
+
+		for (std::remove_const<decltype(F125::cs_maxNumTyreSets)>::type tyre_set = 0; tyre_set < F125::cs_maxNumTyreSets; tyre_set++)
+		{
+			auto tyreset_ti = proto_tree_add_string(vehicle_index_tree, hf_eaf1_tyresets_tyreset, tvb, 0, 0, wmem_strdup_printf(pinfo->pool, "Set %d", tyre_set));
+			auto tyreset_tree = proto_item_add_subtree(tyreset_ti, ett_eaf1_tyresets_tyreset);
+
+			auto tyreset_offset = offsetof(F125::PacketTyreSetsData, m_tyreSetData) + tyre_set * sizeof(F125::TyreSetData);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_actualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_actualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_visualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_visualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_wear, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_wear), sizeof(F125::TyreSetData::m_wear), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_available, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_available), sizeof(F125::TyreSetData::m_available), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_recommendedsession, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_recommendedSession), sizeof(F125::TyreSetData::m_recommendedSession), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lifespan, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_lifeSpan), sizeof(F125::TyreSetData::m_lifeSpan), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_usablelife, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_usableLife), sizeof(F125::TyreSetData::m_usableLife), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lapdeltatime, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_lapDeltaTime), sizeof(F125::TyreSetData::m_lapDeltaTime), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_fitted, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_fitted), sizeof(F125::TyreSetData::m_fitted), ENC_LITTLE_ENDIAN);
 		}
 
 		return tvb_captured_length(tvb);
@@ -4691,6 +4778,176 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// Tyresets packet
+
+			{
+				&hf_eaf1_tyresets_vehicleindex,
+				{
+					"Tyresets vehicle index",
+					"eaf1.tyresets.vehicleindex",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets vehicle index",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_fittedindex,
+				{
+					"Tyresets fitted index",
+					"eaf1.tyresets.fittedindex",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets fitted index",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset,
+				{
+					"Tyresets tyreset",
+					"eaf1.tyresets.tyreset",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Tyresets tyreset",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_actualtyrecompound,
+				{
+					"Tyresets tyreset actual tyre compound",
+					"eaf1.tyresets.tyreset.actualtyrecompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(actualtyrecompoundnames),
+					0x0,
+					"Tyresets tyreset actual tyre compound",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_visualtyrecompound,
+				{
+					"Tyresets tyreset visual tyre compound",
+					"eaf1.tyresets.tyreset.visualtyrecompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(visualtyrecompoundnames),
+					0x0,
+					"Tyresets tyreset visual tyre compound",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_wear,
+				{
+					"Tyresets tyreset wear",
+					"eaf1.tyresets.tyreset.wear",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset wear",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_available,
+				{
+					"Tyresets tyreset available",
+					"eaf1.tyresets.tyreset.available",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset available",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_recommendedsession,
+				{
+					"Tyresets tyreset recommended session",
+					"eaf1.tyresets.tyreset.recommendedsession",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sessiontypenames),
+					0x0,
+					"Tyresets tyreset recommended session",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_lifespan,
+				{
+					"Tyresets tyreset life span",
+					"eaf1.tyresets.tyreset.lifespan",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset life span",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_usablelife,
+				{
+					"Tyresets tyreset usable life",
+					"eaf1.tyresets.tyreset.usablelife",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset usable life",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_lapdeltatime,
+				{
+					"Tyresets tyreset lap delta time",
+					"eaf1.tyresets.tyreset.lapdeltatime",
+					FT_INT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset lap delta time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_tyresets_tyreset_fitted,
+				{
+					"Tyresets tyreset fitted",
+					"eaf1.tyresets.tyreset.fitted",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Tyresets tyreset fitted",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
@@ -4716,6 +4973,8 @@ extern "C"
 				&ett_eaf1_cardamage_tyredamage,
 				&ett_eaf1_cardamage_brakesdamage,
 				&ett_eaf1_cardamage_tyreblisters,
+				&ett_eaf1_tyresets_vehicleindex,
+				&ett_eaf1_tyresets_tyreset,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -4764,5 +5023,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdParticipants, create_dissector_handle(dissect_eaf1_2025_participants, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSession, create_dissector_handle(dissect_eaf1_2025_session, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarDamage, create_dissector_handle(dissect_eaf1_2025_cardamage, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdTyreSets, create_dissector_handle(dissect_eaf1_2025_tyresets, proto_eaf1));
 	}
 }
