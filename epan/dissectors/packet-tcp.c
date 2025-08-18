@@ -2775,6 +2775,8 @@ tcp_analyze_sequence_number(packet_info *pinfo, uint32_t seq, uint32_t ack, uint
             tcpd->ta->flags|=TCP_A_DUPLICATE_ACK;
             tcpd->ta->dupack_num=tcpd->fwd->tcp_analyze_seq_info->dupacknum;
             tcpd->ta->dupack_frame=tcpd->fwd->tcp_analyze_seq_info->lastnondupack;
+
+            /* Track when we're entering a Fast Retransmit/Recovery session */
             if(tcpd->fwd->tcp_analyze_seq_info->dupacknum >= 2) {
                 tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = true;
             }
@@ -2790,7 +2792,7 @@ finished_fwd:
         tcpd->fwd->tcp_analyze_seq_info->dupacknum=0;
 
         /* If it's not a partial acknowledgement, reset/forget the distal mark */
-        if(GE_SEQ(ack, tcpd->fwd->tcp_analyze_seq_info->maxseqtobeacked)) {
+        if(GE_SEQ(ack, tcpd->rev->tcp_analyze_seq_info->nextseq)) {
             tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = false;
         }
     }
@@ -3017,10 +3019,10 @@ finished_fwd:
                          * if not present this might very well be a FAST Retrans,
                          * when the conditions above (timing, number of retrans) are still true */
                         if ((double)resp_time/ooo_thres >= 0.8
-                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
                         &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
 
-                            if ((double)resp_time/ooo_thres < 2.4) {
+                            if (tcpd->rev->tcp_analyze_seq_info->dupacknum>=2 && (double)resp_time/ooo_thres < 2.4) {
+
                                 bool is_sacked = false;
                                 int i=0;
                                 while( !is_sacked && i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges ) {
