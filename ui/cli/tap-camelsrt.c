@@ -17,7 +17,7 @@
 
 #include "epan/packet.h"
 #include <epan/tap.h>
-#include "epan/value_string.h"
+#include <wsutil/value_string.h>
 #include "epan/asn1.h"
 #include "epan/dissectors/packet-camel.h"
 #include "epan/dissectors/packet-tcap.h"

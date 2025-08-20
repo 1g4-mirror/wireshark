@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #include "ws_symbol_export.h"
-#include <epan/wmem_scopes.h>
 
 #include <wsutil/nstime.h>
 
@@ -358,25 +357,25 @@ value_string_ext* get_external_value_string_ext(const char* name);
 
 /* MISC (generally do not use) */
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 void value_string_externals_init(void);
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 void value_string_externals_cleanup(void);
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 bool
 value_string_ext_validate(const value_string_ext *vse);
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 const char *
 value_string_ext_match_type_str(const value_string_ext *vse);
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 bool
 val64_string_ext_validate(const val64_string_ext *vse);
 
-WS_DLL_LOCAL
+WS_DLL_PUBLIC
 const char *
 val64_string_ext_match_type_str(const val64_string_ext *vse);
 
