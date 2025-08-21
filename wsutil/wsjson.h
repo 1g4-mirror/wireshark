@@ -118,7 +118,7 @@ WS_DLL_PUBLIC jsmntok_t *json_get_array_index(jsmntok_t *parent, int idx);
  *  const int count = json_get_array_len(array_token);
  *  jsmntok_t* element = json_get_array_index(array_token, 0);
  *  for (int i = 0; i < count; i++, element = json_get_next_object(element)) {
- *      ...
+ *      ... // Do something with `element`
  *  }
 
  * @note This does not perform bounds checking and so can go out of bounds!
