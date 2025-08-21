@@ -4,10 +4,6 @@
 	 packaging/nsis/custom_diameter_xmls.txt if you want them to be distributed
     -->
 
-    <!-- create entities like this:
 	<!ENTITY myEntity		SYSTEM "myFile.xml">
-    -->
 
-    <!-- and then add the entity here:
 	&myEntity;
-    -->
