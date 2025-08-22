@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<vendor vendor-id="myFile" code="311" name="myFile">
+    <avp name="Response" code="1" vendor-id="myFile">
+        <type type-name="OctetString" />
+    </avp>
+</vendor>
