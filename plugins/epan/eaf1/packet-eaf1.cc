@@ -911,21 +911,21 @@ static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_,
 	return tvb_captured_length(tvb);
 }
 
-static int dissect_eaf1_2023(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2023(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "F1 23");
 
 	return tvb_captured_length(tvb);
 }
 
-static int dissect_eaf1_2024(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2024(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "F1 24");
 
 	return tvb_captured_length(tvb);
 }
 
-static int dissect_eaf1_2025(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "F1 25");
 	col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "%d", tvb_get_uint8(tvb, offsetof(F124::PacketHeader, m_packetId))));
@@ -944,7 +944,7 @@ static int dissect_eaf1_2025(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 	return tvb_captured_length(tvb);
 }
 
-static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLobbyInfoData))
 	{
@@ -980,7 +980,7 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 	return 0;
 }
 
-static int dissect_eaf1_2025_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketEventData))
 	{
@@ -1180,7 +1180,7 @@ static int dissect_eaf1_2025_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 	return 0;
 }
 
-static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketParticipantsData))
 	{
@@ -1250,7 +1250,7 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 	return 0;
 }
 
-static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketSessionData))
 	{
@@ -1387,7 +1387,7 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 	return 0;
 }
 
-static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketCarDamageData))
 	{
@@ -1458,7 +1458,7 @@ static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_
 	return 0;
 }
 
-static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketTyreSetsData))
 	{
@@ -1496,7 +1496,7 @@ static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_t
 	return 0;
 }
 
-static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLapPositionsData))
 	{
