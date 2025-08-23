@@ -300,7 +300,7 @@ extern "C" {
 #define WTAP_ENCAP_ZWAVE_SERIAL                 211
 #define WTAP_ENCAP_ETW                          212
 #define WTAP_ENCAP_ERI_ENB_LOG                  213
-#define WTAP_ENCAP_ZBNCP			214
+#define WTAP_ENCAP_ZBNCP                        214
 #define WTAP_ENCAP_USB_2_0_LOW_SPEED            215
 #define WTAP_ENCAP_USB_2_0_FULL_SPEED           216
 #define WTAP_ENCAP_USB_2_0_HIGH_SPEED           217
@@ -312,6 +312,7 @@ extern "C" {
 #define WTAP_ENCAP_MDB                          223
 #define WTAP_ENCAP_EMS                          224
 #define WTAP_ENCAP_DECT_NR                      225
+#define WTAP_ENCAP_PROCMON                      226
 
 /* After adding new item here, please also add new item to encap_table_base array */
 
