@@ -76,6 +76,8 @@ typedef struct _http_upgrade_info_t {
 	const char *(*get_header_value)(packet_info *, const char *, bool);
 	/** Direction of the message */
 	bool	    from_server;
+	/** Dissector data for given bidirectional stream */
+	void       *dissector_data;
 } http_upgrade_info_t;
 
 /** Conversation data of a HTTP connection. */

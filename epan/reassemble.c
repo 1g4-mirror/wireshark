@@ -3282,7 +3282,7 @@ int
 reassemble_streaming_data_and_call_subdissector(
 	tvbuff_t* tvb, packet_info* pinfo, unsigned offset, int length,
 	proto_tree* segment_tree, proto_tree* reassembled_tree, reassembly_table streaming_reassembly_table,
-	streaming_reassembly_info_t* reassembly_info, uint64_t cur_frame_num,
+	streaming_reassembly_info_t* reassembly_info, uint64_t cur_frame_num, void* reassembly_data,
 	dissector_handle_t subdissector_handle, proto_tree* subdissector_tree, void* subdissector_data,
 	const char* label, const fragment_items* frag_hf_items, int hf_segment_data
 )
@@ -3373,7 +3373,7 @@ reassemble_streaming_data_and_call_subdissector(
 		pinfo->desegment_offset = 0;
 		pinfo->desegment_len = 0;
 
-		head = fragment_add(&streaming_reassembly_table, tvb, offset, pinfo, reassembly_id, NULL,
+		head = fragment_add(&streaming_reassembly_table, tvb, offset, pinfo, reassembly_id, reassembly_data,
 			frag_offset, bytes_belong_to_prev_msp, need_more);
 
 		if (head) {
@@ -3419,7 +3419,7 @@ reassemble_streaming_data_and_call_subdissector(
 
 				/* shorten the bytes_belong_to_prev_msp and just truncate the reassembled tvb */
 				bytes_belong_to_prev_msp = pinfo->desegment_offset - reassembly_info->last_msp->length;
-				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, pinfo->desegment_offset);
+				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, reassembly_data, pinfo->desegment_offset);
 				found_BoMSP = true;
 			} else {
 				if (pinfo->desegment_len == DESEGMENT_ONE_MORE_SEGMENT) {
@@ -3428,8 +3428,8 @@ reassemble_streaming_data_and_call_subdissector(
 				}
 
 				/* Remove the data added by previous fragment_add(), and reopen fragments for adding more bytes. */
-				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, reassembly_info->last_msp->length);
-				fragment_set_partial_reassembly(&streaming_reassembly_table, pinfo, reassembly_id, NULL);
+				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, reassembly_data, reassembly_info->last_msp->length);
+				fragment_set_partial_reassembly(&streaming_reassembly_table, pinfo, reassembly_id, reassembly_data);
 
 				reassembly_info->prev_deseg_len = bytes_belong_to_prev_msp + pinfo->desegment_len;
 				bytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);
@@ -3533,7 +3533,7 @@ reassemble_streaming_data_and_call_subdissector(
 		}
 		/* add first fragment of the new MSP to reassembly table */
 		head = fragment_add(&streaming_reassembly_table, tvb, offset, pinfo, reassembly_id,
-			NULL, 0, length, true);
+			reassembly_data, 0, length, true);
 
 		if (head && frag_hf_items->hf_reassembled_in) {
 			proto_item_set_generated(
