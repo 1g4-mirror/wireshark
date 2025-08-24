@@ -43,6 +43,7 @@
 
 #include <wsutil/pint.h>
 #include <wsutil/ws_assert.h>
+#include "wsutil/str_util.h"
 
 #include "charsets.h"
 
@@ -55,6 +56,8 @@ void proto_register_http3(void);
 
 static dissector_handle_t http3_handle;
 static dissector_handle_t http3_datagram_handle;
+
+static reassembly_table http3_streaming_reassembly_table;
 
 #define PROTO_DATA_KEY_HEADER 0
 #define PROTO_DATA_KEY_QPACK 1
@@ -182,6 +185,19 @@ static int hf_http3_datagram_quarter_stream_id;
 static int hf_http3_datagram_request_stream_id;
 static int hf_http3_datagram_payload;
 
+static int hf_http3_data_segment;
+static int hf_http3_body_fragments;
+static int hf_http3_body_fragment;
+static int hf_http3_body_fragment_overlap;
+static int hf_http3_body_fragment_overlap_conflicts;
+static int hf_http3_body_fragment_multiple_tails;
+static int hf_http3_body_fragment_too_long_fragment;
+static int hf_http3_body_fragment_error;
+static int hf_http3_body_fragment_count;
+static int hf_http3_body_reassembled_in;
+static int hf_http3_body_reassembled_length;
+static int hf_http3_body_reassembled_data;
+
 static expert_field ei_http3_qpack_failed;
 /* HTTP3 dissection EIs */
 static expert_field ei_http3_unknown_stream_type;
@@ -206,6 +222,27 @@ static int ett_http3_qpack_update;
 static int ett_http3_qpack_opcode;
 static int ett_http3_datagram;
 static int ett_http3_datagram_stream_id;
+static int ett_http3_body_fragment;
+static int ett_http3_body_fragments;
+
+static const fragment_items http3_body_fragment_items = {
+    /* Fragment subtrees */
+    &ett_http3_body_fragment,
+    &ett_http3_body_fragments,
+    /* Fragment fields */
+    &hf_http3_body_fragments,
+    &hf_http3_body_fragment,
+    &hf_http3_body_fragment_overlap,
+    &hf_http3_body_fragment_overlap_conflicts,
+    &hf_http3_body_fragment_multiple_tails,
+    &hf_http3_body_fragment_too_long_fragment,
+    &hf_http3_body_fragment_error,
+    &hf_http3_body_fragment_count,
+    &hf_http3_body_reassembled_in,
+    &hf_http3_body_reassembled_length,
+    &hf_http3_body_reassembled_data,
+    "Body fragments"
+};
 
 /**
  * HTTP3 header constants.
@@ -341,6 +378,11 @@ typedef enum _http3_stream_dir {
     FROM_SERVER_TO_CLIENT = 1,
 } http3_stream_dir;
 
+enum http3_data_reassembly_mode_t {
+    HTTP3_DATA_REASSEMBLY_MODE_END_STREAM  = 0, /* default */
+    HTTP3_DATA_REASSEMBLY_MODE_STREAMING   = 1
+};
+
 /**
  * Essential data structures.
  */
@@ -360,6 +402,8 @@ typedef struct _http3_stream_info {
     const char          *protocol;             /**< Protocol from extended CONNECT */
     dissector_handle_t   next_handle;	       /**< Dissector for extended CONNECT protocol */
     http_upgrade_info_t *upgrade_info;         /**< Data for new protocol */
+    enum http3_data_reassembly_mode_t reassembly_mode; /**< Reassembly mode for DATA frames */
+    streaming_reassembly_info_t *stream_reassembly_info[2]; /**< Reassembly info for streaming DATA */
 } http3_stream_info_t;
 
 /**
@@ -593,47 +637,50 @@ try_get_quic_varint(tvbuff_t *tvb, int offset, uint64_t *value, int *lenvar)
 }
 
 /**
- * Return the size of entire HTTP/3 frame.
- */
-static int
-get_http3_frame_size(tvbuff_t *tvb, int offset)
-{
-    int     type_size, length_size;
-    uint64_t frame_length;
-
-    if (!try_get_quic_varint(tvb, offset, NULL, &type_size)) {
-        return 0;
-    }
-    offset += type_size;
-
-    if (!try_get_quic_varint(tvb, offset, &frame_length, &length_size)) {
-        return 0;
-    }
-
-    uint64_t frame_size = type_size + length_size + frame_length;
-    if (frame_size > INT32_MAX) {
-        // We do not support such large frames.
-        return 0;
-    }
-    return (int)frame_size;
-}
-
-/**
  * Check whether the pinfo contains at least one whole HTTP3 frame,
  * and adjust the pinfo desegmentation settings for the lower
  * layer (QUIC, generally) to continue the desegmentation process.
  */
 static bool
-http3_check_frame_size(tvbuff_t *tvb, packet_info *pinfo, int offset)
+http3_check_frame_size(tvbuff_t *tvb, packet_info *pinfo, int offset, enum http3_data_reassembly_mode_t reassembly_mode)
 {
-    int frame_size = get_http3_frame_size(tvb, offset);
+    int     type_size, length_size;
+    uint64_t frame_size, frame_length, frame_type;
+
+    if (!try_get_quic_varint(tvb, offset, &frame_type, &type_size)) {
+        pinfo->desegment_offset = offset;
+        pinfo->desegment_len    = DESEGMENT_ONE_MORE_SEGMENT;
+        return false;
+    }
+
+    if (!try_get_quic_varint(tvb, offset + type_size, &frame_length, &length_size)) {
+        pinfo->desegment_offset = offset;
+        pinfo->desegment_len    = DESEGMENT_ONE_MORE_SEGMENT;
+        return false;
+    }
+
+    frame_size = type_size + length_size + frame_length;
+    if (frame_size > INT32_MAX) {
+        // We do not support such large frames.
+        return false;
+    }
     int remaining  = tvb_reported_length_remaining(tvb, offset);
-    if (frame_size && frame_size <= remaining) {
-        return true;
+    if (frame_size) {
+        if ((int)frame_size <= remaining) {
+            return true;
+        }
+        if (reassembly_mode == HTTP3_DATA_REASSEMBLY_MODE_STREAMING) {
+            if (frame_type == HTTP3_DATA && remaining > type_size + length_size) {
+                return true;
+            }
+            pinfo->desegment_offset = offset;
+            pinfo->desegment_len    = DESEGMENT_ONE_MORE_SEGMENT;
+            return false;
+        }
     }
 
     pinfo->desegment_offset = offset;
-    pinfo->desegment_len    = frame_size ? (frame_size - remaining) : DESEGMENT_ONE_MORE_SEGMENT;
+    pinfo->desegment_len    = (int)frame_size - remaining;
     return false;
 }
 
@@ -1297,13 +1344,16 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig
                  * `:scheme' and `:path' MUST be empty
                  */
                  authority_contains_target = true;
-            } else {
+            } else if (!PINFO_FD_VISITED(pinfo)) {
                 http3_stream->protocol = wmem_strdup(wmem_file_scope(), pseudo_headers.protocol);
                 http3_stream->next_handle = http_upgrade_dissector(http3_stream->protocol);
-                http3_stream->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
-                http3_stream->upgrade_info->server_port = pinfo->destport;
-                http3_stream->upgrade_info->http_version = 3;
-                http3_stream->upgrade_info->get_header_value = http3_get_header_value;
+                if (http3_stream->next_handle) {
+                    http3_stream->reassembly_mode = HTTP3_DATA_REASSEMBLY_MODE_STREAMING;
+                    http3_stream->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
+                    http3_stream->upgrade_info->server_port = pinfo->destport;
+                    http3_stream->upgrade_info->http_version = 3;
+                    http3_stream->upgrade_info->get_header_value = http3_get_header_value;
+                }
             }
         }
 
@@ -1447,14 +1497,23 @@ dissect_http3_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *http3_tree, un
     void                *saved_ctx = NULL;
     int                 remaining;
     conversation_t      *inner_conv _U_;
-    proto_item          *ti_data _U_;
 
     remaining = tvb_reported_length(tvb);
     inner_conv = http3_find_inner_conversation(pinfo, stream_info, http3_stream, &saved_ctx);
-    ti_data    = proto_tree_add_item(http3_tree, hf_http3_data, tvb, offset, remaining, ENC_NA);
     if (http3_stream->next_handle) {
+        proto_tree_add_bytes_format(http3_tree, hf_http3_data, tvb, offset,
+            remaining, NULL, "DATA payload (%u byte%s)", remaining, plurality(remaining, "", "s"));
         http3_stream->upgrade_info->from_server = http3_stream->direction;
-        call_dissector_only(http3_stream->next_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(proto_tree_get_parent_tree(proto_tree_get_parent_tree(http3_tree))), http3_stream->upgrade_info);
+        streaming_reassembly_info_t** reassembly_info = &http3_stream->stream_reassembly_info[http3_stream->direction];
+        if (*reassembly_info == NULL) {
+            *reassembly_info = streaming_reassembly_info_new();
+        }
+        reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset, remaining, http3_tree, proto_tree_get_parent_tree(http3_tree),
+            http3_streaming_reassembly_table, *reassembly_info, stream_info->offset, stream_info,
+            http3_stream->next_handle, proto_tree_get_parent_tree(proto_tree_get_parent_tree(http3_tree)), http3_stream->upgrade_info,
+            "HTTP3 body", &http3_body_fragment_items, hf_http3_data_segment);
+    } else {
+        proto_tree_add_item(http3_tree, hf_http3_data, tvb, offset, remaining, ENC_NA);
     }
     http3_reset_inner_conversation(pinfo, saved_ctx);
 
@@ -2254,7 +2313,7 @@ dissect_http3_client_bidi_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     stream_tree = proto_item_add_subtree(ti_stream, ett_http3_stream_bidi);
 
     while (tvb_reported_length_remaining(tvb, offset)) {
-        if (!http3_check_frame_size(tvb, pinfo, offset)) {
+        if (!http3_check_frame_size(tvb, pinfo, offset, http3_stream->reassembly_mode)) {
             return tvb_captured_length(tvb);
         }
         offset = dissect_http3_frame(tvb, pinfo, stream_tree, offset, stream_info, http3_stream);
@@ -2298,7 +2357,7 @@ dissect_http3_uni_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in
     switch (stream_type) {
     case HTTP3_STREAM_TYPE_CONTROL:
         while (tvb_reported_length_remaining(tvb, offset)) {
-            if (!http3_check_frame_size(tvb, pinfo, offset)) {
+            if (!http3_check_frame_size(tvb, pinfo, offset, HTTP3_DATA_REASSEMBLY_MODE_END_STREAM)) {
                 return tvb_captured_length(tvb);
             }
             offset = dissect_http3_frame(tvb, pinfo, stream_tree, offset, stream_info, http3_stream);
@@ -2364,24 +2423,6 @@ dissect_http3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         return 0;
     }
 
-    switch (QUIC_STREAM_TYPE(stream_info->stream_id)) {
-    case QUIC_STREAM_CLIENT_BIDI:
-        /* Used for HTTP requests and responses. */
-        if (!http3_check_frame_size(tvb, pinfo, offset)) {
-            return tvb_captured_length(tvb);
-        }
-        break;
-    case QUIC_STREAM_SERVER_BIDI:
-        /* "HTTP/3 does not use server-initiated bidirectional streams,
-         * though an extension could define a use for these streams." */
-        break;
-    case QUIC_STREAM_CLIENT_UNI:
-    case QUIC_STREAM_SERVER_UNI:
-        break;
-    }
-
-    http3_tree = start_http3_tree(tvb, pinfo, tree);
-
     /* We need a single HTTP/3 stream for both directions */
     from_server = stream_info->from_server;
     if (QUIC_STREAM_TYPE(stream_info->stream_id) == QUIC_STREAM_CLIENT_BIDI && from_server) {
@@ -2392,6 +2433,7 @@ dissect_http3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         http3_stream = wmem_new0(wmem_file_scope(), http3_stream_info_t);
         quic_stream_add_proto_data(pinfo, stream_info, http3_stream);
         http3_stream->id               = stream_info->stream_id;
+        http3_stream->reassembly_mode  = HTTP3_DATA_REASSEMBLY_MODE_END_STREAM;
     }
     if (QUIC_STREAM_TYPE(stream_info->stream_id) == QUIC_STREAM_CLIENT_BIDI && from_server) {
         stream_info->from_server = true;
@@ -2400,6 +2442,24 @@ dissect_http3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     http3_session = http3_session_lookup_or_create(pinfo);
     http3_session->current_stream = http3_stream;
     http3_stream->direction = http3_packet_get_direction(stream_info);
+
+    switch (QUIC_STREAM_TYPE(stream_info->stream_id)) {
+        case QUIC_STREAM_CLIENT_BIDI:
+            /* Used for HTTP requests and responses. */
+            if (!http3_check_frame_size(tvb, pinfo, offset, http3_stream->reassembly_mode)) {
+                return tvb_captured_length(tvb);
+            }
+            break;
+        case QUIC_STREAM_SERVER_BIDI:
+            /* "HTTP/3 does not use server-initiated bidirectional streams,
+             * though an extension could define a use for these streams." */
+            break;
+        case QUIC_STREAM_CLIENT_UNI:
+        case QUIC_STREAM_SERVER_UNI:
+            break;
+    }
+
+    http3_tree = start_http3_tree(tvb, pinfo, tree);
 
     // If a STREAM has unknown data, everything afterwards cannot be dissected.
     if (http3_stream->broken_from_offset && http3_stream->broken_from_offset <= stream_info->offset + offset) {
@@ -2803,6 +2863,11 @@ proto_register_http3(void)
             FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_http3_data_segment,
+        { "DATA segment", "http3.data.segment",
+        FT_BYTES, BASE_NONE, NULL, 0x0,
+        "A data segment used in reassembly", HFILL}
+        },
 
         /* Headers */
         { &hf_http3_headers_count,
@@ -3058,6 +3123,62 @@ proto_register_http3(void)
               FT_BYTES, BASE_NONE, NULL, 0x0,
               NULL, HFILL }
         },
+        /* Body fragments */
+        { &hf_http3_body_fragments,
+            { "Body fragments", "http3.body.fragments",
+              FT_NONE, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment,
+            { "Body fragment", "http3.body.fragment",
+              FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_overlap,
+            { "Body fragment overlap", "http3.body.fragment.overlap",
+              FT_BOOLEAN, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_overlap_conflicts,
+            { "Body fragment overlapping with conflicting data", "http3.body.fragment.overlap.conflicts",
+              FT_BOOLEAN, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_multiple_tails,
+            { "Body has multiple tail fragments", "http3.body.fragment.multiple_tails",
+              FT_BOOLEAN, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_too_long_fragment,
+            { "Body fragment too long", "http3.body.fragment.too_long_fragment",
+              FT_BOOLEAN, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_error,
+            { "Body defragment error", "http3.body.fragment.error",
+              FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_fragment_count,
+            { "Body fragment count", "http3.body.fragment.count",
+              FT_UINT32, BASE_DEC, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_http3_body_reassembled_in,
+            { "Reassembled body in frame", "http3.body.reassembled.in",
+              FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+              "Reassembled body in frame number", HFILL }
+        },
+        { &hf_http3_body_reassembled_length,
+            { "Reassembled body length", "http3.body.reassembled.length",
+               FT_UINT32, BASE_DEC, NULL, 0x0,
+              "Reassembled body in frame number", HFILL }
+        },
+        { &hf_http3_body_reassembled_data,
+            { "Reassembled body data", "http3.body.reassembled.data",
+               FT_BYTES, BASE_NONE, NULL, 0x0,
+              "Reassembled body data for multisegment PDU spanning across DATAs", HFILL }
+        },
     };
 
     static int *ett[] = {&ett_http3,
@@ -3070,7 +3191,9 @@ proto_register_http3(void)
                           &ett_http3_qpack_update,
                           &ett_http3_qpack_opcode,
                           &ett_http3_datagram,
-                          &ett_http3_datagram_stream_id};
+                          &ett_http3_datagram_stream_id,
+                          &ett_http3_body_fragment,
+                          &ett_http3_body_fragments};
 
     static ei_register_info ei[] = {
         { &ei_http3_unknown_stream_type,
@@ -3115,6 +3238,10 @@ proto_register_http3(void)
 
     http3_handle = register_dissector("http3", dissect_http3, proto_http3);
     http3_datagram_handle = register_dissector("http3.datagram", dissect_http3_datagram, proto_http3);
+
+    reassembly_table_register(&http3_streaming_reassembly_table,
+                              &quic_reassembly_table_functions);
+
 #ifdef HAVE_NGHTTP3
     /* Fill hash table with static headers */
     register_static_headers();
