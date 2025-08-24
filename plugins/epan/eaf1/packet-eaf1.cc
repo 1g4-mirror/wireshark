@@ -276,6 +276,34 @@ static int hf_eaf1_lappositions_lapstart;
 static int hf_eaf1_lappositions_lap;
 static int hf_eaf1_lappositions_position;
 
+static int hf_eaf1_sessionhistory_caridx;
+static int hf_eaf1_sessionhistory_numlaps;
+static int hf_eaf1_sessionhistory_numtyrestints;
+static int hf_eaf1_sessionhistory_bestlaptimelapnum;
+static int hf_eaf1_sessionhistory_bestsector1lapnum;
+static int hf_eaf1_sessionhistory_bestsector2lapnum;
+static int hf_eaf1_sessionhistory_bestsector3lapnum;
+static int hf_eaf1_sessionhistory_lap;
+static int hf_eaf1_sessionhistory_laptime;
+static int hf_eaf1_sessionhistory_sector1time;
+static int hf_eaf1_sessionhistory_sector1timemspart;
+static int hf_eaf1_sessionhistory_sector1timeminutespart;
+static int hf_eaf1_sessionhistory_sector2time;
+static int hf_eaf1_sessionhistory_sector2timemspart;
+static int hf_eaf1_sessionhistory_sector2timeminutespart;
+static int hf_eaf1_sessionhistory_sector3time;
+static int hf_eaf1_sessionhistory_sector3timemspart;
+static int hf_eaf1_sessionhistory_sector3timeminutespart;
+static int hf_eaf1_sessionhistory_lapvalidbitflags;
+static int hf_eaf1_sessionhistory_lapvalidbitflags_lap;
+static int hf_eaf1_sessionhistory_lapvalidbitflags_sector1;
+static int hf_eaf1_sessionhistory_lapvalidbitflags_sector2;
+static int hf_eaf1_sessionhistory_lapvalidbitflags_sector3;
+static int hf_eaf1_sessionhistory_tyrestint;
+static int hf_eaf1_sessionhistory_endlap;
+static int hf_eaf1_sessionhistory_tyreactualcompound;
+static int hf_eaf1_sessionhistory_tyrevisualcompound;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -299,6 +327,15 @@ static int ett_eaf1_cardamage_tyreblisters;
 static int ett_eaf1_tyresets_vehicleindex;
 static int ett_eaf1_tyresets_tyreset;
 static int ett_eaf1_lappositions_lap;
+static int ett_eaf1_sessionhistory_vehicleindex;
+static int ett_eaf1_sessionhistory_numlaps;
+static int ett_eaf1_sessionhistory_numtyrestints;
+static int ett_eaf1_sessionhistory_lap;
+static int ett_eaf1_sessionhistory_sector1time;
+static int ett_eaf1_sessionhistory_sector2time;
+static int ett_eaf1_sessionhistory_sector3time;
+static int ett_eaf1_sessionhistory_lapvalidbitflags;
+static int ett_eaf1_sessionhistory_tyrestint;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -1531,6 +1568,93 @@ static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, pro
 									  sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0][0]),
 									  wmem_strdup_printf(pinfo->pool, "%s: %d", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index), position));
 			}
+		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketSessionHistoryData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session history"));
+
+		auto sessionhistory_data = (F125::PacketSessionHistoryData *)tvb_memdup(pinfo->pool, tvb, 0, tvb_captured_length(tvb));
+		auto vehicle_index = sessionhistory_data->m_carIdx;
+
+		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_sessionhistory_caridx, pinfo, tvb, offsetof(F125::PacketSessionHistoryData, m_carIdx));
+		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_sessionhistory_vehicleindex);
+
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session history (%s)", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index)));
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestlaptimelapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestLapTimeLapNum), sizeof(F125::PacketSessionHistoryData::m_bestLapTimeLapNum), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector1lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector1LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector1LapNum), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector2lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector2LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector2LapNum), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector3lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector3LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector3LapNum), ENC_LITTLE_ENDIAN);
+
+		uint32_t num_laps;
+		auto num_laps_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numlaps, tvb, offsetof(F125::PacketSessionHistoryData, m_numLaps), sizeof(F125::PacketSessionHistoryData::m_numLaps), ENC_LITTLE_ENDIAN, &num_laps);
+		auto num_laps_tree = proto_item_add_subtree(num_laps_ti, ett_eaf1_sessionhistory_numlaps);
+
+		for (uint32_t lap_number = 0; lap_number < num_laps; lap_number++)
+		{
+			auto lap_base = offsetof(F125::PacketSessionHistoryData, m_lapHistoryData) + lap_number * sizeof(F125::LapHistoryData);
+
+			auto lap_ti = proto_tree_add_string(num_laps_tree,
+												hf_eaf1_sessionhistory_lap,
+												tvb,
+												lap_base,
+												sizeof(F125::PacketSessionHistoryData::m_lapHistoryData[0]),
+												wmem_strdup_printf(pinfo->pool, "Lap %d", lap_number + 1));
+
+			auto lap_tree = proto_item_add_subtree(lap_ti, ett_eaf1_sessionhistory_lap);
+
+			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_laptime, tvb, lap_base + offsetof(F125::LapHistoryData, m_lapTimeInMS), sizeof(F125::LapHistoryData::m_lapTimeInMS), ENC_LITTLE_ENDIAN);
+
+			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector1time, hf_eaf1_sessionhistory_sector1timemspart, hf_eaf1_sessionhistory_sector1timeminutespart, ett_eaf1_sessionhistory_sector1time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector1TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector1TimeMinutesPart));
+			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector2time, hf_eaf1_sessionhistory_sector2timemspart, hf_eaf1_sessionhistory_sector2timeminutespart, ett_eaf1_sessionhistory_sector2time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMinutesPart));
+			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector3time, hf_eaf1_sessionhistory_sector3timemspart, hf_eaf1_sessionhistory_sector3timeminutespart, ett_eaf1_sessionhistory_sector3time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMinutesPart));
+
+			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector2timemspart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMSPart), sizeof(F125::LapHistoryData::m_sector2TimeMSPart), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector2timeminutespart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMinutesPart), sizeof(F125::LapHistoryData::m_sector2TimeMinutesPart), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector3timemspart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMSPart), sizeof(F125::LapHistoryData::m_sector3TimeMSPart), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector3timeminutespart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMinutesPart), sizeof(F125::LapHistoryData::m_sector3TimeMinutesPart), ENC_LITTLE_ENDIAN);
+
+			static int *const valid_status_fields[] = {
+				&hf_eaf1_sessionhistory_lapvalidbitflags_lap,
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector1,
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector2,
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector3,
+				NULL,
+			};
+
+			proto_tree_add_bitmask(lap_tree, tvb, lap_base + offsetof(F125::LapHistoryData, m_lapValidBitFlags), hf_eaf1_sessionhistory_lapvalidbitflags,
+								   ett_eaf1_sessionhistory_lapvalidbitflags, valid_status_fields, ENC_LITTLE_ENDIAN);
+		}
+
+		uint32_t num_tyre_stints;
+		auto num_tyre_stints_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numtyrestints, tvb, offsetof(F125::PacketSessionHistoryData, m_numTyreStints), sizeof(F125::PacketSessionHistoryData::m_numTyreStints), ENC_LITTLE_ENDIAN, &num_tyre_stints);
+		auto num_tyre_stints_tree = proto_item_add_subtree(num_tyre_stints_ti, ett_eaf1_sessionhistory_numtyrestints);
+
+		for (uint32_t tyre_stint_number = 0; tyre_stint_number < num_tyre_stints; tyre_stint_number++)
+		{
+			auto tyre_stint_base = offsetof(F125::PacketSessionHistoryData, m_tyreStintsHistoryData) + tyre_stint_number * sizeof(F125::TyreStintHistoryData);
+
+			auto tyre_stint_ti = proto_tree_add_string(num_tyre_stints_tree,
+													   hf_eaf1_sessionhistory_tyrestint,
+													   tvb,
+													   tyre_stint_base,
+													   sizeof(F125::PacketSessionHistoryData::m_tyreStintsHistoryData[0]),
+													   wmem_strdup_printf(pinfo->pool, "Tyre stint %d", tyre_stint_number + 1));
+
+			auto tyre_stint_tree = proto_item_add_subtree(tyre_stint_ti, ett_eaf1_sessionhistory_tyrestint);
+
+			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_endlap, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_endLap), sizeof(F125::TyreStintHistoryData::m_endLap), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyreactualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreActualCompound), sizeof(F125::TyreStintHistoryData::m_tyreActualCompound), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyrevisualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreVisualCompound), sizeof(F125::TyreStintHistoryData::m_tyreVisualCompound), ENC_LITTLE_ENDIAN);
 		}
 
 		return tvb_captured_length(tvb);
@@ -5059,6 +5183,386 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// Session history packet
+
+			{
+				&hf_eaf1_sessionhistory_caridx,
+				{
+					"Session history vehicle index",
+					"eaf1.sessionhistory.vehicleindex",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history vehicle index",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_numlaps,
+				{
+					"Session history num laps",
+					"eaf1.sessionhistory.numlaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history num laps",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_numtyrestints,
+				{
+					"Session history num tyre stints",
+					"eaf1.sessionhistory.numtyrestints",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history num tyre stints",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_bestlaptimelapnum,
+				{
+					"Session history best lap time lap num",
+					"eaf1.sessionhistory.bestlaptimelapnum",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history bestLapTimeLapNum",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_bestsector1lapnum,
+				{
+					"Session history best sector 1 lap num",
+					"eaf1.sessionhistory.bestsector1lapnum",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history best sector 1 lap num",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_bestsector2lapnum,
+				{
+					"Session history best sector 2 lap num",
+					"eaf1.sessionhistory.bestsector2lapnum",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history best sector 2 lap num",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_bestsector3lapnum,
+				{
+					"Session history best sector 3 lap num",
+					"eaf1.sessionhistory.bestsector3lapnum",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history best sector 3 lap num",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lap,
+				{
+					"Session history lap",
+					"eaf1.sessionhistory.lap",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session history lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_laptime,
+				{
+					"Session history lap time",
+					"eaf1.sessionhistory.lap.laptime",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector1time,
+				{
+					"Session history lap sector 1 time",
+					"eaf1.sessionhistory.lap.sector1time",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session history lap sector 1 time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector1timemspart,
+				{
+					"Session history lap sector 1 time mS part",
+					"sessionhistory.lap.sector1timemspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 1 time mS part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector1timeminutespart,
+				{
+					"Session history lap sector 1 time minutes part",
+					"sessionhistory.lap.sector1timeminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 1 time minutes part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector2time,
+				{
+					"Session history lap sector 2 time",
+					"eaf1.sessionhistory.lap.sector2time",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session history lap sector 2 time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector2timemspart,
+				{
+					"Session history lap sector 2 time mS part",
+					"sessionhistory.lap.sector2timemspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 2 time mS part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector2timeminutespart,
+				{
+					"Session history lap sector 2 time minutes part",
+					"sessionhistory.lap.sector2timeminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 2 time minutes part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector3time,
+				{
+					"Session history lap sector 3 time",
+					"eaf1.sessionhistory.lap.sector3time",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session history lap sector 3 time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector3timemspart,
+				{
+					"Session history lap sector 3 time mS part",
+					"sessionhistory.lap.sector3timemspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 3 time mS part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_sector3timeminutespart,
+				{
+					"Session history lap sector 3 time minutes part",
+					"sessionhistory.lap.sector3timeminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history lap sector 3 time minutes part",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lapvalidbitflags,
+				{
+					"Session history lap lap valid bit flags",
+					"eaf1.sessionhistory.lap.lapvalidbitflags",
+					FT_UINT8,
+					BASE_HEX,
+					NULL,
+					0x0,
+					"Session history lap lap valid bit flags",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lapvalidbitflags_lap,
+				{
+					"Lap",
+					"eaf1.sessionhistory.lap.lapvalidbitflags.lap",
+					FT_BOOLEAN,
+					4,
+					NULL,
+					0x01,
+					"Lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector1,
+				{
+					"Sector 1",
+					"eaf1.sessionhistory.lap.lapvalidbitflags.sector1",
+					FT_BOOLEAN,
+					4,
+					NULL,
+					0x02,
+					"Sector 1",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector2,
+				{
+					"Sector 2",
+					"eaf1.sessionhistory.lap.lapvalidbitflags.sector2",
+					FT_BOOLEAN,
+					4,
+					NULL,
+					0x04,
+					"Sector 2",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_lapvalidbitflags_sector3,
+				{
+					"Sector 3",
+					"eaf1.sessionhistory.lap.lapvalidbitflags.sector3",
+					FT_BOOLEAN,
+					4,
+					NULL,
+					0x08,
+					"Sector 3",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_tyrestint,
+				{
+					"Session history tyre stint",
+					"eaf1.sessionhistory.tyrestint",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Session history tyre stint",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_endlap,
+				{
+					"Session history end lap",
+					"eaf1.sessionhistory.endlap",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Session history end lap",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_tyreactualcompound,
+				{
+					"Session history tyre actual compound",
+					"eaf1.sessionhistory.tyreactualcompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(actualtyrecompoundnames),
+					0x0,
+					"Session history tyre actual compound",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_sessionhistory_tyrevisualcompound,
+				{
+					"Session history tyre visual compound",
+					"eaf1.sessionhistory.tyrevisualcompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(visualtyrecompoundnames),
+					0x0,
+					"Session history tyre visual compound",
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
@@ -5087,6 +5591,15 @@ extern "C"
 				&ett_eaf1_tyresets_vehicleindex,
 				&ett_eaf1_tyresets_tyreset,
 				&ett_eaf1_lappositions_lap,
+				&ett_eaf1_sessionhistory_vehicleindex,
+				&ett_eaf1_sessionhistory_numlaps,
+				&ett_eaf1_sessionhistory_lap,
+				&ett_eaf1_sessionhistory_sector1time,
+				&ett_eaf1_sessionhistory_sector2time,
+				&ett_eaf1_sessionhistory_sector3time,
+				&ett_eaf1_sessionhistory_lapvalidbitflags,
+				&ett_eaf1_sessionhistory_numtyrestints,
+				&ett_eaf1_sessionhistory_tyrestint,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -5137,5 +5650,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarDamage, create_dissector_handle(dissect_eaf1_2025_cardamage, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdTyreSets, create_dissector_handle(dissect_eaf1_2025_tyresets, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLapPositions, create_dissector_handle(dissect_eaf1_2025_lappositions, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSessionHistory, create_dissector_handle(dissect_eaf1_2025_sessionhistory, proto_eaf1));
 	}
 }

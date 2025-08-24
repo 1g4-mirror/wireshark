@@ -50,3 +50,23 @@ proto_item *add_driver_name(int proto, proto_tree *tree, int header_field, packe
 
 	return ti_driver_name;
 }
+
+void add_sector_time(proto_tree *tree, int header_field_time, int header_field_timems, int header_field_timemin, int ett, packet_info *pinfo, tvbuff_t *tvb, size_t msoffset, size_t minoffset)
+{
+	uint8 mins = tvb_get_uint8(tvb, minoffset);
+	uint16 ms = tvb_get_uint16(tvb, msoffset, ENC_LITTLE_ENDIAN);
+
+	auto sector_ti = proto_tree_add_string(tree,
+										   header_field_time,
+										   tvb,
+										   msoffset,
+										   sizeof(F125::LapHistoryData::m_sector1TimeMSPart) + sizeof(F125::LapHistoryData::m_sector1TimeMinutesPart),
+										   wmem_strdup_printf(pinfo->pool, "%01d:%02d.%03d",
+															  mins,
+															  ms / 1000,
+															  ms % 1000));
+	auto sector_tree = proto_item_add_subtree(sector_ti, ett);
+
+	proto_tree_add_item(sector_tree, header_field_timems, tvb, msoffset, sizeof(F125::LapHistoryData::m_sector1TimeMSPart), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(sector_tree, header_field_timemin, tvb, minoffset, sizeof(F125::LapHistoryData::m_sector1TimeMinutesPart), ENC_LITTLE_ENDIAN);
+}
