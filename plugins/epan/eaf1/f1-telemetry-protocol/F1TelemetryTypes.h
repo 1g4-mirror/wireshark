@@ -1,3 +1,14 @@
+/* F1TelemetryTypes.h
+ *
+ * Copyright 2025, Andy Hawkins <andy@gently.org.uk>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 #pragma once
 
 #include <stdint.h>

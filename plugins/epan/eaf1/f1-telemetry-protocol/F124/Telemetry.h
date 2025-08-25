@@ -1,11 +1,15 @@
+/* Telemetry.h
+ *
+ * Copyright 2025, Andy Hawkins <andy@gently.org.uk>
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 #pragma once
-
-//------------------------------------------------------------------------------
-//  (c) 2024 Electronic Arts Inc. All rights reserved.
-//------------------------------------------------------------------------------
-
-// C++ structures for F1 24 UDP specification
-// Allows easy comparison with previous years to see what has changed
 
 namespace F124
 {
