@@ -315,6 +315,25 @@ static int hf_eaf1_sessionhistory_endlap;
 static int hf_eaf1_sessionhistory_tyreactualcompound;
 static int hf_eaf1_sessionhistory_tyrevisualcompound;
 
+static int hf_eaf1_finalclassification_numcars;
+static int hf_eaf1_finalclassification_drivername;
+static int hf_eaf1_finalclassification_position;
+static int hf_eaf1_finalclassification_numlaps;
+static int hf_eaf1_finalclassification_gridposition;
+static int hf_eaf1_finalclassification_points;
+static int hf_eaf1_finalclassification_numpitstops;
+static int hf_eaf1_finalclassification_resultstatus;
+static int hf_eaf1_finalclassification_resultreason;
+static int hf_eaf1_finalclassification_bestlaptimeinms;
+static int hf_eaf1_finalclassification_totalracetime;
+static int hf_eaf1_finalclassification_penaltiestime;
+static int hf_eaf1_finalclassification_numpenalties;
+static int hf_eaf1_finalclassification_numtyrestints;
+static int hf_eaf1_finalclassification_tyrestint;
+static int hf_eaf1_finalclassification_tyrestint_actual;
+static int hf_eaf1_finalclassification_tyrestint_visual;
+static int hf_eaf1_finalclassification_tyrestint_endlaps;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -347,6 +366,9 @@ static int ett_eaf1_sessionhistory_sector2time;
 static int ett_eaf1_sessionhistory_sector3time;
 static int ett_eaf1_sessionhistory_lapvalidbitflags;
 static int ett_eaf1_sessionhistory_tyrestint;
+static int ett_eaf1_finalclassification_drivername;
+static int ett_eaf1_finalclassification_numstints;
+static int ett_eaf1_finalclassification_tyrestint;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -916,6 +938,31 @@ static const value_string visualtyrecompoundnames[] = {
 	{20, "soft"},
 	{21, "medium"},
 	{22, "hard"},
+};
+
+static const value_string resultstatusnames[] = {
+	{0, "Invalid"},
+	{1, "Inactive"},
+	{2, "Active"},
+	{3, "Finished"},
+	{4, "DNF"},
+	{5, "Disqualified"},
+	{6, "Not classified"},
+	{7, "Retired"},
+};
+
+static const value_string resultreasonnames[] = {
+	{0, "Invalid"},
+	{1, "Retired"},
+	{2, "Finished"},
+	{3, "Terminal damage"},
+	{4, "Inactive"},
+	{5, "Not enough laps completed"},
+	{6, "Black flagged"},
+	{7, "Red flagged"},
+	{8, "Mechanical failure"},
+	{9, "Session skipped"},
+	{10, "Session simulated"},
 };
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -1666,6 +1713,60 @@ static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, p
 			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_endlap, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_endLap), sizeof(F125::TyreStintHistoryData::m_endLap), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyreactualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreActualCompound), sizeof(F125::TyreStintHistoryData::m_tyreActualCompound), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyrevisualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreVisualCompound), sizeof(F125::TyreStintHistoryData::m_tyreVisualCompound), ENC_LITTLE_ENDIAN);
+		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketFinalClassificationData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Final classification"));
+
+		uint32_t num_cars;
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_finalclassification_numcars, tvb, offsetof(F125::PacketFinalClassificationData, m_numCars), sizeof(F125::PacketFinalClassificationData::m_numCars), ENC_LITTLE_ENDIAN, &num_cars);
+
+		for (uint32_t car = 0; car < num_cars; car++)
+		{
+			auto car_offset = offsetof(F125::PacketFinalClassificationData, m_classificationData) + car * sizeof(F125::FinalClassificationData);
+
+			auto player_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_finalclassification_drivername, pinfo, tvb, car);
+			proto_tree *player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_finalclassification_drivername);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_position, tvb, car_offset + offsetof(F125::FinalClassificationData, m_position), sizeof(F125::FinalClassificationData::m_position), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numlaps, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numLaps), sizeof(F125::FinalClassificationData::m_numLaps), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_gridposition, tvb, car_offset + offsetof(F125::FinalClassificationData, m_gridPosition), sizeof(F125::FinalClassificationData::m_gridPosition), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_points, tvb, car_offset + offsetof(F125::FinalClassificationData, m_points), sizeof(F125::FinalClassificationData::m_points), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpitstops, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numPitStops), sizeof(F125::FinalClassificationData::m_numPitStops), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultstatus, tvb, car_offset + offsetof(F125::FinalClassificationData, m_resultStatus), sizeof(F125::FinalClassificationData::m_resultStatus), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultreason, tvb, car_offset + offsetof(F125::FinalClassificationData, m_resultReason), sizeof(F125::FinalClassificationData::m_resultReason), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_bestlaptimeinms, tvb, car_offset + offsetof(F125::FinalClassificationData, m_bestLapTimeInMS), sizeof(F125::FinalClassificationData::m_bestLapTimeInMS), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_totalracetime, tvb, car_offset + offsetof(F125::FinalClassificationData, m_totalRaceTime), sizeof(F125::FinalClassificationData::m_totalRaceTime), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_penaltiestime, tvb, car_offset + offsetof(F125::FinalClassificationData, m_penaltiesTime), sizeof(F125::FinalClassificationData::m_penaltiesTime), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpenalties, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numPenalties), sizeof(F125::FinalClassificationData::m_numPenalties), ENC_LITTLE_ENDIAN);
+
+			uint32_t num_stints;
+			auto num_stints_ti = proto_tree_add_item_ret_uint(player_name_tree, hf_eaf1_finalclassification_numtyrestints, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numTyreStints), sizeof(F125::FinalClassificationData::m_numTyreStints), ENC_LITTLE_ENDIAN, &num_stints);
+			proto_tree *num_stints_tree = proto_item_add_subtree(num_stints_ti, ett_eaf1_finalclassification_numstints);
+
+			for (uint32_t stint = 0; stint < num_stints; stint++)
+			{
+				auto tyre_stint_ti = proto_tree_add_string(num_stints_tree,
+														   hf_eaf1_finalclassification_tyrestint,
+														   tvb,
+														   0,
+														   0,
+														   wmem_strdup_printf(pinfo->pool, "Tyre stint %d", stint + 1));
+				auto tyre_stint_tree = proto_item_add_subtree(tyre_stint_ti, ett_eaf1_sessionhistory_tyrestint);
+
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_actual, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsActual) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsActual[0]), sizeof(F125::FinalClassificationData::m_tyreStintsActual[0]), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_visual, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsVisual) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_endlaps, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsEndLaps) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), ENC_LITTLE_ENDIAN);
+			}
 		}
 
 		return tvb_captured_length(tvb);
@@ -5574,6 +5675,261 @@ extern "C"
 					HFILL,
 				},
 			},
+
+			// Final classification packet
+
+			{
+				&hf_eaf1_finalclassification_numcars,
+				{
+					"Final classification num cars",
+					"eaf1.finalclassification.numcars",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification num cars",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_drivername,
+				{
+					"Final classification driver name",
+					"eaf1.finalclassification.drivername",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Final classification driver name",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_position,
+				{
+					"Final classification position",
+					"eaf1.finalclassification.position",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification position",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_numlaps,
+				{
+					"Final classification num laps",
+					"eaf1.finalclassification.numlaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification num laps",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_gridposition,
+				{
+					"Final classification grid position",
+					"eaf1.finalclassification.gridposition",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification grid position",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_points,
+				{
+					"Final classification points",
+					"eaf1.finalclassification.points",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification points",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_numpitstops,
+				{
+					"Final classification num pit stops",
+					"eaf1.finalclassification.numpitstops",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification num pit stops",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_resultstatus,
+				{
+					"Final classification result status",
+					"eaf1.finalclassification.resultstatus",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(resultstatusnames),
+					0x0,
+					"Final classification result status",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_resultreason,
+				{
+					"Final classification result reason",
+					"eaf1.finalclassification.resultreason",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(resultreasonnames),
+					0x0,
+					"Final classification result reason",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_bestlaptimeinms,
+				{
+					"Final classification best lap time in mS",
+					"eaf1.finalclassification.bestlaptimeinms",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification best lap time in mS",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_totalracetime,
+				{
+					"Final classification total race time",
+					"eaf1.finalclassification.totalracetime",
+					FT_DOUBLE,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification total race time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_penaltiestime,
+				{
+					"Final classification penalties time",
+					"eaf1.finalclassification.penaltiestime",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification penalties time",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_numpenalties,
+				{
+					"Final classification num penalties",
+					"eaf1.finalclassification.numenalties",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification num penalties",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_numtyrestints,
+				{
+					"Final classification num tyre stints",
+					"eaf1.finalclassification.numtyrestints",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification num tyre stints",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_tyrestint,
+				{
+					"Final classification tyre stint",
+					"eaf1.finalclassification.tyrestint",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					"Final classification tyre stint",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_tyrestint_actual,
+				{
+					"Final classification tyre stint actual",
+					"eaf1.finalclassification.tyrestint.actual",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(actualtyrecompoundnames),
+					0x0,
+					"Final classification tyre stint actual",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_tyrestint_visual,
+				{
+					"Final classification tyre stint visual",
+					"eaf1.finalclassification.tyrestint.visual",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(visualtyrecompoundnames),
+					0x0,
+					"Final classification tyre stint visual",
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_finalclassification_tyrestint_endlaps,
+				{
+					"Final classification tyre stint end lap",
+					"eaf1.finalclassification.tyrestint.endlaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					"Final classification tyre stint end laps",
+					HFILL,
+				},
+			},
+
 		};
 
 		/* Setup protocol subtree array */
@@ -5611,6 +5967,9 @@ extern "C"
 				&ett_eaf1_sessionhistory_lapvalidbitflags,
 				&ett_eaf1_sessionhistory_numtyrestints,
 				&ett_eaf1_sessionhistory_tyrestint,
+				&ett_eaf1_finalclassification_drivername,
+				&ett_eaf1_finalclassification_numstints,
+				&ett_eaf1_finalclassification_tyrestint,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -5662,5 +6021,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdTyreSets, create_dissector_handle(dissect_eaf1_2025_tyresets, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLapPositions, create_dissector_handle(dissect_eaf1_2025_lappositions, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSessionHistory, create_dissector_handle(dissect_eaf1_2025_sessionhistory, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdFinalClassification, create_dissector_handle(dissect_eaf1_2025_finalclassification, proto_eaf1));
 	}
 }
