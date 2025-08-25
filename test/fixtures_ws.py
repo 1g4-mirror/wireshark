@@ -84,8 +84,8 @@ def program(program_path, request):
     if sys.platform.startswith('win32'):
         dotexe = '.exe'
 
-    def resolver(name):
-        path = os.path.abspath(os.path.join(program_path, name + dotexe))
+    def resolver(name, subdir=''):
+        path = os.path.abspath(os.path.join(program_path, subdir, name + dotexe))
         if not os.access(path, os.X_OK):
             if skip_if_missing == ['all'] or name in skip_if_missing:
                 pytest.skip('Program %s is not available' % (name,))
@@ -135,6 +135,16 @@ def cmd_wireshark(program):
 
 
 @pytest.fixture(scope='session')
+def cmd_strato(program):
+    return program('strato')
+
+
+@pytest.fixture(scope='session')
+def cmd_stratoshark(program):
+    return program('stratoshark')
+
+
+@pytest.fixture(scope='session')
 def wireshark_command(cmd_wireshark):
     # Windows can always display the GUI and macOS can if we're in a login session.
     # On Linux, headless mode is used, see QT_QPA_PLATFORM in the 'test_env' fixture.
@@ -145,20 +155,20 @@ def wireshark_command(cmd_wireshark):
             pytest.skip('Wireshark GUI tests require DISPLAY')
     return (cmd_wireshark, '-ogui.update.enabled:FALSE')
 
-
 @pytest.fixture(scope='session')
 def cmd_extcap(program):
     def extcap_name(name, stratoshark_extcap=False):
         if stratoshark_extcap:
             if sys.platform == 'darwin':
-                return program(os.path.join('Stratoshark.app/Contents/MacOS/extcap', name))
+                subdir = 'Stratoshark.app/Contents/MacOS/extcap'
             else:
-                return program(os.path.join('extcap/stratoshark', name))
+                subdir = 'extcap/stratoshark'
         else:
             if sys.platform == 'darwin':
-                return program(os.path.join('Wireshark.app/Contents/MacOS/extcap', name))
+                subdir = 'Wireshark.app/Contents/MacOS/extcap'
             else:
-                return program(os.path.join('extcap/wireshark', name))
+                subdir = 'extcap/wireshark'
+        return program(name, subdir=subdir)
     return extcap_name
 
 
