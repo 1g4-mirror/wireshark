@@ -641,6 +641,12 @@ static bool read_seq_as_syn_cookie;
 #define TCP_COMPLETENESS_FIN        0x10  /* TCP FIN      */
 #define TCP_COMPLETENESS_RST        0x20  /* TCP RST      */
 
+/*
+ * Time conversion helpers
+ * XXX - already defined here and there, worth relying on an include ?
+ */
+#define NANOSECS_PER_SEC 1000000000
+
 static const true_false_string tcp_option_user_to_granularity = {
   "Minutes", "Seconds"
 };
@@ -1911,6 +1917,7 @@ static bool tcp_relative_seq          = true;
 static bool tcp_track_bytes_in_flight = true;
 static bool tcp_bif_seq_based;
 static bool tcp_calculate_ts          = true;
+static bool tcp_distal_algo           = false;
 
 static bool tcp_analyze_mptcp                   = true;
 static bool mptcp_relative_seq                  = true;
@@ -2769,6 +2776,11 @@ tcp_analyze_sequence_number(packet_info *pinfo, uint32_t seq, uint32_t ack, uint
             tcpd->ta->flags|=TCP_A_DUPLICATE_ACK;
             tcpd->ta->dupack_num=tcpd->fwd->tcp_analyze_seq_info->dupacknum;
             tcpd->ta->dupack_frame=tcpd->fwd->tcp_analyze_seq_info->lastnondupack;
+
+            /* Track when we're entering a Fast Retransmit/Recovery session */
+            if(tcpd->fwd->tcp_analyze_seq_info->dupacknum >= 2) {
+                tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = true;
+            }
        }
     }
 
@@ -2779,6 +2791,11 @@ finished_fwd:
     if( ack != tcpd->fwd->tcp_analyze_seq_info->lastack ) {
         tcpd->fwd->tcp_analyze_seq_info->lastnondupack=pinfo->num;
         tcpd->fwd->tcp_analyze_seq_info->dupacknum=0;
+
+        /* If it's not a partial acknowledgement, reset/forget the distal mark */
+        if(GE_SEQ(ack, tcpd->rev->tcp_analyze_seq_info->nextseq)) {
+            tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = false;
+        }
     }
 
 
@@ -2926,6 +2943,237 @@ finished_fwd:
             t = 0;
         }
 
+        /* Choose between the 'Distal' and the historic disambiguation algorithms */
+        if(tcp_distal_algo) {
+            ual = tcpd->fwd->tcp_analyze_seq_info->segments;
+            bool pk_already_seen = false;
+
+            while(ual) {
+
+                /* If we see  this packet has retransmissions, we are marking it
+                 * as eligible to Karn's algo.
+                 */
+                if(GE_SEQ(seq,ual->seq) && LE_SEQ(seq+seglen,ual->nextseq)) {
+                    pk_already_seen = true;
+                    ual->karn_flag = true;
+                    if(!tcpd->ta) {
+                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                    }
+                }
+
+                if(LE_SEQ(nextseq,ual->seq)) {
+
+                    /* Distal Algo : we're taking into account the 'old' past rather
+                     * than just the recent, adjacent packets. Lost packets are sooner or later
+                     * necessarily followed by: an Out Of Order or a (Fast) Retransmission,
+                     * and this is also an indication that it is not a server side capture.
+                     * In the other case (server side capture), we just need to decide
+                     * which kind of Retransmission we are dealing with.
+                     *
+                     * Considering the RTO calculated values from RFC 6298 :
+                     *  - tends towards 2,5 * SRTT when there is no variance, iRTT comparison makes sense
+                     *  - tends towards 3,0 * SRTT when there is important variance, iRTT comparison not so meaningful
+                     * and the fact that Fast Retransmission is inherently aggressive,
+                     * we're defining several ratios that look realistic following our experience.
+                     * When not so clear between Fast Retrans and RTO Retrans (because delays are increasing during
+                     * a long, difficult recovery, RTO Retrans will match more often even when SACK is permitted.
+                     *
+                     * The corner case of data not covering more than 2 packets (frequent with DNS and WHOIS),
+                     * is not managed explicitly and is handled as ordinary traffic. We would need to know
+                     * in advance the data sent will be that short to handle that properly.
+                     * This ends with some affinity with Out-of-Order more than Retransmission packets (see RFC 5827).
+                     *
+                     * Future work could involve averages based on Karn's ACK (which we already have)
+                     */
+                    nstime_t ns;
+                    uint64_t resp_time;
+                    nstime_delta(&ns, &pinfo->abs_ts, &ual->ts );
+                    resp_time = ns.nsecs + ns.secs*NANOSECS_PER_SEC;
+
+                    if(tcpd->ts_first_rtt.nsecs == 0 && tcpd->ts_first_rtt.secs == 0) {
+                        ooo_thres = 3000000;
+                    } else {
+                        ooo_thres = tcpd->ts_first_rtt.nsecs + tcpd->ts_first_rtt.secs*NANOSECS_PER_SEC;
+                    }
+
+                    if(ual->a_lost_packet) {
+
+                        /*
+                         * That's a Fast Retransmission if the delay between the lost packet and this one is:
+                         * 0,8*iRTT <= d < 2,4*iRTT
+                         */
+                        if ((double)resp_time/ooo_thres >= 0.8
+                        && (double)resp_time/ooo_thres < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+
+                            goto finished_checking_retransmission_type;
+                        }
+
+                        /* Look for this segment in reported SACK ranges,
+                         * if not present this might very well be a FAST Retrans,
+                         * when the conditions above (timing, number of retrans) are still true */
+                        if ((double)resp_time/ooo_thres >= 0.8
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
+
+                            if (tcpd->rev->tcp_analyze_seq_info->dupacknum>=2 && (double)resp_time/ooo_thres < 2.4) {
+
+                                bool is_sacked = false;
+                                int i=0;
+                                while( !is_sacked && i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges ) {
+                                    is_sacked = ((seq >= tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i])
+                                                && (nextseq <= tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i]));
+                                    i++;
+                                }
+
+                                /* fine, it's probably a Fast Retrans triggered by the SACK sender algo */
+                                if(!is_sacked) {
+                                    if(!tcpd->ta)
+                                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                                    tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                                    goto finished_checking_retransmission_type;
+                                }
+                            }
+                            /* clearly a SACK recovery but delay is too high.. jump to Retransmission handling */
+                            else {
+                                goto finished_checking_fastrt_vs_ooo;
+                            }
+                        }
+
+                        /*
+                         * Fast Recovery as per Reno (RFC 2001, W.R.Stevens, GBY)
+                         * Handling Partial Acknowledgements when SACK isn't permitted is based on the
+                         * knowledge that the threshold was reached (more than 2 Dup Acks as always).
+                         * In this case we're jumping to Retransmission handling
+                         */
+                        if (tcpd->rev->tcp_analyze_seq_info->dupack_thresh
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum<2
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges==0) {
+
+                            goto finished_checking_fastrt_vs_ooo;
+                        }
+
+                        /*
+                         * That's an Out-of-Order if the delay between Lost-Packet and this one is < 2,4 iRTT
+                         */
+                        if ((double)resp_time/ooo_thres < 2.4 && !pk_already_seen) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                            goto finished_checking_retransmission_type;
+                        }
+
+                    }
+                    /* Server side capture (fast-retrans vs retrans) or client side with RTO */
+                    else {
+
+                        /* Obvious Fast Retrans based when SEQ numbers match */
+                        if ((double)resp_time/ooo_thres < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                            goto finished_checking_retransmission_type;
+                        }
+
+                        /* Look for this segment in reported SACK ranges,
+                         * if not present this might very well be a FAST Retrans,
+                         * when the conditions above (timing, number of retrans) are still true */
+                        if ((double)resp_time/ooo_thres < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
+
+                            bool is_sacked = false;
+                            int i=0;
+                            while( !is_sacked && i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges ) {
+                                is_sacked = ((seq >= tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i])
+                                            && (nextseq <= tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i]));
+                                i++;
+                            }
+
+                            /* fine, it's probably a Fast Retrans triggered by the SACK sender algo */
+                            if(!is_sacked) {
+                                if(!tcpd->ta)
+                                    tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                                tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                                goto finished_checking_retransmission_type;
+                            }
+                        }
+
+                    }
+                }
+
+                ual=ual->next;
+            }
+
+            /*
+             * Legacy analysis for corner cases (pure ACK indicating previous lost packets for example).
+             */
+            if(t < ooo_thres && !pk_already_seen) {
+                /* ordinary OOO with SEQ numbers and lengths clearly stating the situation */
+                if( tcpd->fwd->tcp_analyze_seq_info->nextseq != (seq + seglen + (flags&(TH_SYN|TH_FIN) ? 1 : 0))) {
+                    if(!tcpd->ta) {
+                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                    }
+
+                    tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                    goto finished_checking_retransmission_type;
+                }
+                else {
+                    /* facing an OOO closing a series of disordered packets,
+                       all preceded by a pure ACK. See issue 17214 */
+                    if(tcpd->fwd->tcp_analyze_seq_info->lastacklen == 0) {
+                        if(!tcpd->ta) {
+                            tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                        }
+
+                        tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                        goto finished_checking_retransmission_type;
+                    }
+                }
+            }
+
+finished_checking_fastrt_vs_ooo:
+            if(!tcpd->ta) {
+                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+            }
+            tcpd->ta->flags|=TCP_A_RETRANSMISSION;
+            /*
+             * worst case scenario: if we don't have better than a recent packet,
+             * use it as the reference for RTO
+             */
+            nstime_delta(&tcpd->ta->rto_ts, &pinfo->abs_ts, &tcpd->fwd->tcp_analyze_seq_info->nextseqtime);
+            tcpd->ta->rto_frame=tcpd->fwd->tcp_analyze_seq_info->nextseqframe;
+
+            /*
+             * better case scenario: if we have a list of the previous unacked packets,
+             * go back to the eldest one, which in theory is likely to be the one retransmitted here.
+             * It's not always the perfect match, particularly when original captured packet used LSO
+             * We may parse this list and try to find an obvious matching packet present in the
+             * capture. If such packet is actually missing, we'll reach the list first entry.
+             * See : issue #12259
+             * See : issue #17714
+             */
+            ual = tcpd->fwd->tcp_analyze_seq_info->segments;
+            while(ual) {
+                if(GE_SEQ(ual->seq, seq)) {
+                    nstime_delta(&tcpd->ta->rto_ts, &pinfo->abs_ts, &ual->ts );
+                    tcpd->ta->rto_frame=ual->frame;
+                }
+                ual=ual->next;
+            }
+            goto finished_checking_retransmission_type;
+
+        }
+
+        /* historic disambiguation algorithm , not reached if 'Distal' was chosen */
         bool precedence_count = tcp_fastrt_precedence;
         do {
             if (precedence_count) {
@@ -3126,6 +3374,7 @@ finished_checking_retransmission_type:
         ual->frame=pinfo->num;
         ual->seq=seq;
         ual->ts=pinfo->abs_ts;
+        ual->a_lost_packet = (tcpd->ta && tcpd->ta->flags & TCP_A_LOST_PACKET);
 
         /* next sequence number is seglen bytes away, plus SYN/FIN which counts as one byte */
         if( (flags&(TH_SYN|TH_FIN)) ) {
@@ -10797,6 +11046,11 @@ proto_register_tcp(void)
         "Make the TCP dissector use relative sequence numbers instead of absolute ones. "
         "To use this option you must also enable \"Analyze TCP sequence numbers\". ",
         &tcp_relative_seq);
+    prefs_register_bool_preference(tcp_module, "disambiguation_algo",
+        "Enable Distal Disambiguation Algorithm (Requires \"Analyze TCP sequence numbers\")",
+        "Disambiguate Retransmissions and Out of Order packets with the distal algorithm. "
+        "To use this option you must also enable \"Analyze TCP sequence numbers\". ",
+        &tcp_distal_algo);
 
     prefs_register_custom_preference_TCP_Analysis(tcp_module, "default_override_analysis",
         "Force interpretation to selected packet(s)",
