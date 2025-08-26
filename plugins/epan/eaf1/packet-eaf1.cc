@@ -545,11 +545,13 @@ static const value_string flagnames[] = {
 	{1, "Green"},
 	{2, "Blue"},
 	{3, "Yellow"},
+	{0, NULL},
 };
 
 static const value_string networkgamenames[] = {
 	{0, "Offline"},
 	{1, "Online"},
+	{0, NULL},
 };
 
 static const value_string safetycartypenames[] = {
@@ -557,6 +559,7 @@ static const value_string safetycartypenames[] = {
 	{1, "Full Safety Car"},
 	{2, "Virtual Safety Car"},
 	{3, "Formation Lap"},
+	{0, NULL},
 };
 
 static const value_string safetycareventtypenames[] = {
@@ -564,6 +567,7 @@ static const value_string safetycareventtypenames[] = {
 	{1, "Returning"},
 	{2, "Returned"},
 	{3, "Resume Race"},
+	{0, NULL},
 };
 
 static const value_string retirementreasonnames[] = {
@@ -578,6 +582,7 @@ static const value_string retirementreasonnames[] = {
 	{8, "Mechanical failure"},
 	{9, "Session skipped"},
 	{10, "Session simulated"},
+	{0, NULL},
 };
 
 static const value_string drsdisabledreasonnames[] = {
@@ -585,6 +590,7 @@ static const value_string drsdisabledreasonnames[] = {
 	{1, "Safety car deployed"},
 	{2, "Red flag"},
 	{3, "Min lap not reached"},
+	{0, NULL},
 };
 
 static const value_string penaltytypenames[] = {
@@ -606,6 +612,7 @@ static const value_string penaltytypenames[] = {
 	{15, "This and previous lap invalidated without reason"},
 	{16, "Retired"},
 	{17, "Black flag timer"},
+	{0, NULL},
 };
 
 static const value_string infringementtypenames[] = {
@@ -664,6 +671,7 @@ static const value_string infringementtypenames[] = {
 	{52, "Illegal time gain"},
 	{53, "Mandatory pitstop"},
 	{54, "Attribute assigned"},
+	{0, NULL},
 };
 
 static const value_string weathernames[] = {
@@ -673,6 +681,7 @@ static const value_string weathernames[] = {
 	{3, "Light rain"},
 	{4, "Heavy rain"},
 	{5, "Storm"},
+	{0, NULL},
 };
 
 static const value_string sessiontypenames[] = {
@@ -695,6 +704,7 @@ static const value_string sessiontypenames[] = {
 	{16, "Race 2"},
 	{17, "Race 3"},
 	{18, "Time Trial"},
+	{0, NULL},
 };
 
 static const value_string tracknames[] = {
@@ -725,6 +735,7 @@ static const value_string tracknames[] = {
 	{39, "Silverstone (Reverse)"},
 	{40, "Austria (Reverse)"},
 	{41, "Zandvoort (Reverse)"},
+	{0, NULL},
 };
 
 static const value_string formulanames[] = {
@@ -736,11 +747,13 @@ static const value_string formulanames[] = {
 	{6, "Esports"},
 	{8, "F1 World"},
 	{9, "F1 Elimination"},
+	{0, NULL},
 };
 
 static const value_string forecastaccuracynames[] = {
 	{0, "Perfect"},
 	{1, "Approximate"},
+	{0, NULL},
 };
 
 static const value_string brakingassistnames[] = {
@@ -748,23 +761,27 @@ static const value_string brakingassistnames[] = {
 	{1, "Low"},
 	{2, "Medium"},
 	{3, "High"},
+	{0, NULL},
 };
 
 static const value_string gearboxassistnames[] = {
 	{1, "Manual"},
 	{2, "Manual & suggested gear"},
 	{3, "Auto"},
+	{0, NULL},
 };
 
 static const value_string dynamicracinglinenames[] = {
 	{0, "Off"},
 	{1, "Corners only"},
 	{2, "Full"},
+	{0, NULL},
 };
 
 static const value_string dynamicracinglinetypenames[] = {
 	{0, "2D"},
 	{1, "3D"},
+	{0, NULL},
 };
 
 static const value_string gamemodenames[] = {
@@ -780,6 +797,7 @@ static const value_string gamemodenames[] = {
 	{30, "Challenge Career ‘25"},
 	{75, "Story Mode (APXGP)"},
 	{127, "Benchmark"},
+	{0, NULL},
 };
 
 static const value_string rulesetnames[] = {
@@ -787,6 +805,7 @@ static const value_string rulesetnames[] = {
 	{1, "Race"},
 	{2, "Time Trial"},
 	{12, "Elimination"},
+	{0, NULL},
 };
 
 static const value_string sessionlengthnames[] = {
@@ -797,22 +816,26 @@ static const value_string sessionlengthnames[] = {
 	{5, "Medium Long"},
 	{6, "Long"},
 	{7, "Full"},
+	{0, NULL},
 };
 
 static const value_string speedunitsnames[] = {
 	{0, "MPH"},
 	{1, "KPH"},
+	{0, NULL},
 };
 
 static const value_string temperatureunitsnames[] = {
 	{0, "Celsius"},
 	{1, "Fahrenheit"},
+	{0, NULL},
 };
 
 static const value_string recoverymodenames[] = {
 	{0, "None"},
 	{1, "Flashbacks"},
 	{2, "Auto - recovery"},
+	{0, NULL},
 };
 
 static const value_string flashbacklimitnames[] = {
@@ -820,31 +843,37 @@ static const value_string flashbacklimitnames[] = {
 	{1, "Medium"},
 	{2, "High"},
 	{3, "Unlimited"},
+	{0, NULL},
 };
 
 static const value_string surfacetypenames[] = {
 	{0, "Simplified"},
 	{1, "Realistic"},
+	{0, NULL},
 };
 
 static const value_string lowfuelmodenames[] = {
 	{0, "Easy"},
 	{1, "Hard"},
+	{0, NULL},
 };
 
 static const value_string racestartsnames[] = {
 	{0, "Manual"},
 	{1, "Assisted"},
+	{0, NULL},
 };
 
 static const value_string tyretemperaturenames[] = {
 	{0, "Surface only"},
 	{1, "Surface & Carcass"},
+	{0, NULL},
 };
 
 static const value_string pitlanetyresimnames[] = {
 	{0, "On"},
 	{1, "Off"},
+	{0, NULL},
 };
 
 static const value_string cardamagenames[] = {
@@ -852,34 +881,40 @@ static const value_string cardamagenames[] = {
 	{1, "Reduced"},
 	{2, "Standard"},
 	{3, "Simulation"},
+	{0, NULL},
 };
 
 static const value_string cardamageratenames[] = {
 	{0, "Reduced"},
 	{1, "Standard"},
 	{2, "Simulation"},
+	{0, NULL},
 };
 
 static const value_string collisionsnames[] = {
 	{0, "Off"},
 	{1, "Player - to - Player Off"},
 	{2, "On"},
+	{0, NULL},
 };
 
 static const value_string mpunsafepitreleasenames[] = {
 	{0, "On"},
 	{1, "Off (Multiplayer)"},
+	{0, NULL},
 };
 
 static const value_string cornercuttingstringencynames[] = {
 	{0, "Regular"},
 	{1, "Strict"},
+	{0, NULL},
 };
 
 static const value_string pitstopexperiencenames[] = {
 	{0, "Automatic"},
 	{1, "Broadcast"},
 	{2, "Immersive"},
+	{0, NULL},
 };
 
 static const value_string safetycarnames[] = {
@@ -887,16 +922,19 @@ static const value_string safetycarnames[] = {
 	{1, "Reduced"},
 	{2, "Standard"},
 	{3, "Increased"},
+	{0, NULL},
 };
 
 static const value_string safetycarexperiencenames[] = {
 	{0, "Broadcast"},
 	{1, "Immersive"},
+	{0, NULL},
 };
 
 static const value_string formationlapexperiencenames[] = {
 	{0, "Broadcast"},
 	{1, "Immersive"},
+	{0, NULL},
 };
 
 static const value_string redflagnames[] = {
@@ -904,6 +942,7 @@ static const value_string redflagnames[] = {
 	{1, "Reduced"},
 	{2, "Standard"},
 	{3, "Increased"},
+	{0, NULL},
 };
 
 static const value_string actualtyrecompoundnames[] = {
@@ -923,6 +962,7 @@ static const value_string actualtyrecompoundnames[] = {
 	{13, "medium"},
 	{14, "hard"},
 	{15, "wet"},
+	{0, NULL},
 };
 
 static const value_string visualtyrecompoundnames[] = {
@@ -938,6 +978,7 @@ static const value_string visualtyrecompoundnames[] = {
 	{20, "soft"},
 	{21, "medium"},
 	{22, "hard"},
+	{0, NULL},
 };
 
 static const value_string resultstatusnames[] = {
@@ -949,6 +990,7 @@ static const value_string resultstatusnames[] = {
 	{5, "Disqualified"},
 	{6, "Not classified"},
 	{7, "Retired"},
+	{0, NULL},
 };
 
 static const value_string resultreasonnames[] = {
@@ -963,6 +1005,7 @@ static const value_string resultreasonnames[] = {
 	{8, "Mechanical failure"},
 	{9, "Session skipped"},
 	{10, "Session simulated"},
+	{0, NULL},
 };
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -977,7 +1020,17 @@ static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_,
 	proto_tree_add_item_ret_uint(eaf1_tree, hf_eaf1_packet_format, tvb, offsetof(F124::PacketHeader, m_packetFormat), 2, ENC_LITTLE_ENDIAN, &eaf1_packet_format);
 	proto_tree_add_item(eaf1_tree, hf_eaf1_game_year, tvb, offsetof(F124::PacketHeader, m_gameYear), 1, ENC_LITTLE_ENDIAN);
 
-	proto_item *ti_version = proto_tree_add_string(eaf1_tree, hf_eaf1_game_version, tvb, 0, 0, wmem_strdup_printf(pinfo->pool, "%d.%d", tvb_get_uint8(tvb, offsetof(F124::PacketHeader, m_gameMajorVersion)), tvb_get_uint8(tvb, offsetof(F124::PacketHeader, m_gameMinorVersion))));
+	uint8_t version_major = tvb_get_uint8(tvb, offsetof(F124::PacketHeader, m_gameMajorVersion));
+	uint8_t version_minor = tvb_get_uint8(tvb, offsetof(F124::PacketHeader, m_gameMinorVersion));
+
+	proto_item *ti_version = proto_tree_add_string(eaf1_tree,
+												   hf_eaf1_game_version,
+												   tvb, 0, 0,
+												   wmem_strdup_printf(pinfo->pool,
+																	  "%d.%d",
+																	  version_major,
+																	  version_minor));
+
 	proto_item_set_generated(ti_version);
 
 	proto_tree *eaf1_version_tree = proto_item_add_subtree(ti_version, ett_eaf1_version);
@@ -1052,7 +1105,7 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 		for (int count = 0; count < num_players; count++)
 		{
-			auto base_offset = offsetof(F125::PacketLobbyInfoData, m_lobbyPlayers) + count * sizeof(F125::LobbyInfoData);
+			int base_offset = offsetof(F125::PacketLobbyInfoData, m_lobbyPlayers) + count * sizeof(F125::LobbyInfoData);
 
 			auto player_name_ti = proto_tree_add_item(eaf1_num_players_tree, hf_eaf1_lobby_info_player_name, tvb, base_offset + offsetof(F125::LobbyInfoData, m_name), F125::cs_maxParticipantNameLen, ENC_UTF_8);
 			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_lobbyinfo_player_name);
@@ -1298,7 +1351,7 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 
 		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
 		{
-			auto participant_offset = offsetof(F125::PacketParticipantsData, m_participants) + participant * sizeof(F125::ParticipantData);
+			int participant_offset = offsetof(F125::PacketParticipantsData, m_participants) + participant * sizeof(F125::ParticipantData);
 
 			auto player_name_ti = proto_tree_add_item(tree, hf_eaf1_participants_name, tvb, participant_offset + offsetof(F125::ParticipantData, m_name), F125::cs_maxParticipantNameLen, ENC_UTF_8);
 			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_participants_player_name);
@@ -1321,7 +1374,7 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 
 			for (uint32_t colour = 0; colour < num_colours; colour++)
 			{
-				auto livery_offset = participant_offset + offsetof(F125::ParticipantData, m_liveryColours) + colour * sizeof(F125::LiveryColour);
+				int livery_offset = participant_offset + offsetof(F125::ParticipantData, m_liveryColours) + colour * sizeof(F125::LiveryColour);
 
 				auto livery_colour_ti = proto_tree_add_item(eaf1_num_colours_tree, hf_eaf1_participants_liverycolour, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 				proto_tree *eaf1_livery_colour_tree = proto_item_add_subtree(livery_colour_ti, ett_eaf1_participants_livery_colour);
@@ -1376,7 +1429,7 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 		for (uint32_t zone = 0; zone < num_marshal_zones; zone++)
 		{
-			auto zone_offset = offsetof(F125::PacketSessionData, m_marshalZones) + zone * sizeof(F125::MarshalZone);
+			int zone_offset = offsetof(F125::PacketSessionData, m_marshalZones) + zone * sizeof(F125::MarshalZone);
 
 			auto marshal_zone_ti = proto_tree_add_item(num_marshal_zones_tree, hf_eaf1_session_marshalzone, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			proto_tree *marshal_zone_tree = proto_item_add_subtree(marshal_zone_ti, ett_eaf1_session_marshalzone);
@@ -1394,7 +1447,7 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 		for (uint32_t sample = 0; sample < num_weather_forecast_samples; sample++)
 		{
-			auto sample_offset = offsetof(F125::PacketSessionData, m_weatherForecastSamples) + sample * sizeof(F125::WeatherForecastSample);
+			int sample_offset = offsetof(F125::PacketSessionData, m_weatherForecastSamples) + sample * sizeof(F125::WeatherForecastSample);
 
 			auto weather_sample_ti = proto_tree_add_item(num_weather_forecast_samples_tree, hf_eaf1_session_weatherforecastsample, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			proto_tree *weather_sample_tree = proto_item_add_subtree(weather_sample_ti, ett_eaf1_session_weatherforecastsample);
@@ -1468,7 +1521,8 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 		for (uint32_t session = 0; session < num_sessions_in_weekend; session++)
 		{
-			auto session_offset = offsetof(F125::PacketSessionData, m_weekendStructure) + session * sizeof(F125::PacketSessionData::m_weekendStructure[0]);
+			int session_offset = offsetof(F125::PacketSessionData, m_weekendStructure) + session * sizeof(F125::PacketSessionData::m_weekendStructure[0]);
+
 			proto_tree_add_item(num_sessions_in_weekend_tree, hf_eaf1_session_sessionsinweekend_sessiontype, tvb, session_offset, sizeof(F125::PacketSessionData::m_weekendStructure[0]), ENC_LITTLE_ENDIAN);
 		}
 
@@ -1489,7 +1543,7 @@ static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
 		{
-			auto participant_offset = offsetof(F125::PacketCarDamageData, m_carDamageData) + participant * sizeof(F125::CarDamageData);
+			int participant_offset = offsetof(F125::PacketCarDamageData, m_carDamageData) + participant * sizeof(F125::CarDamageData);
 
 			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_cardamage_drivername, pinfo, tvb, participant);
 			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_cardamage_drivername);
@@ -1570,7 +1624,7 @@ static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_t
 			auto tyreset_ti = proto_tree_add_string(vehicle_index_tree, hf_eaf1_tyresets_tyreset, tvb, 0, 0, wmem_strdup_printf(pinfo->pool, "Set %d", tyre_set));
 			auto tyreset_tree = proto_item_add_subtree(tyreset_ti, ett_eaf1_tyresets_tyreset);
 
-			auto tyreset_offset = offsetof(F125::PacketTyreSetsData, m_tyreSetData) + tyre_set * sizeof(F125::TyreSetData);
+			int tyreset_offset = offsetof(F125::PacketTyreSetsData, m_tyreSetData) + tyre_set * sizeof(F125::TyreSetData);
 
 			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_actualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_actualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_visualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_visualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
@@ -1603,7 +1657,7 @@ static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, pro
 
 		for (std::remove_const<decltype(F125::cs_maxNumLapsInLapPositionsHistoryPacket)>::type lap = 0; lap < num_laps; lap++)
 		{
-			auto lap_offset = offsetof(F125::PacketLapPositionsData, m_positionForVehicleIdx) + lap * sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0]);
+			int lap_offset = offsetof(F125::PacketLapPositionsData, m_positionForVehicleIdx) + lap * sizeof(F125::PacketLapPositionsData::m_positionForVehicleIdx[0]);
 
 			auto lap_ti = proto_tree_add_string(tree,
 												hf_eaf1_lappositions_lap,
@@ -1656,7 +1710,7 @@ static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, p
 
 		for (uint32_t lap_number = 0; lap_number < num_laps; lap_number++)
 		{
-			auto lap_base = offsetof(F125::PacketSessionHistoryData, m_lapHistoryData) + lap_number * sizeof(F125::LapHistoryData);
+			int lap_base = offsetof(F125::PacketSessionHistoryData, m_lapHistoryData) + lap_number * sizeof(F125::LapHistoryData);
 
 			auto lap_ti = proto_tree_add_string(num_laps_tree,
 												hf_eaf1_sessionhistory_lap,
@@ -1696,7 +1750,7 @@ static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, p
 
 		for (uint32_t tyre_stint_number = 0; tyre_stint_number < num_tyre_stints; tyre_stint_number++)
 		{
-			auto tyre_stint_base = offsetof(F125::PacketSessionHistoryData, m_tyreStintsHistoryData) + tyre_stint_number * sizeof(F125::TyreStintHistoryData);
+			int tyre_stint_base = offsetof(F125::PacketSessionHistoryData, m_tyreStintsHistoryData) + tyre_stint_number * sizeof(F125::TyreStintHistoryData);
 
 			auto tyre_stint_ti = proto_tree_add_string(num_tyre_stints_tree,
 													   hf_eaf1_sessionhistory_tyrestint,
@@ -1729,7 +1783,7 @@ static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pin
 
 		for (uint32_t car = 0; car < num_cars; car++)
 		{
-			auto car_offset = offsetof(F125::PacketFinalClassificationData, m_classificationData) + car * sizeof(F125::FinalClassificationData);
+			int car_offset = offsetof(F125::PacketFinalClassificationData, m_classificationData) + car * sizeof(F125::FinalClassificationData);
 
 			auto player_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_finalclassification_drivername, pinfo, tvb, car);
 			proto_tree *player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_finalclassification_drivername);
@@ -1788,7 +1842,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Packet format",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1801,7 +1855,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Game year",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1814,7 +1868,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Game version",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1827,7 +1881,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Protoversion",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1840,7 +1894,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Game major version",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1853,7 +1907,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Game minor version",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1866,7 +1920,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Packet version",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1879,7 +1933,7 @@ extern "C"
 					BASE_DEC,
 					VALS(packetidnames),
 					0x0,
-					"Packet ID",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1892,7 +1946,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session UID",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1905,7 +1959,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1918,7 +1972,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Frame identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1931,7 +1985,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Overall frame identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1944,7 +1998,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Player car index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1957,7 +2011,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Secondary player car index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1973,7 +2027,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Number of players",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -1987,7 +2041,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Player name",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2001,7 +2055,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Player AI controlled",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2015,7 +2069,7 @@ extern "C"
 					BASE_DEC,
 					VALS(teamidnames),
 					0x0,
-					"Player team ID",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2029,7 +2083,7 @@ extern "C"
 					BASE_DEC,
 					VALS(nationalityidnames),
 					0x0,
-					"Player nationality ID",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2043,7 +2097,7 @@ extern "C"
 					BASE_DEC,
 					VALS(platformidnames),
 					0x0,
-					"Player platform ID",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2057,7 +2111,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Player car number",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2071,7 +2125,7 @@ extern "C"
 					BASE_DEC,
 					VALS(yourtelemetrynames),
 					0x0,
-					"Player your telemetry",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2085,7 +2139,7 @@ extern "C"
 					BASE_DEC,
 					VALS(showonlinenames),
 					0x0,
-					"Player show online names",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2099,7 +2153,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Player tech level",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2113,7 +2167,7 @@ extern "C"
 					BASE_DEC,
 					VALS(readystatusnames),
 					0x0,
-					"Player ready status",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2129,7 +2183,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Event code",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2143,7 +2197,7 @@ extern "C"
 					BASE_HEX,
 					NULL,
 					0x0,
-					"Event button status",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2157,7 +2211,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000001,
-					"Cross",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2171,7 +2225,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000002,
-					"Triangle",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2185,7 +2239,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000004,
-					"Circle",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2199,7 +2253,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000008,
-					"Square",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2213,7 +2267,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000010,
-					"D-pad left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2227,7 +2281,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000020,
-					"D-pad right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2241,7 +2295,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000040,
-					"D-pad up",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2255,7 +2309,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000080,
-					"D-pad down",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2269,7 +2323,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000100,
-					"Options",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2283,7 +2337,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000200,
-					"L1",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2297,7 +2351,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000400,
-					"R1",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2311,7 +2365,7 @@ extern "C"
 					32,
 					NULL,
 					0x00000800,
-					"L2",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2325,7 +2379,7 @@ extern "C"
 					32,
 					NULL,
 					0x00001000,
-					"R2",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2339,7 +2393,7 @@ extern "C"
 					32,
 					NULL,
 					0x00002000,
-					"Left stick click",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2353,7 +2407,7 @@ extern "C"
 					32,
 					NULL,
 					0x00004000,
-					"Right stick click",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2367,7 +2421,7 @@ extern "C"
 					32,
 					NULL,
 					0x00008000,
-					"Right stick left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2381,7 +2435,7 @@ extern "C"
 					32,
 					NULL,
 					0x00010000,
-					"Right stick right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2395,7 +2449,7 @@ extern "C"
 					32,
 					NULL,
 					0x00020000,
-					"Right stick up",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2409,7 +2463,7 @@ extern "C"
 					32,
 					NULL,
 					0x00040000,
-					"Right stick down",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2423,7 +2477,7 @@ extern "C"
 					32,
 					NULL,
 					0x00080000,
-					"Special",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2437,7 +2491,7 @@ extern "C"
 					32,
 					NULL,
 					0x00100000,
-					"UDP 1",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2451,7 +2505,7 @@ extern "C"
 					32,
 					NULL,
 					0x00200000,
-					"UDP 2",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2465,7 +2519,7 @@ extern "C"
 					32,
 					NULL,
 					0x00400000,
-					"UDP 3",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2479,7 +2533,7 @@ extern "C"
 					32,
 					NULL,
 					0x00800000,
-					"UDP 4",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2493,7 +2547,7 @@ extern "C"
 					32,
 					NULL,
 					0x01000000,
-					"UDP 5",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2507,7 +2561,7 @@ extern "C"
 					32,
 					NULL,
 					0x02000000,
-					"UDP 6",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2521,7 +2575,7 @@ extern "C"
 					32,
 					NULL,
 					0x04000000,
-					"UDP 7",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2535,7 +2589,7 @@ extern "C"
 					32,
 					NULL,
 					0x08000000,
-					"UDP 8",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2549,7 +2603,7 @@ extern "C"
 					32,
 					NULL,
 					0x10000000,
-					"UDP 9",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2563,7 +2617,7 @@ extern "C"
 					32,
 					NULL,
 					0x20000000,
-					"UDP 10",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2577,7 +2631,7 @@ extern "C"
 					32,
 					NULL,
 					0x40000000,
-					"UDP 11",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2591,7 +2645,7 @@ extern "C"
 					32,
 					NULL,
 					0x80000000,
-					"UDP 12",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2605,7 +2659,7 @@ extern "C"
 					BASE_DEC,
 					VALS(safetycartypenames),
 					0x0,
-					"Event safety car type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2619,7 +2673,7 @@ extern "C"
 					BASE_DEC,
 					VALS(safetycareventtypenames),
 					0x0,
-					"Event safety car event type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2633,7 +2687,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event fastest lap vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2647,7 +2701,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event fastest lap laptime",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2661,7 +2715,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event retirement vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2675,7 +2729,7 @@ extern "C"
 					BASE_DEC,
 					VALS(retirementreasonnames),
 					0x0,
-					"Event retirement reason",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2689,7 +2743,7 @@ extern "C"
 					BASE_DEC,
 					VALS(drsdisabledreasonnames),
 					0x0,
-					"Event DRS disabled reason",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2703,7 +2757,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event team mate in pits vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2717,7 +2771,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event race winner vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2731,7 +2785,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event overtake overtaking vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2745,7 +2799,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event overtake overtaken vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2759,7 +2813,7 @@ extern "C"
 					BASE_DEC,
 					VALS(penaltytypenames),
 					0x0,
-					"Event penalty penalty type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2773,7 +2827,7 @@ extern "C"
 					BASE_DEC,
 					VALS(infringementtypenames),
 					0x0,
-					"Event penalty infringement type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2787,7 +2841,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event penalty vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2801,7 +2855,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event penalty other vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2815,7 +2869,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event penalty time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2829,7 +2883,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event penalty lap number",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2843,7 +2897,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event penalty places gained",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2857,7 +2911,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2871,7 +2925,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap speed",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2885,7 +2939,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap is overall fastest in session",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2899,7 +2953,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap is driver fastest in session",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2913,7 +2967,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap fastest vehicle index in session",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2927,7 +2981,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event speedtrap fastest speed in session",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2941,7 +2995,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event startlights num lights",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2955,7 +3009,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event drive through penalty served vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2969,7 +3023,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event stop go penalty served vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2983,7 +3037,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event flashback frame identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -2997,7 +3051,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event flashback session time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3011,7 +3065,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event stop go penalty served stop time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3025,7 +3079,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event collision vehicle 1 index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3039,7 +3093,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Event collision vehicle 2 index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3055,7 +3109,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants num active cars",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3069,7 +3123,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants AI controlled",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3083,7 +3137,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants driver id",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3097,7 +3151,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants network id",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3111,7 +3165,7 @@ extern "C"
 					BASE_DEC,
 					VALS(teamidnames),
 					0x0,
-					"Participants team id",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3125,7 +3179,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants my team",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3139,7 +3193,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants race number",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3153,7 +3207,7 @@ extern "C"
 					BASE_DEC,
 					VALS(nationalityidnames),
 					0x0,
-					"Participants nationality",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3167,7 +3221,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Participants name",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3181,7 +3235,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants your telemetry",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3195,7 +3249,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants show online names",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3209,7 +3263,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants tech level",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3223,7 +3277,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants platform",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3237,7 +3291,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Participants num livery colours",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3251,7 +3305,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Participants livery colour",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3265,7 +3319,7 @@ extern "C"
 					BASE_HEX,
 					NULL,
 					0x0,
-					"Participants livery colour red",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3279,7 +3333,7 @@ extern "C"
 					BASE_HEX,
 					NULL,
 					0x0,
-					"Participants livery colour green",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3293,7 +3347,7 @@ extern "C"
 					BASE_HEX,
 					NULL,
 					0x0,
-					"Participants livery colour blue",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3309,7 +3363,7 @@ extern "C"
 					BASE_DEC,
 					VALS(weathernames),
 					0x0,
-					"Session weather",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3323,7 +3377,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session track temperature",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3337,7 +3391,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session air temperature",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3351,7 +3405,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session total laps",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3365,7 +3419,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session track length",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3379,7 +3433,7 @@ extern "C"
 					BASE_DEC,
 					VALS(sessiontypenames),
 					0x0,
-					"Session type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3393,7 +3447,7 @@ extern "C"
 					BASE_DEC,
 					VALS(tracknames),
 					0x0,
-					"Session track id",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3407,7 +3461,7 @@ extern "C"
 					BASE_DEC,
 					VALS(formulanames),
 					0x0,
-					"Session formula",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3421,7 +3475,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session time left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3435,7 +3489,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session duration",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3449,7 +3503,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"pitSpeedLimit",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3463,7 +3517,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session game paused",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3477,7 +3531,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session is spectating",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3491,7 +3545,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session spectator car index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3505,7 +3559,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session SLI Pro native support",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3519,7 +3573,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num marshal zones",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3533,7 +3587,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session marshal zone",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3547,7 +3601,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session marshal zone start",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3561,7 +3615,7 @@ extern "C"
 					BASE_DEC,
 					VALS(flagnames),
 					0x0,
-					"Session marshal zone flag",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3575,7 +3629,7 @@ extern "C"
 					BASE_DEC,
 					VALS(safetycartypenames),
 					0x0,
-					"Session safety car status",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3589,7 +3643,7 @@ extern "C"
 					BASE_DEC,
 					VALS(networkgamenames),
 					0x0,
-					"Session network game",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3603,7 +3657,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num weather forecast samples",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3617,7 +3671,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session weather forecast sample",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3631,7 +3685,7 @@ extern "C"
 					BASE_DEC,
 					VALS(sessiontypenames),
 					0x0,
-					"sessionType",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3645,7 +3699,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"timeOffset",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3659,7 +3713,7 @@ extern "C"
 					BASE_DEC,
 					VALS(weathernames),
 					0x0,
-					"weather",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3673,7 +3727,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"trackTemperature",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3687,7 +3741,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"trackTemperatureChange",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3701,7 +3755,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"airTemperature",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3715,7 +3769,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"airTemperatureChange",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3729,7 +3783,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"rainPercentage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3743,7 +3797,7 @@ extern "C"
 					BASE_DEC,
 					VALS(forecastaccuracynames),
 					0x0,
-					"Session forecast accuracy",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3757,7 +3811,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session AI difficulty",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3771,7 +3825,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session season link identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3785,7 +3839,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session weekend link identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3799,7 +3853,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session session link identifier",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3813,7 +3867,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session pit stop window ideal lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3827,7 +3881,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session pit stop window latest lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3841,7 +3895,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session pit stop rejoin position",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3855,7 +3909,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session steering assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3869,7 +3923,7 @@ extern "C"
 					BASE_DEC,
 					VALS(brakingassistnames),
 					0x0,
-					"Session braking assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3883,7 +3937,7 @@ extern "C"
 					BASE_DEC,
 					VALS(gearboxassistnames),
 					0x0,
-					"Session gearbox assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3897,7 +3951,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session pit assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3911,7 +3965,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session pit release assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3925,7 +3979,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session ERS assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3939,7 +3993,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session DRS assist",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3953,7 +4007,7 @@ extern "C"
 					BASE_DEC,
 					VALS(dynamicracinglinenames),
 					0x0,
-					"Session dynamic racing line",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3967,7 +4021,7 @@ extern "C"
 					BASE_DEC,
 					VALS(dynamicracinglinetypenames),
 					0x0,
-					"Session dynamic racing line type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3981,7 +4035,7 @@ extern "C"
 					BASE_DEC,
 					VALS(gamemodenames),
 					0x0,
-					"Session game mode",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -3995,7 +4049,7 @@ extern "C"
 					BASE_DEC,
 					VALS(rulesetnames),
 					0x0,
-					"Session rule set",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4009,7 +4063,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session time of day",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4023,7 +4077,7 @@ extern "C"
 					BASE_DEC,
 					VALS(sessionlengthnames),
 					0x0,
-					"Session session length",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4037,7 +4091,7 @@ extern "C"
 					BASE_DEC,
 					VALS(speedunitsnames),
 					0x0,
-					"Session speed units lead player",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4051,7 +4105,7 @@ extern "C"
 					BASE_DEC,
 					VALS(temperatureunitsnames),
 					0x0,
-					"Session temperature units lead player",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4065,7 +4119,7 @@ extern "C"
 					BASE_DEC,
 					VALS(speedunitsnames),
 					0x0,
-					"Session speed units secondary player",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4079,7 +4133,7 @@ extern "C"
 					BASE_DEC,
 					VALS(temperatureunitsnames),
 					0x0,
-					"Session temperature units secondary player",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4093,7 +4147,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num safety car periods",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4107,7 +4161,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num virtual safety car periods",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4121,7 +4175,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num red flag periods",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4135,7 +4189,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session equal car performance",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4149,7 +4203,7 @@ extern "C"
 					BASE_DEC,
 					VALS(recoverymodenames),
 					0x0,
-					"Session recovery mode",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4163,7 +4217,7 @@ extern "C"
 					BASE_DEC,
 					VALS(flashbacklimitnames),
 					0x0,
-					"Session flashback limit",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4177,7 +4231,7 @@ extern "C"
 					BASE_DEC,
 					VALS(surfacetypenames),
 					0x0,
-					"Session surface type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4191,7 +4245,7 @@ extern "C"
 					BASE_DEC,
 					VALS(lowfuelmodenames),
 					0x0,
-					"Session low fuel mode",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4205,7 +4259,7 @@ extern "C"
 					BASE_DEC,
 					VALS(racestartsnames),
 					0x0,
-					"Session race starts",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4219,7 +4273,7 @@ extern "C"
 					BASE_DEC,
 					VALS(tyretemperaturenames),
 					0x0,
-					"Session tyre temperature",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4233,7 +4287,7 @@ extern "C"
 					BASE_DEC,
 					VALS(pitlanetyresimnames),
 					0x0,
-					"Session pit lane tyre sim",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4247,7 +4301,7 @@ extern "C"
 					BASE_DEC,
 					VALS(cardamagenames),
 					0x0,
-					"Session car damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4261,7 +4315,7 @@ extern "C"
 					BASE_DEC,
 					VALS(cardamageratenames),
 					0x0,
-					"Session car damage rate",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4275,7 +4329,7 @@ extern "C"
 					BASE_DEC,
 					VALS(collisionsnames),
 					0x0,
-					"Session collisions",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4289,7 +4343,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session collisions off for first lap only",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4303,7 +4357,7 @@ extern "C"
 					BASE_DEC,
 					VALS(mpunsafepitreleasenames),
 					0x0,
-					"Session MP unsafe pit release",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4317,7 +4371,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session MP off for griefing",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4331,7 +4385,7 @@ extern "C"
 					BASE_DEC,
 					VALS(cornercuttingstringencynames),
 					0x0,
-					"Session corner cutting stringency",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4345,7 +4399,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session parc ferme rules",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4359,7 +4413,7 @@ extern "C"
 					BASE_DEC,
 					VALS(pitstopexperiencenames),
 					0x0,
-					"Session pit stop experience",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4373,7 +4427,7 @@ extern "C"
 					BASE_DEC,
 					VALS(safetycarnames),
 					0x0,
-					"Session safety car",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4387,7 +4441,7 @@ extern "C"
 					BASE_DEC,
 					VALS(safetycarexperiencenames),
 					0x0,
-					"Session safety car experience",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4401,7 +4455,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session formation lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4415,7 +4469,7 @@ extern "C"
 					BASE_DEC,
 					VALS(formationlapexperiencenames),
 					0x0,
-					"Session formation lap experience",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4429,7 +4483,7 @@ extern "C"
 					BASE_DEC,
 					VALS(redflagnames),
 					0x0,
-					"Session red flags",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4443,7 +4497,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session affects licence level solo",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4457,7 +4511,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session affects licence level MP",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4471,7 +4525,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session num sessions in weekend",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4485,7 +4539,7 @@ extern "C"
 					BASE_DEC,
 					VALS(sessiontypenames),
 					0x0,
-					"Session session in weekend session type",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4499,7 +4553,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session sector 2 lap distance start",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4513,7 +4567,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session sector 3 lap distance start",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4529,7 +4583,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Car damage driver name",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4543,7 +4597,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Car damage tyre wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4557,7 +4611,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre wear rear left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4571,7 +4625,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre wear rear right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4585,7 +4639,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre wear front left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4599,7 +4653,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre wear front right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4613,7 +4667,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Car damage tyre damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4627,7 +4681,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre damage rear left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4641,7 +4695,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre damage rear right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4655,7 +4709,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre damage front left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4669,7 +4723,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre damage front right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4683,7 +4737,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Car damage brakes damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4697,7 +4751,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage brakes damage rear left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4711,7 +4765,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage brakes damage rear right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4725,7 +4779,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage brakes damage front left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4739,7 +4793,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage brakes damage front right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4752,7 +4806,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Car damage tyre blisters",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4766,7 +4820,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre blisters rear left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4780,7 +4834,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre blisters rear right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4794,7 +4848,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre blisters front left",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4808,7 +4862,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage tyre blisters front right",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4822,7 +4876,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage front left wing damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4836,7 +4890,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage front right wing damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4850,7 +4904,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage rear wing damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4864,7 +4918,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage floor damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4878,7 +4932,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage diffuser damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4892,7 +4946,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage sidepod damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4906,7 +4960,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage DRS fault",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4920,7 +4974,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage ERS fault",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4934,7 +4988,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage gearbox damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4948,7 +5002,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine damage",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4962,7 +5016,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine MGUH wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4976,7 +5030,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine ES wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -4990,7 +5044,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine CE wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5004,7 +5058,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine ICE wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5018,7 +5072,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine MGUK wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5032,7 +5086,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine TC wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5046,7 +5100,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine blown",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5060,7 +5114,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Car damage engine seized",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5076,7 +5130,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5090,7 +5144,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets fitted index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5104,7 +5158,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Tyresets tyreset",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5118,7 +5172,7 @@ extern "C"
 					BASE_DEC,
 					VALS(actualtyrecompoundnames),
 					0x0,
-					"Tyresets tyreset actual tyre compound",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5132,7 +5186,7 @@ extern "C"
 					BASE_DEC,
 					VALS(visualtyrecompoundnames),
 					0x0,
-					"Tyresets tyreset visual tyre compound",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5146,7 +5200,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset wear",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5160,7 +5214,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset available",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5174,7 +5228,7 @@ extern "C"
 					BASE_DEC,
 					VALS(sessiontypenames),
 					0x0,
-					"Tyresets tyreset recommended session",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5188,7 +5242,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset life span",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5202,7 +5256,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset usable life",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5216,7 +5270,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset lap delta time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5230,7 +5284,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Tyresets tyreset fitted",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5246,7 +5300,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Lap positions num laps",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5260,7 +5314,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Lap positions lap start",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5274,7 +5328,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Lap positions lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5288,7 +5342,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Lap positions position",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5304,7 +5358,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history vehicle index",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5318,7 +5372,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history num laps",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5332,7 +5386,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history num tyre stints",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5346,7 +5400,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history bestLapTimeLapNum",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5360,7 +5414,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history best sector 1 lap num",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5374,7 +5428,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history best sector 2 lap num",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5388,7 +5442,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history best sector 3 lap num",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5402,7 +5456,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session history lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5416,7 +5470,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5430,7 +5484,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session history lap sector 1 time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5444,7 +5498,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 1 time mS part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5458,7 +5512,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 1 time minutes part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5472,7 +5526,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session history lap sector 2 time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5486,7 +5540,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 2 time mS part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5500,7 +5554,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 2 time minutes part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5514,7 +5568,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session history lap sector 3 time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5528,7 +5582,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 3 time mS part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5542,7 +5596,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history lap sector 3 time minutes part",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5556,7 +5610,7 @@ extern "C"
 					BASE_HEX,
 					NULL,
 					0x0,
-					"Session history lap lap valid bit flags",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5570,7 +5624,7 @@ extern "C"
 					4,
 					NULL,
 					0x01,
-					"Lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5584,7 +5638,7 @@ extern "C"
 					4,
 					NULL,
 					0x02,
-					"Sector 1",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5598,7 +5652,7 @@ extern "C"
 					4,
 					NULL,
 					0x04,
-					"Sector 2",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5612,7 +5666,7 @@ extern "C"
 					4,
 					NULL,
 					0x08,
-					"Sector 3",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5626,7 +5680,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Session history tyre stint",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5640,7 +5694,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Session history end lap",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5654,7 +5708,7 @@ extern "C"
 					BASE_DEC,
 					VALS(actualtyrecompoundnames),
 					0x0,
-					"Session history tyre actual compound",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5668,7 +5722,7 @@ extern "C"
 					BASE_DEC,
 					VALS(visualtyrecompoundnames),
 					0x0,
-					"Session history tyre visual compound",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5684,7 +5738,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification num cars",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5698,7 +5752,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Final classification driver name",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5712,7 +5766,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification position",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5726,7 +5780,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification num laps",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5740,7 +5794,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification grid position",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5754,7 +5808,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification points",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5768,7 +5822,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification num pit stops",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5782,7 +5836,7 @@ extern "C"
 					BASE_DEC,
 					VALS(resultstatusnames),
 					0x0,
-					"Final classification result status",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5796,7 +5850,7 @@ extern "C"
 					BASE_DEC,
 					VALS(resultreasonnames),
 					0x0,
-					"Final classification result reason",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5810,7 +5864,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification best lap time in mS",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5824,7 +5878,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification total race time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5838,7 +5892,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification penalties time",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5852,7 +5906,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification num penalties",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5866,7 +5920,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification num tyre stints",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5880,7 +5934,7 @@ extern "C"
 					BASE_NONE,
 					NULL,
 					0x0,
-					"Final classification tyre stint",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5894,7 +5948,7 @@ extern "C"
 					BASE_DEC,
 					VALS(actualtyrecompoundnames),
 					0x0,
-					"Final classification tyre stint actual",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5908,7 +5962,7 @@ extern "C"
 					BASE_DEC,
 					VALS(visualtyrecompoundnames),
 					0x0,
-					"Final classification tyre stint visual",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},
@@ -5922,7 +5976,7 @@ extern "C"
 					BASE_DEC,
 					NULL,
 					0x0,
-					"Final classification tyre stint end laps",
+					NULL, //'Blurb'
 					HFILL,
 				},
 			},

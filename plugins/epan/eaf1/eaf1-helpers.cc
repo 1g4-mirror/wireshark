@@ -62,7 +62,7 @@ proto_item *add_driver_name(int proto, proto_tree *tree, int header_field, packe
 	return ti_driver_name;
 }
 
-void add_sector_time(proto_tree *tree, int header_field_time, int header_field_timems, int header_field_timemin, int ett, packet_info *pinfo, tvbuff_t *tvb, size_t msoffset, size_t minoffset)
+void add_sector_time(proto_tree *tree, int header_field_time, int header_field_timems, int header_field_timemin, int ett, packet_info *pinfo, tvbuff_t *tvb, int msoffset, int minoffset)
 {
 	uint8 mins = tvb_get_uint8(tvb, minoffset);
 	uint16 ms = tvb_get_uint16(tvb, msoffset, ENC_LITTLE_ENDIAN);
