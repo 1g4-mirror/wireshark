@@ -361,6 +361,47 @@ static int hf_eaf1_carstatus_ersharvestedthislapmguh;
 static int hf_eaf1_carstatus_ersdeployedthislap;
 static int hf_eaf1_carstatus_networkpaused;
 
+static int hf_eaf1_lapdata_drivername;
+static int hf_eaf1_lapdata_lastlaptimeinms;
+static int hf_eaf1_lapdata_currentlaptimeinms;
+static int hf_eaf1_lapdata_sector1time;
+static int hf_eaf1_lapdata_sector1timemspart;
+static int hf_eaf1_lapdata_sector1timeminutespart;
+static int hf_eaf1_lapdata_sector2time;
+static int hf_eaf1_lapdata_sector2timemspart;
+static int hf_eaf1_lapdata_sector2timeminutespart;
+static int hf_eaf1_lapdata_deltatocarinfront;
+static int hf_eaf1_lapdata_deltatocarinfrontmspart;
+static int hf_eaf1_lapdata_deltatocarinfrontminutespart;
+static int hf_eaf1_lapdata_deltatoraceleader;
+static int hf_eaf1_lapdata_deltatoraceleadermspart;
+static int hf_eaf1_lapdata_deltatoraceleaderminutespart;
+static int hf_eaf1_lapdata_lapdistance;
+static int hf_eaf1_lapdata_totaldistance;
+static int hf_eaf1_lapdata_safetycardelta;
+static int hf_eaf1_lapdata_carposition;
+static int hf_eaf1_lapdata_currentlapnum;
+static int hf_eaf1_lapdata_pitstatus;
+static int hf_eaf1_lapdata_numpitstops;
+static int hf_eaf1_lapdata_sector;
+static int hf_eaf1_lapdata_currentlapinvalid;
+static int hf_eaf1_lapdata_penalties;
+static int hf_eaf1_lapdata_totalwarnings;
+static int hf_eaf1_lapdata_cornercuttingwarnings;
+static int hf_eaf1_lapdata_numunserveddrivethroughpens;
+static int hf_eaf1_lapdata_numunservedstopgopens;
+static int hf_eaf1_lapdata_gridposition;
+static int hf_eaf1_lapdata_driverstatus;
+static int hf_eaf1_lapdata_resultstatus;
+static int hf_eaf1_lapdata_pitlanetimeractive;
+static int hf_eaf1_lapdata_pitlanetimeinlaneinms;
+static int hf_eaf1_lapdata_pitstoptimerinms;
+static int hf_eaf1_lapdata_pitstopshouldservepen;
+static int hf_eaf1_lapdata_speedtrapfastestspeed;
+static int hf_eaf1_lapdata_speedtrapfastestlap;
+static int hf_eaf1_lapdata_timetrialpbcaridx;
+static int hf_eaf1_lapdata_timetrialrivalcaridx;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -397,6 +438,11 @@ static int ett_eaf1_finalclassification_drivername;
 static int ett_eaf1_finalclassification_numstints;
 static int ett_eaf1_finalclassification_tyrestint;
 static int ett_eaf1_carstatus_drivername;
+static int ett_eaf1_lapdata_drivername;
+static int ett_eaf1_lapdata_sector1time;
+static int ett_eaf1_lapdata_sector2time;
+static int ett_eaf1_lapdata_deltatocarinfront;
+static int ett_eaf1_lapdata_deltatoraceleader;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -1040,6 +1086,29 @@ static const value_string tractioncontrolnames[] = {
 	{0, "Off"},
 	{1, "Medium"},
 	{2, "Full"},
+	{0, NULL},
+};
+
+static const value_string pitstatusnames[] = {
+	{0, "None"},
+	{1, "Pitting"},
+	{2, "In pit area"},
+	{0, NULL},
+};
+
+static const value_string sectornames[] = {
+	{0, "Sector 1"},
+	{1, "Sector 2"},
+	{2, "Sector 3"},
+	{0, NULL},
+};
+
+static const value_string driverstatusnames[] = {
+	{0, "In garage"},
+	{1, "Flying lap"},
+	{2, "In lap"},
+	{3, "Out lap"},
+	{4, "On track"},
 	{0, NULL},
 };
 
@@ -1908,6 +1977,59 @@ static int dissect_eaf1_2025_carstatus(tvbuff_t *tvb, packet_info *pinfo, proto_
 			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeployedthislap, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersDeployedThisLap), sizeof(F125::CarStatusData::m_ersDeployedThisLap), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_networkpaused, tvb, participant_offset + offsetof(F125::CarStatusData, m_networkPaused), sizeof(F125::CarStatusData::m_networkPaused), ENC_LITTLE_ENDIAN);
 		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_lapdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLapData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Lap data"));
+
+		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
+		{
+			int participant_offset = offsetof(F125::PacketLapData, m_lapData) + participant * sizeof(F125::LapData);
+
+			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_lapdata_drivername, pinfo, tvb, participant);
+			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_lapdata_drivername);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lastlaptimeinms, tvb, participant_offset + offsetof(F125::LapData, m_lastLapTimeInMS), sizeof(F125::LapData::m_lastLapTimeInMS), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlaptimeinms, tvb, participant_offset + offsetof(F125::LapData, m_currentLapTimeInMS), sizeof(F125::LapData::m_currentLapTimeInMS), ENC_LITTLE_ENDIAN);
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector1time, hf_eaf1_lapdata_sector1timemspart, hf_eaf1_lapdata_sector1timeminutespart, ett_eaf1_lapdata_sector1time, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_sector1TimeMSPart), participant_offset + offsetof(F125::LapData, m_sector1TimeMinutesPart));
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector2time, hf_eaf1_lapdata_sector2timemspart, hf_eaf1_lapdata_sector2timeminutespart, ett_eaf1_lapdata_sector2time, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_sector2TimeMSPart), participant_offset + offsetof(F125::LapData, m_sector2TimeMinutesPart));
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatocarinfront, hf_eaf1_lapdata_deltatocarinfrontmspart, hf_eaf1_lapdata_deltatocarinfrontminutespart, ett_eaf1_lapdata_deltatocarinfront, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_deltaToCarInFrontMSPart), participant_offset + offsetof(F125::LapData, m_deltaToCarInFrontMinutesPart));
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatoraceleader, hf_eaf1_lapdata_deltatoraceleadermspart, hf_eaf1_lapdata_deltatoraceleaderminutespart, ett_eaf1_lapdata_deltatoraceleader, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_deltaToRaceLeaderMSPart), participant_offset + offsetof(F125::LapData, m_deltaToRaceLeaderMinutesPart));
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lapdistance, tvb, participant_offset + offsetof(F125::LapData, m_lapDistance), sizeof(F125::LapData::m_lapDistance), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totaldistance, tvb, participant_offset + offsetof(F125::LapData, m_totalDistance), sizeof(F125::LapData::m_totalDistance), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_safetycardelta, tvb, participant_offset + offsetof(F125::LapData, m_safetyCarDelta), sizeof(F125::LapData::m_safetyCarDelta), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_carposition, tvb, participant_offset + offsetof(F125::LapData, m_carPosition), sizeof(F125::LapData::m_carPosition), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapnum, tvb, participant_offset + offsetof(F125::LapData, m_currentLapNum), sizeof(F125::LapData::m_currentLapNum), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstatus, tvb, participant_offset + offsetof(F125::LapData, m_pitStatus), sizeof(F125::LapData::m_pitStatus), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numpitstops, tvb, participant_offset + offsetof(F125::LapData, m_numPitStops), sizeof(F125::LapData::m_numPitStops), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_sector, tvb, participant_offset + offsetof(F125::LapData, m_sector), sizeof(F125::LapData::m_sector), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapinvalid, tvb, participant_offset + offsetof(F125::LapData, m_currentLapInvalid), sizeof(F125::LapData::m_currentLapInvalid), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_penalties, tvb, participant_offset + offsetof(F125::LapData, m_penalties), sizeof(F125::LapData::m_penalties), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totalwarnings, tvb, participant_offset + offsetof(F125::LapData, m_totalWarnings), sizeof(F125::LapData::m_totalWarnings), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_cornercuttingwarnings, tvb, participant_offset + offsetof(F125::LapData, m_cornerCuttingWarnings), sizeof(F125::LapData::m_cornerCuttingWarnings), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunserveddrivethroughpens, tvb, participant_offset + offsetof(F125::LapData, m_numUnservedDriveThroughPens), sizeof(F125::LapData::m_numUnservedDriveThroughPens), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunservedstopgopens, tvb, participant_offset + offsetof(F125::LapData, m_numUnservedStopGoPens), sizeof(F125::LapData::m_numUnservedStopGoPens), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_gridposition, tvb, participant_offset + offsetof(F125::LapData, m_gridPosition), sizeof(F125::LapData::m_gridPosition), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_driverstatus, tvb, participant_offset + offsetof(F125::LapData, m_driverStatus), sizeof(F125::LapData::m_driverStatus), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_resultstatus, tvb, participant_offset + offsetof(F125::LapData, m_resultStatus), sizeof(F125::LapData::m_resultStatus), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeractive, tvb, participant_offset + offsetof(F125::LapData, m_pitLaneTimerActive), sizeof(F125::LapData::m_pitLaneTimerActive), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeinlaneinms, tvb, participant_offset + offsetof(F125::LapData, m_pitLaneTimeInLaneInMS), sizeof(F125::LapData::m_pitLaneTimeInLaneInMS), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstoptimerinms, tvb, participant_offset + offsetof(F125::LapData, m_pitStopTimerInMS), sizeof(F125::LapData::m_pitStopTimerInMS), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstopshouldservepen, tvb, participant_offset + offsetof(F125::LapData, m_pitStopShouldServePen), sizeof(F125::LapData::m_pitStopShouldServePen), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestspeed, tvb, participant_offset + offsetof(F125::LapData, m_speedTrapFastestSpeed), sizeof(F125::LapData::m_speedTrapFastestSpeed), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestlap, tvb, participant_offset + offsetof(F125::LapData, m_speedTrapFastestLap), sizeof(F125::LapData::m_speedTrapFastestLap), ENC_LITTLE_ENDIAN);
+		}
+
+		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialpbcaridx, tvb, offsetof(F125::PacketLapData, m_timeTrialPBCarIdx), sizeof(F125::PacketLapData::m_timeTrialPBCarIdx), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialrivalcaridx, tvb, offsetof(F125::PacketLapData, m_timeTrialRivalCarIdx), sizeof(F125::PacketLapData::m_timeTrialRivalCarIdx), ENC_LITTLE_ENDIAN);
 
 		return tvb_captured_length(tvb);
 	}
@@ -6436,12 +6558,573 @@ extern "C"
 				},
 			},
 
+			// Lap data packet
+
+			{
+				&hf_eaf1_lapdata_drivername,
+				{
+					"Lap data driver name",
+					"eaf1.lapdata.drivername",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_lastlaptimeinms,
+				{
+					"Lap data last lap time in mS",
+					"eaf1.lapdata.lastlaptimeinms",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_currentlaptimeinms,
+				{
+					"Lap data current lap time in mS",
+					"eaf1.lapdata.currentlaptimeinms",
+					FT_UINT32,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector1time,
+				{
+					"Lap data sector 1 time",
+					"eaf1.lapdata.lap.sector1time",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector1timemspart,
+				{
+					"Lap data sector 1 time mS part",
+					"eaf1.lapdata.lap.sector1timemspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector1timeminutespart,
+				{
+					"Lap data sector 1 time minutes part",
+					"eaf1.lapdata.lap.sector1timeminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector2time,
+				{
+					"Lap data sector 2 time",
+					"eaf1.lapdata.lap.sector2time",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector2timemspart,
+				{
+					"Lap data sector 2 time mS part",
+					"eaf1.lapdata.lap.sector2timemspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector2timeminutespart,
+				{
+					"Lap data sector 2 time minutes part",
+					"eaf1.lapdata.lap.sector2timeminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatocarinfront,
+				{
+					"Lap data delta to car in front",
+					"eaf1.lapdata.lap.deltatocarinfront",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatocarinfrontmspart,
+				{
+					"Lap data delta to car in front mS part",
+					"eaf1.lapdata.lap.deltatocarinfrontmspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatocarinfrontminutespart,
+				{
+					"Lap data delta to car in front minutes part",
+					"eaf1.lapdata.lap.deltatocarinfrontminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatoraceleader,
+				{
+					"Lap data delta to race leader",
+					"eaf1.lapdata.lap.deltatoraceleader",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatoraceleadermspart,
+				{
+					"Lap data delta to race leader mS part",
+					"eaf1.lapdata.lap.deltatoraceleadermspart",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_deltatoraceleaderminutespart,
+				{
+					"Lap data delta to race leader minutes part",
+					"eaf1.lapdata.lap.deltatoraceleaderminutespart",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_lapdistance,
+				{
+					"Lap data lap distance",
+					"eaf1.lapdata.lapdistance",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_totaldistance,
+				{
+					"Lap data total distance",
+					"eaf1.lapdata.totaldistance",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_safetycardelta,
+				{
+					"Lap data safety car delta",
+					"eaf1.lapdata.safetycardelta",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_carposition,
+				{
+					"Lap data car position",
+					"eaf1.lapdata.carposition",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_currentlapnum,
+				{
+					"Lap data current lap num",
+					"eaf1.lapdata.currentlapnum",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_pitstatus,
+				{
+					"Lap data pit status",
+					"eaf1.lapdata.pitstatus",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(pitstatusnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_numpitstops,
+				{
+					"Lap data num pit stops",
+					"eaf1.lapdata.numpitstops",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_sector,
+				{
+					"Lap data sector",
+					"eaf1.lapdata.sector",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(sectornames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_currentlapinvalid,
+				{
+					"Lap data current lap invalid",
+					"eaf1.lapdata.currentlapinvalid",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_penalties,
+				{
+					"Lap data penalties",
+					"eaf1.lapdata.penalties",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_totalwarnings,
+				{
+					"Lap data total warnings",
+					"eaf1.lapdata.totalwarnings",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_cornercuttingwarnings,
+				{
+					"Lap data corner cutting warnings",
+					"eaf1.lapdata.cornercuttingwarnings",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_numunserveddrivethroughpens,
+				{
+					"Lap data num unserved drive through pens",
+					"eaf1.lapdata.numunserveddrivethroughpens",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_numunservedstopgopens,
+				{
+					"Lap data num unserved stop go pens",
+					"eaf1.lapdata.numunservedstopgopens",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_gridposition,
+				{
+					"Lap data grid position",
+					"eaf1.lapdata.gridposition",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_driverstatus,
+				{
+					"Lap data driver status",
+					"eaf1.lapdata.driverstatus",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(driverstatusnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_resultstatus,
+				{
+					"Lap data result status",
+					"eaf1.lapdata.resultstatus",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(resultstatusnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_pitlanetimeractive,
+				{
+					"Lap data pitLane timer active",
+					"eaf1.lapdata.pitlanetimeractive",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_pitlanetimeinlaneinms,
+				{
+					"Lap data pit lane time in lane in mS",
+					"eaf1.lapdata.pitlanetimeinlaneinms",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_pitstoptimerinms,
+				{
+					"Lap data pit stop timer in mS",
+					"eaf1.lapdata.pitstoptimerinms",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_pitstopshouldservepen,
+				{
+					"Lap data pit stop should serve pen",
+					"eaf1.lapdata.pitstopshouldservepen",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_speedtrapfastestspeed,
+				{
+					"Lap data speed trap fastest speed",
+					"eaf1.lapdata.speedtrapfastestspeed",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_speedtrapfastestlap,
+				{
+					"Lap data speed trap fastest lap",
+					"eaf1.lapdata.speedtrapfastestlap",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_timetrialpbcaridx,
+				{
+					"Lap data time trial PB car index",
+					"eaf1.lapdata.timetrialpbcaridx",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_lapdata_timetrialrivalcaridx,
+				{
+					"Lap data time trial rival car index",
+					"eaf1.lapdata.timetrialrivalcaridx",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
 		};
 
 		/* Setup protocol subtree array */
 
-		static int *ett[] =
-			{
+		static int *
+			ett[] = {
 				&ett_eaf1,
 				&ett_eaf1_version,
 				&ett_eaf1_packetid,
@@ -6477,6 +7160,11 @@ extern "C"
 				&ett_eaf1_finalclassification_numstints,
 				&ett_eaf1_finalclassification_tyrestint,
 				&ett_eaf1_carstatus_drivername,
+				&ett_eaf1_lapdata_drivername,
+				&ett_eaf1_lapdata_sector1time,
+				&ett_eaf1_lapdata_sector2time,
+				&ett_eaf1_lapdata_deltatocarinfront,
+				&ett_eaf1_lapdata_deltatoraceleader,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -6530,5 +7218,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSessionHistory, create_dissector_handle(dissect_eaf1_2025_sessionhistory, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdFinalClassification, create_dissector_handle(dissect_eaf1_2025_finalclassification, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarStatus, create_dissector_handle(dissect_eaf1_2025_carstatus, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLapData, create_dissector_handle(dissect_eaf1_2025_lapdata, proto_eaf1));
 	}
 }
