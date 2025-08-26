@@ -334,6 +334,33 @@ static int hf_eaf1_finalclassification_tyrestint_actual;
 static int hf_eaf1_finalclassification_tyrestint_visual;
 static int hf_eaf1_finalclassification_tyrestint_endlaps;
 
+static int hf_eaf1_carstatus_drivername;
+static int hf_eaf1_carstatus_tractioncontrol;
+static int hf_eaf1_carstatus_antilockbrakes;
+static int hf_eaf1_carstatus_fuelmix;
+static int hf_eaf1_carstatus_frontbrakebias;
+static int hf_eaf1_carstatus_pitlimiterstatus;
+static int hf_eaf1_carstatus_fuelintank;
+static int hf_eaf1_carstatus_fuelcapacity;
+static int hf_eaf1_carstatus_fuelremaininglaps;
+static int hf_eaf1_carstatus_maxrpm;
+static int hf_eaf1_carstatus_idlerpm;
+static int hf_eaf1_carstatus_maxgears;
+static int hf_eaf1_carstatus_drsallowed;
+static int hf_eaf1_carstatus_drsactivationdistance;
+static int hf_eaf1_carstatus_actualtyrecompound;
+static int hf_eaf1_carstatus_visualtyrecompound;
+static int hf_eaf1_carstatus_tyresagelaps;
+static int hf_eaf1_carstatus_vehiclefiaflags;
+static int hf_eaf1_carstatus_enginepowerice;
+static int hf_eaf1_carstatus_enginepowermguk;
+static int hf_eaf1_carstatus_ersstoreenergy;
+static int hf_eaf1_carstatus_ersdeploymode;
+static int hf_eaf1_carstatus_ersharvestedthislapmguk;
+static int hf_eaf1_carstatus_ersharvestedthislapmguh;
+static int hf_eaf1_carstatus_ersdeployedthislap;
+static int hf_eaf1_carstatus_networkpaused;
+
 static int ett_eaf1;
 static int ett_eaf1_version;
 static int ett_eaf1_packetid;
@@ -369,6 +396,7 @@ static int ett_eaf1_sessionhistory_tyrestint;
 static int ett_eaf1_finalclassification_drivername;
 static int ett_eaf1_finalclassification_numstints;
 static int ett_eaf1_finalclassification_tyrestint;
+static int ett_eaf1_carstatus_drivername;
 
 static const value_string packetidnames[] = {
 	{0, "Motion"},
@@ -1005,6 +1033,21 @@ static const value_string resultreasonnames[] = {
 	{8, "Mechanical failure"},
 	{9, "Session skipped"},
 	{10, "Session simulated"},
+	{0, NULL},
+};
+
+static const value_string tractioncontrolnames[] = {
+	{0, "Off"},
+	{1, "Medium"},
+	{2, "Full"},
+	{0, NULL},
+};
+
+static const value_string fuelmixnames[] = {
+	{0, "Lean"},
+	{1, "Standard"},
+	{2, "Rich"},
+	{3, "Max"},
 	{0, NULL},
 };
 
@@ -1818,6 +1861,52 @@ static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pin
 				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_visual, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsVisual) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), ENC_LITTLE_ENDIAN);
 				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_endlaps, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsEndLaps) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), ENC_LITTLE_ENDIAN);
 			}
+		}
+
+		return tvb_captured_length(tvb);
+	}
+
+	return 0;
+}
+
+static int dissect_eaf1_2025_carstatus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	if (tvb_captured_length(tvb) >= sizeof(F125::PacketCarStatusData))
+	{
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Car status"));
+
+		for (std::remove_const<decltype(F125::cs_maxNumCarsInUDPData)>::type participant = 0; participant < F125::cs_maxNumCarsInUDPData; participant++)
+		{
+			int participant_offset = offsetof(F125::PacketCarStatusData, m_carStatusData) + participant * sizeof(F125::CarStatusData);
+
+			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_carstatus_drivername, pinfo, tvb, participant);
+			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_carstatus_drivername);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tractioncontrol, tvb, participant_offset + offsetof(F125::CarStatusData, m_tractionControl), sizeof(F125::CarStatusData::m_tractionControl), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_antilockbrakes, tvb, participant_offset + offsetof(F125::CarStatusData, m_antiLockBrakes), sizeof(F125::CarStatusData::m_antiLockBrakes), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelmix, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelMix), sizeof(F125::CarStatusData::m_fuelMix), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_frontbrakebias, tvb, participant_offset + offsetof(F125::CarStatusData, m_frontBrakeBias), sizeof(F125::CarStatusData::m_frontBrakeBias), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_pitlimiterstatus, tvb, participant_offset + offsetof(F125::CarStatusData, m_pitLimiterStatus), sizeof(F125::CarStatusData::m_pitLimiterStatus), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelintank, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelInTank), sizeof(F125::CarStatusData::m_fuelInTank), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelcapacity, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelCapacity), sizeof(F125::CarStatusData::m_fuelCapacity), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelremaininglaps, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelRemainingLaps), sizeof(F125::CarStatusData::m_fuelRemainingLaps), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxrpm, tvb, participant_offset + offsetof(F125::CarStatusData, m_maxRPM), sizeof(F125::CarStatusData::m_maxRPM), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_idlerpm, tvb, participant_offset + offsetof(F125::CarStatusData, m_idleRPM), sizeof(F125::CarStatusData::m_idleRPM), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxgears, tvb, participant_offset + offsetof(F125::CarStatusData, m_maxGears), sizeof(F125::CarStatusData::m_maxGears), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsallowed, tvb, participant_offset + offsetof(F125::CarStatusData, m_drsAllowed), sizeof(F125::CarStatusData::m_drsAllowed), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsactivationdistance, tvb, participant_offset + offsetof(F125::CarStatusData, m_drsActivationDistance), sizeof(F125::CarStatusData::m_drsActivationDistance), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_actualtyrecompound, tvb, participant_offset + offsetof(F125::CarStatusData, m_actualTyreCompound), sizeof(F125::CarStatusData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_visualtyrecompound, tvb, participant_offset + offsetof(F125::CarStatusData, m_visualTyreCompound), sizeof(F125::CarStatusData::m_visualTyreCompound), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tyresagelaps, tvb, participant_offset + offsetof(F125::CarStatusData, m_tyresAgeLaps), sizeof(F125::CarStatusData::m_tyresAgeLaps), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_vehiclefiaflags, tvb, participant_offset + offsetof(F125::CarStatusData, m_vehicleFIAFlags), sizeof(F125::CarStatusData::m_vehicleFIAFlags), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowerice, tvb, participant_offset + offsetof(F125::CarStatusData, m_enginePowerICE), sizeof(F125::CarStatusData::m_enginePowerICE), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowermguk, tvb, participant_offset + offsetof(F125::CarStatusData, m_enginePowerMGUK), sizeof(F125::CarStatusData::m_enginePowerMGUK), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersstoreenergy, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersStoreEnergy), sizeof(F125::CarStatusData::m_ersStoreEnergy), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeploymode, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersDeployMode), sizeof(F125::CarStatusData::m_ersDeployMode), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguk, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersHarvestedThisLapMGUK), sizeof(F125::CarStatusData::m_ersHarvestedThisLapMGUK), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguh, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersHarvestedThisLapMGUH), sizeof(F125::CarStatusData::m_ersHarvestedThisLapMGUH), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeployedthislap, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersDeployedThisLap), sizeof(F125::CarStatusData::m_ersDeployedThisLap), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_networkpaused, tvb, participant_offset + offsetof(F125::CarStatusData, m_networkPaused), sizeof(F125::CarStatusData::m_networkPaused), ENC_LITTLE_ENDIAN);
 		}
 
 		return tvb_captured_length(tvb);
@@ -5981,6 +6070,372 @@ extern "C"
 				},
 			},
 
+			// Car status packet
+
+			{
+				&hf_eaf1_carstatus_drivername,
+				{
+					"Car status driver name",
+					"eaf1.carstatus.drivername",
+					FT_STRING,
+					BASE_NONE,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_tractioncontrol,
+				{
+					"Car status traction control",
+					"eaf1.carstatus.tractioncontrol",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(tractioncontrolnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_antilockbrakes,
+				{
+					"Car status anti lock brakes",
+					"eaf1.carstatus.antilockbrakes",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_fuelmix,
+				{
+					"Car status fuel mix",
+					"eaf1.carstatus.fuelmix",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(fuelmixnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_frontbrakebias,
+				{
+					"Car status front brake bias",
+					"eaf1.carstatus.frontbrakebias",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_pitlimiterstatus,
+				{
+					"Car status pit limiter status",
+					"eaf1.carstatus.pitlimiterstatus",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_fuelintank,
+				{
+					"Car status fuel in tank",
+					"eaf1.carstatus.fuelintank",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_fuelcapacity,
+				{
+					"Car status fuel capacity",
+					"eaf1.carstatus.fuelcapacity",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_fuelremaininglaps,
+				{
+					"Car status fuel remaining laps",
+					"eaf1.carstatus.fuelremaininglaps",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_maxrpm,
+				{
+					"Car status max RPM",
+					"eaf1.carstatus.maxrpm",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_idlerpm,
+				{
+					"Car status idle RPM",
+					"eaf1.carstatus.idlerpm",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_maxgears,
+				{
+					"Car status max gears",
+					"eaf1.carstatus.maxgears",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_drsallowed,
+				{
+					"Car status DRS allowed",
+					"eaf1.carstatus.drsallowed",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_drsactivationdistance,
+				{
+					"Car status DRS activation distance",
+					"eaf1.carstatus.drsactivationdistance",
+					FT_UINT16,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_actualtyrecompound,
+				{
+					"Car status actual tyre compound",
+					"eaf1.carstatus.actualtyrecompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(actualtyrecompoundnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_visualtyrecompound,
+				{
+					"Car status visual tyre compound",
+					"eaf1.carstatus.visualtyrecompound",
+					FT_UINT8,
+					BASE_DEC,
+					VALS(visualtyrecompoundnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_tyresagelaps,
+				{
+					"Car status tyres age laps",
+					"eaf1.carstatus.tyresagelaps",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_vehiclefiaflags,
+				{
+					"Car status vehicle FIA flags",
+					"eaf1.carstatus.vehiclefiaflags",
+					FT_INT8,
+					BASE_DEC,
+					VALS(flagnames),
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_enginepowerice,
+				{
+					"Car status engine power ICE",
+					"eaf1.carstatus.enginepowerice",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_enginepowermguk,
+				{
+					"Car status engine power MGUK",
+					"eaf1.carstatus.enginepowermguk",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_ersstoreenergy,
+				{
+					"Car status ERS store energy",
+					"eaf1.carstatus.ersstoreenergy",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_ersdeploymode,
+				{
+					"Car status ERS deployMode",
+					"eaf1.carstatus.ersdeploymode",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_ersharvestedthislapmguk,
+				{
+					"Car status ERS harvested this lap MGUK",
+					"eaf1.carstatus.ersharvestedthislapmguk",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_ersharvestedthislapmguh,
+				{
+					"Car status ERS harvested this lap MGUH",
+					"eaf1.carstatus.ersharvestedthislapmguh",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_ersdeployedthislap,
+				{
+					"Car status ERS deployed this lap",
+					"eaf1.carstatus.ersdeployedthislap",
+					FT_FLOAT,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
+			{
+				&hf_eaf1_carstatus_networkpaused,
+				{
+					"Car status network paused",
+					"eaf1.carstatus.networkpaused",
+					FT_UINT8,
+					BASE_DEC,
+					NULL,
+					0x0,
+					NULL, //'Blurb'
+					HFILL,
+				},
+			},
+
 		};
 
 		/* Setup protocol subtree array */
@@ -6021,6 +6476,7 @@ extern "C"
 				&ett_eaf1_finalclassification_drivername,
 				&ett_eaf1_finalclassification_numstints,
 				&ett_eaf1_finalclassification_tyrestint,
+				&ett_eaf1_carstatus_drivername,
 			};
 
 		proto_eaf1 = proto_register_protocol(
@@ -6073,5 +6529,6 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdLapPositions, create_dissector_handle(dissect_eaf1_2025_lappositions, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdSessionHistory, create_dissector_handle(dissect_eaf1_2025_sessionhistory, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdFinalClassification, create_dissector_handle(dissect_eaf1_2025_finalclassification, proto_eaf1));
+		dissector_add_uint("eaf1.f125packetid", F125::ePacketIdCarStatus, create_dissector_handle(dissect_eaf1_2025_carstatus, proto_eaf1));
 	}
 }
