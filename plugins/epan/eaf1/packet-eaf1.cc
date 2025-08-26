@@ -1043,15 +1043,14 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLobbyInfoData))
 	{
-		F125::PacketLobbyInfoData *LobbyInfo = (F125::PacketLobbyInfoData *)tvb_memdup(pinfo->pool, tvb, 0, sizeof(F125::PacketLobbyInfoData));
-
-		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "LobbyInfo: %d players", LobbyInfo->m_numPlayers));
+		uint8_t num_players = tvb_get_uint8(tvb, offsetof(F125::PacketLobbyInfoData, m_numPlayers));
+		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "LobbyInfo: %d players", num_players));
 
 		auto num_players_ti = proto_tree_add_item(tree, hf_eaf1_lobby_info_num_players, tvb, offsetof(F125::PacketLobbyInfoData, m_numPlayers), 1, ENC_LITTLE_ENDIAN);
 
 		proto_tree *eaf1_num_players_tree = proto_item_add_subtree(num_players_ti, ett_eaf1_lobbyinfo_numplayers);
 
-		for (int count = 0; count < LobbyInfo->m_numPlayers; count++)
+		for (int count = 0; count < num_players; count++)
 		{
 			auto base_offset = offsetof(F125::PacketLobbyInfoData, m_lobbyPlayers) + count * sizeof(F125::LobbyInfoData);
 
@@ -1557,8 +1556,7 @@ static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_t
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketTyreSetsData))
 	{
-		auto tyresets_data = (F125::PacketTyreSetsData *)tvb_memdup(pinfo->pool, tvb, 0, tvb_captured_length(tvb));
-		auto vehicle_index = tyresets_data->m_carIdx;
+		uint8_t vehicle_index = tvb_get_uint8(tvb, offsetof(F125::PacketTyreSetsData, m_carIdx));
 
 		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_tyresets_vehicleindex, pinfo, tvb, offsetof(F125::PacketTyreSetsData, m_carIdx));
 		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_tyresets_vehicleindex);
@@ -1640,8 +1638,7 @@ static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, p
 	{
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session history"));
 
-		auto sessionhistory_data = (F125::PacketSessionHistoryData *)tvb_memdup(pinfo->pool, tvb, 0, tvb_captured_length(tvb));
-		auto vehicle_index = sessionhistory_data->m_carIdx;
+		uint8_t vehicle_index = tvb_get_uint8(tvb, offsetof(F125::PacketSessionHistoryData, m_carIdx));
 
 		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_sessionhistory_caridx, pinfo, tvb, offsetof(F125::PacketSessionHistoryData, m_carIdx));
 		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_sessionhistory_vehicleindex);
