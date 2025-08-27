@@ -279,6 +279,13 @@ extern void avp_init(void) {
 
 }
 
+extern void avp_shutdown(void) {
+
+	if (avp_strings) destroy_scs_collection(avp_strings);
+	g_free(avp_strings);
+	avp_strings = NULL;
+}
+
 /**
  * new_avp_from_finfo:
  * @param name the name the avp will have.
@@ -683,6 +690,9 @@ extern AVP* extract_last_avp(AVPL* avpl) {
  *
  **/
 extern void delete_avpl(AVPL* avpl, bool avps_too) {
+	if (avpl == NULL)
+		return;
+
 	AVP* avp;
 #ifdef _AVP_DEBUGGING
 	dbg_print(dbg_avpl,3,dbg_fp,"delete_avpl: %p",avpl);
