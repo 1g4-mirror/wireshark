@@ -1580,9 +1580,6 @@ static dissector_table_t  bluetooth_eir_ad_manufacturer_company_id;
 static dissector_table_t  bluetooth_eir_ad_tds_organization_id;
 static dissector_table_t  bluetooth_eir_ad_service_uuid;
 
-bool bthci_vendor_android = false;
-const uint16_t bthci_vendor_manufacturer_android = 0x00e0; // Google LLC
-
 wmem_tree_t *bthci_cmds;
 
 extern value_string_ext ext_usb_vendors_vals;
@@ -3249,8 +3246,6 @@ void proto_register_bthci_cmd(void);
 void proto_reg_handoff_bthci_cmd(void);
 void proto_register_btcommon(void);
 void proto_reg_handoff_btcommon(void);
-static void dissect_zigbee_direct_adv_data(proto_tree *tree, tvbuff_t *tvb,
-  const gint start, gint length);
 
 static void bthci_cmd_vendor_prompt(packet_info *pinfo _U_, char* result)
 {
@@ -3733,7 +3728,7 @@ dissect_link_control_cmd(tvbuff_t *tvb, int offset, packet_info *pinfo,
             break;
 
         case 0x003c: /* Flow Spec Modify */
-            proto_tree_add_item(tree, hf_bthci_cmd_logical_link_handle, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(tree, hf_bthci_cmd_physical_link_handle, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset++;
             offset = dissect_bthci_cmd_flow_spec(tvb, offset, pinfo, tree, true);
             offset = dissect_bthci_cmd_flow_spec(tvb, offset, pinfo, tree, false);
@@ -6812,9 +6807,9 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     ogf = (uint8_t) (opcode >> 10);
 
     if (ogf == HCI_OGF_VENDOR_SPECIFIC)
-        proto_item_append_text(ti_cmd," - %s", val_to_str_ext(opcode, &bthci_cmd_opcode_vals_ext, "Vendor Command 0x%04x"));
+        proto_item_append_text(ti_cmd," - %s", val_to_str_ext(pinfo->pool, opcode, &bthci_cmd_opcode_vals_ext, "Vendor Command 0x%04x"));
     else
-        proto_item_append_text(ti_cmd," - %s", val_to_str_ext(opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x"));
+        proto_item_append_text(ti_cmd," - %s", val_to_str_ext(pinfo->pool, opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x"));
 
     if (have_tap_listener(bluetooth_hci_summary_tap)) {
         bluetooth_hci_summary_tap_t  *tap_hci_summary;
@@ -6828,7 +6823,7 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         tap_hci_summary->ogf = ogf;
         tap_hci_summary->ocf = ocf;
         if (try_val_to_str_ext(opcode, &bthci_cmd_opcode_vals_ext))
-            tap_hci_summary->name = val_to_str_ext(opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x");
+            tap_hci_summary->name = val_to_str_ext(pinfo->pool, opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x");
         else
             tap_hci_summary->name = NULL;
         tap_queue_packet(bluetooth_hci_summary_tap, pinfo, tap_hci_summary);
@@ -6894,11 +6889,7 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                 if (hci_vendor_data) {
                     int sub_offset = 0;
 
-                    if (bthci_vendor_android) {
-                      sub_offset = dissector_try_uint_with_data(hci_vendor_table, bthci_vendor_manufacturer_android, tvb, pinfo, tree, true, bluetooth_data);
-                    } else {
-                      sub_offset = dissector_try_uint_with_data(hci_vendor_table, hci_vendor_data->manufacturer, tvb, pinfo, tree, true, bluetooth_data);
-                    }
+                    sub_offset = dissector_try_uint_with_data(hci_vendor_table, hci_vendor_data->manufacturer, tvb, pinfo, tree, true, bluetooth_data);
 
                     if (sub_offset > 0 && sub_offset < tvb_captured_length_remaining(tvb, offset))
                         proto_tree_add_expert(bthci_cmd_tree, pinfo, &ei_command_parameter_unexpected, tvb, offset + sub_offset, tvb_captured_length_remaining(tvb, sub_offset + offset));
@@ -6906,9 +6897,11 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
             }
         }
 
-        proto_tree_add_item(bthci_cmd_tree, hf_bthci_cmd_parameter, tvb, offset, tvb_captured_length_remaining(tvb, offset), ENC_NA);
+        if (param_length > 0) {
+            proto_tree_add_item(bthci_cmd_tree, hf_bthci_cmd_parameter, tvb, offset, param_length, ENC_NA);
+        }
     } else {
-        col_append_str(pinfo->cinfo, COL_INFO, val_to_str_ext(opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x"));
+        col_append_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, opcode, &bthci_cmd_opcode_vals_ext, "Unknown 0x%04x"));
 
         if (param_length > 0) {
             switch (ogf) {
@@ -8810,7 +8803,7 @@ proto_register_bthci_cmd(void)
         },
         { &hf_bthci_cmd_parameter,
           { "Parameter", "bthci_cmd.parameter",
-            FT_NONE, BASE_NONE, NULL, 0x0,
+            FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_response_in_frame,
@@ -11109,13 +11102,14 @@ proto_register_bthci_cmd(void)
     prefs_register_static_text_preference(module, "hci_cmd.version",
             "Bluetooth HCI version: 4.0 (Core)",
             "Version of protocol supported by this dissector.");
-    prefs_register_bool_preference(module, "bthci_vendor_android",
-        "Android HCI Vendor Commands/Events",
-        "Whether HCI Vendor Commands/Events should be dissected as Android specific",
-        &bthci_vendor_android);
 
     vendor_dissector_table = register_decode_as_next_proto(proto_bthci_cmd, "bthci_cmd.vendor",
                                                            "BT HCI Command Vendor", bthci_cmd_vendor_prompt);
+
+    register_external_value_string("bthci_cmd_scan_enable_values", bthci_cmd_scan_enable_values);
+    register_external_value_string("bthci_cmd_encrypt_mode_vals", bthci_cmd_encrypt_mode_vals);
+    register_external_value_string("bthci_cmd_authentication_enable_values", bthci_cmd_authentication_enable_values);
+    register_external_value_string("bthci_cmd_inq_modes", bthci_cmd_inq_modes);
 }
 
 
@@ -11179,6 +11173,36 @@ static void *bluetooth_eir_ad_tds_organization_id_value(packet_info *pinfo)
         return GUINT_TO_POINTER((unsigned long)*value_data);
 
     return NULL;
+}
+
+/* Helper function to dissect Zigbee Direct advertisement data. */
+static void
+dissect_zigbee_direct_adv_data(proto_tree *tree, tvbuff_t *tvb, const gint start, gint length)
+{
+    guint offset = start;
+
+    static int * const zd_adv_data[] = {
+        &hf_btcommon_eir_ad_zd_ext_zd_version,
+        &hf_btcommon_eir_ad_zd_ext_zd_flag_ZDTS,
+        &hf_btcommon_eir_ad_zd_ext_zd_flag_PermitJoin,
+        NULL
+    };
+
+    /* Sanity, ensure we have minimum data as per Zigbee Direct extension to BLE advertisement. */
+    if (length < 5) {
+      return; /* Malformed or truncated Zigbee Direct Advertisement data. */
+    }
+
+    /* Zigbee Direct extension: Version & Flags. */
+    proto_tree_add_bitmask(tree, tvb, offset, hf_btcommon_eir_ad_zd_ext, ett_zigbee_direct_adv_extension, zd_adv_data, ENC_NA);
+    offset += 1;
+
+    /* Zigbee PAN ID. */
+    proto_tree_add_item(tree, hf_btcommon_eir_ad_zd_zigbee_panid, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+    offset += 2;
+
+    /* Zigbee NWK address. */
+    proto_tree_add_item(tree, hf_btcommon_eir_ad_zd_zigbee_nwkaddr, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 }
 
 static int
@@ -13212,38 +13236,6 @@ proto_reg_handoff_btcommon(void)
     btmesh_pbadv_handle = find_dissector("btmesh.pbadv");
     btmesh_beacon_handle = find_dissector("btmesh.beacon");
 }
-
-/* Helper function to dissect Zigbee Direct advertisement data. */
-static void
-dissect_zigbee_direct_adv_data(proto_tree *tree, tvbuff_t *tvb, const gint start, gint length)
-{
-    guint offset = start;
-
-    static int * const zd_adv_data[] = {
-        &hf_btcommon_eir_ad_zd_ext_zd_version,
-        &hf_btcommon_eir_ad_zd_ext_zd_flag_ZDTS,
-        &hf_btcommon_eir_ad_zd_ext_zd_flag_PermitJoin,
-        NULL
-    };
-
-    /* Sanity, ensure we have minimum data as per Zigbee Direct extension to BLE advertisement. */
-    if (length < 5) {
-      return; /* Malformed or truncated Zigbee Direct Advertisement data. */
-    }
-
-    /* Zigbee Direct extension: Version & Flags. */
-    proto_tree_add_bitmask(tree, tvb, offset, hf_btcommon_eir_ad_zd_ext, ett_zigbee_direct_adv_extension, zd_adv_data, ENC_NA);
-    offset += 1;
-
-    /* Zigbee PAN ID. */
-    proto_tree_add_item(tree, hf_btcommon_eir_ad_zd_zigbee_panid, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    offset += 2;
-
-    /* Zigbee NWK address. */
-    proto_tree_add_item(tree, hf_btcommon_eir_ad_zd_zigbee_nwkaddr, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    offset += 2;
-}
-
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -3253,13 +3253,13 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 	ret = krb5_pac_get_buffer(krb5_ctx, state.pac, KRB5_PAC_SERVER_CHECKSUM,
 				  &checksum_data);
 	if (ret == 0) {
-		state.server_checksum = pletoh32(checksum_data.data);
+		state.server_checksum = pletohu32(checksum_data.data);
 		krb5_free_data_contents(krb5_ctx, &checksum_data);
 	};
 	ret = krb5_pac_get_buffer(krb5_ctx, state.pac, KRB5_PAC_PRIVSVR_CHECKSUM,
 				  &checksum_data);
 	if (ret == 0) {
-		state.kdc_checksum = pletoh32(checksum_data.data);
+		state.kdc_checksum = pletohu32(checksum_data.data);
 		krb5_free_data_contents(krb5_ctx, &checksum_data);
 	};
 	ret = krb5_pac_get_buffer(krb5_ctx, state.pac,
@@ -3267,14 +3267,14 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 				  &ticket_checksum_data);
 	if (ret == 0) {
 		state.ticket_checksum_data = &ticket_checksum_data;
-		state.ticket_checksum_type = pletoh32(ticket_checksum_data.data);
+		state.ticket_checksum_type = pletohu32(ticket_checksum_data.data);
 	};
 	ret = krb5_pac_get_buffer(krb5_ctx, state.pac,
 				  __KRB5_PAC_FULL_CHECKSUM,
 				  &full_checksum_data);
 	if (ret == 0) {
 		state.full_checksum_data = &full_checksum_data;
-		state.full_checksum_type = pletoh32(full_checksum_data.data);
+		state.full_checksum_type = pletohu32(full_checksum_data.data);
 	};
 
 	read_keytab_file_from_preferences();
@@ -4860,7 +4860,7 @@ dissect_krb5_PW_SALT(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, a
 			ENC_LITTLE_ENDIAN);
 	col_append_fstr(actx->pinfo->cinfo, COL_INFO,
 			" NT Status: %s",
-			val_to_str_ext(nt_status, &NT_errors_ext,
+			val_to_str_ext(actx->pinfo->pool, nt_status, &NT_errors_ext,
 			"Unknown error code %#x"));
 	offset += 4;
 
@@ -6401,14 +6401,14 @@ dissect_kerberos_MESSAGE_TYPE(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offs
 
   if (gbl_do_col_info) {
     col_add_str(actx->pinfo->cinfo, COL_INFO,
-      val_to_str(msgtype, krb5_msg_types,
+      val_to_str(actx->pinfo->pool, msgtype, krb5_msg_types,
       "Unknown msg type %#x"));
   }
   gbl_do_col_info=false;
 
 #if 0
   /* append the application type to the tree */
-  proto_item_append_text(tree, " %s", val_to_str(msgtype, krb5_msg_types, "Unknown:0x%x"));
+  proto_item_append_text(tree, " %s", val_to_str(actx->pinfo->pool, msgtype, krb5_msg_types, "Unknown:0x%x"));
 #endif
   if (private_data->msg_type == 0) {
     private_data->msg_type = msgtype;
@@ -6503,7 +6503,7 @@ dissect_kerberos_PADATA_TYPE(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offse
 
   if(tree){
     proto_item_append_text(tree, " %s",
-      val_to_str(private_data->padata_type, kerberos_PADATA_TYPE_vals,
+      val_to_str(actx->pinfo->pool, private_data->padata_type, kerberos_PADATA_TYPE_vals,
       "Unknown:%d"));
   }
 
@@ -7687,7 +7687,7 @@ dissect_kerberos_ERROR_CODE(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset
   if (private_data->errorcode) {
     col_add_fstr(actx->pinfo->cinfo, COL_INFO,
       "KRB Error: %s",
-      val_to_str(private_data->errorcode, krb5_error_codes,
+      val_to_str(actx->pinfo->pool, private_data->errorcode, krb5_error_codes,
       "Unknown error code %#x"));
   }
 
@@ -8748,7 +8748,7 @@ dissect_kerberos_PA_SPAKE(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _
 
   if(tree){
     proto_item_append_text(tree, " %s",
-      val_to_str(private_data->padata_type, kerberos_PA_SPAKE_vals,
+      val_to_str(actx->pinfo->pool, private_data->padata_type, kerberos_PA_SPAKE_vals,
       "Unknown:%d"));
   }
   return offset;

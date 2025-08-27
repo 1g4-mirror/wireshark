@@ -6,6 +6,21 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+/*
+ * VMS TCPTRACE
+ *
+ * DEC/Compaq/HP/VMS Software VMS's TCPIPTRACE/TCPTRACE format is supported.
+ * This is the capture program that comes with TCP/IP or UCX as supplied by
+ * VMS Software, Hewlett Packard Enterprise/HP, Compaq, or Digital Equipment
+ * Corporation.
+ *
+ * Under UCX 4.x, it is invoked as TCPIPTRACE.  Under TCPIP 5.x, it is invoked
+ * as TCPTRACE.
+ *
+ * TCPTRACE produces an ASCII text based format that has changed slightly over
+ * time.
+*/
+
 /* Notes:
  *   TCPIPtrace TCP fragments don't have the header line.  So, we are never
  *   to look for that line for the first line of a packet except the first

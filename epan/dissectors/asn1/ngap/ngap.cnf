@@ -116,7 +116,7 @@ UE-NGAP-IDs/aMF-UE-NGAP-ID ABBREV=AMF_UE_NGAP_ID
 #.FN_FTR ProtocolIE-ID
   if (tree) {
     proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
-                           val_to_str_ext(ngap_data->protocol_ie_id, &ngap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
+                           val_to_str_ext(actx->pinfo->pool, ngap_data->protocol_ie_id, &ngap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
   }
 #.END
 
@@ -1224,6 +1224,23 @@ LAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
   if (nr_ue_rlc_report_tvb) {
     proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_ngap_NRUERLFReportContainer);
     dissect_nr_rrc_nr_RLF_Report_r16_PDU(nr_ue_rlc_report_tvb, actx->pinfo, subtree, NULL);
+  }
+
+#.FN_BODY GTP-TEID VAL_PTR = &parameter_tvb LEN_PTR = &len
+  tvbuff_t *parameter_tvb = NULL;
+  uint32_t teid = 0;
+  const char *imsi = NULL;
+
+%(DEFAULT_BODY)s
+  if (!parameter_tvb)
+    return offset;
+
+  if (proto_is_frame_protocol(actx->pinfo->layers, "http2")) {
+    imsi = http2_get_stream_imsi(actx->pinfo);
+    if(imsi) {
+      teid = tvb_get_uint32(parameter_tvb, 0, ENC_BIG_ENDIAN);
+      gtp_add_teid_imsi(teid, imsi);
+    }
   }
 
 #.TYPE_ATTR

@@ -1620,7 +1620,7 @@ dissect_routing6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 
     ti_type = proto_tree_add_item(rt_tree, hf_ipv6_routing_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     type = tvb_get_uint8(tvb, offset);
-    proto_item_append_text(pi, " (%s)", val_to_str(type, routing_header_type, "Unknown type %u"));
+    proto_item_append_text(pi, " (%s)", val_to_str(pinfo->pool, type, routing_header_type, "Unknown type %u"));
     offset += 1;
 
     ti_segs = proto_tree_add_item(rt_tree, hf_ipv6_routing_segleft, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2035,7 +2035,7 @@ dissect_opt_quickstart(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
         offset += 1;
         proto_tree_add_item_ret_uint(opt_tree, hf_ipv6_opt_qs_ttl, tvb, offset, 1, ENC_BIG_ENDIAN, &qs_ttl);
         proto_item_append_text(pi, ", %s, QS TTL %u",
-                               val_to_str_ext(rate, &qs_rate_vals_ext, "Unknown (%u)"),
+                               val_to_str_ext(pinfo->pool, rate, &qs_rate_vals_ext, "Unknown (%u)"),
                                qs_ttl);
         if (iph != NULL) {
             uint8_t ttl_diff;
@@ -2052,7 +2052,7 @@ dissect_opt_quickstart(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
         break;
     case QS_RATE_REPORT:
         proto_tree_add_item(opt_tree, hf_ipv6_opt_qs_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_item_append_text(pi, ", %s", val_to_str_ext(rate, &qs_rate_vals_ext, "Unknown (%u)"));
+        proto_item_append_text(pi, ", %s", val_to_str_ext(pinfo->pool, rate, &qs_rate_vals_ext, "Unknown (%u)"));
         offset += 1;
         proto_tree_add_item(opt_tree, hf_ipv6_opt_qs_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
@@ -2948,7 +2948,7 @@ dissect_opts(tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pinfo, ws
 
         opt_type = tvb_get_uint8(tvb, offset);
         opt_len = tvb_get_uint8(tvb, offset + 1);
-        opt_name = val_to_str_ext(opt_type, &ipv6_opt_type_vals_ext, "Unknown IPv6 Option (%u)");
+        opt_name = val_to_str_ext(pinfo->pool, opt_type, &ipv6_opt_type_vals_ext, "Unknown IPv6 Option (%u)");
 
         pi = proto_tree_add_none_format(exthdr_tree, hf_ipv6_opt, tvb, offset, 2 + opt_len,
                     "%s", opt_name);
@@ -3645,7 +3645,7 @@ dissect_ipv6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     /* Set DSCP column */
     col_add_str(pinfo->cinfo, COL_DSCP_VALUE,
-                val_to_str_ext(IPDSFIELD_DSCP(ip6_tcls), &dscp_short_vals_ext, "%u"));
+                val_to_str_ext(pinfo->pool, IPDSFIELD_DSCP(ip6_tcls), &dscp_short_vals_ext, "%u"));
 
     proto_tree_add_item_ret_uint(ipv6_tree, hf_ipv6_flow, tvb,
                         offset + IP6H_CTL_FLOW + 1, 3, ENC_BIG_ENDIAN, &ip6_flow);
@@ -3827,6 +3827,46 @@ dissect_ipv6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     pinfo->fragmented = save_fragmented;
     return tvb_captured_length(tvb);
+}
+
+bool
+dissect_ipv6_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int length, tot_length;
+    uint8_t version;
+
+   /*
+    * IPv6 Header Format
+    *
+    *  0                   1                   2                   3
+    *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    * |Version| Traffic Class |           Flow Label                  |
+    * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    * |         Payload Length        |  Next Header  |   Hop Limit   |
+    * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    */
+
+    length = tvb_captured_length(tvb);
+    if (length < 8) {
+        /* Need at least 8 bytes to make a decision */
+        return false;
+    }
+
+    /* Check IPv6 version */
+    version = tvb_get_uint8(tvb, 0) >> 4;
+    if (version != 6) {
+        return false;
+    }
+
+    /* Payload Length is the length of the payload without the IPv6 header. */
+    tot_length = tvb_get_ntohs(tvb, 4);
+    if ((tot_length + 40) != (int)tvb_reported_length(tvb)) {
+        return false;
+    }
+
+    dissect_ipv6(tvb, pinfo, tree, data);
+    return true;
 }
 
 void

@@ -12,7 +12,7 @@
 #requires -version 2
 
 # To do:
-# - Use Expand-Archive instead of `cmake -E tar`? That requires PS >= 5.0
+# - Move this to FetchArtifacts.cmake.
 
 <#
 .SYNOPSIS
@@ -74,8 +74,6 @@ $X64Archives = @{
     "bcg729/bcg729-1.0.4-win64ws.zip" = "9a095fda4c39860d96f0c568830faa6651cd17635f68e27aa6de46c689aa0ee2";
     "brotli/brotli-1.0.9-1-win64ws.zip" = "3f8d24aec8668201994327ff8d8542fe507d1d468a500a1aec50d0415f695aab";
     "c-ares/c-ares-1.34.4-x64-windows-ws.zip" = "b82429cce98c164f5a094b172238cea33c130130634a722656bd0981209240cb";
-    "falcosecurity-libs/falcosecurity-libs-0.21.0-1-x64-ws.7z" = "917eca3b676e1201d48acfbb72660fcd7af4ce40fe5112bb1ce689d957c18c4a";
-    "falcosecurity-libs/falcosecurity-plugins-2025-06-11-1-x64-ws.7z" = "35062b7fecd5e2cb01750b28eb154d7abb6d47abcf1c6a7357b8af7a137e72d8";
     "gnutls/gnutls-3.8.10-1-x64-mingw-dynamic-ws.7z" = "3f62c512a5973277ee03a51cecf876b102066ffb5588d87841cbe239f15f9680";
     "krb5/krb5-1.21.3-1-x64-windows-ws.zip" = "49b83da4baa476c4c31ed3ee463f962114a469b8c3d601db68bdb6bc03a88e42";
     "libgcrypt/libgcrypt-bundle-1.11.1-1-x64-mingw-dynamic-ws.zip" = "2987e0b57f4509c02a26d146950a1bcb630bc0cca57b2dcce54b357936a7db3b";
@@ -95,7 +93,7 @@ $X64Archives = @{
     "snappy/snappy-1.2.1-1-x64-windows-ws.zip" = "e2ffccb26e91881b42d03061dcc728a98af9037705cb4595c8ccbe8d912b5d68";
     "spandsp/spandsp-0.0.6-5-x64-windows-ws.zip" = "cbb18310876ec6f081662253a2d37f5174ac60c58b0b7cd6759852fbcfaa7d7f";
     "speexdsp/speexdsp-1.21.1-1-win64ws.zip" = "d36db62e64ffaee38d9f607bef07d3778d8957ad29757f3eba169eb135f1a4e5";
-    "vcpkg-export/vcpkg-export-2025.04.09-x64-windows-ws.zip" = "6381760a70967010b76f943f6b39d1219dc7fddef508a8bb5dc5ed6dbeba1d0b";
+    "vcpkg-export/vcpkg-export-2025.07.25-x64-windows-ws.zip" = "5a9751b4406eeac1c7d46220077da530e584e8aed0ff6fab8dcc2903c6c4c686";
     "WinSparkle/WinSparkle-0.8.0-4-gb320893.zip" = "3ae42326bcd34594bc21b1e7948863a839ee76e87d9f4cf6b59b9d9f9a083881";
     "xxhash/xxhash-0.8.3-1-x64-windows-ws.zip" = "35e5adca66137150de17458c41f6b65fa8abb5a46cfb91deaaaa24df08121082";
     "zlib-ng/zlib-ng-2.2.3-1-x64-windows-ws.zip" = "8b4e5ba1b61688eccb7e315c2f4ce1ef0c4301172f265bd41455e1df6a5a9522";
@@ -107,8 +105,6 @@ $Arm64Archives = @{
     "bcg729/bcg729-1.1.1-1-win64armws.zip" = "f4d76b9acf0d0e12e87a020e9805d136a0e8775e061eeec23910a10828153625";
     "brotli/brotli-1.0.9-1-win64armws.zip" = "5ba1b62ebc514d55c3eae85a00ff107e587b6e7cb1275e2d33fcddcd49f8e2af";
     "c-ares/c-ares-1.34.4-arm64-windows-ws.zip" = "f1cff731bd7d53effebf79dc64f199a82b875ecbfb3049f67e37765e34847a32";
-    "falcosecurity-libs/falcosecurity-libs-0.21.0-1-arm64-ws.7z" = "222a691e704989144c91b08612ab7e0af1a6721a7f0bc3ac17452de3342a654e";
-    "falcosecurity-libs/falcosecurity-plugins-2025-06-11-1-arm64-ws.7z" = "3f1850a0547eeb910e455515733e7876f9c5da15624ecd865a4d1714c1d5b604";
     "gnutls/gnutls-3.8.10-1-arm64-mingw-dynamic-ws.7z" = "6174219a79c061874c7bf5cf89b13d0542c37f91f91fbc79c8f0a419a415121e";
     "krb5/krb5-1.21.3-1-arm64-windows-ws.zip" = "26166173cb653fdf2153c311a9f611a76575359393222cebd5228842632a0ccb";
     "libgcrypt/libgcrypt-bundle-1.11.1-1-arm64-mingw-dynamic-ws.zip" = "a7170343edaa732ab04e76874972291b9875cbd1e394c3bfcee13b89e608719f";
@@ -128,7 +124,7 @@ $Arm64Archives = @{
     "snappy/snappy-1.2.1-1-arm64-windows-ws.zip" = "71d6987360eb1a10abd0d070768e6b7b250c6ea87feaee044ecbc8864c7e57f4";
     "spandsp/spandsp-0.0.6-5-arm64-windows-ws.zip" = "fdf01e3c33e739ff9399b7d42cd8230c97cb27ce51865a0f06285a8f68206b6c";
     "speexdsp/speexdsp-1.2.1-1-win64armws.zip" = "1759a9193065f27e50dd79dbb1786d24031ac43ccc48c40dca46d8a48552e3bb";
-    "vcpkg-export/vcpkg-export-2025.04.09-arm64-windows-ws.zip" = "dce8775a0fbfab7c32be39787e4d1b4f27295b8a66a409467910a0c5b5b55c15";
+    "vcpkg-export/vcpkg-export-2025.07.25-arm64-windows-ws.zip" = "68571e46354416d54ec5a86bef10a73426a250f2b920827fa9d7071e2f063ce7";
     "WinSparkle/WinSparkle-0.8.0-4-gb320893.zip" = "3ae42326bcd34594bc21b1e7948863a839ee76e87d9f4cf6b59b9d9f9a083881";
     "xxhash/xxhash-0.8.3-1-arm64-windows-ws.zip" = "d0fc3804b0c4d43ac09f80d9b0bab8d8b5550df282e56b44be3dd997ccc9eba2";
     "zlib-ng/zlib-ng-2.2.3-1-arm64-windows-ws.zip" = "bea4250059565c3cc49a382d8ec3f82b70c51c3ccca41c5d3daec6862d22d8f8";

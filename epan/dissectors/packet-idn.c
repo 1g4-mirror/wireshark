@@ -765,7 +765,7 @@ static int dissect_idn_dmx_dictionary(tvbuff_t *tvb, int offset, proto_tree *idn
 	int i, j, curr_size;
 	bool words_found = 0;
 	int dictionary_size = 0;
-	uint8_t idepar; /* idetifier + parameter */
+	uint8_t idepar; /* identifier + parameter */
 	proto_tree *gts_tree = proto_tree_add_subtree(idn_tree, tvb, offset, -1, ett_dic_tree, NULL, "Dictionary");
 
 	for(i=1; i<=config->word_count; i++) {
@@ -1350,7 +1350,7 @@ static int dissect_idn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IDN");
 	col_clear(pinfo->cinfo, COL_INFO);
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(packet_type, command_code, "Unknown (0x%02x)"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, packet_type, command_code, "Unknown (0x%02x)"));
 
 	offset = dissect_idn_header(tvb, offset, idn_tree, packet_type);
 

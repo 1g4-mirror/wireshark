@@ -2403,7 +2403,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Gestisci filtri di visualizzazione</translation>
     </message>
     <message>
-        <source>Filter Button Preferences...</source>
+        <source>Filter Button Preferences…</source>
+        <oldsource>Filter Button Preferences...</oldsource>
         <translation>Preferenze pulsante di filtro...</translation>
     </message>
 </context>
@@ -3305,7 +3306,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
 <context>
     <name>FilterExpressionToolBar</name>
     <message>
-        <source>Filter Button Preferences...</source>
+        <source>Filter Button Preferences…</source>
+        <oldsource>Filter Button Preferences...</oldsource>
         <translation>Preferenze pulsante di filtro...</translation>
     </message>
     <message>
@@ -3404,6 +3406,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>MAC destination address.</source>
         <translation>Indirizzo di destinazione MAC.</translation>
+    </message>
+    <message>
+        <source>Save %1 rules as…</source>
+        <translation>Salva %1 regole come...</translation>
     </message>
     <message>
         <source>Text file (*.txt);;All Files (</source>
@@ -4031,8 +4037,9 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>…come bit</translation>
     </message>
     <message>
-        <source>Show text based on packet</source>
-        <translation>Mostra testo sulla base del pacchetto</translation>
+        <source>Show text as frame encoding</source>
+        <oldsource>Show text based on packet</oldsource>
+        <translation type="unfinished">Mostra testo sulla base del pacchetto</translation>
     </message>
     <message>
         <source>Show text based on event</source>
@@ -5278,7 +5285,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>I campi supportati sono dati, dir, ora, numseq</translation>
     </message>
     <message>
-        <source>Missing capturing group data (use (?&lt;data&gt;(...)) )</source>
+        <source>Missing capturing group data (use (?&lt;data&gt;(…)) )</source>
+        <oldsource>Missing capturing group data (use (?&lt;data&gt;(...)) )</oldsource>
         <translation>Mancano i dati del gruppo di cattura (usa (?&lt;data&gt;(...)) )</translation>
     </message>
     <message>
@@ -7002,19 +7010,23 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Nessun evento</translation>
     </message>
     <message>
-        <source>From Zip File...</source>
+        <source>From Zip File…</source>
+        <oldsource>From Zip File...</oldsource>
         <translation>Da file Zip...</translation>
     </message>
     <message>
-        <source>From Directory...</source>
+        <source>From Directory…</source>
+        <oldsource>From Directory...</oldsource>
         <translation>Da cartella...</translation>
     </message>
     <message>
-        <source>Selected Personal Profile...</source>
+        <source>Selected Personal Profile…</source>
+        <oldsource>Selected Personal Profile...</oldsource>
         <translation>Profilo personale selezionato...</translation>
     </message>
     <message>
-        <source>All Personal Profiles...</source>
+        <source>All Personal Profiles…</source>
+        <oldsource>All Personal Profiles...</oldsource>
         <translation>Tutti i profili personali...</translation>
     </message>
     <message>
@@ -7038,6 +7050,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Display filter as %1</source>
         <translation>Filtro di visualizzazione come %1</translation>
+    </message>
+    <message>
+        <source>…as %1</source>
+        <translation>…come %1</translation>
     </message>
     <message>
         <source>The Wireshark Network Analyzer</source>
@@ -8268,6 +8284,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Mostra punti di dati marcatori</translation>
     </message>
     <message>
+        <source>Auto Scroll</source>
+        <translation>Scorrimento automatico</translation>
+    </message>
+    <message>
         <source>Plots</source>
         <translation>Grafici</translation>
     </message>
@@ -8662,22 +8682,26 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Esporta</translation>
     </message>
     <message>
-        <source>From Zip File...</source>
+        <source>From Zip File…</source>
+        <oldsource>From Zip File...</oldsource>
         <translation>Da file Zip...</translation>
     </message>
     <message>
-        <source>From Directory...</source>
+        <source>From Directory…</source>
+        <oldsource>From Directory...</oldsource>
         <translation>Da cartella...</translation>
     </message>
     <message numerus="yes">
-        <source>%Ln Selected Personal Profile(s)...</source>
+        <source>%Ln Selected Personal Profile(s)…</source>
+        <oldsource>%Ln Selected Personal Profile(s)...</oldsource>
         <translation>
             <numerusform>%Ln profilo personale selezionato...</numerusform>
             <numerusform>%Ln profili personali selezionati...</numerusform>
         </translation>
     </message>
     <message>
-        <source>All Personal Profiles...</source>
+        <source>All Personal Profiles…</source>
+        <oldsource>All Personal Profiles...</oldsource>
         <translation>Tutti i profili personali...</translation>
     </message>
     <message>
@@ -10854,7 +10878,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Nessun audio</translation>
     </message>
     <message>
-        <source>Decoding streams...</source>
+        <source>Decoding streams…</source>
+        <oldsource>Decoding streams...</oldsource>
         <translation>Decodifica dei flussi...</translation>
     </message>
     <message>
@@ -10906,7 +10931,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Automatico</translation>
     </message>
     <message>
-        <source>Resampling waveform...</source>
+        <source>Resampling waveform…</source>
+        <oldsource>Resampling waveform...</oldsource>
         <translation>Ricampionamento della forma d&apos;onda...</translation>
     </message>
     <message>
@@ -10970,7 +10996,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Doppio clic per cambiare l&apos;instradamento dell&apos;audio</translation>
     </message>
     <message>
-        <source>Preparing to play...</source>
+        <source>Preparing to play…</source>
+        <oldsource>Preparing to play...</oldsource>
         <translation>Preparazione della riproduzione…</translation>
     </message>
     <message>
@@ -13945,6 +13972,14 @@ a:hover {
         <translation>Interfaccia</translation>
     </message>
     <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the 802.11 band.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Imposta la banda 802.11.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Band</source>
+        <translation>Banda</translation>
+    </message>
+    <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the 802.11 channel.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Imposta il canale 802.11.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -15995,6 +16030,10 @@ a:hover {
     <message>
         <source>Unknown file type returned by export dialog.</source>
         <translation>Tipo di file sconosciuto restituito dalla finestra di esportazione. </translation>
+    </message>
+    <message>
+        <source>Unsaved packets…</source>
+        <translation>Pacchetti non salvati...</translation>
     </message>
     <message>
         <source>Do you want to stop the capture and save the captured packets%1?</source>

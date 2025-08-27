@@ -50,6 +50,8 @@
 #include "packet-ntp.h"
 #include "packet-gsm_a_common.h"
 #include "packet-media-type.h"
+#include "packet-http2.h"
+#include "packet-gtp.h"
 
 #define PNAME  "NG Application Protocol"
 #define PSNAME "NGAP"
@@ -4615,7 +4617,7 @@ dissect_ngap_ProtocolIE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
   if (tree) {
     proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
-                           val_to_str_ext(ngap_data->protocol_ie_id, &ngap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
+                           val_to_str_ext(actx->pinfo->pool, ngap_data->protocol_ie_id, &ngap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
   }
   return offset;
 }
@@ -4799,8 +4801,24 @@ dissect_ngap_TransportLayerAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 static int
 dissect_ngap_GTP_TEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *parameter_tvb = NULL;
+  uint32_t teid = 0;
+  const char *imsi = NULL;
+
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, false, NULL);
+                                       4, 4, false, &parameter_tvb);
+
+  if (!parameter_tvb)
+    return offset;
+
+  if (proto_is_frame_protocol(actx->pinfo->layers, "http2")) {
+    imsi = http2_get_stream_imsi(actx->pinfo);
+    if(imsi) {
+      teid = tvb_get_uint32(parameter_tvb, 0, ENC_BIG_ENDIAN);
+      gtp_add_teid_imsi(teid, imsi);
+    }
+  }
+
 
   return offset;
 }
@@ -31158,7 +31176,7 @@ ngap_stats_tree_packet(stats_tree* st, packet_info* pinfo _U_,
 
     tick_stat_node(st, st_str_packets, 0, false);
     stats_tree_tick_pivot(st, st_node_packet_types,
-                          val_to_str(pi->ngap_mtype, mtype_names,
+                          val_to_str(pinfo->pool, pi->ngap_mtype, mtype_names,
                                      "Unknown packet type (%d)"));
     return TAP_PACKET_REDRAW;
 }
@@ -31327,10 +31345,10 @@ dissect_ngap_media_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
     goto found;
   cur_tok = json_get_array(json_data, tokens, "pduSessionList");
   if (cur_tok) {
-    int i, count;
-    count = json_get_array_len(cur_tok);
-    for (i = 0; i < count; i++) {
-      jsmntok_t *array_tok = json_get_array_index(cur_tok, i);
+    const int count = json_get_array_len(cur_tok);
+    jsmntok_t* array_tok = json_get_array_index(cur_tok, 0);
+    for (int i = 0; i < count; i++, array_tok = json_get_next_object(array_tok)) {
+
       if (find_n2_info_content(json_data, array_tok, "n2InfoContent",
                                content_info->content_id, &subdissector))
         goto found;

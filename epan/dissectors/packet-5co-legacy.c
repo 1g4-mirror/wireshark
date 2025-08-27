@@ -404,7 +404,7 @@ dissect_FiveCoLegacy_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
         request_tvb = tvb_new_child_real_data(tvb, pRequestVal->pDataBuffer, pRequestVal->usParaLen, pRequestVal->usParaLen);
     }
 
-    str_packet_type = val_to_str_wmem(pinfo->pool, header_type, packettypenames, "Unknown Type:0x%02x");
+    str_packet_type = val_to_str(pinfo->pool, header_type, packettypenames, "Unknown Type:0x%02x");
 
     /* Add text to info column */
     col_append_sep_fstr(pinfo->cinfo, COL_INFO, ",", "%s ID=%d Len=%d", str_packet_type, header_id, header_data_length);
@@ -522,7 +522,7 @@ dissect_FiveCoLegacy_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 // Read number of bytes to read
                 proto_tree_add_item_ret_uint(fiveco_data_tree, hf_fiveco_i2c2read, request_tvb, request_offset++, 1, ENC_NA, &ucBytesToRead);
 
-                fiveco_data_item = proto_tree_add_item(fiveco_data_tree, hf_fiveco_i2canswer, tvb, offset, ucBytesToRead, ENC_NA);
+                proto_tree_add_item(fiveco_data_tree, hf_fiveco_i2canswer, tvb, offset, ucBytesToRead, ENC_NA);
                 offset += ucBytesToRead;
 
                 if (header_type == I2C_READ_WRITE_ACK_ANSWER)

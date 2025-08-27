@@ -65,6 +65,7 @@ static int hf_http3_stream_uni_type;
 static int hf_http3_stream_bidi;
 static int hf_http3_push_id;
 static int hf_http3_frame;
+static int hf_http3_frame_streamid;
 static int hf_http3_frame_type;
 static int hf_http3_frame_length;
 static int hf_http3_frame_payload;
@@ -929,9 +930,9 @@ get_header_field_pstr(wmem_allocator_t *scratch, nghttp3_qpack_nv *header_nv, co
      */
     pstr_len = (4 + name_len) + (4 + value_len);
     scratch_buffer = (char *)wmem_alloc(scratch, pstr_len);
-    phton32(&scratch_buffer[0], name_len);
+    phtonu32(&scratch_buffer[0], name_len);
     memcpy(&scratch_buffer[4], name, name_len);
-    phton32(&scratch_buffer[4 + name_len], value_len);
+    phtonu32(&scratch_buffer[4 + name_len], value_len);
     memcpy(&scratch_buffer[4 + name_len + 4], value, value_len);
 
     /* Check whether the pstr is already in the cache,
@@ -984,11 +985,11 @@ http3_get_header_value(packet_info *pinfo, const char* name, bool the_other_dire
             http3_header_field_t *in;
             uint32_t             name_len;
             in = (http3_header_field_t *)wmem_array_index(header_data->header_fields, i);
-            name_len = pntoh32(in->decoded.bytes);
+            name_len = pntohu32(in->decoded.bytes);
             if (strlen(name) == name_len && strncmp(in->decoded.bytes + 4, name, name_len) == 0) {
                 return get_ascii_string(pinfo->pool,
                     in->decoded.bytes + 4 + name_len + 4,
-                    pntoh32(in->decoded.bytes + 4 + name_len));
+                    pntohu32(in->decoded.bytes + 4 + name_len));
             }
         }
     }
@@ -1560,12 +1561,15 @@ dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int off
 {
     uint64_t    frame_type, frame_length;
     int         type_length_size, lenvar, payload_length;
-    proto_item  *ti_ft, *ti_ft_type;
+    proto_item  *ti_ft, *ti_ft_type, *ti_streamid;
     proto_tree  *ft_tree;
     const char *ft_display_name;
 
     ti_ft = proto_tree_add_item(tree, hf_http3_frame, tvb, offset, -1, ENC_NA);
     ft_tree = proto_item_add_subtree(ti_ft, ett_http3_frame);
+
+    ti_streamid = proto_tree_add_uint64(ft_tree, hf_http3_frame_streamid, tvb, offset, 0, http3_stream->id);
+    proto_item_set_generated(ti_streamid);
 
     ti_ft_type = proto_tree_add_item_ret_varint(ft_tree, hf_http3_frame_type, tvb, offset, -1, ENC_VARINT_QUIC, &frame_type,
                                         &lenvar);
@@ -1753,7 +1757,7 @@ dissect_http3_qpack_encoder_stream(tvbuff_t *tvb, packet_info *pinfo _U_, proto_
     can_continue    = true;
     icnt            = 0;
     offset          = start_offset;
-    end_offset      = start_offset + tvb_captured_length_remaining(tvb, start_offset);;
+    end_offset      = start_offset + tvb_captured_length_remaining(tvb, start_offset);
 
     while (offset < end_offset && can_continue) {
         int         inst_offset;        /* Starting offset of the currently parsed instruction in the tvb */
@@ -2777,6 +2781,11 @@ proto_register_http3(void)
             FT_UINT64, BASE_HEX|BASE_VAL64_STRING, VALS64(http3_frame_types), 0x0,
             "Frame Type", HFILL }
         },
+        { &hf_http3_frame_streamid,
+          { "Stream ID", "http3.frame_streamid",
+            FT_UINT64, BASE_DEC, NULL, 0x0,
+            "QUIC Stream id that this frame came in on", HFILL }
+        },
         { &hf_http3_frame_length,
           { "Length", "http3.frame_length",
             FT_UINT64, BASE_DEC, NULL, 0x0,
@@ -3166,8 +3175,8 @@ http3_hdrcache_length(const void *vv)
     const uint8_t *v = (const uint8_t *)vv;
     uint32_t      namelen, valuelen;
 
-    namelen  = pntoh32(v);
-    valuelen = pntoh32(v + sizeof(namelen) + namelen);
+    namelen  = pntohu32(v);
+    valuelen = pntohu32(v + sizeof(namelen) + namelen);
 
     return namelen + sizeof(namelen) + valuelen + sizeof(valuelen);
 }

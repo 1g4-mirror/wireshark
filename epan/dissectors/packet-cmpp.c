@@ -534,7 +534,7 @@ dissect_cmpp_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 
 	/* Get the length of the PDU */
 	tvb_len = tvb_captured_length(tvb);
-	/* if the length of the tvb is shorder then the cmpp header length exit */
+	/* if the length of the tvb is shorter then the cmpp header length exit */
 	if (tvb_len < CMPP_FIX_HEADER_LENGTH)
 		return 0;
 
@@ -547,7 +547,7 @@ dissect_cmpp_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 		return 0;
 	}
 
-	command_str = val_to_str(command_id, vals_command_Id,
+	command_str = val_to_str(pinfo->pool, command_id, vals_command_Id,
 				 "(Unknown CMPP Operation 0x%08X)");
 
 	/* tvb has less data then the PDU Header status, return */

@@ -274,7 +274,7 @@ QWidget* ExtArgTable::createEditor(QWidget* parent)
     QWidget* treeViewWidget = ExtArgMultiSelect::createEditor(addDialog);
     addDialog = new ExtArgTableAddDialog(parent, treeViewWidget);
 
-    // Instanciate the menu bar
+    // Instantiate the menu bar
     toolbar = new QToolBar(pane);
     toolbar->setStyleSheet("QToolBar { border: 1px solid gray; border-radius: 3px; }");
     QAction* addAction = toolbar->addAction("Add");
@@ -282,7 +282,7 @@ QWidget* ExtArgTable::createEditor(QWidget* parent)
     QAction* removeAction = toolbar->addAction("Remove");
     paneLayout->addWidget(toolbar);
 
-    // Instanciate empty table
+    // Instantiate empty table
     tableView = new QTableView(pane);
     tableView->setMinimumHeight(200);
     tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -361,7 +361,7 @@ void ExtArgTable::addChecked(QStringList checked, QStringList options)
         {
             if (options.size() > i)
             {
-                item->setData(QString(options[i]), Qt::UserRole + 1);  // Currently: no configuration
+                item->setData(QString(options[i]), Qt::UserRole + 1);  // Currently: has configuration
             }
             else
             {

@@ -20,6 +20,7 @@
 #include <epan/wmem_scopes.h>
 #include <epan/expert.h>
 #include <epan/conversation.h>
+#include <epan/tap.h>
 #include <epan/unit_strings.h>
 #include <wsutil/wsgcrypt.h>
 
@@ -203,6 +204,7 @@ typedef enum {
 /* https://github.com/facebookincubator/mvfst/blob/master/quic/QuicConstants.h */
 #define SSL_HND_QUIC_TP_FACEBOOK_PARTIAL_RELIABILITY        0xFF00
 #define SSL_HND_QUIC_TP_VERSION_INFORMATION_DRAFT           0xff73db /* https://datatracker.ietf.org/doc/draft-ietf-quic-version-negotiation/13/ */
+#define SSL_HND_QUIC_TP_ADDRESS_DISCOVERY                   0x9f81a176 /* https://tools.ietf.org/html/draft-ietf-quic-address-discovery-00 */
 #define SSL_HND_QUIC_TP_MIN_ACK_DELAY_DRAFT_V1              0xFF03DE1A /* https://tools.ietf.org/html/draft-ietf-quic-ack-frequency-01 */
 #define SSL_HND_QUIC_TP_MIN_ACK_DELAY_DRAFT05               0xff04de1a /* https://tools.ietf.org/html/draft-ietf-quic-ack-frequency-04 / draft-05 */
 #define SSL_HND_QUIC_TP_MIN_ACK_DELAY                       0xff04de1b /* https://tools.ietf.org/html/draft-ietf-quic-ack-frequency-07 */
@@ -254,6 +256,7 @@ extern const value_string tls13_key_update_request[];
 extern const value_string compress_certificate_algorithm_vals[];
 extern const val64_string quic_transport_parameter_id[];
 extern const range_string quic_version_vals[];
+extern const val64_string quic_address_discovery_vals[];
 extern const val64_string quic_enable_time_stamp_v2_vals[];
 extern const val64_string quic_enable_multipath_vals[];
 extern const value_string tls_hello_ext_ech_clienthello_types[];
@@ -490,6 +493,8 @@ typedef struct _SslSession {
     address srv_addr;
     port_type srv_ptype;
     unsigned srv_port;
+
+    uint32_t stream;
 
     /* The Application layer protocol if known (for STARTTLS support) */
     dissector_handle_t   app_handle;
@@ -1105,6 +1110,7 @@ typedef struct ssl_common_dissect {
         int hs_ext_quictp_parameter_cibir_encoding_length;
         int hs_ext_quictp_parameter_cibir_encoding_offset;
         int hs_ext_quictp_parameter_loss_bits;
+        int hs_ext_quictp_parameter_address_discovery;
         int hs_ext_quictp_parameter_enable_time_stamp_v2;
         int hs_ext_quictp_parameter_min_ack_delay;
         int hs_ext_quictp_parameter_google_user_agent_id;
@@ -1408,9 +1414,13 @@ ssl_dissect_hnd_compress_certificate(ssl_common_dissect_t *hf, tvbuff_t *tvb, pr
                                      uint32_t offset, uint32_t offset_end, packet_info *pinfo,
                                      SslSession *session _U_, SslDecryptSession *ssl _U_,
                                      bool is_from_server _U_, bool is_dtls _U_);
+
+extern tap_packet_status
+ssl_follow_tap_listener(void *tapdata, packet_info *pinfo, epan_dissect_t *edt _U_, const void *ssl, tap_flags_t flags _U_);
+
 /* {{{ */
 #define SSL_COMMON_LIST_T(name) \
-ssl_common_dissect_t name;
+ssl_common_dissect_t name
 /* }}} */
 
 /* {{{ */
@@ -2515,6 +2525,11 @@ ssl_common_dissect_t name;
     { & name .hf.hs_ext_quictp_parameter_loss_bits,                     \
       { "loss_bits", prefix ".quic.parameter.loss_bits",                \
         FT_UINT64, BASE_DEC, NULL, 0x00,                                \
+        NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_quictp_parameter_address_discovery,             \
+      { "address_discovery", prefix ".quic.parameter.address_discovery",  \
+        FT_UINT64, BASE_DEC|BASE_VAL64_STRING, VALS64(quic_address_discovery_vals), 0x00,  \
         NULL, HFILL }                                                   \
     },                                                                  \
     { & name .hf.hs_ext_quictp_parameter_enable_time_stamp_v2,          \

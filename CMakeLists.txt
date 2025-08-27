@@ -254,8 +254,8 @@ if(WIN32)
 	file(TO_CMAKE_PATH ${EXTRA_INSTALLER_DIR} _file_download_dir)
 
 	# Download Npcap required by the Windows installer
-	set(NPCAP_VERSION "1.82")
-	set(NPCAP_SHA256 "dd6a26f07e90fe8308f06b09af0eafa188f4ff0a1a184e5adfa35e37467c705d")
+	set(NPCAP_VERSION "1.83")
+	set(NPCAP_SHA256 "1bf58936296992d6b03e6c36621ca8239a786c13b89d761d210fa21731567ac0")
 	set(NPCAP_FILENAME "npcap-${NPCAP_VERSION}.exe")
 	set(NPCAP_URL "${LIBS_URL}/Npcap/${NPCAP_FILENAME}")
 	FetchContent_Declare(Npcap
@@ -278,7 +278,7 @@ if(WIN32)
 	)
 endif(WIN32)
 
-if(WIRESHARK_BASE_DIR AND APPLE)
+if((WIRESHARK_BASE_DIR AND APPLE) OR (_PROJECT_LIB_DIR AND WIN32))
 	include(FetchArtifacts)
 else()
 	set(OSX_APP_LIBPREFIX "/usr/local")
@@ -733,6 +733,7 @@ else() # ! MSVC
 		-Wunreachable-code	# Clang-only
 		-Wdocumentation		# Clang-only
 		-Wlogical-op		# GCC-only
+		-Wextra-semi		# Clang C and C++. GCC >= 8.0 has for C++ but not C.
 
 		# Run-time protections mechanisms
 		-fstrict-flex-arrays=3			# Consider a trailing array in a struct as a flexible array if declared as []
@@ -856,7 +857,6 @@ else() # ! MSVC
 		#
 		### Flags for C++ only ###
 		#
-		-Wextra-semi	# Clang-only
 	)
 
 	#
@@ -2217,6 +2217,18 @@ set(TSHARK_TAP_SRC
 
 )
 
+set(STRATO_TAP_SRC
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-endpoints.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-exportobject.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-funnel.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-iousers.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-rtd.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-simple_stattable.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-stats_tree.c
+	${CMAKE_SOURCE_DIR}/ui/cli/tap-srt.c
+	${CUSTOM_STRATO_TAP_SRC}
+)
+
 # Copied into ${DATAFILE_DIR} at build time and ${CMAKE_INSTALL_DATADIR}/wireshark
 # at install time.
 set(INSTALL_DIRS
@@ -2276,6 +2288,7 @@ if (ASCIIDOCTOR_FOUND)
 		${CMAKE_BINARY_DIR}/doc/man_pages/reordercap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/sshdig.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/sshdump.html
+		${CMAKE_BINARY_DIR}/doc/man_pages/strato.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/stratoshark.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/wifidump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/text2pcap.html
@@ -2649,6 +2662,7 @@ add_custom_command(
 
 file(GLOB _diameter_src_files RELATIVE ${_protocol_data_dir}
 	${_protocol_data_dir}/diameter/*.dtd
+	${_protocol_data_dir}/diameter/*.ent
 	${_protocol_data_dir}/diameter/*.xml
 )
 
@@ -3150,7 +3164,7 @@ if (BUILD_stratoshark AND FALCO_PLUGINS)
 endif()
 
 # Common properties for CLI executables
-macro(set_extra_executable_properties _executable _folder)
+function(set_extra_executable_properties _executable _folder)
 	set_target_properties(${_executable} PROPERTIES
 		LINK_FLAGS "${WILDCARD_OBJ} ${WS_LINK_FLAGS}"
 		FOLDER ${_folder}
@@ -3160,29 +3174,33 @@ macro(set_extra_executable_properties _executable _folder)
 		set_target_properties(${_executable} PROPERTIES LINK_FLAGS_DEBUG "${WS_MSVC_DEBUG_LINK_FLAGS}")
 	endif()
 
-	set(PROGLIST ${PROGLIST} ${_executable})
+	set(PROGLIST ${PROGLIST} ${_executable} PARENT_SCOPE)
 
 	if(ENABLE_APPLICATION_BUNDLE)
+		set(bundle_name "Wireshark.app")
+		if (_executable MATCHES "strato")
+			set(bundle_name "Stratoshark.app")
+		endif()
 		if(NOT CMAKE_CFG_INTDIR STREQUAL ".")
 			# Xcode
 			set_target_properties(${_executable} PROPERTIES
-				RUNTIME_OUTPUT_DIRECTORY run/$<CONFIG>/Wireshark.app/Contents/MacOS
+				RUNTIME_OUTPUT_DIRECTORY run/$<CONFIG>/${bundle_name}/Contents/MacOS
 			)
 		else ()
 			set_target_properties(${_executable} PROPERTIES
-				RUNTIME_OUTPUT_DIRECTORY run/Wireshark.app/Contents/MacOS
+				RUNTIME_OUTPUT_DIRECTORY run/${bundle_name}/Contents/MacOS
 			)
 			# Create a convenience link from run/<name> to its respective
 			# target in the application bundle.
 			add_custom_target(${_executable}-symlink
 				COMMAND ln -s -f
-					Wireshark.app/Contents/MacOS/${_executable}
+					${bundle_name}/Contents/MacOS/${_executable}
 					${CMAKE_BINARY_DIR}/run/${_executable}
 			)
 			add_dependencies(${_executable} ${_executable}-symlink)
 		endif()
 	endif()
-endmacro()
+endfunction()
 
 macro(executable_link_mingw_unicode _target)
 	# target_link_options() requires CMake >= 3.13
@@ -3223,6 +3241,38 @@ if(BUILD_tshark)
 	target_link_libraries(tshark ${tshark_LIBS})
 	executable_link_mingw_unicode(tshark)
 	install(TARGETS tshark RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+if(BUILD_strato)
+	set(strato_LIBS
+		capchild
+		ui
+		caputils
+		wiretap
+		epan
+		iface_monitor
+		wsutil
+		${APPLE_CORE_FOUNDATION_LIBRARY}
+		${APPLE_SYSTEM_CONFIGURATION_LIBRARY}
+		${WIN_WS2_32_LIBRARY}
+	)
+	set(strato_FILES
+		$<TARGET_OBJECTS:cli_main>
+		$<TARGET_OBJECTS:shark_common>
+		strato.c
+		extcap.c
+		${STRATO_TAP_SRC}
+		strato-tap-register.c
+	)
+
+	set_executable_resources(strato "Strato" UNIQUE_RC)
+	add_executable(strato ${strato_FILES})
+	set_extra_executable_properties(strato "Executables")
+	target_link_libraries(strato ${strato_LIBS})
+	executable_link_mingw_unicode(strato)
+	install(TARGETS strato RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+	register_tap_files(strato-tap-register.c ${STRATO_TAP_SRC})
 endif()
 
 if(BUILD_tfshark)
@@ -4387,7 +4437,7 @@ if (DOXYGEN_EXECUTABLE)
 		COMMAND ${CMAKE_COMMAND} -E tar "cfv" "wsar_html.zip" --format=zip wsar_html
 		DEPENDS wsar_html_perms
 	)
-	set_target_properties(wsar_html wsar_html_zip PROPERTIES
+	set_target_properties(wsar_html wsar_html_perms wsar_html_zip PROPERTIES
 		FOLDER "Documentation"
 		EXCLUDE_FROM_DEFAULT_BUILD True
 	)

@@ -7,6 +7,7 @@
 1xrtt
 20west
 29west
+2bytes
 32apsk
 3gpp2
 3pcap
@@ -694,6 +695,7 @@ desegmenting
 deselect
 deserialize
 designator
+destdir
 destip
 destport
 determinant
@@ -1279,6 +1281,7 @@ inmarsat
 inoage
 inode
 inodes
+inout
 inspiron
 installers
 instantiate
@@ -1709,6 +1712,7 @@ mysql
 méxico
 móviles
 n3iwf
+n3nan
 n3qai
 nacks
 nagle
@@ -2166,6 +2170,7 @@ quadro
 quadruplet
 quadruplets
 qualcomm
+quals
 quantifiers
 quantization
 quantized
@@ -2665,6 +2670,7 @@ steinigke
 stevens
 stmin
 stnode
+strato
 stratoshark
 strawberryperl
 strbuf
@@ -2672,6 +2678,7 @@ strcmp
 strdup
 streamid
 strfunc
+stringified
 stringz
 stringzpad
 strlen
@@ -2735,6 +2742,7 @@ superseding
 superset
 suppfeat
 svalidator
+svalue
 svcparam
 svcparams
 sverige
@@ -3035,6 +3043,7 @@ uninstallation
 uninstalled
 uninstaller
 uninterruptable
+uninterruptible
 unintuitive
 unistim
 universitaet
@@ -3134,6 +3143,7 @@ userdata
 userinfo
 userlist
 userplane
+ushort
 utf8mb
 utf8string
 utilization

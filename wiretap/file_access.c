@@ -99,6 +99,7 @@
 #include "ems.h"
 #include "ttl.h"
 #include "peak-trc.h"
+#include "netlog.h"
 
 /*
  * Add an extension, and all compressed versions thereof if requested,
@@ -178,6 +179,7 @@ static const struct file_extension_info wireshark_file_type_extensions_base[] = 
 	{ "MPEG files", false, "mpeg;mpg;mp3" },
 	{ "Transport-Neutral Encapsulation Format", false, "tnef" },
 	{ "JPEG/JFIF files", false, "jpg;jpeg;jfif" },
+	{ "NetLog file", true, "json" },
 	{ "JavaScript Object Notation file", false, "json" },
 	{ "MP4 file", false, "mp4" },
 	{ "RTPDump file", false, "rtp;rtpdump" },
@@ -441,6 +443,8 @@ static const struct open_info open_info_base[] = {
 	/* Extremely weak heuristics - put them at the end. */
 	{ "Ixia IxVeriWave .vwr Raw Capture",       OPEN_INFO_HEURISTIC, vwr_open,                 "vwr",      NULL, NULL },
 	{ "CAM Inspector file",                     OPEN_INFO_HEURISTIC, camins_open,              "camins",   NULL, NULL },
+	/* NetLog needs to be before JSON open because it is a specifically formatted JSON file */
+	{ "NetLog",                                 OPEN_INFO_HEURISTIC, netlog_open,              "json",     NULL, NULL },
 	{ "JavaScript Object Notation",             OPEN_INFO_HEURISTIC, json_open,                "json",     NULL, NULL },
 	{ "Ruby Marshal Object",                    OPEN_INFO_HEURISTIC, ruby_marshal_open,        "",         NULL, NULL },
 	{ "3gpp phone log",                         OPEN_INFO_MAGIC,     log3gpp_open,             "log",      NULL, NULL },
@@ -2171,8 +2175,8 @@ wtap_dump_can_compress(int file_type_subtype _U_)
 static bool wtap_dump_open_finish(wtap_dumper *wdh, int *err,
 				      char **err_info);
 
-static WFILE_T wtap_dump_file_open(wtap_dumper *wdh, const char *filename);
-static WFILE_T wtap_dump_file_fdopen(wtap_dumper *wdh, int fd);
+static WFILE_T wtap_dump_file_open(const wtap_dumper *wdh, const char *filename);
+static WFILE_T wtap_dump_file_fdopen(const wtap_dumper *wdh, int fd);
 static int wtap_dump_file_close(wtap_dumper *wdh);
 static bool wtap_dump_fix_idb(wtap_dumper *wdh, wtap_block_t idb, int *err);
 
@@ -2670,13 +2674,13 @@ wtap_dump_close(wtap_dumper *wdh, bool *needs_reload,
 }
 
 int
-wtap_dump_file_type_subtype(wtap_dumper *wdh)
+wtap_dump_file_type_subtype(const wtap_dumper *wdh)
 {
 	return wdh->file_type_subtype;
 }
 
 int64_t
-wtap_get_bytes_dumped(wtap_dumper *wdh)
+wtap_get_bytes_dumped(const wtap_dumper *wdh)
 {
 	return wdh->bytes_dumped;
 }
@@ -2688,7 +2692,7 @@ wtap_set_bytes_dumped(wtap_dumper *wdh, int64_t bytes_dumped)
 }
 
 bool
-wtap_addrinfo_list_empty(addrinfo_lists_t *addrinfo_lists)
+wtap_addrinfo_list_empty(const addrinfo_lists_t *addrinfo_lists)
 {
 	return (addrinfo_lists == NULL) ||
 	    ((addrinfo_lists->ipv4_addr_list == NULL) &&
@@ -2754,7 +2758,7 @@ wtap_dump_discard_sysdig_meta_events(wtap_dumper *wdh)
 
 /* internally open a file for writing (compressed or not) */
 static WFILE_T
-wtap_dump_file_open(wtap_dumper *wdh, const char *filename)
+wtap_dump_file_open(const wtap_dumper *wdh, const char *filename)
 {
 	switch (wdh->compression_type) {
 #if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
@@ -2772,7 +2776,7 @@ wtap_dump_file_open(wtap_dumper *wdh, const char *filename)
 
 /* internally open a file for writing (compressed or not) */
 static WFILE_T
-wtap_dump_file_fdopen(wtap_dumper *wdh, int fd)
+wtap_dump_file_fdopen(const wtap_dumper *wdh, int fd)
 {
 	switch (wdh->compression_type) {
 #if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)

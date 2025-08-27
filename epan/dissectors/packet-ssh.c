@@ -1372,7 +1372,7 @@ ssh_dissect_ssh1(tvbuff_t *tvb, packet_info *pinfo,
 
         proto_tree_add_item(ssh1_tree, hf_ssh_msg_code, tvb, offset, 1, ENC_BIG_ENDIAN);
         col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-            val_to_str(msg_code, ssh1_msg_vals, "Unknown (%u)"));
+            val_to_str(pinfo->pool, msg_code, ssh1_msg_vals, "Unknown (%u)"));
         offset += 1;
         len = plen -1;
         if (!pinfo->fd->visited) {
@@ -1679,7 +1679,7 @@ ssh_dissect_key_exchange(tvbuff_t *tvb, packet_info *pinfo,
         offset += 1;
 
         col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-            val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+            val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
 
         /* 16 bytes cookie  */
         switch(msg_code)
@@ -1744,7 +1744,7 @@ static int ssh_dissect_kex_dh(uint8_t msg_code, tvbuff_t *tvb,
     offset += 1;
 
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-        val_to_str(msg_code, ssh2_kex_dh_msg_vals, "Unknown (%u)"));
+        val_to_str(pinfo->pool, msg_code, ssh2_kex_dh_msg_vals, "Unknown (%u)"));
 
     switch (msg_code) {
     case SSH_MSG_KEXDH_INIT:
@@ -1786,7 +1786,7 @@ static int ssh_dissect_kex_dh_gex(uint8_t msg_code, tvbuff_t *tvb,
     offset += 1;
 
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-        val_to_str(msg_code, ssh2_kex_dh_gex_msg_vals, "Unknown (%u)"));
+        val_to_str(pinfo->pool, msg_code, ssh2_kex_dh_gex_msg_vals, "Unknown (%u)"));
 
     switch (msg_code) {
     case SSH_MSG_KEX_DH_GEX_REQUEST_OLD:
@@ -1859,7 +1859,7 @@ ssh_dissect_kex_ecdh(uint8_t msg_code, tvbuff_t *tvb,
     offset += 1;
 
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-        val_to_str(msg_code, ssh2_kex_ecdh_msg_vals, "Unknown (%u)"));
+        val_to_str(pinfo->pool, msg_code, ssh2_kex_ecdh_msg_vals, "Unknown (%u)"));
 
     switch (msg_code) {
     case SSH_MSG_KEX_ECDH_INIT:
@@ -1900,7 +1900,7 @@ static int ssh_dissect_kex_hybrid(uint8_t msg_code, tvbuff_t *tvb,
     offset += 1;
 
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-        val_to_str(msg_code, ssh2_kex_hybrid_msg_vals, "Unknown (%u)"));
+        val_to_str(pinfo->pool, msg_code, ssh2_kex_hybrid_msg_vals, "Unknown (%u)"));
 
     const char *kex_name = global_data->kex;
     switch (msg_code) {
@@ -1988,7 +1988,7 @@ ssh_dissect_kex_pq_hybrid(uint8_t msg_code, tvbuff_t *tvb,
 
     // Add a descriptive string to Wireshark's "Info" column.
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
-        val_to_str(msg_code, ssh2_kex_hybrid_msg_vals, "Unknown (%u)"));
+        val_to_str(pinfo->pool, msg_code, ssh2_kex_hybrid_msg_vals, "Unknown (%u)"));
 
     if (msg_code == SSH_MSG_KEX_HYBRID_INIT) {
         // Print warning when sntrup761x25519-sha512 or mlkem768x25519-sha256 is detected in KEX
@@ -3821,7 +3821,7 @@ ssh_calc_mac(struct ssh_peer_data *peer_data, uint32_t seqnr, uint8_t* data, uin
         return;
 
     /* hash sequence number */
-    phton32(buf, seqnr);
+    phtonu32(buf, seqnr);
 
     ssh_print_data("Mac IV", peer_data->hmac_iv, peer_data->hmac_iv_len);
     ssh_print_data("Mac seq", buf, 4);
@@ -3911,7 +3911,7 @@ ssh_decrypt_packet(tvbuff_t *tvb, packet_info *pinfo,
             return tvb_captured_length(tvb);
         }
 
-        message_length = pntoh32(plain_length_buf);
+        message_length = pntohu32(plain_length_buf);
 
         ssh_debug_printf("chachapoly_crypt seqnr=%d [%u]\n", seqnr, message_length);
 
@@ -3958,7 +3958,7 @@ ssh_decrypt_packet(tvbuff_t *tvb, packet_info *pinfo,
 
         memset(poly_key, 0, 32);
         memset(iv, 0, 8);
-        phton64(iv+8, (uint64_t)seqnr);
+        phtonu64(iv+8, (uint64_t)seqnr);
         gcry_cipher_setiv(peer_data->cipher, iv, mac_len);
         gcry_cipher_encrypt(peer_data->cipher, poly_key, 32, poly_key, 32);
 
@@ -4041,7 +4041,7 @@ ssh_decrypt_packet(tvbuff_t *tvb, packet_info *pinfo,
         const char *ctext = (const char *)tvb_get_ptr(tvb, offset + 4,
                 message_length);
         plain = (char *)wmem_alloc(pinfo->pool, message_length+4);
-        phton32(plain, message_length);
+        phtonu32(plain, message_length);
 
         if ((err = gcry_cipher_authenticate(peer_data->cipher, plain, 4))) {
 // TODO: temporary work-around as long as a Windows python bug is triggered by automated tests
@@ -4110,7 +4110,7 @@ ssh_decrypt_packet(tvbuff_t *tvb, packet_info *pinfo,
             }
         }
 
-        message_length = pntoh32(peer_data->plain0);
+        message_length = pntohu32(peer_data->plain0);
 
         /* The message_length value doesn't include the length of the
          * message_length field itself, so it must be at least 12 bytes.
@@ -4261,7 +4261,7 @@ ssh_decrypt_chacha20(gcry_cipher_hd_t hd,
     unsigned char seq[8];
     unsigned char iv[16];
 
-    phton64(seq, (uint64_t)seqnr);
+    phtonu64(seq, (uint64_t)seqnr);
 
     // chacha20 uses a different cipher handle for the packet payload & length
     // the payload uses a block counter
@@ -4389,7 +4389,7 @@ ssh_dissect_decrypted_packet(tvbuff_t *tvb, packet_info *pinfo,
     /* Transport layer protocol */
     /* Generic (1-19) */
     if(msg_code >= 1 && msg_code <= 19) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: Transport (generic)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = ssh_dissect_transport_generic(payload_tvb, pinfo, 1, peer_data, msg_type_tree, msg_code);
@@ -4399,7 +4399,7 @@ ssh_dissect_decrypted_packet(tvbuff_t *tvb, packet_info *pinfo,
     else if(msg_code >=20 && msg_code <= 29) {
 //TODO: See if the complete dissector should be refactored to always go through here first        offset = ssh_dissect_transport_algorithm_negotiation(packet_tvb, pinfo, global_data, offset, msg_type_tree, is_response, msg_code);
 
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: Transport (algorithm negotiation)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = 1;
@@ -4461,14 +4461,14 @@ ssh_dissect_decrypted_packet(tvbuff_t *tvb, packet_info *pinfo,
     /* User authentication protocol */
     /* Generic (50-59) */
     else if (msg_code >= 50 && msg_code <= 59) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: User Authentication (generic)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = ssh_dissect_userauth_generic(payload_tvb, pinfo, 1, msg_type_tree, msg_code);
     }
     /* User authentication method specific (reusable) (60-79) */
     else if (msg_code >= 60 && msg_code <= 79) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: User Authentication: (method specific)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = ssh_dissect_userauth_specific(payload_tvb, pinfo, 1, msg_type_tree, msg_code);
@@ -4477,14 +4477,14 @@ ssh_dissect_decrypted_packet(tvbuff_t *tvb, packet_info *pinfo,
     /* Connection protocol */
     /* Generic (80-89) */
     else if (msg_code >= 80 && msg_code <= 89) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: Connection (generic)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = ssh_dissect_connection_generic(payload_tvb, pinfo, 1, msg_type_tree, msg_code);
     }
     /* Channel related messages (90-127) */
     else if (msg_code >= 90 && msg_code <= 127) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: Connection: (channel related message)");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         dissected_len = ssh_dissect_connection_specific(payload_tvb, pinfo, peer_data, 1, msg_type_tree, msg_code, message);
@@ -4492,7 +4492,7 @@ ssh_dissect_decrypted_packet(tvbuff_t *tvb, packet_info *pinfo,
 
     /* Reserved for client protocols (128-191) */
     else if (msg_code >= 128 && msg_code <= 191) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         msg_type_tree = proto_tree_add_subtree(tree, packet_tvb, offset, plen-1, ett_key_exchange, NULL, "Message: Client protocol");
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         offset+=1;
@@ -5759,7 +5759,7 @@ ssh_dissect_local_extension(tvbuff_t *packet_tvb, packet_info *pinfo,
         int offset, struct ssh_peer_data *peer_data, proto_item *msg_type_tree, unsigned msg_code) {
     unsigned slen;
     if (peer_data->global_data->ext_ping_openssh_offered && msg_code >= SSH_MSG_PING && msg_code <= SSH_MSG_PONG) {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_ext_ping_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_ext_ping_msg_vals, "Unknown (%u)"));
         proto_tree_add_item(msg_type_tree, hf_ssh2_ext_ping_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         if (msg_code == SSH_MSG_PING) {
@@ -5776,7 +5776,7 @@ ssh_dissect_local_extension(tvbuff_t *packet_tvb, packet_info *pinfo,
             offset += slen;
         }
     } else {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(msg_code, ssh2_msg_vals, "Unknown (%u)"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pinfo->pool, msg_code, ssh2_msg_vals, "Unknown (%u)"));
         proto_tree_add_item(msg_type_tree, hf_ssh2_msg_code, packet_tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
     }

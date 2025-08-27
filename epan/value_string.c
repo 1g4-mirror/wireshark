@@ -22,6 +22,12 @@
 
 #include <wsutil/wslog.h>
 
+ /*
+  * List of registered value strings for use outside of dissectors
+  */
+static GHashTable* registered_vs;
+static GHashTable* registered_vs_ext;
+
 
 /* Sort function that can be used with dynamically created value_strings */
 int
@@ -43,22 +49,8 @@ value_str_value_compare(const void* a, const void* b)
 /* Tries to match val against each element in the value_string array vs.
    Returns the associated string ptr on a match.
    Formats val with fmt, and returns the resulting string, on failure. */
-const char *
-val_to_str(const uint32_t val, const value_string *vs, const char *fmt)
-{
-    const char *ret;
-
-    DISSECTOR_ASSERT(fmt != NULL);
-
-    ret = try_val_to_str(val, vs);
-    if (ret != NULL)
-        return ret;
-
-    return wmem_strdup_printf(wmem_packet_scope(), fmt, val);
-}
-
 char *
-val_to_str_wmem(wmem_allocator_t *scope, const uint32_t val, const value_string *vs, const char *fmt)
+val_to_str(wmem_allocator_t *scope, const uint32_t val, const value_string *vs, const char *fmt)
 {
     const char *ret;
 
@@ -322,22 +314,8 @@ try_val_to_str_idx_ext(const uint32_t val, value_string_ext *vse, int *idx)
 }
 
 /* Like val_to_str for extended value strings */
-const char *
-val_to_str_ext(const uint32_t val, value_string_ext *vse, const char *fmt)
-{
-    const char *ret;
-
-    DISSECTOR_ASSERT(fmt != NULL);
-
-    ret = try_val_to_str_ext(val, vse);
-    if (ret != NULL)
-        return ret;
-
-    return wmem_strdup_printf(wmem_packet_scope(), fmt, val);
-}
-
 char *
-val_to_str_ext_wmem(wmem_allocator_t *scope, const uint32_t val, value_string_ext *vse, const char *fmt)
+val_to_str_ext(wmem_allocator_t *scope, const uint32_t val, value_string_ext *vse, const char *fmt)
 {
     const char *ret;
 
@@ -1009,6 +987,49 @@ try_bytesprefix_to_str(const uint8_t *haystack, const size_t haystack_len, const
 
     return NULL;
 }
+
+void
+value_string_externals_init(void)
+{
+    registered_vs = g_hash_table_new(g_str_hash, g_str_equal);
+    registered_vs_ext = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+void value_string_externals_cleanup(void)
+{
+    g_hash_table_destroy(registered_vs);
+    g_hash_table_destroy(registered_vs_ext);
+}
+
+void
+register_external_value_string(const char* name, const value_string* vs)
+{
+    g_hash_table_insert(registered_vs, (void*)name, (void*)vs);
+}
+
+value_string*
+vs_get_external_value_string(const char* name)
+{
+    value_string* ret = (value_string*)g_hash_table_lookup(registered_vs, name);
+    DISSECTOR_ASSERT(ret != NULL);
+    return ret;
+}
+
+void
+register_external_value_string_ext(const char* name, const value_string_ext* vse)
+{
+    g_hash_table_insert(registered_vs_ext, (void*)name, (void*)vse);
+}
+
+value_string_ext*
+get_external_value_string_ext(const char* name)
+{
+    value_string_ext* ret = (value_string_ext*)g_hash_table_lookup(registered_vs_ext, name);
+    DISSECTOR_ASSERT(ret != NULL);
+    return ret;
+}
+
+
 
 /* MISC */
 

@@ -41,6 +41,7 @@ endmacro()
 ADD_MAN_PAGE(wireshark   1)
 ADD_MAN_PAGE(tshark      1)
 ADD_MAN_PAGE(stratoshark 1)
+ADD_MAN_PAGE(strato      1)
 
 ADD_MAN_PAGE(androiddump 1)
 ADD_MAN_PAGE(capinfos    1)
@@ -395,6 +396,7 @@ set(WSDG_FILES
 	wsdg_src/wsdg_tests.adoc
 	wsdg_src/wsdg_tools.adoc
 	wsdg_src/wsdg_userinterface.adoc
+	wsdg_src/wsdg_wiretap.adoc
 	wsdg_src/wsdg_works.adoc
 	${COMMON_GUIDE_FILES}
 )

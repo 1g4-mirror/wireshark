@@ -2735,6 +2735,7 @@ const val64_string quic_transport_parameter_id[] = {
     { SSL_HND_QUIC_TP_GOOGLE_QUIC_PARAMS, "google_quic_params" },
     { SSL_HND_QUIC_TP_GOOGLE_CONNECTION_OPTIONS, "google_connection_options" },
     { SSL_HND_QUIC_TP_FACEBOOK_PARTIAL_RELIABILITY, "facebook_partial_reliability" },
+    { SSL_HND_QUIC_TP_ADDRESS_DISCOVERY, "address_discovery" },
     { SSL_HND_QUIC_TP_MIN_ACK_DELAY_DRAFT_V1, "min_ack_delay (draft-01)" },
     { SSL_HND_QUIC_TP_MIN_ACK_DELAY_DRAFT05, "min_ack_delay (draft-05)" },
     { SSL_HND_QUIC_TP_MIN_ACK_DELAY, "min_ack_delay" },
@@ -2746,6 +2747,14 @@ const val64_string quic_transport_parameter_id[] = {
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT11, "initial_max_path_id (draft-11)" },
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID_DRAFT12, "initial_max_path_id (draft-12)" },
     { SSL_HND_QUIC_TP_INITIAL_MAX_PATH_ID, "initial_max_path_id" },
+    { 0, NULL }
+};
+
+/* https://tools.ietf.org/html/draft-ietf-quic-address-discovery-00 */
+const val64_string quic_address_discovery_vals[] = {
+    { 0, "The node is willing to provide address observations to its peer, but is not interested in receiving address observations itself" },
+    { 1, "The node is interested in receiving address observations, but it is not willing to provide address observations" },
+    { 2, "The node is interested in receiving address observations, and it is willing to provide address observations" },
     { 0, NULL }
 };
 
@@ -5288,7 +5297,7 @@ tls_check_mac(SslDecoder*decoder, int ct, int ver, uint8_t* data,
         return -1;
 
     /* hash sequence number */
-    phton64(buf, decoder->seq);
+    phtonu64(buf, decoder->seq);
 
     decoder->seq++;
 
@@ -5347,7 +5356,7 @@ ssl3_check_mac(SslDecoder*decoder,int ct,uint8_t* data,
     ssl_md_update(&mc,buf,pad_ct);
 
     /* hash sequence number */
-    phton64(buf, decoder->seq);
+    phtonu64(buf, decoder->seq);
     decoder->seq++;
     ssl_md_update(&mc,buf,8);
 
@@ -5424,7 +5433,7 @@ dtls_check_mac(SslDecryptSession *ssl, SslDecoder*decoder, int ct, uint8_t* data
         ssl_hmac_update(&hm,buf,2);
 
         /* hash sequence number */
-        phton64(buf, decoder->seq);
+        phtonu64(buf, decoder->seq);
         buf[0]=decoder->epoch>>8;
         buf[1]=(uint8_t)decoder->epoch;
         ssl_hmac_update(&hm,buf,8);
@@ -5433,7 +5442,7 @@ dtls_check_mac(SslDecryptSession *ssl, SslDecoder*decoder, int ct, uint8_t* data
         ssl_hmac_update(&hm,cid,cidl);
     } else {
         /* hash sequence number */
-        phton64(buf, decoder->seq);
+        phtonu64(buf, decoder->seq);
         buf[0]=decoder->epoch>>8;
         buf[1]=(uint8_t)decoder->epoch;
         ssl_hmac_update(&hm,buf,8);
@@ -5560,7 +5569,7 @@ tls_decrypt_aead_record(wmem_allocator_t* allocator, SslDecryptSession *ssl, Ssl
         DISSECTOR_ASSERT(decoder->write_iv.data_len == nonce_len);
         memcpy(nonce, decoder->write_iv.data, decoder->write_iv.data_len);
         /* Sequence number is left-padded with zeroes and XORed with write_iv */
-        phton64(nonce + nonce_len - 8, pntoh64(nonce + nonce_len - 8) ^ decoder->seq);
+        phtonu64(nonce + nonce_len - 8, pntohu64(nonce + nonce_len - 8) ^ decoder->seq);
         ssl_debug_printf("%s seq %" PRIu64 "\n", G_STRFUNC, decoder->seq);
     }
 
@@ -5578,13 +5587,13 @@ tls_decrypt_aead_record(wmem_allocator_t* allocator, SslDecryptSession *ssl, Ssl
         if (ssl->session.deprecated_cid) {
             aad_len = 14 + cidl;
             aad = wmem_alloc(allocator, aad_len);
-            phton64(aad, decoder->seq);         /* record sequence number */
-            phton16(aad, decoder->epoch);       /* DTLS 1.2 includes epoch. */
+            phtonu64(aad, decoder->seq);         /* record sequence number */
+            phtonu16(aad, decoder->epoch);       /* DTLS 1.2 includes epoch. */
             aad[8] = ct;                        /* TLSCompressed.type */
-            phton16(aad + 9, record_version);   /* TLSCompressed.version */
+            phtonu16(aad + 9, record_version);   /* TLSCompressed.version */
             memcpy(aad + 11, cid, cidl);        /* cid */
             aad[11 + cidl] = cidl;              /* cid_length */
-            phton16(aad + 12 + cidl, ciphertext_len);  /* TLSCompressed.length */
+            phtonu16(aad + 12 + cidl, ciphertext_len);  /* TLSCompressed.length */
         } else {
             aad_len = 23 + cidl;
             aad = wmem_alloc(allocator, aad_len);
@@ -5592,22 +5601,22 @@ tls_decrypt_aead_record(wmem_allocator_t* allocator, SslDecryptSession *ssl, Ssl
             aad[8] = ct;                        /* TLSCompressed.type */
             aad[9] = cidl;                      /* cid_length */
             aad[10] = ct;                       /* TLSCompressed.type */
-            phton16(aad + 11, record_version);  /* TLSCompressed.version */
-            phton64(aad + 13, decoder->seq);    /* record sequence number */
-            phton16(aad + 13, decoder->epoch);  /* DTLS 1.2 includes epoch. */
+            phtonu16(aad + 11, record_version);  /* TLSCompressed.version */
+            phtonu64(aad + 13, decoder->seq);    /* record sequence number */
+            phtonu16(aad + 13, decoder->epoch);  /* DTLS 1.2 includes epoch. */
             memcpy(aad + 21, cid, cidl);        /* cid */
-            phton16(aad + 21 + cidl, ciphertext_len);  /* TLSCompressed.length */
+            phtonu16(aad + 21 + cidl, ciphertext_len);  /* TLSCompressed.length */
         }
     } else if (is_v12) {
         aad_len = 13;
         aad = wmem_alloc(allocator, aad_len);
-        phton64(aad, decoder->seq);         /* record sequence number */
+        phtonu64(aad, decoder->seq);         /* record sequence number */
         if (version == DTLSV1DOT2_VERSION) {
-            phton16(aad, decoder->epoch);   /* DTLS 1.2 includes epoch. */
+            phtonu16(aad, decoder->epoch);   /* DTLS 1.2 includes epoch. */
         }
         aad[8] = ct;                        /* TLSCompressed.type */
-        phton16(aad + 9, record_version);   /* TLSCompressed.version */
-        phton16(aad + 11, ciphertext_len);  /* TLSCompressed.length */
+        phtonu16(aad + 9, record_version);   /* TLSCompressed.version */
+        phtonu16(aad + 11, ciphertext_len);  /* TLSCompressed.length */
     } else if (version == DTLSV1DOT3_VERSION) {
         aad_len = decoder->dtls13_aad.data_len;
         aad = decoder->dtls13_aad.data;
@@ -5615,8 +5624,8 @@ tls_decrypt_aead_record(wmem_allocator_t* allocator, SslDecryptSession *ssl, Ssl
         aad_len = 5;
         aad = wmem_alloc(allocator, aad_len);
         aad[0] = ct;                        /* TLSCiphertext.opaque_type (23) */
-        phton16(aad + 1, record_version);   /* TLSCiphertext.legacy_record_version (0x0303) */
-        phton16(aad + 3, inl);              /* TLSCiphertext.length */
+        phtonu16(aad + 1, record_version);   /* TLSCiphertext.legacy_record_version (0x0303) */
+        phtonu16(aad + 3, inl);              /* TLSCiphertext.length */
     }
 
     if (decoder->cipher_suite->mode == MODE_CCM || decoder->cipher_suite->mode == MODE_CCM_8) {
@@ -5974,6 +5983,20 @@ end:
 
 /*--- Start of dissector-related code below ---*/
 
+/* This is not a "protocol" but ensures that this gets called during
+ * the handoff stage. */
+void proto_reg_handoff_tls_utils(void);
+
+static dissector_handle_t base_tls_handle;
+static dissector_handle_t dtls_handle;
+
+void
+proto_reg_handoff_tls_utils(void)
+{
+    base_tls_handle = find_dissector("tls");
+    dtls_handle = find_dissector("dtls");
+}
+
 /* get ssl data for this session. if no ssl data is found allocate a new one*/
 SslDecryptSession *
 ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle)
@@ -5982,6 +6005,8 @@ ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle)
     SslDecryptSession  *ssl_session;
     int                 proto_ssl;
 
+    /* Note proto_ssl is tls for either the main tls_handle or the
+     * tls13_handshake handle used by QUIC. */
     proto_ssl = dissector_handle_get_protocol_index(tls_handle);
     conv_data = conversation_get_proto_data(conversation, proto_ssl);
     if (conv_data != NULL)
@@ -6027,6 +6052,17 @@ ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle)
     ssl_session->session.ech = false;
     ssl_session->session.hrr_ech_declined = false;
     ssl_session->session.first_ch_ech_frame = 0;
+
+    /* We want to increment the stream count for the normal tls handle and
+     * dtls handle, but presumably not for the tls13_handshake handle used
+     * by QUIC (it has its own Follow Stream handling, and the QUIC stream
+     * doesn't get sent to the TLS follow tap.)
+     */
+    if (tls_handle == base_tls_handle) {
+        ssl_session->session.stream = tls_increment_stream_count();
+    } else if (tls_handle == dtls_handle) {
+        ssl_session->session.stream = dtls_increment_stream_count();
+    }
 
     conversation_add_proto_data(conversation, proto_ssl, ssl_session);
     return ssl_session;
@@ -7907,7 +7943,7 @@ ssl_dissect_hnd_hello_ext_key_share_entry(ssl_common_dissect_t *hf, tvbuff_t *tv
 
     proto_tree_add_item_ret_uint(ks_tree, hf->hf.hs_ext_key_share_group, tvb, offset, 2, ENC_BIG_ENDIAN, &group);
     offset += 2;
-    const char *group_name = val_to_str(group, ssl_extension_curves, "Unknown (%u)");
+    const char *group_name = val_to_str(pinfo->pool, group, ssl_extension_curves, "Unknown (%u)");
     proto_item_append_text(ks_tree, ": Group: %s", group_name);
     if (group_name_out) {
         *group_name_out = !IS_GREASE_TLS(group) ? group_name : NULL;
@@ -7975,7 +8011,7 @@ ssl_dissect_hnd_hello_ext_key_share(ssl_common_dissect_t *hf, tvbuff_t *tvb, pac
         case SSL_HND_HELLO_RETRY_REQUEST:
             proto_tree_add_item_ret_uint(key_share_tree, hf->hf.hs_ext_key_share_selected_group, tvb, offset, 2, ENC_BIG_ENDIAN, &group);
             offset += 2;
-            group_name = val_to_str(group, ssl_extension_curves, "Unknown (%u)");
+            group_name = val_to_str(pinfo->pool, group, ssl_extension_curves, "Unknown (%u)");
             proto_item_append_text(tree, " %s", group_name);
         break;
         default: /* no default */
@@ -8210,7 +8246,7 @@ ssl_dissect_hnd_hello_ext_supported_versions(ssl_common_dissect_t *hf, tvbuff_t 
         offset += 2;
 
         if (!IS_GREASE_TLS(version)) {
-            proto_item_append_text(tree, "%s%s", sep, val_to_str(version, ssl_versions, "Unknown (0x%04x)"));
+            proto_item_append_text(tree, "%s%s", sep, val_to_str(pinfo->pool, version, ssl_versions, "Unknown (0x%04x)"));
             sep = ", ";
         }
 
@@ -8926,6 +8962,11 @@ ssl_dissect_hnd_hello_ext_quic_transport_parameters(ssl_common_dissect_t *hf, tv
                     quic_add_loss_bits(pinfo, value);
                 }
                 offset += 1;
+            break;
+            case SSL_HND_QUIC_TP_ADDRESS_DISCOVERY:
+                proto_tree_add_item_ret_varint(parameter_tree, hf->hf.hs_ext_quictp_parameter_address_discovery,
+                                               tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len);
+                offset += len;
             break;
             case SSL_HND_QUIC_TP_MIN_ACK_DELAY_OLD:
             case SSL_HND_QUIC_TP_MIN_ACK_DELAY_DRAFT_V1:
@@ -11702,7 +11743,7 @@ ssl_dissect_hnd_extension(ssl_common_dissect_t *hf, tvbuff_t *tvb, proto_tree *t
         }
 
         ext_item = proto_tree_add_none_format(tree, hf->hf.hs_ext, tvb, offset, 4 + ext_len,
-                                  "Extension: %s (len=%u)", val_to_str(ext_type,
+                                  "Extension: %s (len=%u)", val_to_str(pinfo->pool, ext_type,
                                             tls_hello_extension_types,
                                             "Unknown type %u"), ext_len);
         ext_tree = proto_item_add_subtree(ext_item, hf->ett.hs_ext);
@@ -11881,7 +11922,7 @@ ssl_dissect_hnd_extension(ssl_common_dissect_t *hf, tvbuff_t *tvb, proto_tree *t
             case SSL_HND_HELLO_RETRY_REQUEST:
                 proto_tree_add_item_ret_uint(ext_tree, hf->hf.hs_ext_supported_version, tvb, offset, 2, ENC_BIG_ENDIAN, &supported_version);
                 offset += 2;
-                proto_item_append_text(ext_tree, " %s", val_to_str(supported_version, ssl_versions, "Unknown (0x%04x)"));
+                proto_item_append_text(ext_tree, " %s", val_to_str(pinfo->pool, supported_version, ssl_versions, "Unknown (0x%04x)"));
                 break;
             }
             break;
