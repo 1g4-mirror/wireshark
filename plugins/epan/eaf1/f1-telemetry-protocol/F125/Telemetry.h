@@ -15,13 +15,16 @@
 
 namespace F125
 {
+
     //-----------------------------------------------------------------------------
     // Header - 29 bytes
     //-----------------------------------------------------------------------------
-    static const uint32 cs_maxNumCarsInUDPData = 22;
-    static const uint32 cs_maxParticipantNameLen = 32;
-    static const uint32 cs_maxTyreStints = 8;
-    static const uint32 cs_maxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
+    static const uint32 cs_ADHF125maxNumCarsInUDPData = 22;
+    static const uint32 cs_ADHF125maxParticipantNameLen = 32;
+    static const uint32 cs_ADHF125maxTyreStints = 8;
+    static const uint32 cs_ADHF125maxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
+
+#if 0
 
     // Different packet types
     enum PacketId
@@ -44,8 +47,9 @@ namespace F125
         ePacketIdLapPositions = 15,       // Lap positions on each lap so a chart can be constructed
         ePacketIdMax
     };
+#endif
 
-    struct PacketHeader
+    struct ADHF125PacketHeader
     {
         uint16 m_packetFormat;           // 2025
         uint8 m_gameYear;                // Game year - last two digits e.g. 25
@@ -92,18 +96,18 @@ namespace F125
 
     struct PacketMotionData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        CarMotionData m_carMotionData[cs_maxNumCarsInUDPData]; // Data for all cars on track
+        CarMotionData m_carMotionData[cs_ADHF125maxNumCarsInUDPData]; // Data for all cars on track
     };
 
     //-----------------------------------------------------------------------------
     // Session - 753 bytes
     //-----------------------------------------------------------------------------
-    static const uint32 cs_maxMarshalsZonePerLap = 21;
-    static const uint32 cs_maxWeatherForecastSamples = 64;
-    static const uint32 cs_maxSessionsInWeekend = 12;
+    static const uint32 cs_ADHF125maxMarshalsZonePerLap = 21;
+    static const uint32 cs_ADHF125maxWeatherForecastSamples = 64;
+    static const uint32 cs_ADHF125maxSessionsInWeekend = 12;
 
     struct MarshalZone
     {
@@ -125,86 +129,86 @@ namespace F125
 
     struct PacketSessionData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        uint8 m_weather;                                                              // Weather - 0 = clear, 1 = light cloud, 2 = overcast, 3 = light rain, 4 = heavy rain, 5 = storm
-        int8 m_trackTemperature;                                                      // Track temp. in degrees celsius
-        int8 m_airTemperature;                                                        // Air temp. in degrees celsius
-        uint8 m_totalLaps;                                                            // Total number of laps in this race
-        uint16 m_trackLength;                                                         // Track length in metres
-        uint8 m_sessionType;                                                          // 0 = unknown, see appendix
-        int8 m_trackId;                                                               // -1 for unknown, see appendix
-        uint8 m_formula;                                                              // Formula, 0 = F1 Modern, 1 = F1 Classic, 2 = F2, 3 = F1 Generic, 4 = Beta, 6 = Esports, 8 = F1 World, 9 = F1 Elimination
-        uint16 m_sessionTimeLeft;                                                     // Time left in session in seconds
-        uint16 m_sessionDuration;                                                     // Session duration in seconds
-        uint8 m_pitSpeedLimit;                                                        // Pit speed limit in kilometres per hour
-        uint8 m_gamePaused;                                                           // Whether the game is paused - network game only
-        uint8 m_isSpectating;                                                         // Whether the player is spectating
-        uint8 m_spectatorCarIndex;                                                    // Index of the car being spectated
-        uint8 m_sliProNativeSupport;                                                  // SLI Pro support, 0 = inactive, 1 = active
-        uint8 m_numMarshalZones;                                                      // Number of marshal zones to follow
-        MarshalZone m_marshalZones[cs_maxMarshalsZonePerLap];                         // List of marshal zones - max 21
-        uint8 m_safetyCarStatus;                                                      // 0 = no safety car, 1 = full, 2 = virtual, 3 = formation lap
-        uint8 m_networkGame;                                                          // 0 = offline, 1 = online
-        uint8 m_numWeatherForecastSamples;                                            // Number of weather samples to follow
-        WeatherForecastSample m_weatherForecastSamples[cs_maxWeatherForecastSamples]; // Array of weather forecast samples
-        uint8 m_forecastAccuracy;                                                     // 0 = Perfect, 1 = Approximate
-        uint8 m_aiDifficulty;                                                         // AI difficulty - 0-110
-        uint32 m_seasonLinkIdentifier;                                                // Identifier for season - persists across saves
-        uint32 m_weekendLinkIdentifier;                                               // Identifier for weekend - persists across saves
-        uint32 m_sessionLinkIdentifier;                                               // Identifier for session - persists across saves
-        uint8 m_pitStopWindowIdealLap;                                                // Ideal lap to pit on for current strategy (player)
-        uint8 m_pitStopWindowLatestLap;                                               // Latest lap to pit on for current strategy (player)
-        uint8 m_pitStopRejoinPosition;                                                // Predicted position to rejoin at (player)
-        uint8 m_steeringAssist;                                                       // 0 = off, 1 = on
-        uint8 m_brakingAssist;                                                        // 0 = off, 1 = low, 2 = medium, 3 = high
-        uint8 m_gearboxAssist;                                                        // 1 = manual, 2 = manual & suggested gear, 3 = auto
-        uint8 m_pitAssist;                                                            // 0 = off, 1 = on
-        uint8 m_pitReleaseAssist;                                                     // 0 = off, 1 = on
-        uint8 m_ERSAssist;                                                            // 0 = off, 1 = on
-        uint8 m_DRSAssist;                                                            // 0 = off, 1 = on
-        uint8 m_dynamicRacingLine;                                                    // 0 = off, 1 = corners only, 2 = full
-        uint8 m_dynamicRacingLineType;                                                // 0 = 2D, 1 = 3D
-        uint8 m_gameMode;                                                             // Game mode id - see appendix
-        uint8 m_ruleSet;                                                              // Ruleset - see appendix
-        uint32 m_timeOfDay;                                                           // Local time of day - minutes since midnight
-        uint8 m_sessionLength;                                                        // 0 = None, 2 = Very Short, 3 = Short, 4 = Medium, 5 = Medium Long, 6 = Long, 7 = Full
-        uint8 m_speedUnitsLeadPlayer;                                                 // 0 = MPH, 1 = KPH
-        uint8 m_temperatureUnitsLeadPlayer;                                           // 0 = Celsius, 1 = Fahrenheit
-        uint8 m_speedUnitsSecondaryPlayer;                                            // 0 = MPH, 1 = KPH
-        uint8 m_temperatureUnitsSecondaryPlayer;                                      // 0 = Celsius, 1 = Fahrenheit
-        uint8 m_numSafetyCarPeriods;                                                  // Number of safety cars called during session
-        uint8 m_numVirtualSafetyCarPeriods;                                           // Number of virtual safety cars called during session
-        uint8 m_numRedFlagPeriods;                                                    // Number of red flags called during session
-        uint8 m_equalCarPerformance;                                                  // 0 = Off, 1 = On
-        uint8 m_recoveryMode;                                                         // 0 = None, 1 = Flashbacks, 2 = Auto-recovery
-        uint8 m_flashbackLimit;                                                       // 0 = Low, 1 = Medium, 2 = High, 3 = Unlimited
-        uint8 m_surfaceType;                                                          // 0 = Simplified, 1 = Realistic
-        uint8 m_lowFuelMode;                                                          // 0 = Easy, 1 = Hard
-        uint8 m_raceStarts;                                                           // 0 = Manual, 1 = Assisted
-        uint8 m_tyreTemperature;                                                      // 0 = Surface only, 1 = Surface & Carcass
-        uint8 m_pitLaneTyreSim;                                                       // 0 = On, 1 = Off
-        uint8 m_carDamage;                                                            // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Simulation
-        uint8 m_carDamageRate;                                                        // 0 = Reduced, 1 = Standard, 2 = Simulation
-        uint8 m_collisions;                                                           // 0 = Off, 1 = Player-to-Player Off, 2 = On
-        uint8 m_collisionsOffForFirstLapOnly;                                         // 0 = Disabled, 1 = Enabled
-        uint8 m_mpUnsafePitRelease;                                                   // 0 = On, 1 = Off (Multiplayer)
-        uint8 m_mpOffForGriefing;                                                     // 0 = Disabled, 1 = Enabled (Multiplayer)
-        uint8 m_cornerCuttingStringency;                                              // 0 = Regular, 1 = Strict
-        uint8 m_parcFermeRules;                                                       // 0 = Off, 1 = On
-        uint8 m_pitStopExperience;                                                    // 0 = Automatic, 1 = Broadcast, 2 = Immersive
-        uint8 m_safetyCar;                                                            // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Increased
-        uint8 m_safetyCarExperience;                                                  // 0 = Broadcast, 1 = Immersive
-        uint8 m_formationLap;                                                         // 0 = Off, 1 = On
-        uint8 m_formationLapExperience;                                               // 0 = Broadcast, 1 = Immersive
-        uint8 m_redFlags;                                                             // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Increased
-        uint8 m_affectsLicenceLevelSolo;                                              // 0 = Off, 1 = On
-        uint8 m_affectsLicenceLevelMP;                                                // 0 = Off, 1 = On
-        uint8 m_numSessionsInWeekend;                                                 // Number of session in following array
-        uint8 m_weekendStructure[cs_maxSessionsInWeekend];                            // List of session types to show weekend structure - see appendix for types
-        float m_sector2LapDistanceStart;                                              // Distance in m around track where sector 2 starts
-        float m_sector3LapDistanceStart;                                              // Distance in m around track where sector 3 starts
+        uint8 m_weather;                                                                     // Weather - 0 = clear, 1 = light cloud, 2 = overcast, 3 = light rain, 4 = heavy rain, 5 = storm
+        int8 m_trackTemperature;                                                             // Track temp. in degrees celsius
+        int8 m_airTemperature;                                                               // Air temp. in degrees celsius
+        uint8 m_totalLaps;                                                                   // Total number of laps in this race
+        uint16 m_trackLength;                                                                // Track length in metres
+        uint8 m_sessionType;                                                                 // 0 = unknown, see appendix
+        int8 m_trackId;                                                                      // -1 for unknown, see appendix
+        uint8 m_formula;                                                                     // Formula, 0 = F1 Modern, 1 = F1 Classic, 2 = F2, 3 = F1 Generic, 4 = Beta, 6 = Esports, 8 = F1 World, 9 = F1 Elimination
+        uint16 m_sessionTimeLeft;                                                            // Time left in session in seconds
+        uint16 m_sessionDuration;                                                            // Session duration in seconds
+        uint8 m_pitSpeedLimit;                                                               // Pit speed limit in kilometres per hour
+        uint8 m_gamePaused;                                                                  // Whether the game is paused - network game only
+        uint8 m_isSpectating;                                                                // Whether the player is spectating
+        uint8 m_spectatorCarIndex;                                                           // Index of the car being spectated
+        uint8 m_sliProNativeSupport;                                                         // SLI Pro support, 0 = inactive, 1 = active
+        uint8 m_numMarshalZones;                                                             // Number of marshal zones to follow
+        MarshalZone m_marshalZones[cs_ADHF125maxMarshalsZonePerLap];                         // List of marshal zones - max 21
+        uint8 m_safetyCarStatus;                                                             // 0 = no safety car, 1 = full, 2 = virtual, 3 = formation lap
+        uint8 m_networkGame;                                                                 // 0 = offline, 1 = online
+        uint8 m_numWeatherForecastSamples;                                                   // Number of weather samples to follow
+        WeatherForecastSample m_weatherForecastSamples[cs_ADHF125maxWeatherForecastSamples]; // Array of weather forecast samples
+        uint8 m_forecastAccuracy;                                                            // 0 = Perfect, 1 = Approximate
+        uint8 m_aiDifficulty;                                                                // AI difficulty - 0-110
+        uint32 m_seasonLinkIdentifier;                                                       // Identifier for season - persists across saves
+        uint32 m_weekendLinkIdentifier;                                                      // Identifier for weekend - persists across saves
+        uint32 m_sessionLinkIdentifier;                                                      // Identifier for session - persists across saves
+        uint8 m_pitStopWindowIdealLap;                                                       // Ideal lap to pit on for current strategy (player)
+        uint8 m_pitStopWindowLatestLap;                                                      // Latest lap to pit on for current strategy (player)
+        uint8 m_pitStopRejoinPosition;                                                       // Predicted position to rejoin at (player)
+        uint8 m_steeringAssist;                                                              // 0 = off, 1 = on
+        uint8 m_brakingAssist;                                                               // 0 = off, 1 = low, 2 = medium, 3 = high
+        uint8 m_gearboxAssist;                                                               // 1 = manual, 2 = manual & suggested gear, 3 = auto
+        uint8 m_pitAssist;                                                                   // 0 = off, 1 = on
+        uint8 m_pitReleaseAssist;                                                            // 0 = off, 1 = on
+        uint8 m_ERSAssist;                                                                   // 0 = off, 1 = on
+        uint8 m_DRSAssist;                                                                   // 0 = off, 1 = on
+        uint8 m_dynamicRacingLine;                                                           // 0 = off, 1 = corners only, 2 = full
+        uint8 m_dynamicRacingLineType;                                                       // 0 = 2D, 1 = 3D
+        uint8 m_gameMode;                                                                    // Game mode id - see appendix
+        uint8 m_ruleSet;                                                                     // Ruleset - see appendix
+        uint32 m_timeOfDay;                                                                  // Local time of day - minutes since midnight
+        uint8 m_sessionLength;                                                               // 0 = None, 2 = Very Short, 3 = Short, 4 = Medium, 5 = Medium Long, 6 = Long, 7 = Full
+        uint8 m_speedUnitsLeadPlayer;                                                        // 0 = MPH, 1 = KPH
+        uint8 m_temperatureUnitsLeadPlayer;                                                  // 0 = Celsius, 1 = Fahrenheit
+        uint8 m_speedUnitsSecondaryPlayer;                                                   // 0 = MPH, 1 = KPH
+        uint8 m_temperatureUnitsSecondaryPlayer;                                             // 0 = Celsius, 1 = Fahrenheit
+        uint8 m_numSafetyCarPeriods;                                                         // Number of safety cars called during session
+        uint8 m_numVirtualSafetyCarPeriods;                                                  // Number of virtual safety cars called during session
+        uint8 m_numRedFlagPeriods;                                                           // Number of red flags called during session
+        uint8 m_equalCarPerformance;                                                         // 0 = Off, 1 = On
+        uint8 m_recoveryMode;                                                                // 0 = None, 1 = Flashbacks, 2 = Auto-recovery
+        uint8 m_flashbackLimit;                                                              // 0 = Low, 1 = Medium, 2 = High, 3 = Unlimited
+        uint8 m_surfaceType;                                                                 // 0 = Simplified, 1 = Realistic
+        uint8 m_lowFuelMode;                                                                 // 0 = Easy, 1 = Hard
+        uint8 m_raceStarts;                                                                  // 0 = Manual, 1 = Assisted
+        uint8 m_tyreTemperature;                                                             // 0 = Surface only, 1 = Surface & Carcass
+        uint8 m_pitLaneTyreSim;                                                              // 0 = On, 1 = Off
+        uint8 m_carDamage;                                                                   // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Simulation
+        uint8 m_carDamageRate;                                                               // 0 = Reduced, 1 = Standard, 2 = Simulation
+        uint8 m_collisions;                                                                  // 0 = Off, 1 = Player-to-Player Off, 2 = On
+        uint8 m_collisionsOffForFirstLapOnly;                                                // 0 = Disabled, 1 = Enabled
+        uint8 m_mpUnsafePitRelease;                                                          // 0 = On, 1 = Off (Multiplayer)
+        uint8 m_mpOffForGriefing;                                                            // 0 = Disabled, 1 = Enabled (Multiplayer)
+        uint8 m_cornerCuttingStringency;                                                     // 0 = Regular, 1 = Strict
+        uint8 m_parcFermeRules;                                                              // 0 = Off, 1 = On
+        uint8 m_pitStopExperience;                                                           // 0 = Automatic, 1 = Broadcast, 2 = Immersive
+        uint8 m_safetyCar;                                                                   // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Increased
+        uint8 m_safetyCarExperience;                                                         // 0 = Broadcast, 1 = Immersive
+        uint8 m_formationLap;                                                                // 0 = Off, 1 = On
+        uint8 m_formationLapExperience;                                                      // 0 = Broadcast, 1 = Immersive
+        uint8 m_redFlags;                                                                    // 0 = Off, 1 = Reduced, 2 = Standard, 3 = Increased
+        uint8 m_affectsLicenceLevelSolo;                                                     // 0 = Off, 1 = On
+        uint8 m_affectsLicenceLevelMP;                                                       // 0 = Off, 1 = On
+        uint8 m_numSessionsInWeekend;                                                        // Number of session in following array
+        uint8 m_weekendStructure[cs_ADHF125maxSessionsInWeekend];                            // List of session types to show weekend structure - see appendix for types
+        float m_sector2LapDistanceStart;                                                     // Distance in m around track where sector 2 starts
+        float m_sector3LapDistanceStart;                                                     // Distance in m around track where sector 3 starts
     };
 
     //-----------------------------------------------------------------------------
@@ -253,10 +257,10 @@ namespace F125
 
     struct PacketLapData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        LapData m_lapData[cs_maxNumCarsInUDPData]; // Lap data for all cars on track
+        LapData m_lapData[cs_ADHF125maxNumCarsInUDPData]; // Lap data for all cars on track
 
         uint8 m_timeTrialPBCarIdx;    // Index of Personal Best car in time trial (255 if invalid)
         uint8 m_timeTrialRivalCarIdx; // Index of Rival car in time trial (255 if invalid)
@@ -266,7 +270,7 @@ namespace F125
     // Event - 45 bytes
     //-----------------------------------------------------------------------------
 
-    static const uint cs_eventStringCodeLen = 4;
+    static const uint cs_ADHF125eventStringCodeLen = 4;
 
     // The event details packet is different for each type of event.
     // Make sure only the correct type is interpreted.
@@ -370,33 +374,33 @@ namespace F125
     struct PacketEventData
     {
         // Valid event strings
-        static constexpr const char *cs_sessionStartedEventCode = "SSTA";
-        static constexpr const char *cs_sessionEndedEventCode = "SEND";
-        static constexpr const char *cs_fastestLapEventCode = "FTLP";
-        static constexpr const char *cs_retirementEventCode = "RTMT";
-        static constexpr const char *cs_drsEnabledEventCode = "DRSE";
-        static constexpr const char *cs_drsDisabledEventCode = "DRSD";
-        static constexpr const char *cs_teamMateInPitsEventCode = "TMPT";
-        static constexpr const char *cs_chequeredFlagEventCode = "CHQF";
-        static constexpr const char *cs_raceWinnerEventCode = "RCWN";
-        static constexpr const char *cs_penaltyEventCode = "PENA";
-        static constexpr const char *cs_speedTrapEventCode = "SPTP";
-        static constexpr const char *cs_startLightsEventCode = "STLG";
-        static constexpr const char *cs_lightsOutEventCode = "LGOT";
-        static constexpr const char *cs_driveThroughServedEventCode = "DTSV";
-        static constexpr const char *cs_stopGoServedEventCode = "SGSV";
-        static constexpr const char *cs_flashbackEventCode = "FLBK";
-        static constexpr const char *cs_buttonStatusEventCode = "BUTN";
-        static constexpr const char *cs_redFlagEventCode = "RDFL";
-        static constexpr const char *cs_overtakeEventCode = "OVTK";
-        static constexpr const char *cs_safetyCarEventCode = "SCAR";
-        static constexpr const char *cs_collisionEventCode = "COLL";
+        static constexpr const char *cs_ADHF125sessionStartedEventCode = "SSTA";
+        static constexpr const char *cs_ADHF125sessionEndedEventCode = "SEND";
+        static constexpr const char *cs_ADHF125fastestLapEventCode = "FTLP";
+        static constexpr const char *cs_ADHF125retirementEventCode = "RTMT";
+        static constexpr const char *cs_ADHF125drsEnabledEventCode = "DRSE";
+        static constexpr const char *cs_ADHF125drsDisabledEventCode = "DRSD";
+        static constexpr const char *cs_ADHF125teamMateInPitsEventCode = "TMPT";
+        static constexpr const char *cs_ADHF125chequeredFlagEventCode = "CHQF";
+        static constexpr const char *cs_ADHF125raceWinnerEventCode = "RCWN";
+        static constexpr const char *cs_ADHF125penaltyEventCode = "PENA";
+        static constexpr const char *cs_ADHF125speedTrapEventCode = "SPTP";
+        static constexpr const char *cs_ADHF125startLightsEventCode = "STLG";
+        static constexpr const char *cs_ADHF125lightsOutEventCode = "LGOT";
+        static constexpr const char *cs_ADHF125driveThroughServedEventCode = "DTSV";
+        static constexpr const char *cs_ADHF125stopGoServedEventCode = "SGSV";
+        static constexpr const char *cs_ADHF125flashbackEventCode = "FLBK";
+        static constexpr const char *cs_ADHF125buttonStatusEventCode = "BUTN";
+        static constexpr const char *cs_ADHF125redFlagEventCode = "RDFL";
+        static constexpr const char *cs_ADHF125overtakeEventCode = "OVTK";
+        static constexpr const char *cs_ADHF125safetyCarEventCode = "SCAR";
+        static constexpr const char *cs_ADHF125collisionEventCode = "COLL";
 
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        uint8 m_eventStringCode[cs_eventStringCodeLen]; // Event string code
-        EventDataDetails m_eventDetails;                // Event details - should be interpreted differently for each type
+        uint8 m_eventStringCode[cs_ADHF125eventStringCodeLen]; // Event string code
+        EventDataDetails m_eventDetails;                       // Event details - should be interpreted differently for each type
     };
 
     //-----------------------------------------------------------------------------
@@ -416,30 +420,30 @@ namespace F125
     //-----------------------------------------------------------------------------
     struct ParticipantData
     {
-        uint8 m_aiControlled;                  // Whether the vehicle is AI (1) or Human (0) controlled
-        uint8 m_driverId;                      // Driver id - see appendix, 255 if network human
-        uint8 m_networkId;                     // Network id - unique identifier for network players
-        uint8 m_teamId;                        // Team id - see appendix
-        uint8 m_myTeam;                        // My team flag - 1 = My Team, 0 = otherwise
-        uint8 m_raceNumber;                    // Race number of the car
-        uint8 m_nationality;                   // Nationality of the driver
-        char m_name[cs_maxParticipantNameLen]; // Name of participant in UTF-8 format – null terminated
-                                               // Will be truncated with ... (U+2026) if too long
-        uint8 m_yourTelemetry;                 // The player's UDP setting, 0 = restricted, 1 = public
-        uint8 m_showOnlineNames;               // The player's show online names setting, 0 = off, 1 = on
-        uint16 m_techLevel;                    // F1 World tech level
-        uint8 m_platform;                      // 1 = Steam, 3 = PlayStation, 4 = Xbox, 6 = Origin, 255 = unknown
-        uint8 m_numColours;                    // Number of colours valid for this car
-        LiveryColour m_liveryColours[4];       // Colours for the car
+        uint8 m_aiControlled;                         // Whether the vehicle is AI (1) or Human (0) controlled
+        uint8 m_driverId;                             // Driver id - see appendix, 255 if network human
+        uint8 m_networkId;                            // Network id - unique identifier for network players
+        uint8 m_teamId;                               // Team id - see appendix
+        uint8 m_myTeam;                               // My team flag - 1 = My Team, 0 = otherwise
+        uint8 m_raceNumber;                           // Race number of the car
+        uint8 m_nationality;                          // Nationality of the driver
+        char m_name[cs_ADHF125maxParticipantNameLen]; // Name of participant in UTF-8 format – null terminated
+                                                      // Will be truncated with ... (U+2026) if too long
+        uint8 m_yourTelemetry;                        // The player's UDP setting, 0 = restricted, 1 = public
+        uint8 m_showOnlineNames;                      // The player's show online names setting, 0 = off, 1 = on
+        uint16 m_techLevel;                           // F1 World tech level
+        uint8 m_platform;                             // 1 = Steam, 3 = PlayStation, 4 = Xbox, 6 = Origin, 255 = unknown
+        uint8 m_numColours;                           // Number of colours valid for this car
+        LiveryColour m_liveryColours[4];              // Colours for the car
     };
 
     struct PacketParticipantsData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
         uint8 m_numActiveCars; // Number of active cars in the data - should match number of cars on HUD
-        ParticipantData m_participants[cs_maxNumCarsInUDPData];
+        ParticipantData m_participants[cs_ADHF125maxNumCarsInUDPData];
     };
 
     //-----------------------------------------------------------------------------
@@ -478,10 +482,10 @@ namespace F125
 
     struct PacketCarSetupData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        CarSetupData m_carSetupData[cs_maxNumCarsInUDPData];
+        CarSetupData m_carSetupData[cs_ADHF125maxNumCarsInUDPData];
 
         float m_nextFrontWingValue; // Value of front wing after next pit stop - player only
     };
@@ -515,10 +519,10 @@ namespace F125
 
     struct PacketCarTelemetryData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        CarTelemetryData m_carTelemetryData[cs_maxNumCarsInUDPData]; // data for all cars on track
+        CarTelemetryData m_carTelemetryData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
 
         uint8 m_mfdPanelIndex;                // Index of MFD panel open - 255 = MFD closed
                                               // Single player, race – 0 = Car setup, 1 = Pits
@@ -571,10 +575,10 @@ namespace F125
 
     struct PacketCarStatusData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        CarStatusData m_carStatusData[cs_maxNumCarsInUDPData]; // data for all cars on track
+        CarStatusData m_carStatusData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
     };
 
     //-----------------------------------------------------------------------------
@@ -586,31 +590,31 @@ namespace F125
     //-----------------------------------------------------------------------------
     struct FinalClassificationData
     {
-        uint8 m_position;                            // Finishing position
-        uint8 m_numLaps;                             // Number of laps completed
-        uint8 m_gridPosition;                        // Grid position of the car
-        uint8 m_points;                              // Number of points scored
-        uint8 m_numPitStops;                         // Number of pit stops made
-        uint8 m_resultStatus;                        // Result status - 0 = invalid, 1 = inactive, 2 = active, 3 = finished, 4 = didnotfinish, 5 = disqualified, 6 = not classified, 7 = retired
-        uint8 m_resultReason;                        // Result reason - 0 = invalid, 1 = retired, 2 = finished, 3 = terminal damage, 4 = inactive, 5 = not enough laps completed, 6 = black flagged
-                                                     // 7 = red flagged, 8 = mechanical failure, 9 = session skipped, 10 = session simulated
-        uint32 m_bestLapTimeInMS;                    // Best lap time of the session in milliseconds
-        double m_totalRaceTime;                      // Total race time in seconds without penalties
-        uint8 m_penaltiesTime;                       // Total penalties accumulated in seconds
-        uint8 m_numPenalties;                        // Number of penalties applied to this driver
-        uint8 m_numTyreStints;                       // Number of tyres stints up to maximum
-        uint8 m_tyreStintsActual[cs_maxTyreStints];  // Actual tyres used by this driver
-        uint8 m_tyreStintsVisual[cs_maxTyreStints];  // Visual tyres used by this driver
-        uint8 m_tyreStintsEndLaps[cs_maxTyreStints]; // The lap number stints end on
+        uint8 m_position;                                   // Finishing position
+        uint8 m_numLaps;                                    // Number of laps completed
+        uint8 m_gridPosition;                               // Grid position of the car
+        uint8 m_points;                                     // Number of points scored
+        uint8 m_numPitStops;                                // Number of pit stops made
+        uint8 m_resultStatus;                               // Result status - 0 = invalid, 1 = inactive, 2 = active, 3 = finished, 4 = didnotfinish, 5 = disqualified, 6 = not classified, 7 = retired
+        uint8 m_resultReason;                               // Result reason - 0 = invalid, 1 = retired, 2 = finished, 3 = terminal damage, 4 = inactive, 5 = not enough laps completed, 6 = black flagged
+                                                            // 7 = red flagged, 8 = mechanical failure, 9 = session skipped, 10 = session simulated
+        uint32 m_bestLapTimeInMS;                           // Best lap time of the session in milliseconds
+        double m_totalRaceTime;                             // Total race time in seconds without penalties
+        uint8 m_penaltiesTime;                              // Total penalties accumulated in seconds
+        uint8 m_numPenalties;                               // Number of penalties applied to this driver
+        uint8 m_numTyreStints;                              // Number of tyres stints up to maximum
+        uint8 m_tyreStintsActual[cs_ADHF125maxTyreStints];  // Actual tyres used by this driver
+        uint8 m_tyreStintsVisual[cs_ADHF125maxTyreStints];  // Visual tyres used by this driver
+        uint8 m_tyreStintsEndLaps[cs_ADHF125maxTyreStints]; // The lap number stints end on
     };
 
     struct PacketFinalClassificationData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
         uint8 m_numCars; // Number of cars in the final classification
-        FinalClassificationData m_classificationData[cs_maxNumCarsInUDPData];
+        FinalClassificationData m_classificationData[cs_ADHF125maxNumCarsInUDPData];
     };
 
     //-----------------------------------------------------------------------------
@@ -620,29 +624,31 @@ namespace F125
     //-----------------------------------------------------------------------------
     // Data about one participant
     //-----------------------------------------------------------------------------
+#if 0
     struct LobbyInfoData
     {
-        uint8 m_aiControlled;                  // Whether the vehicle is AI (1) or Human (0) controlled
-        uint8 m_teamId;                        // Team id - see appendix (255 if no team currently selected)
-        uint8 m_nationality;                   // Nationality of the driver
-        uint8 m_platform;                      // 1 = Steam, 3 = PlayStation, 4 = Xbox, 6 = Origin, 255 = unknown
-        char m_name[cs_maxParticipantNameLen]; // Name of participant in UTF-8 format – null terminated
-                                               // Will be truncated with ... (U+2026) if too long
-        uint8 m_carNumber;                     // Car number of the player
-        uint8 m_yourTelemetry;                 // The player's UDP setting, 0 = restricted, 1 = public
-        uint8 m_showOnlineNames;               // The player's show online names setting, 0 = off, 1 = on
-        uint16 m_techLevel;                    // F1 World tech level
-        uint8 m_readyStatus;                   // 0 = not ready, 1 = ready, 2 = spectating
+        uint8 m_aiControlled;                         // Whether the vehicle is AI (1) or Human (0) controlled
+        uint8 m_teamId;                               // Team id - see appendix (255 if no team currently selected)
+        uint8 m_nationality;                          // Nationality of the driver
+        uint8 m_platform;                             // 1 = Steam, 3 = PlayStation, 4 = Xbox, 6 = Origin, 255 = unknown
+        char m_name[cs_ADHF125maxParticipantNameLen]; // Name of participant in UTF-8 format – null terminated
+                                                      // Will be truncated with ... (U+2026) if too long
+        uint8 m_carNumber;                            // Car number of the player
+        uint8 m_yourTelemetry;                        // The player's UDP setting, 0 = restricted, 1 = public
+        uint8 m_showOnlineNames;                      // The player's show online names setting, 0 = off, 1 = on
+        uint16 m_techLevel;                           // F1 World tech level
+        uint8 m_readyStatus;                          // 0 = not ready, 1 = ready, 2 = spectating
     };
 
     struct PacketLobbyInfoData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
         uint8 m_numPlayers; // Number of players in the lobby data
-        LobbyInfoData m_lobbyPlayers[cs_maxNumCarsInUDPData];
+        LobbyInfoData m_lobbyPlayers[cs_ADHF125maxNumCarsInUDPData];
     };
+#endif
 
     //-----------------------------------------------------------------------------
     // Car Damage - 1041 bytes
@@ -679,17 +685,17 @@ namespace F125
 
     struct PacketCarDamageData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
-        CarDamageData m_carDamageData[cs_maxNumCarsInUDPData]; // data for all cars on track
+        CarDamageData m_carDamageData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
     };
 
     //-----------------------------------------------------------------------------
     // Session History - 1460 bytes
     //-----------------------------------------------------------------------------
 
-    static const uint cs_maxNumLapsInHistory = 100;
+    static const uint cs_ADHF125maxNumLapsInHistory = 100;
 
     struct LapHistoryData
     {
@@ -713,7 +719,7 @@ namespace F125
 
     struct PacketSessionHistoryData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
         uint8 m_carIdx;        // Index of the car this lap data relates to
@@ -725,8 +731,8 @@ namespace F125
         uint8 m_bestSector2LapNum; // Lap the best Sector 2 time was achieved on
         uint8 m_bestSector3LapNum; // Lap the best Sector 3 time was achieved on
 
-        LapHistoryData m_lapHistoryData[cs_maxNumLapsInHistory]; // 100 laps of data max
-        TyreStintHistoryData m_tyreStintsHistoryData[cs_maxTyreStints];
+        LapHistoryData m_lapHistoryData[cs_ADHF125maxNumLapsInHistory]; // 100 laps of data max
+        TyreStintHistoryData m_tyreStintsHistoryData[cs_ADHF125maxTyreStints];
     };
 
     //-----------------------------------------------------------------------------
@@ -751,12 +757,12 @@ namespace F125
 
     struct PacketTyreSetsData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         uint8 m_carIdx; // Index of the car this data relates to
 
         // Packet specific data
-        TyreSetData m_tyreSetData[cs_maxNumTyreSets]; // 13 (dry) + 7 (wet)
+        TyreSetData m_tyreSetData[cs_ADHF125maxNumTyreSets]; // 13 (dry) + 7 (wet)
 
         uint8 m_fittedIdx; // Index into array of fitted tyre
     };
@@ -767,7 +773,7 @@ namespace F125
 
     struct PacketMotionExData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Extra player car ONLY data
         float m_suspensionPosition[4];     // Note: All wheel arrays have the following order:
@@ -822,7 +828,7 @@ namespace F125
 
     struct PacketTimeTrialData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         TimeTrialDataSet m_playerSessionBestDataSet; // Player session best data set
         TimeTrialDataSet m_personalBestDataSet;      // Personal best data set
@@ -837,18 +843,18 @@ namespace F125
     // Packet to send UDP data about the lap positions in a session. It details
     // the positions of all the drivers at the start of each lap
     //-----------------------------------------------------------------------------
-    static const uint8 cs_maxNumLapsInLapPositionsHistoryPacket = 50;
+    static const uint8 cs_ADHF125maxNumLapsInLapPositionsHistoryPacket = 50;
 
     struct PacketLapPositionsData
     {
-        PacketHeader m_header; // Header
+        ADHF125PacketHeader m_header; // Header
 
         // Packet specific data
         uint8 m_numLaps;  // Number of laps in the data
         uint8 m_lapStart; // Index of the lap where the data starts, 0 indexed
 
         // Array holding the position of the car in a given lap, 0 if no record
-        uint8 m_positionForVehicleIdx[cs_maxNumLapsInLapPositionsHistoryPacket][cs_maxNumCarsInUDPData];
+        uint8 m_positionForVehicleIdx[cs_ADHF125maxNumLapsInLapPositionsHistoryPacket][cs_ADHF125maxNumCarsInUDPData];
     };
 
     //////////////////////////////// END OF FILE ////////////////////////////////
