@@ -22,6 +22,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/proto.h>
+#include <epan/column-utils.h>
 
 #include "ui/main_statusbar.h"
 #include "ui/packet_list_utils.h"
@@ -2429,8 +2430,17 @@ void PacketList::resizeAllColumns(bool onlyTimeFormatted)
         return;
 
     for (int col = 0; col < cap_file_->cinfo.num_cols; col++) {
-        if (! onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) {
+        if (!onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) {
             resizeColumnToContents(col);
+
+            // If the column is of type "Info", limit its width
+            if (cap_file_->cinfo.col_fmt[col] == COL_INFO) {
+                const int maxInfoWidth = 600; // píxeles
+                if (columnWidth(col) > maxInfoWidth) {
+                    setColumnWidth(col, maxInfoWidth);
+                }
+            }
         }
     }
 }
+
