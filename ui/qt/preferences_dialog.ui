@@ -43,7 +43,17 @@
       <property name="currentIndex">
        <number>6</number>
       </property>
-      <widget class="MainWindowPreferencesFrame" name="appearanceFrame"/>
+      <widget class="MainWindowPreferencesFrame" name="appearanceFrame">
+        <layout class="QVBoxLayout" name="verticalLayout_appearance">
+          <item>
+            <widget class="QCheckBox" name="expert_info_bgcolor_checkbox">
+              <property name="text">
+                <string>Disable background color for Expert Info items</string>
+              </property>
+            </widget>
+          </item>
+        </layout>
+      </widget>
       <widget class="LayoutPreferencesFrame" name="layoutFrame"/>
       <widget class="ColumnPreferencesFrame" name="columnFrame"/>
       <widget class="FontColorPreferencesFrame" name="fontandcolorFrame"/>
