@@ -37,7 +37,9 @@ macro(set_common_executable_properties _executable _application)
 		set_target_properties(${_executable} PROPERTIES LINK_FLAGS_DEBUG "${WS_MSVC_DEBUG_LINK_FLAGS}")
 	endif()
 
-	set(PROGLIST ${PROGLIST} ${_executable})
+	# NB: We want to set this in the parent scope. If this becomes
+	# a function instead of a macro, we have to change this.
+	set(EXTCAP_PROGLIST ${EXTCAP_PROGLIST} ${_executable})
 
 	string(TOLOWER ${_application} _application_lower)
 	if(CMAKE_CONFIGURATION_TYPES)
@@ -382,6 +384,9 @@ if(BUILD_sshdig AND LIBSSH_FOUND)
 elseif (BUILD_sshdig)
 	#message( WARNING "Cannot find libssh, cannot build sshdig" )
 endif()
+
+# Propagate the program list up
+set(PROGLIST ${PROGLIST} ${EXTCAP_PROGLIST} PARENT_SCOPE)
 
 #
 # Editor modelines  -  https://www.wireshark.org/tools/modelines.html
