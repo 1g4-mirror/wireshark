@@ -9039,7 +9039,7 @@ void proto_register_mac_lte(void)
         },
         { &hf_mac_lte_rar_bi_nb,
             { "BI",
-              "mac-lte.rar.bi", FT_UINT8, BASE_HEX, VALS(rar_bi_nb_vals), 0x0f,
+              "mac-lte.rar.bi-nb", FT_UINT8, BASE_HEX, VALS(rar_bi_nb_vals), 0x0f,
               "Backoff Indicator (ms)", HFILL
             }
         },
@@ -9295,31 +9295,31 @@ void proto_register_mac_lte(void)
         },
         { &hf_mac_lte_control_short_ext_bsr_buffer_size,
             { "Buffer Size",
-              "mac-lte.control.bsr.buffer-size", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x3f,
+              "mac-lte.control.ext-bsr.buffer-size", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x3f,
               "Buffer Size available in all channels in group", HFILL
             }
         },
         { &hf_mac_lte_control_long_ext_bsr_buffer_size_0,
             { "Buffer Size 0",
-              "mac-lte.control.bsr.buffer-size-0", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0xfc,
+              "mac-lte.control.ext-bsr.buffer-size-0", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0xfc,
               "Buffer Size available in logical channel group 0", HFILL
             }
         },
         { &hf_mac_lte_control_long_ext_bsr_buffer_size_1,
             { "Buffer Size 1",
-              "mac-lte.control.bsr.buffer-size-1", FT_UINT16, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x03f0,
+              "mac-lte.control.ext-bsr.buffer-size-1", FT_UINT16, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x03f0,
               "Buffer Size available in logical channel group 1", HFILL
             }
         },
         { &hf_mac_lte_control_long_ext_bsr_buffer_size_2,
             { "Buffer Size 2",
-              "mac-lte.control.bsr.buffer-size-2", FT_UINT16, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x0fc0,
+              "mac-lte.control.ext-bsr.buffer-size-2", FT_UINT16, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x0fc0,
               "Buffer Size available in logical channel group 2", HFILL
             }
         },
         { &hf_mac_lte_control_long_ext_bsr_buffer_size_3,
             { "Buffer Size 3",
-              "mac-lte.control.bsr.buffer-size-3", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x3f,
+              "mac-lte.control.ext-bsr.buffer-size-3", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &ext_buffer_size_vals_ext, 0x3f,
               "Buffer Size available in logical channel group 3", HFILL
             }
         },
