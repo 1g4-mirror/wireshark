@@ -207,6 +207,8 @@ static int ett_http3_qpack_opcode;
 static int ett_http3_datagram;
 static int ett_http3_datagram_stream_id;
 
+static dissector_table_t datagram_subdissector_table; // Dissectors for processing HTTP/3 datagram payload
+
 /**
  * HTTP3 header constants.
  * The below constants are used for dissecting the
@@ -359,6 +361,7 @@ typedef struct _http3_stream_info {
     wmem_list_t         *response_header_data; /**< List of response header data */
     const char          *protocol;             /**< Protocol from extended CONNECT */
     dissector_handle_t   next_handle;	       /**< Dissector for extended CONNECT protocol */
+    dissector_handle_t   datagram_handle;	   /**< Dissector for datagrams of extended CONNECT protocol */
     http_upgrade_info_t *upgrade_info;         /**< Data for new protocol */
 } http3_stream_info_t;
 
@@ -1297,13 +1300,16 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig
                  * `:scheme' and `:path' MUST be empty
                  */
                  authority_contains_target = true;
-            } else {
+            } else if (!PINFO_FD_VISITED(pinfo)) {
                 http3_stream->protocol = wmem_strdup(wmem_file_scope(), pseudo_headers.protocol);
                 http3_stream->next_handle = http_upgrade_dissector(http3_stream->protocol);
-                http3_stream->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
-                http3_stream->upgrade_info->server_port = pinfo->destport;
-                http3_stream->upgrade_info->http_version = 3;
-                http3_stream->upgrade_info->get_header_value = http3_get_header_value;
+                http3_stream->datagram_handle = dissector_get_string_handle(datagram_subdissector_table, http3_stream->protocol);
+                if (http3_stream->next_handle || http3_stream->datagram_handle) {
+                    http3_stream->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
+                    http3_stream->upgrade_info->server_port = pinfo->destport;
+                    http3_stream->upgrade_info->http_version = 3;
+                    http3_stream->upgrade_info->get_header_value = http3_get_header_value;
+                }
             }
         }
 
@@ -2463,6 +2469,17 @@ dissect_http3_datagram(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
     proto_tree_add_item(datragram_tree, hf_http3_datagram_payload, tvb, offset, -1, ENC_NA);
 
+    quic_stream_info stream_info = {
+        .stream_id = request_stream_id,
+        .quic_info = datagram_info->quic_info,
+    };
+    http3_stream_info_t *http3_stream = (http3_stream_info_t *)quic_stream_get_proto_data(pinfo, &stream_info);
+
+    if (http3_stream && http3_stream->datagram_handle) {
+        http3_stream->upgrade_info->from_server = datagram_info->from_server;
+        call_dissector_only(http3_stream->datagram_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(proto_tree_get_parent_tree(proto_tree_get_parent_tree(http3_tree))), http3_stream->upgrade_info);
+    }
+
     return tvb_captured_length(tvb);
 }
 
@@ -3112,6 +3129,11 @@ proto_register_http3(void)
 
     expert_http3 = expert_register_protocol(proto_http3);
     expert_register_field_array(expert_http3, ei, array_length(ei));
+
+    /*
+     * Maps the lowercase Upgrade header value for Extended Connect :proto that processes HTTP/3 datagrams.
+     */
+    datagram_subdissector_table = register_dissector_table("http3.datagram", "HTTP/3 Datagrams", proto_http3, FT_STRING, STRING_CASE_SENSITIVE);
 
     http3_handle = register_dissector("http3", dissect_http3, proto_http3);
     http3_datagram_handle = register_dissector("http3.datagram", dissect_http3_datagram, proto_http3);
