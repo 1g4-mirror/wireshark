@@ -367,7 +367,7 @@ load_cap_file(capture_file *cf, int max_packet_count, int64_t max_byte_count)
             edt = epan_dissect_new(cf->epan, create_proto_tree, false);
         }
 
-        wtap_rec_init(&rec, 1514);
+        wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
         while (wtap_read(cf->provider.wth, &rec, &err, &err_info, &data_offset)) {
             if (process_packet(cf, edt, data_offset, &rec)) {
@@ -575,7 +575,7 @@ sharkd_retap(void)
     create_proto_tree =
         (have_filtering_tap_listeners() || (tap_flags & TL_REQUIRES_PROTO_TREE));
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
     epan_dissect_init(&edt, cfile.epan, create_proto_tree, false);
 
     reset_tap_listeners();
@@ -630,7 +630,7 @@ sharkd_filter(const char *dftext, uint8_t **result)
 
     frames_count = cfile.count;
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
     epan_dissect_init(&edt, cfile.epan, true, false);
 
     passed_bits = 0;
@@ -707,7 +707,7 @@ sharkd_get_packet_block(const frame_data *fd)
         int err;
         char *err_info;
 
-        wtap_rec_init(&rec, 1514);
+        wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
         if (!wtap_seek_read(cfile.provider.wth, fd->file_off, &rec, &err, &err_info))
         { /* XXX, what we can do here? */ }

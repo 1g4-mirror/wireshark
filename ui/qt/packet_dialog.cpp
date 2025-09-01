@@ -45,7 +45,7 @@ PacketDialog::PacketDialog(QWidget &parent, CaptureFile &cf, frame_data *fdata) 
     ui->prefsLayout->insertSpacing(1, 20);
     ui->prefsLayout->addStretch();
 
-    wtap_rec_init(&rec_, 1514);
+    wtap_rec_init(&rec_, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     edt_.session = NULL;
     edt_.tvb = NULL;

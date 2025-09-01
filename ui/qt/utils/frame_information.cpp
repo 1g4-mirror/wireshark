@@ -30,7 +30,7 @@ FrameInformation::FrameInformation(CaptureFile * capfile, frame_data * fi, QObje
  cap_file_(capfile),
  edt_(Q_NULLPTR)
 {
-    wtap_rec_init(&rec_, 1514);
+    wtap_rec_init(&rec_, WTAP_DEFAULT_ETH_FRAME_LEN);
     loadFrameTree();
 }
 
