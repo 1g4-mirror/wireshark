@@ -718,9 +718,17 @@ static void ob_lazy_reset_on_new_capture(packet_info *pinfo _U_)
 static order_group_t* ob_find_root(order_group_t *g)
 {
     if (!g) return NULL;
-    if (!g->parent) return g;
-    g->parent = ob_find_root(g->parent);
-    return g->parent;
+    order_group_t *root = g;
+    while (root->parent) {
+        root = root->parent;
+    }
+    order_group_t *current = g;
+    while (current != root) {
+        order_group_t *next = current->parent;
+        current->parent = root;
+        current = next;
+    }
+    return root;
 }
 
 static order_group_t* ob_union_groups(order_group_t *a, order_group_t *b)
