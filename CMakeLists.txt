@@ -1780,6 +1780,7 @@ add_subdirectory( capture )
 add_subdirectory( epan )
 add_subdirectory( extcap )
 add_subdirectory( randpkt_core )
+add_subdirectory( test )
 if(NOT LEMON_EXECUTABLE)
 	add_subdirectory( tools/lemon )
 endif()
@@ -4433,7 +4434,8 @@ if (DOXYGEN_EXECUTABLE)
 endif(DOXYGEN_EXECUTABLE)
 
 add_custom_target(test-programs
-	DEPENDS exntest
+	DEPENDS dissectors_test
+	        exntest
 		fifo_string_cache_test
 		oids_test
 		reassemble_test
