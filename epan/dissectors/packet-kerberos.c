@@ -1298,6 +1298,7 @@ add_encryption_key(packet_info *pinfo,
 		methodu = "Derived";
 	}
 
+#if VERY_TEMPORARY_CHECK
 	if(pinfo->fd->visited){
 		/*
 		 * We already processed this,
@@ -1313,6 +1314,9 @@ add_encryption_key(packet_info *pinfo,
 		 */
 		key_scope = wmem_epan_scope();
 	}
+#else
+        key_scope = wmem_epan_scope();
+#endif
 
 	new_key = wmem_new0(key_scope, enc_key_t);
 	new_key->key_origin = wmem_strdup_printf(key_scope, "%s %s in frame %u", methodl, origin, pinfo->num);
@@ -1577,12 +1581,12 @@ static void missing_encryption_key_ex(proto_tree *tree, packet_info *pinfo,
 	proto_item *item = NULL;
 	enc_key_t *mek = NULL;
 
-	mek = wmem_new0(pinfo->pool, enc_key_t);
-	mek->key_origin = wmem_strdup_printf(pinfo->pool, "keytype %d usage %s missing in frame %u",
+	mek = wmem_new0(wmem_epan_scope(), enc_key_t);
+	mek->key_origin = wmem_strdup_printf(wmem_epan_scope(), "keytype %d usage %s missing in frame %u",
 		   keytype, usage, pinfo->num);
 	mek->fd_num = pinfo->num;
 	mek->id = ++private_data->missing_key_ids;
-	mek->id_str = wmem_strdup_printf(pinfo->pool, "missing.%u", mek->id);
+	mek->id_str = wmem_strdup_printf(wmem_epan_scope(), "missing.%u", mek->id);
 	mek->keytype=keytype;
 
 	item = proto_tree_add_expert_format(tree, pinfo, &ei_kerberos_missing_keytype,
@@ -1676,12 +1680,12 @@ static void missing_signing_key(proto_tree *tree, packet_info *pinfo,
 	proto_item *item = NULL;
 	enc_key_t *mek = NULL;
 
-	mek = wmem_new0(pinfo->pool, enc_key_t);
-	mek->key_origin = wmem_strdup_printf(pinfo->pool, "checksum %d keytype %d missing in frame %u",
+	mek = wmem_new0(wmem_epan_scope(), enc_key_t);
+	mek->key_origin = wmem_strdup_printf(wmem_epan_scope(), "checksum %d keytype %d missing in frame %u",
 		   checksum, keytype, pinfo->num);
 	mek->fd_num = pinfo->num;
 	mek->id = ++private_data->missing_key_ids;
-	mek->id_str = wmem_strdup_printf(pinfo->pool, "missing.%u", mek->id);
+	mek->id_str = wmem_strdup_printf(wmem_epan_scope(), "missing.%u", mek->id);
 	mek->keytype=keytype;
 
 	item = proto_tree_add_expert_format(tree, pinfo, &ei_kerberos_missing_keytype,
