@@ -48,8 +48,8 @@ static const unsigned char c_file_header[] = "<fileHeader";
 static const unsigned char c_file_format_version[] = "fileFormatVersion=\"";
 static const unsigned char c_threegpp_doc_no[] = "32.423";
 static const unsigned char c_begin_time[] = "<traceCollec beginTime=\"";
-static const unsigned char c_s_msg[] = "<msg";
-static const unsigned char c_e_msg[] = "</msg>";
+static const unsigned char c_s_trace_rec_session[] = "<traceRecSession";
+static const unsigned char c_e_trace_rec_session[] = "</traceRecSession>";
 
 /* These are protocol names we may put in the exported-pdu data based on
  * what's in the XML. They're defined here as constants so we can use
@@ -81,6 +81,9 @@ typedef struct nettrace_3gpp_32_423_file_info {
 	nstime_t start_time;		// from <traceCollec beginTime=""> attribute
 } nettrace_3gpp_32_423_file_info_t;
 
+typedef struct tracerecsession {
+	nstime_t start_time;	// from <traceRecSession stime=""> attribute
+} tracerecsession_t;
 
 typedef struct exported_pdu_info {
 	uint32_t presence_flags;
@@ -216,11 +219,9 @@ nettrace_parse_address(char* curr_pos, bool is_src_addr, exported_pdu_info_t *ex
 
 /* Parse a <msg ...><rawMsg ...>XXXX</rawMsg></msg> into packet data. */
 static bool
-nettrace_msg_to_packet(wtap* wth, wtap_rec* rec, const char* text, size_t len, int* err, char** err_info)
+nettrace_msg_to_packet(wtap* wth, wtap_rec* rec, tracerecsession_t *tracerecsession, xmlNodePtr root_element, int* err, char** err_info)
 {
 	nettrace_3gpp_32_423_file_info_t* file_info = (nettrace_3gpp_32_423_file_info_t*)wth->priv;
-	xmlDocPtr           doc;
-	xmlNodePtr root_element;
 	exported_pdu_info_t  exported_pdu_info = { 0 };
 	exported_pdu_info_t  proxy_exported_pdu_info = { 0 };
 	char function_str[MAX_FUNCTION_LEN + 1];
@@ -231,18 +232,6 @@ nettrace_msg_to_packet(wtap* wth, wtap_rec* rec, const char* text, size_t len, i
 	bool found_raw = false;
 	bool use_proto_table = false;
 	bool status = true;
-
-	doc = xmlParseMemory(text, (int)len);
-	if (doc == NULL) {
-		return false;
-	}
-
-	root_element = xmlDocGetRootElement(doc);
-	if (root_element == NULL) {
-		ws_debug("empty xml doc");
-		status = false;
-		goto end;
-	}
 
 	//Sanity check
 	if (xmlStrcmp(root_element->name, (const xmlChar*)"msg") != 0) {
@@ -314,33 +303,49 @@ nettrace_msg_to_packet(wtap* wth, wtap_rec* rec, const char* text, size_t len, i
 			}
 		}
 		else if (xmlStrcmp(attr->name, (const xmlChar*)"changeTime") == 0) {
+			nstime_t start_time;
+			/* Utilize stime from traceRecSession (if exist) otherwise use file info start time*/
+			if (tracerecsession && !nstime_is_unset(&(tracerecsession->start_time))) {
+				start_time = tracerecsession->start_time;
+			} else if (!nstime_is_unset(&(file_info->start_time))) {
+				start_time = file_info->start_time;
+			} else{
+				continue;
+			}
 
 			/* Check if we have a time stamp "changeTime"
 			 * expressed in number of seconds and milliseconds (nbsec.ms).
 			 * Only needed if we have a "beginTime" for this file.
 			 */
-			if (!nstime_is_unset(&(file_info->start_time))) {
-				int scan_found;
-				unsigned second = 0, ms = 0;
+			int scan_found;
+			unsigned second = 0, ms = 0;
 
-				xmlChar* str_time = xmlNodeListGetString(root_element->doc, attr->children, 1);
-				if (str_time != NULL) {
-					scan_found = sscanf(str_time, "%u.%u", &second, &ms);
+			xmlChar* str_time = xmlNodeListGetString(root_element->doc, attr->children, 1);
+			if (str_time != NULL) {
+				scan_found = sscanf(str_time, "%u.%u", &second, &ms);
 
-					if (scan_found == 2) {
-						unsigned start_ms = file_info->start_time.nsecs / 1000000;
-						unsigned elapsed_ms = start_ms + ms;
-						if (elapsed_ms > 1000) {
-							elapsed_ms -= 1000;
-							second++;
-						}
-						rec->presence_flags |= WTAP_HAS_TS;
-						rec->ts.secs = file_info->start_time.secs + second;
-						rec->ts.nsecs = (elapsed_ms * 1000000);
+				if (scan_found == 2) {
+					unsigned start_ms = start_time.nsecs / 1000000;
+					unsigned elapsed_ms = start_ms + ms;
+					if (elapsed_ms > 1000) {
+						elapsed_ms -= 1000;
+						second++;
 					}
-
-					xmlFree(str_time);
+					rec->presence_flags |= WTAP_HAS_TS;
+					rec->ts.secs = start_time.secs + second;
+					rec->ts.nsecs = (elapsed_ms * 1000000);
 				}
+				/* Some traces sets "No value" when traceRecSession stime has been used,
+				 * this is wrong as according to spec changeTime is a float...
+				 * But let's use the values we have from start_time
+				 */
+				else {
+					rec->presence_flags |= WTAP_HAS_TS;
+					rec->ts.secs = start_time.secs;
+					rec->ts.nsecs = start_time.nsecs;
+				}
+
+				xmlFree(str_time);
 			}
 		}
 	}
@@ -564,7 +569,6 @@ nettrace_msg_to_packet(wtap* wth, wtap_rec* rec, const char* text, size_t len, i
 		goto end;
 	}
 end:
-	xmlFreeDoc(doc);
 	return status;
 }
 
@@ -593,6 +597,72 @@ read_until(GByteArray *buffer, const unsigned char *needle, FILE_T fh, int *err,
 	return found_it;
 }
 
+static bool
+nettrace_parse_tracerecsession(wtap *wth, wtap_rec *rec, uint8_t *tracerecsession_start, size_t tracerecsession_len, int *err, char **err_info)
+{
+	tracerecsession_t *tracerecsession = g_new0(tracerecsession_t, 1);
+	xmlDocPtr           doc;
+	xmlNodePtr root_element;
+	bool status = false;
+
+	doc = xmlParseMemory(tracerecsession_start, (int)tracerecsession_len);
+	if (doc == NULL) {
+		return false;
+	}
+
+	root_element = xmlDocGetRootElement(doc);
+	if (root_element == NULL) {
+		status = false;
+		goto end;
+	}
+
+	//Sanity check
+	if (xmlStrcmp(root_element->name, (const xmlChar*)"traceRecSession") != 0) {
+		*err = WTAP_ERR_BAD_FILE;
+		*err_info = ws_strdup("nettrace_3gpp_32_423: Did not have a \"<traceRecSession\"");
+		status = false;
+		goto end;
+	}
+
+	if (root_element->children == NULL) {
+		/* There is no msg here. */
+		*err = WTAP_ERR_BAD_FILE;
+		*err_info = g_strdup("Had \"<traceRecSession />\" with no \"<msg>\"");
+		status = false;
+		goto end;
+	}
+
+	/* Walk the attributes of the traceRecSession */
+	for (xmlAttrPtr attr = root_element->properties; attr; attr = attr->next) {
+		if (xmlStrcmp(attr->name, (const xmlChar*)"stime") == 0) {
+
+			/* Check if we have a time stamp "stime"
+			* expressed in number of seconds and milliseconds (nbsec.ms).
+			* Will override "beginTime" for the file.
+			*/
+			xmlChar* str_time = xmlNodeListGetString(root_element->doc, attr->children, 1);
+			if (str_time != NULL) {
+				nstime_t start_time;
+				iso8601_to_nstime(&start_time, str_time, ISO8601_DATETIME);
+				tracerecsession->start_time = start_time;
+
+				xmlFree(str_time);
+			}
+		}
+	}
+
+	for (xmlNodePtr cur = root_element->children; cur != NULL; cur = cur->next) {
+		if (xmlStrcmp(cur->name, (const xmlChar*)"msg") == 0) {
+			/* pass all of <msg....</msg> to nettrace_parsemsg_to_packet() */
+			status = nettrace_msg_to_packet(wth, rec, tracerecsession, cur, err, err_info);
+		}
+	}
+
+end:
+	xmlFreeDoc(doc);
+	return status;
+}
+
 /* Find a complete packet, parse and return it to wiretap.
  * Set as the subtype_read function in the file_open function below.
  */
@@ -601,49 +671,49 @@ nettrace_read(wtap *wth, wtap_rec *rec, int *err, char **err_info, int64_t *data
 {
 	nettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;
 	uint8_t *buf_start;
-	uint8_t *msg_start, *msg_end;
-	unsigned msg_offset = 0;
-	size_t msg_len = 0;
+	uint8_t *tracerecsession_start, *tracerecsession_end;
+	unsigned tracerecsession_offset = 0;
+	size_t tracerecsession_len = 0;
 	bool status = false;
 
-	/* Make sure we have a start and end of message in our buffer -- end first */
-	msg_end = read_until(file_info->buffer, c_e_msg, wth->fh, err, err_info);
-	if (msg_end == NULL) {
+	/* Make sure we have a start and end of traceRecSession in our buffer -- end first */
+	tracerecsession_end = read_until(file_info->buffer, c_e_trace_rec_session, wth->fh, err, err_info);
+	if (tracerecsession_end == NULL) {
 		goto end;
 	}
 
 	buf_start = file_info->buffer->data;
-	/* Now search backwards for the message start
-	 * (doing it this way should skip over any empty "<msg ... />" tags we have)
+	/* Now search backwards for the traceRecSession start
+	 * (doing it this way should skip over any empty "<traceRecSession ... />" tags we have)
 	 */
-	msg_start = g_strrstr_len(buf_start, (unsigned)(msg_end - buf_start), c_s_msg);
-	if (msg_start == NULL || msg_start > msg_end) {
-		*err_info = ws_strdup_printf("nettrace_3gpp_32_423: Found \"%s\" without matching \"%s\"", c_e_msg, c_s_msg);
+	tracerecsession_start = g_strrstr_len(buf_start, (unsigned)(tracerecsession_end - buf_start), c_s_trace_rec_session);
+	if (tracerecsession_start == NULL || tracerecsession_start > tracerecsession_end) {
+		*err_info = ws_strdup_printf("nettrace_3gpp_32_423: Found \"%s\" without matching \"%s\"", c_e_trace_rec_session, c_s_trace_rec_session);
 		*err = WTAP_ERR_BAD_FILE;
 		goto end;
 	}
 
-	/* We know we have a message, what's its offset from the buffer start? */
-	msg_offset = (unsigned)(msg_start - buf_start);
-	msg_end += CLEN(c_e_msg);
-	msg_len = (unsigned)(msg_end - msg_start);
+	/* We know we have a tracerecsession, what's its offset from the buffer start? */
+	tracerecsession_offset = (unsigned)(tracerecsession_start - buf_start);
+	tracerecsession_end += CLEN(c_e_trace_rec_session);
+	tracerecsession_len = (unsigned)(tracerecsession_end - tracerecsession_start);
 
-	/* Tell Wireshark to put us at the start of the "<msg" for seek_read later */
-	*data_offset = file_info->start_offset + msg_offset;
+	/* Tell Wireshark to put us at the start of the "<traceRcSession" for seek_read later */
+	*data_offset = file_info->start_offset + tracerecsession_offset;
 
-	/* pass all of <msg....</msg> to nettrace_msg_to_packet() */
-	status = nettrace_msg_to_packet(wth, rec, msg_start, msg_len, err, err_info);
+	/* Let's parse traceRecSession */
+	status = nettrace_parse_tracerecsession(wth, rec, tracerecsession_start, tracerecsession_len, err, err_info);
 
 	/* Finally, shift our buffer to the end of this message to get ready for the next one.
-	 * Re-use msg_len to get the length of the data we're done with.
+	 * Re-use tracerecsession_len to get the length of the data we're done with.
 	 */
-	msg_len = msg_end - file_info->buffer->data;
-	while (G_UNLIKELY(msg_len > UINT_MAX)) {
+	tracerecsession_len = tracerecsession_end - file_info->buffer->data;
+	while (G_UNLIKELY(tracerecsession_len > UINT_MAX)) {
 		g_byte_array_remove_range(file_info->buffer, 0, UINT_MAX);
-		msg_len -= UINT_MAX;
+		tracerecsession_len -= UINT_MAX;
 	}
-	g_byte_array_remove_range(file_info->buffer, 0, (unsigned)msg_len);
-	file_info->start_offset += msg_len;
+	g_byte_array_remove_range(file_info->buffer, 0, (unsigned)tracerecsession_len);
+	file_info->start_offset += tracerecsession_len;
 
 end:
 	if (status == false) {
@@ -662,21 +732,22 @@ nettrace_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec, int *err, char **
 {
 	nettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;
 	bool status = false;
-	uint8_t *msg_end;
-	unsigned msg_len = 0;
-
-	/* We stored the offset of the "<msg" for this packet */
+	uint8_t *tracerecsession_end;
+	unsigned tracerecsession_len = 0;
+	/* We stored the offset of the "<tracerecsession" for this packet */
 	if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
 		return false;
 
-	msg_end = read_until(file_info->buffer, c_e_msg, wth->random_fh, err, err_info);
-	if (msg_end == NULL) {
+	tracerecsession_end = read_until(file_info->buffer, c_e_trace_rec_session, wth->random_fh, err, err_info);
+	if (tracerecsession_end == NULL) {
 		return false;
 	}
-	msg_end += CLEN(c_e_msg);
-	msg_len = (unsigned)(msg_end - file_info->buffer->data);
+	tracerecsession_end += CLEN(c_e_trace_rec_session);
+	tracerecsession_len = (unsigned)(tracerecsession_end - file_info->buffer->data);
 
-	status = nettrace_msg_to_packet(wth, rec, file_info->buffer->data, msg_len, err, err_info);
+	/* Let's parse traceRecSession */
+	status = nettrace_parse_tracerecsession(wth, rec, file_info->buffer->data, tracerecsession_len, err, err_info);
+
 	g_byte_array_set_size(file_info->buffer, 0);
 	return status;
 }
