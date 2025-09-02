@@ -34,6 +34,7 @@
 #include <epan/reassemble.h>
 #include <epan/uat.h>
 #include <epan/tfs.h>
+#include <epan/read_keytab_file.h>
 #include <wsutil/array.h>
 
 #include "packet-smb2.h"
@@ -41,8 +42,6 @@
 #include "packet-kerberos.h"
 #include "packet-windows-common.h"
 #include "packet-dcerpc-nt.h"
-
-#include "read_keytab_file.h"
 
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/ws_roundup.h>

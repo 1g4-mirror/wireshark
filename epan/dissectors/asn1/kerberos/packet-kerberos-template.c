@@ -63,6 +63,7 @@
 #include <epan/prefs.h>
 #include <epan/srt_table.h>
 #include <epan/tfs.h>
+#include <epan/read_keytab_file.h>
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/file_util.h>
 #include <wsutil/str_util.h>
@@ -75,8 +76,6 @@
 #include "packet-pkinit.h"
 #include "packet-cms.h"
 #include "packet-windows-common.h"
-
-#include "read_keytab_file.h"
 
 #include "packet-dcerpc-netlogon.h"
 #include "packet-dcerpc.h"
@@ -756,179 +755,11 @@ read_keytab_file_from_preferences(void)
 	g_free(last_keytab);
 	last_keytab = g_strdup(keytab_filename);
 
-	read_keytab_file(last_keytab);
+	keytab_file_read(last_keytab);
 }
 #endif /* HAVE_KERBEROS */
 
 #if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
-enc_key_t *enc_key_list=NULL;
-static unsigned kerberos_longterm_ids;
-wmem_map_t *kerberos_longterm_keys;
-static wmem_map_t *kerberos_all_keys;
-static wmem_map_t *kerberos_app_session_keys;
-
-static bool
-enc_key_list_cb(wmem_allocator_t* allocator _U_, wmem_cb_event_t event _U_, void *user_data _U_)
-{
-	enc_key_list = NULL;
-	kerberos_longterm_ids = 0;
-	/* keep the callback registered */
-	return true;
-}
-
-static int enc_key_cmp_id(const void *k1, const void *k2)
-{
-	const enc_key_t *key1 = (const enc_key_t *)k1;
-	const enc_key_t *key2 = (const enc_key_t *)k2;
-
-	if (key1->fd_num < key2->fd_num) {
-		return -1;
-	}
-	if (key1->fd_num > key2->fd_num) {
-		return 1;
-	}
-
-	if (key1->id < key2->id) {
-		return -1;
-	}
-	if (key1->id > key2->id) {
-		return 1;
-	}
-
-	return 0;
-}
-
-static gboolean
-enc_key_content_equal(const void *k1, const void *k2)
-{
-	const enc_key_t *key1 = (const enc_key_t *)k1;
-	const enc_key_t *key2 = (const enc_key_t *)k2;
-	int cmp;
-
-	if (key1->keytype != key2->keytype) {
-		return false;
-	}
-
-	if (key1->keylength != key2->keylength) {
-		return false;
-	}
-
-	cmp = memcmp(key1->keyvalue, key2->keyvalue, key1->keylength);
-	if (cmp != 0) {
-		return false;
-	}
-
-	return true;
-}
-
-static unsigned
-enc_key_content_hash(const void *k)
-{
-	const enc_key_t *key = (const enc_key_t *)k;
-	unsigned ret = 0;
-
-	ret += wmem_strong_hash((const uint8_t *)&key->keytype,
-				sizeof(key->keytype));
-	ret += wmem_strong_hash((const uint8_t *)&key->keylength,
-				sizeof(key->keylength));
-	ret += wmem_strong_hash((const uint8_t *)key->keyvalue,
-				key->keylength);
-
-	return ret;
-}
-
-static void
-kerberos_key_map_insert(wmem_map_t *key_map, enc_key_t *new_key)
-{
-	enc_key_t *existing = NULL;
-	enc_key_t *cur = NULL;
-	int cmp;
-
-	existing = (enc_key_t *)wmem_map_lookup(key_map, new_key);
-	if (existing == NULL) {
-		wmem_map_insert(key_map, new_key, new_key);
-		return;
-	}
-
-	if (key_map != kerberos_all_keys) {
-		/*
-		 * It should already be linked to the existing key...
-		 */
-		return;
-	}
-
-	if (existing->fd_num == -1 && new_key->fd_num != -1) {
-		/*
-		 * We can't reference a learnt key
-		 * from a longterm key. As they have
-		 * a shorter lifetime.
-		 *
-		 * So just let the learnt key remember the
-		 * match.
-		 */
-		new_key->same_list = existing;
-		new_key->num_same = existing->num_same + 1;
-		return;
-	}
-
-	/*
-	 * If a key with the same content (keytype,keylength,keyvalue)
-	 * already exists, we want the earliest key to be
-	 * in the list.
-	 */
-	cmp = enc_key_cmp_id(new_key, existing);
-	if (cmp == 0) {
-		/*
-		 * It's the same, nothing to do...
-		 */
-		return;
-	}
-	if (cmp < 0) {
-		/* The new key has should be added to the list. */
-		new_key->same_list = existing;
-		new_key->num_same = existing->num_same + 1;
-		wmem_map_insert(key_map, new_key, new_key);
-		return;
-	}
-
-	/*
-	 * We want to link the new_key to the existing one.
-	 *
-	 * But we want keep the list sorted, so we need to forward
-	 * to the correct spot.
-	 */
-	for (cur = existing; cur->same_list != NULL; cur = cur->same_list) {
-		cmp = enc_key_cmp_id(new_key, cur->same_list);
-		if (cmp == 0) {
-			/*
-			 * It's the same, nothing to do...
-			 */
-			return;
-		}
-
-		if (cmp < 0) {
-			/*
-			 * We found the correct spot,
-			 * the new_key should added
-			 * between existing and existing->same_list
-			 */
-			new_key->same_list = cur->same_list;
-			new_key->num_same = cur->num_same;
-			break;
-		}
-	}
-
-	/*
-	 * finally link new_key to existing
-	 * and fix up the numbers
-	 */
-	cur->same_list = new_key;
-	for (cur = existing; cur != new_key; cur = cur->same_list) {
-		cur->num_same += 1;
-	}
-
-	return;
-}
 
 struct insert_longterm_keys_into_key_map_state {
 	wmem_map_t *key_map;
@@ -942,26 +773,26 @@ static void insert_longterm_keys_into_key_map_cb(void *__key _U_,
 		(struct insert_longterm_keys_into_key_map_state *)user_data;
 	enc_key_t *key = (enc_key_t *)value;
 
-	kerberos_key_map_insert(state->key_map, key);
+	keytab_file_key_map_insert(state->key_map, key);
 }
 
 static void insert_longterm_keys_into_key_map(wmem_map_t *key_map)
 {
 	/*
-	 * Because the kerberos_longterm_keys are allocated on
-	 * wmem_epan_scope() and kerberos_all_keys are allocated
+	 * Because the keytab_file_longterm_keys are allocated on
+	 * wmem_epan_scope() and keytab_file_all_keys are allocated
 	 * on wmem_file_scope(), we need to plug the longterm keys
-	 * back to kerberos_all_keys if a new file was loaded
+	 * back to keytab_file_all_keys if a new file was loaded
 	 * and wmem_file_scope() got cleared.
 	 */
-	if (wmem_map_size(key_map) < wmem_map_size(kerberos_longterm_keys)) {
+	if (wmem_map_size(key_map) < wmem_map_size(keytab_file_longterm_keys)) {
 		struct insert_longterm_keys_into_key_map_state state = {
 			.key_map = key_map,
 		};
 		/*
-		 * Reference all longterm keys into kerberos_all_keys
+		 * Reference all longterm keys into keytab_file_all_keys
 		 */
-		wmem_map_foreach(kerberos_longterm_keys,
+		wmem_map_foreach(keytab_file_longterm_keys,
 				 insert_longterm_keys_into_key_map_cb,
 				 &state);
 	}
@@ -1003,6 +834,7 @@ add_encryption_key(packet_info *pinfo,
 		methodu = "Derived";
 	}
 
+#if VERY_TEMPORARY_CHECK
 	if(pinfo->fd->visited){
 		/*
 		 * We already processed this,
@@ -1018,6 +850,9 @@ add_encryption_key(packet_info *pinfo,
 		 */
 		key_scope = wmem_epan_scope();
 	}
+#else
+        key_scope = wmem_epan_scope();
+#endif
 
 	new_key = wmem_new0(key_scope, enc_key_t);
 	new_key->key_origin = wmem_strdup_printf(key_scope, "%s %s in frame %u", methodl, origin, pinfo->num);
@@ -1036,8 +871,8 @@ add_encryption_key(packet_info *pinfo,
 		 */
 		new_key->next=enc_key_list;
 		enc_key_list=new_key;
-		insert_longterm_keys_into_key_map(kerberos_all_keys);
-		kerberos_key_map_insert(kerberos_all_keys, new_key);
+		insert_longterm_keys_into_key_map(keytab_file_all_keys);
+		keytab_file_key_map_insert(keytab_file_all_keys, new_key);
 	}
 
 	item = proto_tree_add_expert_format(key_tree, pinfo, &ei_kerberos_learnt_keytype,
@@ -1157,7 +992,7 @@ save_EncAPRepPart_subkey(tvbuff_t *tvb, int offset, int length,
 		ak->pac_names = tk->pac_names;
 	}
 
-	kerberos_key_map_insert(kerberos_app_session_keys, private_data->last_added_key);
+	keytab_file_key_map_insert(keytab_file_session_keys, private_data->last_added_key);
 }
 
 static void
@@ -1282,12 +1117,12 @@ static void missing_encryption_key_ex(proto_tree *tree, packet_info *pinfo,
 	proto_item *item = NULL;
 	enc_key_t *mek = NULL;
 
-	mek = wmem_new0(pinfo->pool, enc_key_t);
-	mek->key_origin = wmem_strdup_printf(pinfo->pool, "keytype %d usage %s missing in frame %u",
+	mek = wmem_new0(wmem_epan_scope(), enc_key_t);
+	mek->key_origin = wmem_strdup_printf(wmem_epan_scope(), "keytype %d usage %s missing in frame %u",
 		   keytype, usage, pinfo->num);
 	mek->fd_num = pinfo->num;
 	mek->id = ++private_data->missing_key_ids;
-	mek->id_str = wmem_strdup_printf(pinfo->pool, "missing.%u", mek->id);
+	mek->id_str = wmem_strdup_printf(wmem_epan_scope(), "missing.%u", mek->id);
 	mek->keytype=keytype;
 
 	item = proto_tree_add_expert_format(tree, pinfo, &ei_kerberos_missing_keytype,
@@ -1381,12 +1216,12 @@ static void missing_signing_key(proto_tree *tree, packet_info *pinfo,
 	proto_item *item = NULL;
 	enc_key_t *mek = NULL;
 
-	mek = wmem_new0(pinfo->pool, enc_key_t);
-	mek->key_origin = wmem_strdup_printf(pinfo->pool, "checksum %d keytype %d missing in frame %u",
+	mek = wmem_new0(wmem_epan_scope(), enc_key_t);
+	mek->key_origin = wmem_strdup_printf(wmem_epan_scope(), "checksum %d keytype %d missing in frame %u",
 		   checksum, keytype, pinfo->num);
 	mek->fd_num = pinfo->num;
 	mek->id = ++private_data->missing_key_ids;
-	mek->id_str = wmem_strdup_printf(pinfo->pool, "missing.%u", mek->id);
+	mek->id_str = wmem_strdup_printf(wmem_epan_scope(), "missing.%u", mek->id);
 	mek->keytype=keytype;
 
 	item = proto_tree_add_expert_format(tree, pinfo, &ei_kerberos_missing_keytype,
@@ -1467,85 +1302,6 @@ krb5_fast_key(asn1_ctx_t *actx _U_, proto_tree *tree _U_, tvbuff_t *tvb _U_,
 #endif /* HAVE_KRB5_C_FX_CF2_SIMPLE */
 
 USES_APPLE_DEPRECATED_API
-void
-read_keytab_file(const char *filename)
-{
-	krb5_keytab keytab;
-	krb5_error_code ret;
-	krb5_keytab_entry key;
-	krb5_kt_cursor cursor;
-	static bool first_time=true;
-
-	if (filename == NULL || filename[0] == 0) {
-		return;
-	}
-
-	if(first_time){
-		first_time=false;
-		ret = krb5_init_context(&krb5_ctx);
-		if(ret && ret != KRB5_CONFIG_CANTOPEN){
-			return;
-		}
-	}
-
-	/* should use a file in the wireshark users dir */
-	ret = krb5_kt_resolve(krb5_ctx, filename, &keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Badly formatted keytab filename: %s", filename);
-
-		return;
-	}
-
-	ret = krb5_kt_start_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not open or could not read from keytab file: %s", filename);
-		return;
-	}
-
-	do{
-		ret = krb5_kt_next_entry(krb5_ctx, keytab, &key, &cursor);
-		if(ret==0){
-			enc_key_t *new_key;
-			int i;
-			wmem_strbuf_t* str_principal = wmem_strbuf_new(wmem_epan_scope(), "keytab principal ");
-
-			new_key = wmem_new0(wmem_epan_scope(), enc_key_t);
-			new_key->fd_num = -1;
-			new_key->id = ++kerberos_longterm_ids;
-			new_key->id_str = wmem_strdup_printf(wmem_epan_scope(), "keytab.%u", new_key->id);
-			new_key->next = enc_key_list;
-
-			/* generate origin string, describing where this key came from */
-			for(i=0;i<key.principal->length;i++){
-				wmem_strbuf_append_printf(str_principal, "%s%s",(i?"/":""),(key.principal->data[i]).data);
-			}
-			wmem_strbuf_append_printf(str_principal, "@%s",key.principal->realm.data);
-			new_key->key_origin = (char*)wmem_strbuf_get_str(str_principal);
-			new_key->keytype=key.key.enctype;
-			new_key->keylength=key.key.length;
-			memcpy(new_key->keyvalue,
-			       key.key.contents,
-			       MIN(key.key.length, KRB_MAX_KEY_LENGTH));
-
-			enc_key_list=new_key;
-			ret = krb5_free_keytab_entry_contents(krb5_ctx, &key);
-			if (ret) {
-				ws_critical("KERBEROS ERROR: Could not release the entry: %d", ret);
-				ret = 0; /* try to continue with the next entry */
-			}
-			kerberos_key_map_insert(kerberos_longterm_keys, new_key);
-		}
-	}while(ret==0);
-
-	ret = krb5_kt_end_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not release the keytab cursor: %d", ret);
-	}
-	ret = krb5_kt_close(krb5_ctx, keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not close the key table handle: %d", ret);
-	}
-}
 
 struct decrypt_krb5_with_cb_state {
 	proto_tree *tree;
@@ -1816,11 +1572,11 @@ decrypt_krb5_with_cb(proto_tree *tree,
 	case KRB5_KU_USAGE_INITIATOR_SEAL:
 	case KRB5_KU_USAGE_ACCEPTOR_SEAL:
 		key_map_name = "app_session_keys";
-		key_map = kerberos_app_session_keys;
+		key_map = keytab_file_session_keys;
 		break;
 	default:
 		key_map_name = "all_keys";
-		key_map = kerberos_all_keys;
+		key_map = keytab_file_all_keys;
 		insert_longterm_keys_into_key_map(key_map);
 		break;
 	}
@@ -2815,7 +2571,7 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 
 	read_keytab_file_from_preferences();
 
-	wmem_map_foreach(kerberos_all_keys,
+	wmem_map_foreach(keytab_file_all_keys,
 			 verify_krb5_pac_try_server_key,
 			 &state);
 	if (state.server_ek != NULL) {
@@ -2823,7 +2579,7 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 				 state.server_ek, pactvb,
 				 state.server_checksum, "Verified Server",
 				 "all_keys",
-				 wmem_map_size(kerberos_all_keys),
+				 wmem_map_size(keytab_file_all_keys),
 				 state.server_count);
 	} else {
 		int keytype = keytype_for_cksumtype(state.server_checksum);
@@ -2831,10 +2587,10 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 				    pactvb, state.server_checksum, keytype,
 				    "Missing Server",
 				    "all_keys",
-				    wmem_map_size(kerberos_all_keys),
+				    wmem_map_size(keytab_file_all_keys),
 				    state.server_count);
 	}
-	wmem_map_foreach(kerberos_longterm_keys,
+	wmem_map_foreach(keytab_file_longterm_keys,
 			 verify_krb5_pac_try_kdc_key,
 			 &state);
 	if (state.kdc_ek != NULL) {
@@ -2842,7 +2598,7 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 				 state.kdc_ek, pactvb,
 				 state.kdc_checksum, "Verified KDC",
 				 "longterm_keys",
-				 wmem_map_size(kerberos_longterm_keys),
+				 wmem_map_size(keytab_file_longterm_keys),
 				 state.kdc_count);
 	} else {
 		int keytype = keytype_for_cksumtype(state.kdc_checksum);
@@ -2850,7 +2606,7 @@ verify_krb5_pac(proto_tree *tree _U_, asn1_ctx_t *actx, tvbuff_t *pactvb)
 				    pactvb, state.kdc_checksum, keytype,
 				    "Missing KDC",
 				    "longterm_keys",
-				    wmem_map_size(kerberos_longterm_keys),
+				    wmem_map_size(keytab_file_longterm_keys),
 				    state.kdc_count);
 	}
 
@@ -2886,86 +2642,6 @@ krb5_fast_key(asn1_ctx_t *actx _U_, proto_tree *tree _U_, tvbuff_t *tvb _U_,
 	      const char *origin _U_)
 {
 /* TODO: use krb5_crypto_fx_cf2() from Heimdal */
-}
-void
-read_keytab_file(const char *filename)
-{
-	krb5_keytab keytab;
-	krb5_error_code ret;
-	krb5_keytab_entry key;
-	krb5_kt_cursor cursor;
-	enc_key_t *new_key;
-	static bool first_time=true;
-
-	if (filename == NULL || filename[0] == 0) {
-		return;
-	}
-
-	if(first_time){
-		first_time=false;
-		ret = krb5_init_context(&krb5_ctx);
-		if(ret){
-			return;
-		}
-	}
-
-	/* should use a file in the wireshark users dir */
-	ret = krb5_kt_resolve(krb5_ctx, filename, &keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not open keytab file: %s", filename);
-
-		return;
-	}
-
-	ret = krb5_kt_start_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not read from keytab file: %s", filename);
-		return;
-	}
-
-	do{
-		ret = krb5_kt_next_entry(krb5_ctx, keytab, &key, &cursor);
-		if(ret==0){
-			unsigned int i;
-			wmem_strbuf_t* str_principal = wmem_strbuf_new(wmem_epan_scope(), "keytab principal ");
-
-			new_key = wmem_new0(wmem_epan_scope(), enc_key_t);
-			new_key->fd_num = -1;
-			new_key->id = ++kerberos_longterm_ids;
-			new_key->id_str = wmem_strdup_printf(wmem_epan_scope(), "keytab.%u", new_key->id);
-			new_key->next = enc_key_list;
-
-			/* generate origin string, describing where this key came from */
-			for(i=0;i<key.principal->name.name_string.len;i++){
-				wmem_strbuf_append_printf(str_principal, "%s%s",(i?"/":""),key.principal->name.name_string.val[i]));
-			}
-			wmem_strbuf_append_printf(str_principal, "@%s",key.principal->realm);
-			new_key->key_origin = (char*)wmem_strbuf_get_str(str_principal);
-			new_key->keytype=key.keyblock.keytype;
-			new_key->keylength=(int)key.keyblock.keyvalue.length;
-			memcpy(new_key->keyvalue,
-			       key.keyblock.keyvalue.data,
-			       MIN((unsigned)key.keyblock.keyvalue.length, KRB_MAX_KEY_LENGTH));
-
-			enc_key_list=new_key;
-			ret = krb5_kt_free_entry(krb5_ctx, &key);
-			if (ret) {
-				ws_critical("KERBEROS ERROR: Could not release the entry: %d", ret);
-				ret = 0; /* try to continue with the next entry */
-			}
-			kerberos_key_map_insert(kerberos_longterm_keys, new_key);
-		}
-	}while(ret==0);
-
-	ret = krb5_kt_end_seq_get(krb5_ctx, keytab, &cursor);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not release the keytab cursor: %d", ret);
-	}
-	ret = krb5_kt_close(krb5_ctx, keytab);
-	if(ret){
-		ws_critical("KERBEROS ERROR: Could not close the key table handle: %d", ret);
-	}
-
 }
 USES_APPLE_RST
 
@@ -6156,20 +5832,6 @@ void proto_register_kerberos(void) {
 				   "The keytab file containing all the secrets",
 				   &keytab_filename, false);
 
-#if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
-	wmem_register_callback(wmem_epan_scope(), enc_key_list_cb, NULL);
-	kerberos_longterm_keys = wmem_map_new(wmem_epan_scope(),
-					      enc_key_content_hash,
-					      enc_key_content_equal);
-	kerberos_all_keys = wmem_map_new_autoreset(wmem_epan_scope(),
-						   wmem_file_scope(),
-						   enc_key_content_hash,
-						   enc_key_content_equal);
-	kerberos_app_session_keys = wmem_map_new_autoreset(wmem_epan_scope(),
-							   wmem_file_scope(),
-							   enc_key_content_hash,
-							   enc_key_content_equal);
-#endif /* defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS) */
 #endif /* HAVE_KERBEROS */
 
 }
