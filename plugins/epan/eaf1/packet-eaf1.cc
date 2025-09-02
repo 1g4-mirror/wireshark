@@ -27,6 +27,7 @@ static dissector_handle_t eaf1_handle;
 
 static dissector_table_t eaf1_packet_format_dissector_table;
 static dissector_table_t eaf1_f125_packet_id_dissector_table;
+static dissector_table_t e1f1_f125_event_code_dissector_table;
 
 // Different packet types
 enum F125PacketId
@@ -51,30 +52,30 @@ enum F125PacketId
 };
 
 // Valid event strings
-static constexpr const char *eaf1_F125sessionStartedEventCode = "SSTA";
-static constexpr const char *eaf1_F125sessionEndedEventCode = "SEND";
-static constexpr const char *eaf1_F125fastestLapEventCode = "FTLP";
-static constexpr const char *eaf1_F125retirementEventCode = "RTMT";
-static constexpr const char *eaf1_F125drsEnabledEventCode = "DRSE";
-static constexpr const char *eaf1_F125drsDisabledEventCode = "DRSD";
-static constexpr const char *eaf1_F125teamMateInPitsEventCode = "TMPT";
-static constexpr const char *eaf1_F125chequeredFlagEventCode = "CHQF";
-static constexpr const char *eaf1_F125raceWinnerEventCode = "RCWN";
-static constexpr const char *eaf1_F125penaltyEventCode = "PENA";
-static constexpr const char *eaf1_F125speedTrapEventCode = "SPTP";
-static constexpr const char *eaf1_F125startLightsEventCode = "STLG";
-static constexpr const char *eaf1_F125lightsOutEventCode = "LGOT";
-static constexpr const char *eaf1_F125driveThroughServedEventCode = "DTSV";
-static constexpr const char *eaf1_F125stopGoServedEventCode = "SGSV";
-static constexpr const char *eaf1_F125flashbackEventCode = "FLBK";
-static constexpr const char *eaf1_F125buttonStatusEventCode = "BUTN";
-static constexpr const char *eaf1_F125redFlagEventCode = "RDFL";
-static constexpr const char *eaf1_F125overtakeEventCode = "OVTK";
-static constexpr const char *eaf1_F125safetyCarEventCode = "SCAR";
-static constexpr const char *eaf1_F125collisionEventCode = "COLL";
+static constexpr const char *eaf1_F125SessionStartedEventCode = "SSTA";
+static constexpr const char *eaf1_F125SessionEndedEventCode = "SEND";
+static constexpr const char *eaf1_F125FastestLapEventCode = "FTLP";
+static constexpr const char *eaf1_F125RetirementEventCode = "RTMT";
+static constexpr const char *eaf1_F125DRSEnabledEventCode = "DRSE";
+static constexpr const char *eaf1_F125DRSDisabledEventCode = "DRSD";
+static constexpr const char *eaf1_F125TeamMateInPitsEventCode = "TMPT";
+static constexpr const char *eaf1_F125ChequeredFlagEventCode = "CHQF";
+static constexpr const char *eaf1_F125RaceWinnerEventCode = "RCWN";
+static constexpr const char *eaf1_F125PenaltyEventCode = "PENA";
+static constexpr const char *eaf1_F125SpeedTrapEventCode = "SPTP";
+static constexpr const char *eaf1_F125StartLightsEventCode = "STLG";
+static constexpr const char *eaf1_F125LightsOutEventCode = "LGOT";
+static constexpr const char *eaf1_F125DriveThroughServedEventCode = "DTSV";
+static constexpr const char *eaf1_F125StopGoServedEventCode = "SGSV";
+static constexpr const char *eaf1_F125FlashbackEventCode = "FLBK";
+static constexpr const char *eaf1_F125ButtonStatusEventCode = "BUTN";
+static constexpr const char *eaf1_F125RedFlagEventCode = "RDFL";
+static constexpr const char *eaf1_F125OvertakeEventCode = "OVTK";
+static constexpr const char *eaf1_F125SafetyCarEventCode = "SCAR";
+static constexpr const char *eaf1_F125CollisionEventCode = "COLL";
 
-static const uint32 eaf1_F125MaxNumCarsInUDPData = 22;
-static const uint32 eaf1_F125MaxParticipantNameLen = 32;
+static const uint32_t eaf1_F125MaxNumCarsInUDPData = 22;
+static const uint32_t eaf1_F125MaxParticipantNameLen = 32;
 // static const uint32 eaf1_F125MaxTyreStints = 8;
 static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
 // static const uint eaf1_F125MaxNumLapsInHistory = 100;
@@ -82,6 +83,7 @@ static const uint8 eaf1_F125MaxNumLapsInLapPositionsHistoryPacket = 50;
 
 static const size_t eaf1_headerSize = 29;
 static const size_t eaf1_lobbyInfoSize = 954;
+static const size_t eaf1_eventDataSize = 45;
 
 static const uint eaf1_eventStringCodeLen = 4;
 
@@ -1347,202 +1349,408 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 static int dissect_eaf1_2025_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketEventData))
+	if (tvb_captured_length(tvb) >= eaf1_eventDataSize)
 	{
+		int offset = eaf1_headerSize;
+
 		const char *EventCode;
 
-		auto event_code_ti = proto_tree_add_item_ret_string(tree, hf_eaf1_event_code, tvb, offsetof(F125::PacketEventData, m_eventStringCode), eaf1_eventStringCodeLen, ENC_UTF_8, pinfo->pool, (const uint8_t **)&EventCode);
+		auto event_code_ti = proto_tree_add_item_ret_string(tree, hf_eaf1_event_code, tvb, offset, eaf1_eventStringCodeLen, ENC_UTF_8, pinfo->pool, (const uint8_t **)&EventCode);
 		proto_tree *eaf1_event_code_tree = proto_item_add_subtree(event_code_ti, ett_eaf1_event_eventcode);
+		offset += eaf1_eventStringCodeLen;
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Event: %s", EventCode));
 
-		if (0 == strcmp(EventCode, eaf1_F125sessionStartedEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Session start");
+		static const string_string event_desc_lookup[] = {
+			{
+				eaf1_F125SessionStartedEventCode,
+				"Session start",
+			},
+			{
+				eaf1_F125SessionEndedEventCode,
+				"Session end",
+			},
+			{
+				eaf1_F125FastestLapEventCode,
+				"Fastest lap ",
+			},
+			{
+				eaf1_F125RetirementEventCode,
+				"Retirement",
+			},
+			{
+				eaf1_F125DRSEnabledEventCode,
+				"DRS Enabled",
+			},
+			{
+				eaf1_F125DRSDisabledEventCode,
+				"DRS Disabled",
+			},
+			{
+				eaf1_F125TeamMateInPitsEventCode,
+				"Teammate in pits",
+			},
+			{
+				eaf1_F125ChequeredFlagEventCode,
+				"Chequered flag",
+			},
+			{
+				eaf1_F125RaceWinnerEventCode,
+				"Race winner",
+			},
+			{
+				eaf1_F125PenaltyEventCode,
+				"Penalty",
+			},
+			{
+				eaf1_F125SpeedTrapEventCode,
+				"Speed trap",
+			},
+			{
+				eaf1_F125StartLightsEventCode,
+				"Start lights",
+			},
+			{
+				eaf1_F125LightsOutEventCode,
+				"Lights out",
+			},
+			{
+				eaf1_F125DriveThroughServedEventCode,
+				"Drive through penalty served",
+			},
+			{
+				eaf1_F125StopGoServedEventCode,
+				"Stop go penalty served",
+			},
+			{
+				eaf1_F125FlashbackEventCode,
+				"Flashback",
+			},
+			{
+				eaf1_F125ButtonStatusEventCode,
+				"Button",
+			},
+			{
+				eaf1_F125RedFlagEventCode,
+				"Red flag",
+			},
+			{
+				eaf1_F125OvertakeEventCode,
+				"Overtake",
+			},
+			{
+				eaf1_F125SafetyCarEventCode,
+				"Safety car",
+			},
+			{
+				eaf1_F125CollisionEventCode,
+				"Collision",
+			},
+			{NULL, NULL},
+		};
 
-			// No data for this event type
+		const char *event_desc = try_str_to_str(EventCode, event_desc_lookup);
+		if (event_desc)
+		{
+			proto_item_set_text(event_code_ti, "%s", event_desc);
 		}
-		else if (0 == strcmp(EventCode, eaf1_F125sessionEndedEventCode))
+
+		auto next_tvb = tvb_new_subset_remaining(tvb, eaf1_headerSize + eaf1_eventStringCodeLen);
+
+		if (!dissector_try_string_new(e1f1_f125_event_code_dissector_table,
+									  EventCode, next_tvb, pinfo, eaf1_event_code_tree,
+									  false, NULL))
 		{
-			proto_item_set_text(event_code_ti, "Session end");
-
-			// No data for this event type
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125fastestLapEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Fastest lap");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_fastestlap_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.FastestLap.vehicleIdx));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_fastestlap_laptime, tvb, offsetof(F125::PacketEventData, m_eventDetails.FastestLap.lapTime), sizeof(float), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125retirementEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Retirement");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_retirement_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Retirement.vehicleIdx));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_retirement_reason, tvb, offsetof(F125::PacketEventData, m_eventDetails.Retirement.reason), sizeof(uint8), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125drsEnabledEventCode))
-		{
-			proto_item_set_text(event_code_ti, "DRS Enabled");
-
-			// No data for this event type
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125drsDisabledEventCode))
-		{
-			proto_item_set_text(event_code_ti, "DRS Disabled");
-
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_drsdisabled_reason, tvb, offsetof(F125::PacketEventData, m_eventDetails.DRSDisabled.reason), sizeof(uint8), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125teamMateInPitsEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Teammate in pits");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_teammateinpits_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.TeamMateInPits.vehicleIdx));
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125chequeredFlagEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Chequered flag");
-
-			// No data for this event type
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125raceWinnerEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Race winner");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_racewinner_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.RaceWinner.vehicleIdx));
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125penaltyEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Penalty");
-
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_penalty_penaltytype, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.penaltyType), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_penalty_infringementtype, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.infringementType), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_penalty_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.vehicleIdx));
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_penalty_othervehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.otherVehicleIdx));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_penalty_time, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.time), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_penalty_lapnumber, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.lapNum), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_penalty_placesgained, tvb, offsetof(F125::PacketEventData, m_eventDetails.Penalty.placesGained), sizeof(uint8), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125speedTrapEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Speed trap");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_speedtrap_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.vehicleIdx));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_speedtrap_speed, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.speed), sizeof(float), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_speedtrap_isoverallfastestinsession, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.isOverallFastestInSession), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_speedtrap_isdriverfastestinsession, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.isDriverFastestInSession), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_speedtrap_fastestvehicleindexinsession, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.fastestVehicleIdxInSession));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_speedtrap_fastestspeedinsession, tvb, offsetof(F125::PacketEventData, m_eventDetails.SpeedTrap.fastestSpeedInSession), sizeof(float), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125startLightsEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Start lights");
-
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_startlights_numlights, tvb, offsetof(F125::PacketEventData, m_eventDetails.StartLights.numLights), sizeof(uint8), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125lightsOutEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Lights out");
-
-			// No data for this event type
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125driveThroughServedEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Drive through penalty served");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_drivethroughpenaltyserved_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.DriveThroughPenaltyServed.vehicleIdx));
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125stopGoServedEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Stop go penalty served");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_stopgopenaltyserved_vehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.StopGoPenaltyServed.vehicleIdx));
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_stopgopenaltyserved_stoptime, tvb, offsetof(F125::PacketEventData, m_eventDetails.StopGoPenaltyServed.stopTime), sizeof(float), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125flashbackEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Flashback");
-
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_flashback_frameidentifier, tvb, offsetof(F125::PacketEventData, m_eventDetails.Flashback.flashbackFrameIdentifier), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_flashback_sessiontime, tvb, offsetof(F125::PacketEventData, m_eventDetails.Flashback.flashbackSessionTime), sizeof(float), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125buttonStatusEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Button");
-
-			static int *const button_status_fields[] = {
-				&hf_eaf1_event_button_status_cross,
-				&hf_eaf1_event_button_status_triangle,
-				&hf_eaf1_event_button_status_circle,
-				&hf_eaf1_event_button_status_square,
-				&hf_eaf1_event_button_status_dpadleft,
-				&hf_eaf1_event_button_status_dpadright,
-				&hf_eaf1_event_button_status_dpadup,
-				&hf_eaf1_event_button_status_dpaddown,
-				&hf_eaf1_event_button_status_options,
-				&hf_eaf1_event_button_status_l1,
-				&hf_eaf1_event_button_status_r1,
-				&hf_eaf1_event_button_status_l2,
-				&hf_eaf1_event_button_status_r2,
-				&hf_eaf1_event_button_status_leftstickclick,
-				&hf_eaf1_event_button_status_rightstickclick,
-				&hf_eaf1_event_button_status_rightstickleft,
-				&hf_eaf1_event_button_status_rightstickright,
-				&hf_eaf1_event_button_status_rightstickup,
-				&hf_eaf1_event_button_status_rightstickdown,
-				&hf_eaf1_event_button_status_special,
-				&hf_eaf1_event_button_status_udp1,
-				&hf_eaf1_event_button_status_udp2,
-				&hf_eaf1_event_button_status_udp3,
-				&hf_eaf1_event_button_status_udp4,
-				&hf_eaf1_event_button_status_udp5,
-				&hf_eaf1_event_button_status_udp6,
-				&hf_eaf1_event_button_status_udp7,
-				&hf_eaf1_event_button_status_udp8,
-				&hf_eaf1_event_button_status_udp9,
-				&hf_eaf1_event_button_status_udp10,
-				&hf_eaf1_event_button_status_udp11,
-				&hf_eaf1_event_button_status_udp12,
-				NULL,
-			};
-
-			// proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_button_status, tvb, offsetof(F125::PacketEventData, m_eventDetails.Buttons.buttonStatus), sizeof(uint32), ENC_LITTLE_ENDIAN);
-			proto_tree_add_bitmask(eaf1_event_code_tree, tvb, offsetof(F125::PacketEventData, m_eventDetails.Buttons.buttonStatus), hf_eaf1_event_button_status,
-								   ett_eaf1_event_buttonstatus, button_status_fields, ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125redFlagEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Red flag");
-
-			// No data for this event type
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125overtakeEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Overtake");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_overtake_overtakingvehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Overtake.overtakingVehicleIdx));
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_overtake_overtakenvehicleindex, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Overtake.beingOvertakenVehicleIdx));
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125safetyCarEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Safety car");
-
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_safetycar_type, tvb, offsetof(F125::PacketEventData, m_eventDetails.SafetyCar.safetyCarType), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_event_code_tree, hf_eaf1_event_safetycar_eventtype, tvb, offsetof(F125::PacketEventData, m_eventDetails.SafetyCar.eventType), sizeof(uint8), ENC_LITTLE_ENDIAN);
-		}
-		else if (0 == strcmp(EventCode, eaf1_F125collisionEventCode))
-		{
-			proto_item_set_text(event_code_ti, "Collision");
-
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_collision_vehicle1index, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Collision.vehicle1Idx));
-			add_vehicle_index_and_name(proto_eaf1, eaf1_event_code_tree, hf_eaf1_event_collision_vehicle2index, pinfo, tvb, offsetof(F125::PacketEventData, m_eventDetails.Collision.vehicle2Idx));
+			call_data_dissector(next_tvb, pinfo, tree);
 		}
 
 		return tvb_captured_length(tvb);
 	}
 
 	return 0;
+}
+
+static int dissect_eaf1_2025_event_sessionstarted(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_sessionended(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_fastestlap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_fastestlap_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_fastestlap_laptime, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+	offset += sizeof(float);
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_retirement(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_retirement_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_retirement_reason, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_drsenabled(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_drsdisabled(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	proto_tree_add_item(tree, hf_eaf1_event_drsdisabled_reason, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_teammateinpits(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_teammateinpits_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_chequeredflag(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_racewinner(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_racewinner_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_penalty(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_penaltytype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_infringementtype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_penalty_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_penalty_othervehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_time, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_lapnumber, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_placesgained, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_speedtrap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_speedtrap_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_speed, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+	offset += sizeof(float);
+
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isoverallfastestinsession, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isdriverfastestinsession, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_speedtrap_fastestvehicleindexinsession, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_fastestspeedinsession, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+	offset += sizeof(float);
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_startlights(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	proto_tree_add_item(tree, hf_eaf1_event_startlights_numlights, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_lightsout(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_drivethroughserved(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_drivethroughpenaltyserved_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_stopgoserved(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_stopgopenaltyserved_vehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_stopgopenaltyserved_stoptime, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+	offset += sizeof(float);
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_flashback(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	proto_tree_add_item(tree, hf_eaf1_event_flashback_frameidentifier, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_flashback_sessiontime, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+	offset += sizeof(float);
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_button(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	static int *const button_status_fields[] = {
+		&hf_eaf1_event_button_status_cross,
+		&hf_eaf1_event_button_status_triangle,
+		&hf_eaf1_event_button_status_circle,
+		&hf_eaf1_event_button_status_square,
+		&hf_eaf1_event_button_status_dpadleft,
+		&hf_eaf1_event_button_status_dpadright,
+		&hf_eaf1_event_button_status_dpadup,
+		&hf_eaf1_event_button_status_dpaddown,
+		&hf_eaf1_event_button_status_options,
+		&hf_eaf1_event_button_status_l1,
+		&hf_eaf1_event_button_status_r1,
+		&hf_eaf1_event_button_status_l2,
+		&hf_eaf1_event_button_status_r2,
+		&hf_eaf1_event_button_status_leftstickclick,
+		&hf_eaf1_event_button_status_rightstickclick,
+		&hf_eaf1_event_button_status_rightstickleft,
+		&hf_eaf1_event_button_status_rightstickright,
+		&hf_eaf1_event_button_status_rightstickup,
+		&hf_eaf1_event_button_status_rightstickdown,
+		&hf_eaf1_event_button_status_special,
+		&hf_eaf1_event_button_status_udp1,
+		&hf_eaf1_event_button_status_udp2,
+		&hf_eaf1_event_button_status_udp3,
+		&hf_eaf1_event_button_status_udp4,
+		&hf_eaf1_event_button_status_udp5,
+		&hf_eaf1_event_button_status_udp6,
+		&hf_eaf1_event_button_status_udp7,
+		&hf_eaf1_event_button_status_udp8,
+		&hf_eaf1_event_button_status_udp9,
+		&hf_eaf1_event_button_status_udp10,
+		&hf_eaf1_event_button_status_udp11,
+		&hf_eaf1_event_button_status_udp12,
+		NULL,
+	};
+
+	int offset = 0;
+
+	proto_tree_add_bitmask(tree, tvb, offset, hf_eaf1_event_button_status,
+						   ett_eaf1_event_buttonstatus, button_status_fields, ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_redflag(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	// No data for this event type
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_overtake(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_overtake_overtakingvehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_overtake_overtakenvehicleindex, pinfo, tvb, offset);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_safetycar(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	proto_tree_add_item(tree, hf_eaf1_event_safetycar_type, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	proto_tree_add_item(tree, hf_eaf1_event_safetycar_eventtype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
+}
+
+static int dissect_eaf1_2025_event_collision(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
+{
+	int offset = 0;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_collision_vehicle1index, pinfo, tvb, offset);
+	offset += 1;
+
+	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_collision_vehicle2index, pinfo, tvb, offset);
+	offset += 1;
+
+	return tvb_captured_length(tvb);
 }
 
 static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -7298,6 +7506,11 @@ extern "C"
 																	   "EAf1 F125 Packet ID",
 																	   proto_eaf1, FT_UINT8,
 																	   BASE_DEC);
+
+		e1f1_f125_event_code_dissector_table = register_dissector_table("e1f1.f125.event.code",
+																		"EAF1 F125 Event Code",
+																		proto_eaf1, FT_STRING,
+																		BASE_NONE);
 	}
 
 	void proto_reg_handoff_eaf1(void)
@@ -7325,5 +7538,27 @@ extern "C"
 		dissector_add_uint("eaf1.f125packetid", eF125PacketIdFinalClassification, create_dissector_handle(dissect_eaf1_2025_finalclassification, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", eF125PacketIdCarStatus, create_dissector_handle(dissect_eaf1_2025_carstatus, proto_eaf1));
 		dissector_add_uint("eaf1.f125packetid", eF125PacketIdLapData, create_dissector_handle(dissect_eaf1_2025_lapdata, proto_eaf1));
+
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125SessionStartedEventCode, create_dissector_handle(dissect_eaf1_2025_event_sessionstarted, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125SessionEndedEventCode, create_dissector_handle(dissect_eaf1_2025_event_sessionended, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125FastestLapEventCode, create_dissector_handle(dissect_eaf1_2025_event_fastestlap, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125RetirementEventCode, create_dissector_handle(dissect_eaf1_2025_event_retirement, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125DRSEnabledEventCode, create_dissector_handle(dissect_eaf1_2025_event_drsenabled, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125DRSDisabledEventCode, create_dissector_handle(dissect_eaf1_2025_event_drsdisabled, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125TeamMateInPitsEventCode, create_dissector_handle(dissect_eaf1_2025_event_teammateinpits, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125ChequeredFlagEventCode, create_dissector_handle(dissect_eaf1_2025_event_chequeredflag, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125RaceWinnerEventCode, create_dissector_handle(dissect_eaf1_2025_event_racewinner, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125PenaltyEventCode, create_dissector_handle(dissect_eaf1_2025_event_penalty, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125SpeedTrapEventCode, create_dissector_handle(dissect_eaf1_2025_event_speedtrap, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125StartLightsEventCode, create_dissector_handle(dissect_eaf1_2025_event_startlights, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125LightsOutEventCode, create_dissector_handle(dissect_eaf1_2025_event_lightsout, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125DriveThroughServedEventCode, create_dissector_handle(dissect_eaf1_2025_event_drivethroughserved, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125StopGoServedEventCode, create_dissector_handle(dissect_eaf1_2025_event_stopgoserved, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125FlashbackEventCode, create_dissector_handle(dissect_eaf1_2025_event_flashback, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125ButtonStatusEventCode, create_dissector_handle(dissect_eaf1_2025_event_button, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125RedFlagEventCode, create_dissector_handle(dissect_eaf1_2025_event_redflag, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125OvertakeEventCode, create_dissector_handle(dissect_eaf1_2025_event_overtake, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125SafetyCarEventCode, create_dissector_handle(dissect_eaf1_2025_event_safetycar, proto_eaf1));
+		dissector_add_string("e1f1.f125.event.code", eaf1_F125CollisionEventCode, create_dissector_handle(dissect_eaf1_2025_event_collision, proto_eaf1));
 	}
 }

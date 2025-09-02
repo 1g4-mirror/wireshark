@@ -270,6 +270,7 @@ namespace F125
     // Event - 45 bytes
     //-----------------------------------------------------------------------------
 
+#if 0
     static const uint cs_ADHF125eventStringCodeLen = 4;
 
     // The event details packet is different for each type of event.
@@ -402,6 +403,7 @@ namespace F125
         uint8 m_eventStringCode[cs_ADHF125eventStringCodeLen]; // Event string code
         EventDataDetails m_eventDetails;                       // Event details - should be interpreted differently for each type
     };
+#endif
 
     //-----------------------------------------------------------------------------
     // Participants - 1284 bytes
