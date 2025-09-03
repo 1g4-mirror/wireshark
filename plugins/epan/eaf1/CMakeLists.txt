@@ -14,7 +14,6 @@ set_module_info(eaf1 0 0 1 0)
 
 set(DISSECTOR_SRC
 	packet-eaf1.cc
-	eaf1-helpers.cc
 )
 
 set(PLUGIN_FILES
