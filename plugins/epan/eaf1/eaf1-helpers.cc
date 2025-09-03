@@ -24,10 +24,10 @@ const char *lookup_driver_name(int proto, uint32_t packet_number, const address 
 		auto conversation = find_conversation(packet_number, &src_addr, NULL, CONVERSATION_UDP, src_port, 0, NO_ADDR_B | NO_PORT_B);
 		if (conversation)
 		{
-			F125::PacketParticipantsData *Participants = (F125::PacketParticipantsData *)conversation_get_proto_data(conversation, proto);
-			if (Participants)
+			tConversationData *conversation_data = (tConversationData *)conversation_get_proto_data(conversation, proto);
+			if (conversation_data)
 			{
-				ret = Participants->m_participants[vehicle_index].m_name;
+				ret = conversation_data->m_DriverNames[vehicle_index];
 			}
 		}
 	}

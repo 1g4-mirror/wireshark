@@ -74,8 +74,6 @@ static constexpr const char *eaf1_F125OvertakeEventCode = "OVTK";
 static constexpr const char *eaf1_F125SafetyCarEventCode = "SCAR";
 static constexpr const char *eaf1_F125CollisionEventCode = "COLL";
 
-static const uint32_t eaf1_F125MaxNumCarsInUDPData = 22;
-static const uint32_t eaf1_F125MaxParticipantNameLen = 32;
 // static const uint32 eaf1_F125MaxTyreStints = 8;
 static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
 // static const uint eaf1_F125MaxNumLapsInHistory = 100;
@@ -1757,17 +1755,8 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 {
 	if (tvb_captured_length(tvb) >= sizeof(F125::PacketParticipantsData))
 	{
-		if (!PINFO_FD_VISITED(pinfo))
-		{
-			auto conversation = conversation_new(pinfo->num, &pinfo->src,
-												 NULL, CONVERSATION_UDP, pinfo->srcport,
-												 0, NO_ADDR2 | NO_PORT2);
-
-			if (conversation)
-			{
-				conversation_add_proto_data(conversation, proto_eaf1, tvb_memdup(wmem_file_scope(), tvb, 0, tvb_captured_length(tvb)));
-			}
-		}
+		tConversationData conversation_data;
+		memset(&conversation_data, 0, sizeof(conversation_data));
 
 		uint32_t active_cars;
 
@@ -1779,8 +1768,14 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 		{
 			int participant_offset = offsetof(F125::PacketParticipantsData, m_participants) + participant * sizeof(F125::ParticipantData);
 
-			auto player_name_ti = proto_tree_add_item(tree, hf_eaf1_participants_name, tvb, participant_offset + offsetof(F125::ParticipantData, m_name), eaf1_F125MaxParticipantNameLen, ENC_UTF_8);
+			char *player_name;
+			auto player_name_ti = proto_tree_add_item_ret_string(tree, hf_eaf1_participants_name, tvb, participant_offset + offsetof(F125::ParticipantData, m_name), eaf1_F125MaxParticipantNameLen, ENC_UTF_8, pinfo->pool, (const uint8_t **)&player_name);
 			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_participants_player_name);
+
+			if (!PINFO_FD_VISITED(pinfo))
+			{
+				snprintf(conversation_data.m_DriverNames[participant], sizeof(conversation_data.m_DriverNames[participant]), "%s", player_name);
+			}
 
 			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_aicontrolled, tvb, participant_offset + offsetof(F125::ParticipantData, m_aiControlled), sizeof(uint8), ENC_LITTLE_ENDIAN);
 			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_driverid, tvb, participant_offset + offsetof(F125::ParticipantData, m_driverId), sizeof(uint8), ENC_LITTLE_ENDIAN);
@@ -1814,6 +1809,18 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_blue, tvb, livery_offset + offsetof(F125::LiveryColour, blue), sizeof(uint8), ENC_LITTLE_ENDIAN, &blue);
 
 				proto_item_append_text(livery_colour_ti, " (0x%02x%02x%02x)", red, green, blue);
+			}
+		}
+
+		if (!PINFO_FD_VISITED(pinfo))
+		{
+			auto conversation = conversation_new(pinfo->num, &pinfo->src,
+												 NULL, CONVERSATION_UDP, pinfo->srcport,
+												 0, NO_ADDR2 | NO_PORT2);
+
+			if (conversation)
+			{
+				conversation_add_proto_data(conversation, proto_eaf1, wmem_memdup(wmem_file_scope(), &conversation_data, sizeof(conversation_data)));
 			}
 		}
 
