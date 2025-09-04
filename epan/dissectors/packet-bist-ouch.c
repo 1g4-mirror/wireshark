@@ -462,6 +462,8 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             g_iot = ob_ensure_group_for_token(token_map, ti.iot, (uint32_t)pinfo->fd->num);
             if (!g_iot->initial_token) g_iot->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             group = g_iot;
+            /* Map ROT as well so outbound rejects referencing ROT join this chain */
+            if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
         } else if (g_rot && !g_iot) {
             if (!g_rot->initial_token) g_rot->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             ob_map_token_to_group(token_map, ti.iot, g_rot);
@@ -477,6 +479,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             if (group && !group->initial_token && ti.has_iot)
                 group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             if (group && ti.has_iot) ob_map_token_to_group(token_map, ti.iot, group);
+            if (group && ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
         }
 
         if (ti.has_iot && group && group->initial_token &&
