@@ -94,6 +94,8 @@ static int hf_ob_group_size;
 static int hf_ob_is_inbound;
 static int hf_ob_global_index;
 static int hf_ob_group_id;
+static int hf_ob_first_frame;
+static int hf_ob_prev_frame;
 
 /* Experts */
 static expert_field ei_ob_prev_unmapped;
@@ -105,6 +107,7 @@ typedef struct order_group_t_ {
     const char *initial_token;
 
     uint32_t     first_frame;  /* frame numbers are 32-bit */
+    uint32_t     tail_frame;   /* most recent frame in this group (for chaining) */
     uint32_t     next_index;
     uint32_t     total;
 
@@ -115,12 +118,17 @@ typedef struct ob_frame_idx_t_ {
     uint32_t       index;        /* per-group incremental index */
     uint32_t       global_index; /* capture-wide OUCH ordinal */
     order_group_t *group;        /* root group pointer */
+    uint32_t       prev_frame;   /* immediate previous frame in this order chain */
 } ob_frame_idx_t;
 
 /* Capture-lifetime maps (allocated in file scope) — all O(1) lookups.
  *
- *  g_token_to_group         : key = const char* (token)      -> value = order_group_t*
- *  g_frame_to_index         : key = GUINT_TO_POINTER(frame#) -> value = ob_frame_idx_t*
+ *  g_token_to_group : key = const char* (any OUCH token for the chain) -> value = order_group_t*
+ *                     The key can be the initial Enter Order token (IOT) or any
+ *                     Replacement Order Token (ROT) observed for that chain. We
+ *                     proactively map both IOT and ROT so that a later message
+ *                     (e.g., Order Rejected carrying the ROT) joins the same chain.
+ *  g_frame_to_index : key = GUINT_TO_POINTER(frame#)                      -> value = ob_frame_idx_t*
  */
 static wmem_map_t *g_token_to_group   = NULL;
 static wmem_map_t *g_frame_to_index   = NULL;
@@ -335,15 +343,13 @@ ob_lazy_reset_on_new_capture(packet_info *pinfo _U_)
     wmem_allocator_t *fs = wmem_file_scope();
     if (fs != g_current_file_scope) {
         g_current_file_scope = fs;
-        g_token_to_group     = NULL;
-        g_frame_to_index     = NULL;
         g_next_global_index  = 1;
         g_next_group_id      = 1;
     }
     if (!g_token_to_group)
-        g_token_to_group = wmem_map_new(g_current_file_scope, g_str_hash, g_str_equal);
+        g_token_to_group = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_str_hash, g_str_equal);
     if (!g_frame_to_index)
-        g_frame_to_index  = wmem_map_new(g_current_file_scope, g_direct_hash, g_direct_equal);
+        g_frame_to_index  = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 }
 
 static order_group_t*
@@ -358,7 +364,6 @@ static void
 ob_map_token_to_group(wmem_map_t *token_map, const char *token, order_group_t *g)
 {
     if (!token || !g) return;
-    if (wmem_map_lookup(token_map, token) == g) return;
     const char *tok_fs = wmem_strdup(wmem_file_scope(), token);
     wmem_map_insert(token_map, (void *)tok_fs, g);
 }
@@ -371,6 +376,7 @@ ob_ensure_group_for_token(wmem_map_t *token_map, const char *token, uint32_t fra
         g = wmem_new0(wmem_file_scope(), order_group_t);
         g->initial_token = NULL;
         g->first_frame   = frame_num;            /* 32-bit frame number */
+        g->tail_frame    = 0;
         g->next_index    = 1;
         g->total         = 0;
         g->group_id      = g_next_group_id++;
@@ -391,18 +397,12 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
     } ti = {0};
 
     ti.type = tvb_get_uint8(tvb, 0);
+    /* We extract tokens (IOT/ROT/PREV) from the current message so grouping
+     * still works on partial captures where earlier messages are missing. */
 
     switch (ti.type) {
     case 'O':
-        ti.is_inbound = true;
-        ti.iot = ob_get_ascii_token(tvb, 1, 14, pinfo->pool);
-        ti.has_iot = (ti.iot != NULL);
-        break;
     case 'X':
-        ti.is_inbound = true;
-        ti.iot = ob_get_ascii_token(tvb, 1, 14, pinfo->pool);
-        ti.has_iot = (ti.iot != NULL);
-        break;
     case 'Q':
         ti.is_inbound = true;
         ti.iot = ob_get_ascii_token(tvb, 1, 14, pinfo->pool);
@@ -444,7 +444,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
                 group = ob_ensure_group_for_token(token_map, ti.prev, (uint32_t)pinfo->fd->num);
                 if (root_item) {
                     expert_add_info_format(pinfo, root_item, &ei_ob_prev_unmapped,
-                        "Order Replaced: previous token '%s' was not mapped in this session (partial capture?); created a temporary group",
+                        "Order Replaced: previous token '%s' not seen earlier in this capture; starting an order chain here",
                         ti.prev);
                 }
             }
@@ -455,27 +455,27 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         }
     } else if (ti.type == 'U' && ti.is_inbound) {
         /* Inbound Replace Order: unify EOT & ROT */
-        order_group_t *g_iot = ti.has_iot ? ob_lookup_group(token_map, ti.iot) : NULL;
-        order_group_t *g_rot = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
+        order_group_t *iot_group = ti.has_iot ? ob_lookup_group(token_map, ti.iot) : NULL;
+        order_group_t *rot_group = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
 
-        if (!g_iot && !g_rot) {
-            g_iot = ob_ensure_group_for_token(token_map, ti.iot, (uint32_t)pinfo->fd->num);
-            if (!g_iot->initial_token) g_iot->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            group = g_iot;
+        if (!iot_group && !rot_group) {
+            iot_group = ob_ensure_group_for_token(token_map, ti.iot, (uint32_t)pinfo->fd->num);
+            if (!iot_group->initial_token) iot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+            group = iot_group;
             /* Map ROT as well so outbound rejects referencing ROT join this chain */
             if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
-        } else if (g_rot && !g_iot) {
-            if (!g_rot->initial_token) g_rot->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            ob_map_token_to_group(token_map, ti.iot, g_rot);
-            group = g_rot;
-        } else if (g_iot && g_rot && g_iot != g_rot) {
-            order_group_t *root = ob_union_groups(g_iot, g_rot);
+        } else if (rot_group && !iot_group) {
+            if (!rot_group->initial_token) rot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+            ob_map_token_to_group(token_map, ti.iot, rot_group);
+            group = rot_group;
+        } else if (iot_group && rot_group && iot_group != rot_group) {
+            order_group_t *root = ob_union_groups(iot_group, rot_group);
             if (!root->initial_token) root->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             ob_map_token_to_group(token_map, ti.iot, root);
             if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, root);
             group = root;
         } else {
-            group = g_iot ? g_iot : g_rot;
+            group = iot_group ? iot_group : rot_group;
             if (group && !group->initial_token && ti.has_iot)
                 group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             if (group && ti.has_iot) ob_map_token_to_group(token_map, ti.iot, group);
@@ -499,7 +499,12 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         }
     }
 
-    /* Per-frame index/global storage */
+    /* Per-frame index/global storage
+     *
+     * First pass (!visited): assign a global index, advance per-group index,
+     * and update group running state. On re-dissect (visited): avoid changing
+     * state and only retrieve previously computed indices for display.
+     */
     void *fkey = GUINT_TO_POINTER((guint)pinfo->fd->num);
     ob_frame_idx_t *pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
     if (!pd) {
@@ -510,14 +515,18 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
 
     if (group) {
         if (!pd->index) {
+            order_group_t *root = ob_find_root(group);
             if (!pinfo->fd->visited) {
-                order_group_t *root = ob_find_root(group);
-                pd->index = root->next_index++;
-                root->total = root->next_index - 1;
+                /* Set prev link from current tail, then advance tail to this frame */
+                pd->prev_frame = root ? root->tail_frame : 0;
+                if (root) root->tail_frame = (uint32_t)pinfo->fd->num;
+                pd->index = root ? root->next_index++ : 0;
+                if (root) root->total = root->next_index - 1;
                 pd->group = root;
             } else {
                 pd->index = 0;
-                pd->group = ob_find_root(group);
+                pd->group = root;
+                /* prev_frame is already stored from first pass */
             }
         }
     }
@@ -537,6 +546,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
     proto_item *ob_item = NULL;
     proto_tree *ob_tree = proto_tree_add_subtree_format(pt, tvb, 0, 0,
                                 ett_bist_ouch_orderbook, &ob_item, "Orderbook");
+    if (ob_item) proto_item_set_generated(ob_item);
 
     const char *canon_iot = (pd->group ? ob_find_root(pd->group)->initial_token : NULL);
     if (!canon_iot && ti.has_iot) canon_iot = ti.iot;
@@ -575,6 +585,16 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         if (display_total == 0 && idx > 0) display_total = idx;
         proto_item *pi = proto_tree_add_uint(ob_tree, hf_ob_group_size, tvb, 0, 0, display_total);
         proto_item_set_generated(pi);
+        /* Add links to first and previous frames */
+        order_group_t *root = ob_find_root(pd->group);
+        if (root && root->first_frame) {
+            proto_item *pf = proto_tree_add_uint(ob_tree, hf_ob_first_frame, tvb, 0, 0, root->first_frame);
+            proto_item_set_generated(pf);
+        }
+        if (pd->prev_frame) {
+            proto_item *pp = proto_tree_add_uint(ob_tree, hf_ob_prev_frame, tvb, 0, 0, pd->prev_frame);
+            proto_item_set_generated(pp);
+        }
     }
 }
 
@@ -878,14 +898,16 @@ proto_register_bist_ouch(void)
         { &hf_ouch_traded_qty,           { "Traded Quantity", "bist_ouch.traded_qty", FT_UINT64, BASE_DEC, NULL, 0x0, "Total traded quantity for this order", HFILL }},
 
         /* Orderbook generated fields */
-        { &hf_ob_initial_token,     { "Orderbook • Initial Token",      "bist_ouch.order.initial_token",     FT_STRING, BASE_NONE, NULL, 0x0, "Initial inbound Order Token (IOT)", HFILL }},
-        { &hf_ob_replacement_token, { "Orderbook • Replacement Token",  "bist_ouch.order.replacement_token", FT_STRING, BASE_NONE, NULL, 0x0, "Replacement Order Token on this frame (if any)", HFILL }},
-        { &hf_ob_previous_token,    { "Orderbook • Previous Token",     "bist_ouch.order.previous_token",    FT_STRING, BASE_NONE, NULL, 0x0, "Previous Replacement Token (links ROT chain)", HFILL }},
-        { &hf_ob_group_index,       { "Orderbook • Order Index",        "bist_ouch.order.group_index",       FT_UINT32, BASE_DEC,  NULL, 0x0, "Event index within this order lifecycle", HFILL }},
-        { &hf_ob_group_size,        { "Orderbook • OrderChain Size",    "bist_ouch.order.group_size",        FT_UINT32, BASE_DEC,  NULL, 0x0, "Progressive count of events for this order", HFILL }},
-        { &hf_ob_is_inbound,        { "Orderbook • Is Inbound",         "bist_ouch.order.is_inbound",        FT_BOOLEAN, BASE_NONE, NULL, 0x0, "Message direction (client→exchange)", HFILL }},
-        { &hf_ob_global_index,      { "Orderbook • Global Index",       "bist_ouch.order.global_index",      FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide absolute OUCH message index (unique)", HFILL }},
-        { &hf_ob_group_id,          { "Orderbook • OrderChain ID",      "bist_ouch.order.group_id",          FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide ordinal ID of the order group", HFILL }},
+        { &hf_ob_initial_token,     { "Initial Token",      "bist_ouch.order.initial_token",     FT_STRING, BASE_NONE, NULL, 0x0, "Initial inbound Order Token (IOT)", HFILL }},
+        { &hf_ob_replacement_token, { "Replacement Token",  "bist_ouch.order.replacement_token", FT_STRING, BASE_NONE, NULL, 0x0, "Replacement Order Token on this frame (if any)", HFILL }},
+        { &hf_ob_previous_token,    { "Previous Token",     "bist_ouch.order.previous_token",    FT_STRING, BASE_NONE, NULL, 0x0, "Previous Replacement Token (links ROT chain)", HFILL }},
+        { &hf_ob_group_index,       { "Order Index",        "bist_ouch.order.group_index",       FT_UINT32, BASE_DEC,  NULL, 0x0, "Event index within this order lifecycle", HFILL }},
+        { &hf_ob_group_size,        { "OrderChain Size",    "bist_ouch.order.group_size",        FT_UINT32, BASE_DEC,  NULL, 0x0, "Progressive count of events for this order", HFILL }},
+        { &hf_ob_is_inbound,        { "Is Inbound",         "bist_ouch.order.is_inbound",        FT_BOOLEAN, BASE_NONE, NULL, 0x0, "Message direction (client→exchange)", HFILL }},
+        { &hf_ob_global_index,      { "Global Index",       "bist_ouch.order.global_index",      FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide absolute OUCH message index (unique)", HFILL }},
+        { &hf_ob_group_id,          { "OrderChain ID",      "bist_ouch.order.group_id",          FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide ordinal ID of the order group", HFILL }},
+        { &hf_ob_first_frame,       { "First Frame",        "bist_ouch.order.first_frame",       FT_FRAMENUM, BASE_NONE, NULL, 0x0, "First frame in this order chain", HFILL }},
+        { &hf_ob_prev_frame,        { "Previous Frame",     "bist_ouch.order.prev_frame",        FT_FRAMENUM, BASE_NONE, NULL, 0x0, "Previous frame in this order chain", HFILL }},
     };
 
     static int *ett[] = { &ett_bist_ouch, &ett_bist_ouch_quote, &ett_bist_ouch_orderbook };
