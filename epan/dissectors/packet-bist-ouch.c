@@ -17,13 +17,10 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/column-utils.h>
-
-#include <glib.h>
 #include <epan/address.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
 #include <epan/value_string.h>
-#include <wsutil/wmem/wmem.h>
 #include <wsutil/wmem/wmem_map.h>
 
 #define PNAME  "BIST OUCH"
