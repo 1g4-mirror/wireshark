@@ -504,8 +504,11 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
     ob_frame_idx_t *pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
     if (!pd) {
         pd = wmem_new0(wmem_file_scope(), ob_frame_idx_t);
-        if (!pinfo->fd->visited) pd->global_index = g_next_global_index++;
-        wmem_map_insert(g_frame_to_index, fkey, pd);
+        if (!pinfo->fd->visited) {
+            pd->global_index = g_next_global_index++;
+            /* Update state only if not visited */
+            wmem_map_insert(g_frame_to_index, fkey, pd);
+        }
     }
 
     if (group) {
