@@ -20,7 +20,7 @@
 #include <epan/address.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
-#include "value_string.h"
+#include <wsutil/value_string.h>
 #include <wsutil/wmem/wmem.h>
 #include <wsutil/wmem/wmem_map.h>
 
