@@ -17,6 +17,8 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/column-utils.h>
+
+#include <glib.h>
 #include <epan/address.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
@@ -327,10 +329,8 @@ ob_union_groups(order_group_t *a, order_group_t *b)
 static void
 bist_ouch_reset_state(void)
 {
-    g_current_file_scope = NULL;
-    /* Recreate maps bound to the new file scope so they autoreset per capture. */
-    g_token_to_group     = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_str_hash, g_str_equal);
-    g_frame_to_index     = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
+    /* Counters reset per capture; maps are autoreset and created at registration. */
+    g_current_file_scope = wmem_file_scope();
     g_next_global_index  = 1;
     g_next_group_id      = 1;
 }
@@ -345,11 +345,6 @@ ob_lazy_reset_on_new_capture(packet_info *pinfo _U_)
         g_next_global_index  = 1;
         g_next_group_id      = 1;
     }
-    /* Create maps the first time we see a file scope; data must live in file scope. */
-    if (!g_token_to_group)
-        g_token_to_group = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_str_hash, g_str_equal);
-    if (!g_frame_to_index)
-        g_frame_to_index  = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 }
 
 static order_group_t*
@@ -602,12 +597,10 @@ static int
 dissect_u_replace_order(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, int offset)
 {
     /* Existing Order Token (EOT) — dedicated field + generated legacy alias */
-    proto_item *eot_pi =
-        proto_tree_add_item(pt, hf_ouch_existing_order_token, tvb, offset, 14, ENC_ASCII);
+    proto_tree_add_item(pt, hf_ouch_existing_order_token, tvb, offset, 14, ENC_ASCII);
     proto_item *legacy_pi =
         proto_tree_add_item(pt, hf_ouch_order_token, tvb, offset, 14, ENC_ASCII);
     proto_item_set_generated(legacy_pi);
-    (void)eot_pi;
     offset += 14;
 
     /* Replacement Order Token (ROT) */
@@ -952,13 +945,12 @@ proto_register_bist_ouch(void)
 
     bist_ouch_handle = register_dissector("bist-ouch", dissect_bist_ouch, proto_bist_ouch);
 
-    /* Create maps at registration time with safe epan scope so early heuristics
-     * do not dereference NULL; they will be rebound per file in
-     * bist_ouch_reset_state() to autoreset with the file scope. */
+    /* Create maps at registration time using autoreset so they clear per capture
+     * automatically when file scope changes. */
     if (!g_token_to_group)
-        g_token_to_group = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+        g_token_to_group = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_str_hash, g_str_equal);
     if (!g_frame_to_index)
-        g_frame_to_index  = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+        g_frame_to_index  = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 
     register_init_routine(bist_ouch_reset_state);
 }
@@ -969,3 +961,4 @@ proto_reg_handoff_bist_ouch(void)
     heur_dissector_add("soupbintcp", dissect_bist_ouch_heur,
         "BIST OUCH over SoupBinTCP", "bist_ouch_soupbintcp", proto_bist_ouch, HEURISTIC_ENABLE);
 }
+
