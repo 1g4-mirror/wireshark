@@ -436,7 +436,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         if (ti.has_prev) {
             group = ob_lookup_group(token_map, ti.prev);
             if (!group) {
-                group = ob_ensure_group_for_token(token_map, ti.prev, (uint32_t)pinfo->fd->num);
+                group = ob_ensure_group_for_token(token_map, ti.prev, pinfo->fd->num);
                 if (root_item) {
                     expert_add_info_format(pinfo, root_item, &ei_ob_prev_unmapped,
                         "Order Replaced: previous token '%s' not seen earlier in this capture; starting an order chain here",
@@ -446,7 +446,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
         } else if (ti.has_rot) {
             group = ob_lookup_group(token_map, ti.rot);
-            if (!group) group = ob_ensure_group_for_token(token_map, ti.rot, (uint32_t)pinfo->fd->num);
+            if (!group) group = ob_ensure_group_for_token(token_map, ti.rot, pinfo->fd->num);
         }
     } else if (ti.type == 'U' && ti.is_inbound) {
         /* Inbound Replace Order: unify EOT & ROT */
@@ -454,7 +454,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         order_group_t *rot_group = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
 
         if (!iot_group && !rot_group) {
-            iot_group = ob_ensure_group_for_token(token_map, ti.iot, (uint32_t)pinfo->fd->num);
+            iot_group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
             if (!iot_group->initial_token) iot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
             group = iot_group;
             /* Map ROT as well so outbound rejects referencing ROT join this chain */
@@ -486,7 +486,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         if (ti.has_iot) {
             group = ob_lookup_group(token_map, ti.iot);
             if (!group) {
-                group = ob_ensure_group_for_token(token_map, ti.iot, (uint32_t)pinfo->fd->num);
+                group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
             }
             if (!group->initial_token)
                 group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
@@ -500,7 +500,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
      * and update group running state. On re-dissect (visited): avoid changing
      * state and only retrieve previously computed indices for display.
      */
-    void *fkey = GUINT_TO_POINTER((guint)pinfo->fd->num);
+    void *fkey = GUINT_TO_POINTER(pinfo->fd->num);
     ob_frame_idx_t *pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
     if (!pd) {
         pd = wmem_new0(wmem_file_scope(), ob_frame_idx_t);
@@ -517,7 +517,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             if (!pinfo->fd->visited) {
                 /* Set prev link from current tail, then advance tail to this frame */
                 pd->prev_frame = root ? root->tail_frame : 0;
-                if (root) root->tail_frame = (uint32_t)pinfo->fd->num;
+                if (root) root->tail_frame = pinfo->fd->num;
                 pd->index = root ? root->next_index++ : 0;
                 if (root) root->total = root->next_index - 1;
                 pd->group = root;
