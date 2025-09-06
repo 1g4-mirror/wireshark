@@ -504,7 +504,6 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
      */
     void *fkey = GUINT_TO_POINTER(pinfo->fd->num);
     ob_frame_idx_t *pd = NULL;
-    
     if (!pinfo->fd->visited) {
         /* First pass: create and populate frame data */
         pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
@@ -513,7 +512,6 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             pd->global_index = g_next_global_index++;
             wmem_map_insert(g_frame_to_index, fkey, pd);
         }
-        
         if (group) {
             order_group_t *root = ob_find_root(group);
             /* Set prev link from current tail, then advance tail to this frame */
