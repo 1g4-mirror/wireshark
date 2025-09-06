@@ -34,7 +34,7 @@
 
 static bool bist_ouch_show_decimal_price = false;
 static dissector_handle_t bist_ouch_handle;
-static bool bist_ouch_enable_orderbook_tracking = true;
+static bool bist_ouch_enable_orderbook_tracking = false;
 static bool bist_ouch_show_order_index_in_info = false;
 static bool bist_ouch_show_global_index_in_info = false;
 static bool bist_ouch_show_group_id_in_info = false;
@@ -95,7 +95,9 @@ static int hf_ob_is_inbound;
 static int hf_ob_global_index;
 static int hf_ob_group_id;
 static int hf_ob_first_frame;
+static int hf_ob_last_frame;
 static int hf_ob_prev_frame;
+static int hf_ob_next_frame;
 
 /* Experts */
 static expert_field ei_ob_prev_unmapped;
@@ -107,6 +109,7 @@ typedef struct order_group_t_ {
     const char *initial_token;
 
     uint32_t     first_frame;  /* frame numbers are 32-bit */
+    uint32_t     last_frame;   /* most recent frame in this group (for chaining) */
     uint32_t     tail_frame;   /* most recent frame in this group (for chaining) */
     uint32_t     next_index;
     uint32_t     total;
@@ -119,6 +122,7 @@ typedef struct ob_frame_idx_t_ {
     uint32_t       global_index; /* capture-wide OUCH ordinal */
     order_group_t *group;        /* root group pointer */
     uint32_t       prev_frame;   /* immediate previous frame in this order chain */
+    uint32_t       next_frame;   /* immediate next frame in this order chain */
 } ob_frame_idx_t;
 
 /* Capture-lifetime maps (allocated in file scope) — all O(1) lookups.
@@ -366,17 +370,15 @@ ob_map_token_to_group(wmem_map_t *token_map, const char *token, order_group_t *g
 static order_group_t*
 ob_ensure_group_for_token(wmem_map_t *token_map, const char *token, uint32_t frame_num)
 {
-    order_group_t *g = ob_lookup_group(token_map, token);
-    if (!g) {
-        g = wmem_new0(wmem_file_scope(), order_group_t);
-        g->initial_token = NULL;
-        g->first_frame   = frame_num;            /* 32-bit frame number */
-        g->tail_frame    = 0;
-        g->next_index    = 1;
-        g->total         = 0;
-        g->group_id      = g_next_group_id++;
-        ob_map_token_to_group(token_map, token, g);
-    }
+    order_group_t *g = wmem_new0(wmem_file_scope(), order_group_t);
+    g->initial_token = NULL;
+    g->first_frame   = frame_num;            /* 32-bit frame number */
+    g->last_frame    = frame_num;           /* initialize last_frame to first frame */
+    g->tail_frame    = 0;
+    g->next_index    = 1;
+    g->total         = 0;
+    g->group_id      = g_next_group_id++;
+    ob_map_token_to_group(token_map, token, g);
     return g;
 }
 
@@ -501,37 +503,51 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
      * state and only retrieve previously computed indices for display.
      */
     void *fkey = GUINT_TO_POINTER(pinfo->fd->num);
-    ob_frame_idx_t *pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
-    if (!pd) {
-        pd = wmem_new0(wmem_file_scope(), ob_frame_idx_t);
-        if (!pinfo->fd->visited) {
+    ob_frame_idx_t *pd = NULL;
+    
+    if (!pinfo->fd->visited) {
+        /* First pass: create and populate frame data */
+        pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
+        if (!pd) {
+            pd = wmem_new0(wmem_file_scope(), ob_frame_idx_t);
             pd->global_index = g_next_global_index++;
-            /* Update state only if not visited */
             wmem_map_insert(g_frame_to_index, fkey, pd);
         }
-    }
-
-    if (group) {
-        if (!pd->index) {
+        
+        if (group) {
             order_group_t *root = ob_find_root(group);
-            if (!pinfo->fd->visited) {
-                /* Set prev link from current tail, then advance tail to this frame */
-                pd->prev_frame = root ? root->tail_frame : 0;
-                if (root) root->tail_frame = pinfo->fd->num;
-                pd->index = root ? root->next_index++ : 0;
-                if (root) root->total = root->next_index - 1;
-                pd->group = root;
-            } else {
-                pd->index = 0;
-                pd->group = root;
-                /* prev_frame is already stored from first pass */
+            /* Set prev link from current tail, then advance tail to this frame */
+            pd->prev_frame = root ? root->tail_frame : 0;
+            if (root) {
+                /* Update the previous frame's next_frame to point to current frame */
+                if (root->tail_frame > 0) {
+                    void *prev_fkey = GUINT_TO_POINTER(root->tail_frame);
+                    ob_frame_idx_t *prev_pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, prev_fkey);
+                    if (prev_pd) {
+                        prev_pd->next_frame = pinfo->fd->num;
+                    }
+                }
+                root->tail_frame = pinfo->fd->num;
+                root->last_frame = pinfo->fd->num;
             }
+            pd->index = root ? root->next_index++ : 0;
+            if (root) root->total = root->next_index - 1;
+            pd->group = root;
+        }
+    } else {
+        /* Re-dissect: only retrieve existing data for display */
+        pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
+        if (pd && group) {
+            order_group_t *root = ob_find_root(group);
+            /* Don't reset pd->index to 0 - keep the original value for display */
+            pd->group = root;
+            /* prev_frame is already stored from first pass */
         }
     }
 
-    const uint32_t idx  = pd->index;
-    const uint32_t gidx = pd->global_index;
-    const uint32_t gid  = (pd->group ? pd->group->group_id : 0);
+    const uint32_t idx  = pd ? pd->index : 0;
+    const uint32_t gidx = pd ? pd->global_index : 0;
+    const uint32_t gid  = (pd && pd->group) ? pd->group->group_id : 0;
 
     if (bist_ouch_show_group_id_in_info && gid > 0)
         col_append_fstr(pinfo->cinfo, COL_INFO, " OrderChainID#%u", gid);
@@ -546,7 +562,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
                                 ett_bist_ouch_orderbook, &ob_item, "Orderbook");
     if (ob_item) proto_item_set_generated(ob_item);
 
-    const char *canon_iot = (pd->group ? ob_find_root(pd->group)->initial_token : NULL);
+    const char *canon_iot = (pd && pd->group) ? ob_find_root(pd->group)->initial_token : NULL;
     if (!canon_iot && ti.has_iot) canon_iot = ti.iot;
 
     if (canon_iot) {
@@ -578,20 +594,28 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         proto_item *pi = proto_tree_add_uint(ob_tree, hf_ob_global_index, tvb, 0, 0, gidx);
         proto_item_set_generated(pi);
     }
-    if (pd->group) {
+    if (pd && pd->group) {
         uint32_t display_total = ob_find_root(pd->group)->total;
         if (display_total == 0 && idx > 0) display_total = idx;
         proto_item *pi = proto_tree_add_uint(ob_tree, hf_ob_group_size, tvb, 0, 0, display_total);
         proto_item_set_generated(pi);
-        /* Add links to first and previous frames */
+        /* Add links to first, last, previous and next frames */
         order_group_t *root = ob_find_root(pd->group);
         if (root && root->first_frame) {
             proto_item *pf = proto_tree_add_uint(ob_tree, hf_ob_first_frame, tvb, 0, 0, root->first_frame);
             proto_item_set_generated(pf);
         }
+        if (root && root->last_frame) {
+            proto_item *pl = proto_tree_add_uint(ob_tree, hf_ob_last_frame, tvb, 0, 0, root->last_frame);
+            proto_item_set_generated(pl);
+        }
         if (pd->prev_frame) {
             proto_item *pp = proto_tree_add_uint(ob_tree, hf_ob_prev_frame, tvb, 0, 0, pd->prev_frame);
             proto_item_set_generated(pp);
+        }
+        if (pd->next_frame) {
+            proto_item *pn = proto_tree_add_uint(ob_tree, hf_ob_next_frame, tvb, 0, 0, pd->next_frame);
+            proto_item_set_generated(pn);
         }
     }
 }
@@ -903,7 +927,9 @@ proto_register_bist_ouch(void)
         { &hf_ob_global_index,      { "Global Index",       "bist_ouch.order.global_index",      FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide absolute OUCH message index (unique)", HFILL }},
         { &hf_ob_group_id,          { "OrderChain ID",      "bist_ouch.order.group_id",          FT_UINT32, BASE_DEC,  NULL, 0x0, "Capture-wide ordinal ID of the order group", HFILL }},
         { &hf_ob_first_frame,       { "First Frame",        "bist_ouch.order.first_frame",       FT_FRAMENUM, BASE_NONE, NULL, 0x0, "First frame in this order chain", HFILL }},
+        { &hf_ob_last_frame,        { "Last Frame",         "bist_ouch.order.last_frame",        FT_FRAMENUM, BASE_NONE, NULL, 0x0, "Last frame in this order chain", HFILL }},
         { &hf_ob_prev_frame,        { "Previous Frame",     "bist_ouch.order.prev_frame",        FT_FRAMENUM, BASE_NONE, NULL, 0x0, "Previous frame in this order chain", HFILL }},
+        { &hf_ob_next_frame,        { "Next Frame",         "bist_ouch.order.next_frame",        FT_FRAMENUM, BASE_NONE, NULL, 0x0, "Next frame in this order chain", HFILL }},
     };
 
     static int *ett[] = { &ett_bist_ouch, &ett_bist_ouch_quote, &ett_bist_ouch_orderbook };
