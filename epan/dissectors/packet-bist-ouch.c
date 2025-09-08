@@ -137,7 +137,6 @@ typedef struct ob_frame_idx_t_ {
 static wmem_map_t *g_token_to_group   = NULL;
 static wmem_map_t *g_frame_to_index   = NULL;
 
-static wmem_allocator_t *g_current_file_scope = NULL;
 static uint32_t g_next_global_index;
 static uint32_t g_next_group_id;
 
@@ -334,21 +333,15 @@ static void
 bist_ouch_reset_state(void)
 {
     /* Counters reset per capture; maps are autoreset and created at registration. */
-    g_current_file_scope = wmem_file_scope();
     g_next_global_index  = 1;
     g_next_group_id      = 1;
 }
 
-/* Lazy init per capture */
+/*
+ * because maps are autoreset and allocations are in file scope. */
 static void
-ob_lazy_reset_on_new_capture(packet_info *pinfo _U_)
+bist_ouch_cleanup_state(void)
 {
-    wmem_allocator_t *fs = wmem_file_scope();
-    if (fs != g_current_file_scope) {
-        g_current_file_scope = fs;
-        g_next_global_index  = 1;
-        g_next_group_id      = 1;
-    }
 }
 
 static order_group_t*
@@ -385,8 +378,6 @@ ob_ensure_group_for_token(wmem_map_t *token_map, const char *token, uint32_t fra
 static void
 ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_item *root_item)
 {
-    ob_lazy_reset_on_new_capture(pinfo);
-
     struct {
         const char *iot, *rot, *prev;
         bool has_iot, has_rot, has_prev, is_inbound;
@@ -980,6 +971,7 @@ proto_register_bist_ouch(void)
         g_frame_to_index  = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 
     register_init_routine(bist_ouch_reset_state);
+    register_cleanup_routine(bist_ouch_cleanup_state);
 }
 
 void
