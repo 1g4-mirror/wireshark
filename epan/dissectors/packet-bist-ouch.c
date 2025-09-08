@@ -288,10 +288,10 @@ ob_get_ascii_token(tvbuff_t *tvb, int offset, int len, wmem_allocator_t *scope)
     return tvb_get_string_enc(scope, tvb, offset, len, ENC_ASCII);
 }
 
-/* Union-Find helpers (iterative find with path compression) */
+/* Union-Find helpers (iterative find; compresses path so all nodes point to root) */
 
 static order_group_t*
-ob_find_root(order_group_t *g)
+ob_canonicalize_root(order_group_t *g)
 {
     if (!g) return NULL;
     order_group_t *root = g;
@@ -308,10 +308,10 @@ ob_find_root(order_group_t *g)
 static order_group_t*
 ob_union_groups(order_group_t *a, order_group_t *b)
 {
-    if (!a) return ob_find_root(b);
-    if (!b) return ob_find_root(a);
-    a = ob_find_root(a);
-    b = ob_find_root(b);
+    if (!a) return ob_canonicalize_root(b);
+    if (!b) return ob_canonicalize_root(a);
+    a = ob_canonicalize_root(a);
+    b = ob_canonicalize_root(b);
     if (a == b) return a;
 
     order_group_t *root  = (a->first_frame <= b->first_frame) ? a : b;
@@ -340,11 +340,11 @@ bist_ouch_reset_state(void)
 /* No cleanup routine required: allocations are in file scope and maps autoreset. */
 
 static order_group_t*
-ob_lookup_group(wmem_map_t *token_map, const char *token)
+ob_lookup_and_canonicalize(wmem_map_t *token_map, const char *token)
 {
     if (!token || !token_map) return NULL;
     order_group_t *g = (order_group_t *)wmem_map_lookup(token_map, token);
-    return ob_find_root(g);
+    return ob_canonicalize_root(g);
 }
 
 static void
@@ -432,7 +432,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         if (ti.type == 'U' && !ti.is_inbound) {
             /* Outbound "Order Replaced": PREV -> group, ROT into same group */
             if (ti.has_prev) {
-                group = ob_lookup_group(token_map, ti.prev);
+                group = ob_lookup_and_canonicalize(token_map, ti.prev);
                 if (!group) {
                     group = ob_ensure_group_for_token(token_map, ti.prev, pinfo->fd->num);
                     if (root_item) {
@@ -443,13 +443,13 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
                 }
                 if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
             } else if (ti.has_rot) {
-                group = ob_lookup_group(token_map, ti.rot);
+                group = ob_lookup_and_canonicalize(token_map, ti.rot);
                 if (!group) group = ob_ensure_group_for_token(token_map, ti.rot, pinfo->fd->num);
             }
         } else if (ti.type == 'U' && ti.is_inbound) {
             /* Inbound Replace Order: unify EOT & ROT */
-            order_group_t *iot_group = ti.has_iot ? ob_lookup_group(token_map, ti.iot) : NULL;
-            order_group_t *rot_group = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
+            order_group_t *iot_group = ti.has_iot ? ob_lookup_and_canonicalize(token_map, ti.iot) : NULL;
+            order_group_t *rot_group = ti.has_rot ? ob_lookup_and_canonicalize(token_map, ti.rot) : NULL;
 
             if (!iot_group && !rot_group) {
                 iot_group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
@@ -482,7 +482,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         } else {
             /* Other messages carrying an order token */
             if (ti.has_iot) {
-                group = ob_lookup_group(token_map, ti.iot);
+                group = ob_lookup_and_canonicalize(token_map, ti.iot);
                 if (!group) {
                     group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
                 }
@@ -499,7 +499,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             wmem_map_insert(g_frame_to_index, fkey, pd);
         }
         if (group) {
-            order_group_t *root = ob_find_root(group);
+            order_group_t *root = ob_canonicalize_root(group);
             /* Set prev link from current tail, then advance tail to this frame */
             pd->prev_frame = root ? root->tail_frame : 0;
             if (root) {
@@ -569,12 +569,12 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         proto_item_set_generated(pi);
     }
     if (pd && pd->group) {
-        uint32_t display_total = ob_find_root(pd->group)->total;
+        uint32_t display_total = pd->group->total;
         if (display_total == 0 && idx > 0) display_total = idx;
         proto_item *pi = proto_tree_add_uint(ob_tree, hf_ob_group_size, tvb, 0, 0, display_total);
         proto_item_set_generated(pi);
         /* Add links to first, last, previous and next frames */
-        order_group_t *root = ob_find_root(pd->group);
+        order_group_t *root = pd->group;
         if (root && root->first_frame) {
             proto_item *pf = proto_tree_add_uint(ob_tree, hf_ob_first_frame, tvb, 0, 0, root->first_frame);
             proto_item_set_generated(pf);
