@@ -337,12 +337,7 @@ bist_ouch_reset_state(void)
     g_next_group_id      = 1;
 }
 
-/*
- * because maps are autoreset and allocations are in file scope. */
-static void
-bist_ouch_cleanup_state(void)
-{
-}
+/* No cleanup routine required: allocations are in file scope and maps autoreset. */
 
 static order_group_t*
 ob_lookup_group(wmem_map_t *token_map, const char *token)
@@ -961,7 +956,6 @@ proto_register_bist_ouch(void)
         g_frame_to_index  = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 
     register_init_routine(bist_ouch_reset_state);
-    register_cleanup_routine(bist_ouch_cleanup_state);
 }
 
 void
