@@ -421,83 +421,83 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
         break;
     }
 
-    wmem_map_t *token_map = g_token_to_group;
-    order_group_t *group = NULL;
-
-    if (ti.type == 'U' && !ti.is_inbound) {
-        /* Outbound "Order Replaced": PREV -> group, ROT into same group */
-        if (ti.has_prev) {
-            group = ob_lookup_group(token_map, ti.prev);
-            if (!group) {
-                group = ob_ensure_group_for_token(token_map, ti.prev, pinfo->fd->num);
-                if (root_item) {
-                    expert_add_info_format(pinfo, root_item, &ei_ob_prev_unmapped,
-                        "Order Replaced: previous token '%s' not seen earlier in this capture; starting an order chain here",
-                        ti.prev);
-                }
-            }
-            if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
-        } else if (ti.has_rot) {
-            group = ob_lookup_group(token_map, ti.rot);
-            if (!group) group = ob_ensure_group_for_token(token_map, ti.rot, pinfo->fd->num);
-        }
-    } else if (ti.type == 'U' && ti.is_inbound) {
-        /* Inbound Replace Order: unify EOT & ROT */
-        order_group_t *iot_group = ti.has_iot ? ob_lookup_group(token_map, ti.iot) : NULL;
-        order_group_t *rot_group = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
-
-        if (!iot_group && !rot_group) {
-            iot_group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
-            if (!iot_group->initial_token) iot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            group = iot_group;
-            /* Map ROT as well so outbound rejects referencing ROT join this chain */
-            if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
-        } else if (rot_group && !iot_group) {
-            if (!rot_group->initial_token) rot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            ob_map_token_to_group(token_map, ti.iot, rot_group);
-            group = rot_group;
-        } else if (iot_group && rot_group && iot_group != rot_group) {
-            order_group_t *root = ob_union_groups(iot_group, rot_group);
-            if (!root->initial_token) root->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            ob_map_token_to_group(token_map, ti.iot, root);
-            if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, root);
-            group = root;
-        } else {
-            group = iot_group ? iot_group : rot_group;
-            if (group && !group->initial_token && ti.has_iot)
-                group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            if (group && ti.has_iot) ob_map_token_to_group(token_map, ti.iot, group);
-            if (group && ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
-        }
-
-        if (ti.has_iot && group && group->initial_token &&
-            strcmp(ti.iot, group->initial_token) != 0 && root_item) {
-            expert_add_info(pinfo, root_item, &ei_ob_eot_not_initial);
-        }
-    } else {
-        /* Other messages carrying an order token */
-        if (ti.has_iot) {
-            group = ob_lookup_group(token_map, ti.iot);
-            if (!group) {
-                group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
-            }
-            if (!group->initial_token)
-                group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
-            ob_map_token_to_group(token_map, ti.iot, group);
-        }
-    }
-
-    /* Per-frame index/global storage
+    /* Per-frame index/global storage and grouping
      *
-     * First pass (!visited): assign a global index, advance per-group index,
-     * and update group running state. On re-dissect (visited): avoid changing
-     * state and only retrieve previously computed indices for display.
+     * First pass (!visited): compute and update state. Re-dissect (visited):
+     * avoid token-map lookups or group chasing; only read previously stored
+     * results for display.
      */
     void *fkey = GUINT_TO_POINTER(pinfo->fd->num);
-    ob_frame_idx_t *pd = NULL;
+    ob_frame_idx_t *pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
+
     if (!pinfo->fd->visited) {
+        wmem_map_t *token_map = g_token_to_group;
+        order_group_t *group = NULL;
+
+        if (ti.type == 'U' && !ti.is_inbound) {
+            /* Outbound "Order Replaced": PREV -> group, ROT into same group */
+            if (ti.has_prev) {
+                group = ob_lookup_group(token_map, ti.prev);
+                if (!group) {
+                    group = ob_ensure_group_for_token(token_map, ti.prev, pinfo->fd->num);
+                    if (root_item) {
+                        expert_add_info_format(pinfo, root_item, &ei_ob_prev_unmapped,
+                            "Order Replaced: previous token '%s' not seen earlier in this capture; starting an order chain here",
+                            ti.prev);
+                    }
+                }
+                if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
+            } else if (ti.has_rot) {
+                group = ob_lookup_group(token_map, ti.rot);
+                if (!group) group = ob_ensure_group_for_token(token_map, ti.rot, pinfo->fd->num);
+            }
+        } else if (ti.type == 'U' && ti.is_inbound) {
+            /* Inbound Replace Order: unify EOT & ROT */
+            order_group_t *iot_group = ti.has_iot ? ob_lookup_group(token_map, ti.iot) : NULL;
+            order_group_t *rot_group = ti.has_rot ? ob_lookup_group(token_map, ti.rot) : NULL;
+
+            if (!iot_group && !rot_group) {
+                iot_group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
+                if (!iot_group->initial_token) iot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+                group = iot_group;
+                /* Map ROT as well so outbound rejects referencing ROT join this chain */
+                if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
+            } else if (rot_group && !iot_group) {
+                if (!rot_group->initial_token) rot_group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+                ob_map_token_to_group(token_map, ti.iot, rot_group);
+                group = rot_group;
+            } else if (iot_group && rot_group && iot_group != rot_group) {
+                order_group_t *root = ob_union_groups(iot_group, rot_group);
+                if (!root->initial_token) root->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+                ob_map_token_to_group(token_map, ti.iot, root);
+                if (ti.has_rot) ob_map_token_to_group(token_map, ti.rot, root);
+                group = root;
+            } else {
+                group = iot_group ? iot_group : rot_group;
+                if (group && !group->initial_token && ti.has_iot)
+                    group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+                if (group && ti.has_iot) ob_map_token_to_group(token_map, ti.iot, group);
+                if (group && ti.has_rot) ob_map_token_to_group(token_map, ti.rot, group);
+            }
+
+            if (ti.has_iot && group && group->initial_token &&
+                strcmp(ti.iot, group->initial_token) != 0 && root_item) {
+                expert_add_info(pinfo, root_item, &ei_ob_eot_not_initial);
+            }
+        } else {
+            /* Other messages carrying an order token */
+            if (ti.has_iot) {
+                group = ob_lookup_group(token_map, ti.iot);
+                if (!group) {
+                    group = ob_ensure_group_for_token(token_map, ti.iot, pinfo->fd->num);
+                }
+                if (!group->initial_token)
+                    group->initial_token = wmem_strdup(wmem_file_scope(), ti.iot);
+                ob_map_token_to_group(token_map, ti.iot, group);
+            }
+        }
+
         /* First pass: create and populate frame data */
-        pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
         if (!pd) {
             pd = wmem_new0(wmem_file_scope(), ob_frame_idx_t);
             pd->global_index = g_next_global_index++;
@@ -508,7 +508,6 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             /* Set prev link from current tail, then advance tail to this frame */
             pd->prev_frame = root ? root->tail_frame : 0;
             if (root) {
-                /* Update the previous frame's next_frame to point to current frame */
                 if (root->tail_frame > 0) {
                     void *prev_fkey = GUINT_TO_POINTER(root->tail_frame);
                     ob_frame_idx_t *prev_pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, prev_fkey);
@@ -522,15 +521,6 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
             pd->index = root ? root->next_index++ : 0;
             if (root) root->total = root->next_index - 1;
             pd->group = root;
-        }
-    } else {
-        /* Re-dissect: only retrieve existing data for display */
-        pd = (ob_frame_idx_t *)wmem_map_lookup(g_frame_to_index, fkey);
-        if (pd && group) {
-            order_group_t *root = ob_find_root(group);
-            /* Don't reset pd->index to 0 - keep the original value for display */
-            pd->group = root;
-            /* prev_frame is already stored from first pass */
         }
     }
 
@@ -551,7 +541,7 @@ ob_track_and_annotate(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, proto_i
                                 ett_bist_ouch_orderbook, &ob_item, "Orderbook");
     if (ob_item) proto_item_set_generated(ob_item);
 
-    const char *canon_iot = (pd && pd->group) ? ob_find_root(pd->group)->initial_token : NULL;
+    const char *canon_iot = (pd && pd->group) ? pd->group->initial_token : NULL;
     if (!canon_iot && ti.has_iot) canon_iot = ti.iot;
 
     if (canon_iot) {
