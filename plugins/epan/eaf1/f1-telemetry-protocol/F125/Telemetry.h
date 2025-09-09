@@ -850,6 +850,7 @@ namespace F125
         TimeTrialDataSet m_rivalDataSet;             // Rival data set
     };
 
+#if 0
     //-----------------------------------------------------------------------------
     // Lap Positions - 1131 bytes
     //-----------------------------------------------------------------------------
@@ -871,6 +872,7 @@ namespace F125
         // Array holding the position of the car in a given lap, 0 if no record
         uint8 m_positionForVehicleIdx[cs_ADHF125maxNumLapsInLapPositionsHistoryPacket][cs_ADHF125maxNumCarsInUDPData];
     };
+#endif
 
     //////////////////////////////// END OF FILE ////////////////////////////////
 }
