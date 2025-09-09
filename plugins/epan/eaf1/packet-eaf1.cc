@@ -92,7 +92,7 @@ static const size_t eaf1_f125_participantsSize = 1284;
 // static const size_t eaf1_f125_carSetupsSize = 1133;
 // static const size_t eaf1_f125_carTelemetrySize = 1352;
 // static const size_t eaf1_f125_carStatusSize = 1239;
-// static const size_t eaf1_f125_finalClassificationSize = 1042;
+static const size_t eaf1_f125_finalClassificationSize = 1042;
 static const size_t eaf1_f125_lobbyInfoSize = 954;
 static const size_t eaf1_f125_carDamageSize = 1041;
 static const size_t eaf1_f125_sessionHistorySize = 1460;
@@ -2647,35 +2647,68 @@ static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, p
 
 static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketFinalClassificationData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_finalClassificationSize)
 	{
+		int offset = eaf1_headerSize;
+
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Final classification"));
 
 		uint32_t num_cars;
-		proto_tree_add_item_ret_uint(tree, hf_eaf1_finalclassification_numcars, tvb, offsetof(F125::PacketFinalClassificationData, m_numCars), sizeof(F125::PacketFinalClassificationData::m_numCars), ENC_LITTLE_ENDIAN, &num_cars);
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_finalclassification_numcars, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_cars);
+		offset += sizeof(uint8_t);
 
 		for (uint32_t car = 0; car < num_cars; car++)
 		{
-			int car_offset = offsetof(F125::PacketFinalClassificationData, m_classificationData) + car * sizeof(F125::FinalClassificationData);
-
 			auto player_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_finalclassification_drivername, pinfo, tvb, car);
 			proto_tree *player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_finalclassification_drivername);
 
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_position, tvb, car_offset + offsetof(F125::FinalClassificationData, m_position), sizeof(F125::FinalClassificationData::m_position), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numlaps, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numLaps), sizeof(F125::FinalClassificationData::m_numLaps), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_gridposition, tvb, car_offset + offsetof(F125::FinalClassificationData, m_gridPosition), sizeof(F125::FinalClassificationData::m_gridPosition), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_points, tvb, car_offset + offsetof(F125::FinalClassificationData, m_points), sizeof(F125::FinalClassificationData::m_points), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpitstops, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numPitStops), sizeof(F125::FinalClassificationData::m_numPitStops), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultstatus, tvb, car_offset + offsetof(F125::FinalClassificationData, m_resultStatus), sizeof(F125::FinalClassificationData::m_resultStatus), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultreason, tvb, car_offset + offsetof(F125::FinalClassificationData, m_resultReason), sizeof(F125::FinalClassificationData::m_resultReason), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_bestlaptimeinms, tvb, car_offset + offsetof(F125::FinalClassificationData, m_bestLapTimeInMS), sizeof(F125::FinalClassificationData::m_bestLapTimeInMS), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_totalracetime, tvb, car_offset + offsetof(F125::FinalClassificationData, m_totalRaceTime), sizeof(F125::FinalClassificationData::m_totalRaceTime), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_penaltiestime, tvb, car_offset + offsetof(F125::FinalClassificationData, m_penaltiesTime), sizeof(F125::FinalClassificationData::m_penaltiesTime), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpenalties, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numPenalties), sizeof(F125::FinalClassificationData::m_numPenalties), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_position, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numlaps, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_gridposition, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_points, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpitstops, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_resultreason, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_bestlaptimeinms, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint32_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_totalracetime, tvb, offset, sizeof(double), ENC_LITTLE_ENDIAN);
+			offset += sizeof(double);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_penaltiestime, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(player_name_tree, hf_eaf1_finalclassification_numpenalties, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
 			uint32_t num_stints;
-			auto num_stints_ti = proto_tree_add_item_ret_uint(player_name_tree, hf_eaf1_finalclassification_numtyrestints, tvb, car_offset + offsetof(F125::FinalClassificationData, m_numTyreStints), sizeof(F125::FinalClassificationData::m_numTyreStints), ENC_LITTLE_ENDIAN, &num_stints);
+			auto num_stints_ti = proto_tree_add_item_ret_uint(player_name_tree, hf_eaf1_finalclassification_numtyrestints, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_stints);
+			offset += sizeof(uint8_t);
+
 			proto_tree *num_stints_tree = proto_item_add_subtree(num_stints_ti, ett_eaf1_finalclassification_numstints);
+
+			int actual_offset = offset;
+			offset += eaf1_f125_maxTyreStints;
+
+			int visual_offset = offset;
+			offset += eaf1_f125_maxTyreStints;
+
+			int endlap_offset = offset;
+			offset += eaf1_f125_maxTyreStints;
 
 			for (uint32_t stint = 0; stint < num_stints; stint++)
 			{
@@ -2687,9 +2720,9 @@ static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pin
 														   wmem_strdup_printf(pinfo->pool, "Tyre stint %d", stint + 1));
 				auto tyre_stint_tree = proto_item_add_subtree(tyre_stint_ti, ett_eaf1_sessionhistory_tyrestint);
 
-				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_actual, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsActual) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsActual[0]), sizeof(F125::FinalClassificationData::m_tyreStintsActual[0]), ENC_LITTLE_ENDIAN);
-				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_visual, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsVisual) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), sizeof(F125::FinalClassificationData::m_tyreStintsVisual[0]), ENC_LITTLE_ENDIAN);
-				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_endlaps, tvb, car_offset + offsetof(F125::FinalClassificationData, m_tyreStintsEndLaps) + stint * sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), sizeof(F125::FinalClassificationData::m_tyreStintsEndLaps[0]), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_actual, tvb, actual_offset + stint * sizeof(uint8_t), sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_visual, tvb, visual_offset + stint * sizeof(uint8_t), sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_finalclassification_tyrestint_endlaps, tvb, endlap_offset + stint * sizeof(uint8_t), sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 			}
 		}
 

@@ -590,6 +590,8 @@ namespace F125
         CarStatusData m_carStatusData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
     };
 
+#if 0
+
     //-----------------------------------------------------------------------------
     // Final Classification - 1042 bytes
     //-----------------------------------------------------------------------------
@@ -625,6 +627,8 @@ namespace F125
         uint8 m_numCars; // Number of cars in the final classification
         FinalClassificationData m_classificationData[cs_ADHF125maxNumCarsInUDPData];
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Lobby Info - 954 bytes
