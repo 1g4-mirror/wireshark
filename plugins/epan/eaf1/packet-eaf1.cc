@@ -2276,67 +2276,130 @@ static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketCarDamageData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_carDamageSize)
 	{
+		int offset = eaf1_headerSize;
+
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Car damage"));
 
 		for (std::remove_const<decltype(eaf1_F125MaxNumCarsInUDPData)>::type participant = 0; participant < eaf1_F125MaxNumCarsInUDPData; participant++)
 		{
-			int participant_offset = offsetof(F125::PacketCarDamageData, m_carDamageData) + participant * sizeof(F125::CarDamageData);
-
 			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_cardamage_drivername, pinfo, tvb, participant);
 			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_cardamage_drivername);
 
 			auto tyre_wear_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyrewear, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			auto tyre_wear_tree = proto_item_add_subtree(tyre_wear_ti, ett_eaf1_cardamage_tyrewear);
 
-			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 0 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 1 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 2 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresWear) + 3 * sizeof(F125::CarDamageData::m_tyresWear[0]), sizeof(F125::CarDamageData::m_tyresWear[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearleft, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_rearright, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontleft, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(tyre_wear_tree, hf_eaf1_cardamage_tyrewear_frontright, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
 
 			auto tyre_damage_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyredamage, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			auto tyre_damage_tree = proto_item_add_subtree(tyre_damage_ti, ett_eaf1_cardamage_tyredamage);
 
-			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 0 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 1 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 2 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyresDamage) + 3 * sizeof(F125::CarDamageData::m_tyresDamage[0]), sizeof(F125::CarDamageData::m_tyresDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_rearright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyre_damage_tree, hf_eaf1_cardamage_tyredamage_frontright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
 			auto brakes_damage_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_brakesdamage, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			auto brakes_damage_tree = proto_item_add_subtree(brakes_damage_ti, ett_eaf1_cardamage_brakesdamage);
 
-			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 0 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 1 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 2 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_brakesDamage) + 3 * sizeof(F125::CarDamageData::m_brakesDamage[0]), sizeof(F125::CarDamageData::m_brakesDamage[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_rearright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(brakes_damage_tree, hf_eaf1_cardamage_brakesdamage_frontright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
 			auto tyre_blisters_ti = proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_tyreblisters, tvb, 0, 0, ENC_LITTLE_ENDIAN);
 			auto tyre_blisters_tree = proto_item_add_subtree(tyre_blisters_ti, ett_eaf1_cardamage_tyreblisters);
 
-			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 0 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 1 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontleft, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 2 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontright, tvb, participant_offset + offsetof(F125::CarDamageData, m_tyreBlisters) + 3 * sizeof(F125::CarDamageData::m_tyreBlisters[0]), sizeof(F125::CarDamageData::m_tyreBlisters[0]), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontleftwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_frontLeftWingDamage), sizeof(F125::CarDamageData::m_frontLeftWingDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontrightwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_frontRightWingDamage), sizeof(F125::CarDamageData::m_frontRightWingDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_rearwingdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_rearWingDamage), sizeof(F125::CarDamageData::m_rearWingDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_floordamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_floorDamage), sizeof(F125::CarDamageData::m_floorDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_diffuserdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_diffuserDamage), sizeof(F125::CarDamageData::m_diffuserDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_sidepoddamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_sidepodDamage), sizeof(F125::CarDamageData::m_sidepodDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_drsfault, tvb, participant_offset + offsetof(F125::CarDamageData, m_drsFault), sizeof(F125::CarDamageData::m_drsFault), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_ersfault, tvb, participant_offset + offsetof(F125::CarDamageData, m_ersFault), sizeof(F125::CarDamageData::m_ersFault), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_gearboxdamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_gearBoxDamage), sizeof(F125::CarDamageData::m_gearBoxDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginedamage, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineDamage), sizeof(F125::CarDamageData::m_engineDamage), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemguhwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineMGUHWear), sizeof(F125::CarDamageData::m_engineMGUHWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineeswear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineESWear), sizeof(F125::CarDamageData::m_engineESWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginecewear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineCEWear), sizeof(F125::CarDamageData::m_engineCEWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineicewear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineICEWear), sizeof(F125::CarDamageData::m_engineICEWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemgukwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineMGUKWear), sizeof(F125::CarDamageData::m_engineMGUKWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginetcwear, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineTCWear), sizeof(F125::CarDamageData::m_engineTCWear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineblown, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineBlown), sizeof(F125::CarDamageData::m_engineBlown), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineseized, tvb, participant_offset + offsetof(F125::CarDamageData, m_engineSeized), sizeof(F125::CarDamageData::m_engineSeized), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_rearright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontleft, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyre_blisters_tree, hf_eaf1_cardamage_tyreblisters_frontright, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontleftwingdamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_frontrightwingdamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_rearwingdamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_floordamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_diffuserdamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_sidepoddamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_drsfault, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_ersfault, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_gearboxdamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginedamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemguhwear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineeswear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginecewear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineicewear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginemgukwear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_enginetcwear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineblown, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_cardamage_engineseized, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 		}
 
 		return tvb_captured_length(tvb);

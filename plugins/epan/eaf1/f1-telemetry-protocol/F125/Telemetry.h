@@ -659,6 +659,7 @@ namespace F125
     };
 #endif
 
+#if 0
     //-----------------------------------------------------------------------------
     // Car Damage - 1041 bytes
     //-----------------------------------------------------------------------------
@@ -699,6 +700,8 @@ namespace F125
         // Packet specific data
         CarDamageData m_carDamageData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Session History - 1460 bytes
