@@ -98,7 +98,6 @@ typedef enum {
     PREF_DECODE_AS_RANGE,       // (2)
     PREF_OPEN_FILENAME,
     PREF_PASSWORD,              // (3)
-    PREF_PROTO_TCP_SNDAMB_ENUM, // (4)
     PREF_DISSECTOR              // (5)
 } pref_type_e;
 

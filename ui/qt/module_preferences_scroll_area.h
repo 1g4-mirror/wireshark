@@ -44,14 +44,13 @@ private slots:
     void uintLineEditTextEdited(const QString &new_str);
     void boolCheckBoxToggled(bool checked);
     void enumRadioButtonToggled(bool checked);
-    void enumComboBoxCurrentIndexChanged(int index);
+    void enumComboBoxCurrentIndexChanged(int idx);
     void stringLineEditTextEdited(const QString &new_str);
     void rangeSyntaxLineEditTextEdited(const QString &new_str);
     void uatPushButtonClicked();
     void saveFilenamePushButtonClicked();
     void openFilenamePushButtonClicked();
     void dirnamePushButtonClicked();
-    void enumComboBoxCurrentIndexChanged_PROTO_TCP(int index);
 };
 
 #endif // MODULE_PREFERENCES_SCROLL_AREA_H
