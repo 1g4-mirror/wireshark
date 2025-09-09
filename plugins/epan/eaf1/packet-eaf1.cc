@@ -75,6 +75,9 @@ static constexpr const char *eaf1_F125CollisionEventCode = "COLL";
 static const uint32_t eaf1_F125MaxNumCarsInUDPData = 22;
 static const uint8_t eaf1_F125NumLiveryColours = 4;
 static const uint32_t eaf1_F125MaxParticipantNameLen = 32;
+static const uint32 eaf1_f125_maxMarshalsZonePerLap = 21;
+static const uint32 eaf1_f125_maxWeatherForecastSamples = 64;
+static const uint32 eaf1_f125_maxSessionsInWeekend = 12;
 // static const uint32 eaf1_F125MaxTyreStints = 8;
 static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
 // static const uint eaf1_F125MaxNumLapsInHistory = 100;
@@ -1957,135 +1960,313 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 
 static int dissect_eaf1_2025_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketSessionData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_sessionSize)
 	{
-		proto_tree_add_item(tree, hf_eaf1_session_weather, tvb, offsetof(F125::PacketSessionData, m_weather), sizeof(F125::PacketSessionData::m_weather), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_tracktemperature, tvb, offsetof(F125::PacketSessionData, m_trackTemperature), sizeof(F125::PacketSessionData::m_trackTemperature), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_airtemperature, tvb, offsetof(F125::PacketSessionData, m_airTemperature), sizeof(F125::PacketSessionData::m_airTemperature), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_totallaps, tvb, offsetof(F125::PacketSessionData, m_totalLaps), sizeof(F125::PacketSessionData::m_totalLaps), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_tracklength, tvb, offsetof(F125::PacketSessionData, m_trackLength), sizeof(F125::PacketSessionData::m_trackLength), ENC_LITTLE_ENDIAN);
+		int offset = eaf1_headerSize;
+
+		proto_tree_add_item(tree, hf_eaf1_session_weather, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_tracktemperature, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(int8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_airtemperature, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(int8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_totallaps, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_tracklength, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint16_t);
 
 		uint32_t session_type;
-		proto_tree_add_item_ret_uint(tree, hf_eaf1_session_sessiontype, tvb, offsetof(F125::PacketSessionData, m_sessionType), sizeof(F125::PacketSessionData::m_sessionType), ENC_LITTLE_ENDIAN, &session_type);
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_session_sessiontype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &session_type);
+		offset += sizeof(uint8_t);
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session (%s)", val_to_str(session_type, sessiontypenames, "Invalid session %u")));
 
-		proto_tree_add_item(tree, hf_eaf1_session_trackid, tvb, offsetof(F125::PacketSessionData, m_trackId), sizeof(F125::PacketSessionData::m_trackId), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_formula, tvb, offsetof(F125::PacketSessionData, m_formula), sizeof(F125::PacketSessionData::m_formula), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_sessiontimeleft, tvb, offsetof(F125::PacketSessionData, m_sessionTimeLeft), sizeof(F125::PacketSessionData::m_sessionTimeLeft), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_sessionduration, tvb, offsetof(F125::PacketSessionData, m_sessionDuration), sizeof(F125::PacketSessionData::m_sessionDuration), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitspeedlimit, tvb, offsetof(F125::PacketSessionData, m_pitSpeedLimit), sizeof(F125::PacketSessionData::m_pitSpeedLimit), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_gamepaused, tvb, offsetof(F125::PacketSessionData, m_gamePaused), sizeof(F125::PacketSessionData::m_gamePaused), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_isspectating, tvb, offsetof(F125::PacketSessionData, m_isSpectating), sizeof(F125::PacketSessionData::m_isSpectating), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_spectatorcarindex, tvb, offsetof(F125::PacketSessionData, m_spectatorCarIndex), sizeof(F125::PacketSessionData::m_spectatorCarIndex), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_slipronativesupport, tvb, offsetof(F125::PacketSessionData, m_sliProNativeSupport), sizeof(F125::PacketSessionData::m_sliProNativeSupport), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_trackid, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(int8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_formula, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_sessiontimeleft, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint16_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_sessionduration, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint16_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitspeedlimit, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_gamepaused, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_isspectating, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_spectatorcarindex, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_slipronativesupport, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		uint32_t num_marshal_zones;
 
-		auto num_marshal_zones_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_nummarshalzones, tvb, offsetof(F125::PacketSessionData, m_numMarshalZones), sizeof(F125::PacketSessionData::m_numMarshalZones), ENC_LITTLE_ENDIAN, &num_marshal_zones);
+		auto num_marshal_zones_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_nummarshalzones, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_marshal_zones);
+		offset += sizeof(uint8_t);
+
 		auto num_marshal_zones_tree = proto_item_add_subtree(num_marshal_zones_ti, ett_eaf1_session_nummarshalzones);
 
-		for (uint32_t zone = 0; zone < num_marshal_zones; zone++)
+		for (uint32_t zone = 0; zone < eaf1_f125_maxMarshalsZonePerLap; zone++)
 		{
-			int zone_offset = offsetof(F125::PacketSessionData, m_marshalZones) + zone * sizeof(F125::MarshalZone);
+			if (zone < num_marshal_zones)
+			{
+				auto marshal_zone_ti = proto_tree_add_item(num_marshal_zones_tree, hf_eaf1_session_marshalzone, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+				proto_tree *marshal_zone_tree = proto_item_add_subtree(marshal_zone_ti, ett_eaf1_session_marshalzone);
 
-			auto marshal_zone_ti = proto_tree_add_item(num_marshal_zones_tree, hf_eaf1_session_marshalzone, tvb, 0, 0, ENC_LITTLE_ENDIAN);
-			proto_tree *marshal_zone_tree = proto_item_add_subtree(marshal_zone_ti, ett_eaf1_session_marshalzone);
+				proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_start, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+				offset += sizeof(float);
 
-			proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_start, tvb, zone_offset + offsetof(F125::MarshalZone, m_zoneStart), sizeof(F125::MarshalZone::m_zoneStart), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_flag, tvb, zone_offset + offsetof(F125::MarshalZone, m_zoneFlag), sizeof(F125::MarshalZone::m_zoneFlag), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(marshal_zone_tree, hf_eaf1_session_marshalzone_flag, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(int8_t);
+			}
+			else
+			{
+				offset += sizeof(float) + sizeof(int8_t);
+			}
 		}
 
-		proto_tree_add_item(tree, hf_eaf1_session_safetycarstatus, tvb, offsetof(F125::PacketSessionData, m_safetyCarStatus), sizeof(F125::PacketSessionData::m_safetyCarStatus), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_networkgame, tvb, offsetof(F125::PacketSessionData, m_networkGame), sizeof(F125::PacketSessionData::m_networkGame), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_safetycarstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_networkgame, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		uint32_t num_weather_forecast_samples;
-		auto num_weather_forecast_samples_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numweatherforecastsamples, tvb, offsetof(F125::PacketSessionData, m_numWeatherForecastSamples), sizeof(F125::PacketSessionData::m_numWeatherForecastSamples), ENC_LITTLE_ENDIAN, &num_weather_forecast_samples);
+		auto num_weather_forecast_samples_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numweatherforecastsamples, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_weather_forecast_samples);
+		offset += sizeof(uint8_t);
+
 		auto num_weather_forecast_samples_tree = proto_item_add_subtree(num_weather_forecast_samples_ti, ett_eaf1_session_numweatherforecastsamples);
 
-		for (uint32_t sample = 0; sample < num_weather_forecast_samples; sample++)
+		for (uint32_t sample = 0; sample < eaf1_f125_maxWeatherForecastSamples; sample++)
 		{
-			int sample_offset = offsetof(F125::PacketSessionData, m_weatherForecastSamples) + sample * sizeof(F125::WeatherForecastSample);
+			if (sample < num_weather_forecast_samples)
+			{
+				auto weather_sample_ti = proto_tree_add_item(num_weather_forecast_samples_tree, hf_eaf1_session_weatherforecastsample, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+				proto_tree *weather_sample_tree = proto_item_add_subtree(weather_sample_ti, ett_eaf1_session_weatherforecastsample);
 
-			auto weather_sample_ti = proto_tree_add_item(num_weather_forecast_samples_tree, hf_eaf1_session_weatherforecastsample, tvb, 0, 0, ENC_LITTLE_ENDIAN);
-			proto_tree *weather_sample_tree = proto_item_add_subtree(weather_sample_ti, ett_eaf1_session_weatherforecastsample);
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_sessiontype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
 
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_sessiontype, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_sessionType), sizeof(F125::WeatherForecastSample::m_sessionType), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_timeoffset, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_timeOffset), sizeof(F125::WeatherForecastSample::m_timeOffset), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_weather, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_weather), sizeof(F125::WeatherForecastSample::m_weather), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperature, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_trackTemperature), sizeof(F125::WeatherForecastSample::m_trackTemperature), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperaturechange, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_trackTemperatureChange), sizeof(F125::WeatherForecastSample::m_trackTemperatureChange), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperature, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_airTemperature), sizeof(F125::WeatherForecastSample::m_airTemperature), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperaturechange, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_airTemperatureChange), sizeof(F125::WeatherForecastSample::m_airTemperatureChange), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_rainpercentage, tvb, sample_offset + offsetof(F125::WeatherForecastSample, m_rainPercentage), sizeof(F125::WeatherForecastSample::m_rainPercentage), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_timeoffset, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_weather, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperature, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(int8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_tracktemperaturechange, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(int8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperature, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(int8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_airtemperaturechange, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(int8_t);
+
+				proto_tree_add_item(weather_sample_tree, hf_eaf1_session_weatherforecastsample_rainpercentage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+			}
+			else
+			{
+				offset += 8;
+			}
 		}
 
-		proto_tree_add_item(tree, hf_eaf1_session_forecastaccuracy, tvb, offsetof(F125::PacketSessionData, m_forecastAccuracy), sizeof(F125::PacketSessionData::m_forecastAccuracy), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_aidifficulty, tvb, offsetof(F125::PacketSessionData, m_aiDifficulty), sizeof(F125::PacketSessionData::m_aiDifficulty), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_seasonlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_seasonLinkIdentifier), sizeof(F125::PacketSessionData::m_seasonLinkIdentifier), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_weekendlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_weekendLinkIdentifier), sizeof(F125::PacketSessionData::m_weekendLinkIdentifier), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_sessionlinkidentifier, tvb, offsetof(F125::PacketSessionData, m_sessionLinkIdentifier), sizeof(F125::PacketSessionData::m_sessionLinkIdentifier), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowideallap, tvb, offsetof(F125::PacketSessionData, m_pitStopWindowIdealLap), sizeof(F125::PacketSessionData::m_pitStopWindowIdealLap), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowlatestlap, tvb, offsetof(F125::PacketSessionData, m_pitStopWindowLatestLap), sizeof(F125::PacketSessionData::m_pitStopWindowLatestLap), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitstoprejoinposition, tvb, offsetof(F125::PacketSessionData, m_pitStopRejoinPosition), sizeof(F125::PacketSessionData::m_pitStopRejoinPosition), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_steeringassist, tvb, offsetof(F125::PacketSessionData, m_steeringAssist), sizeof(F125::PacketSessionData::m_steeringAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_brakingassist, tvb, offsetof(F125::PacketSessionData, m_brakingAssist), sizeof(F125::PacketSessionData::m_brakingAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_gearboxassist, tvb, offsetof(F125::PacketSessionData, m_gearboxAssist), sizeof(F125::PacketSessionData::m_gearboxAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitassist, tvb, offsetof(F125::PacketSessionData, m_pitAssist), sizeof(F125::PacketSessionData::m_pitAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitreleaseassist, tvb, offsetof(F125::PacketSessionData, m_pitReleaseAssist), sizeof(F125::PacketSessionData::m_pitReleaseAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_ersassist, tvb, offsetof(F125::PacketSessionData, m_ERSAssist), sizeof(F125::PacketSessionData::m_ERSAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_drsassist, tvb, offsetof(F125::PacketSessionData, m_DRSAssist), sizeof(F125::PacketSessionData::m_DRSAssist), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_dynamicracingline, tvb, offsetof(F125::PacketSessionData, m_dynamicRacingLine), sizeof(F125::PacketSessionData::m_dynamicRacingLine), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_dynamicracinglinetype, tvb, offsetof(F125::PacketSessionData, m_dynamicRacingLineType), sizeof(F125::PacketSessionData::m_dynamicRacingLineType), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_gamemode, tvb, offsetof(F125::PacketSessionData, m_gameMode), sizeof(F125::PacketSessionData::m_gameMode), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_ruleset, tvb, offsetof(F125::PacketSessionData, m_ruleSet), sizeof(F125::PacketSessionData::m_ruleSet), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_timeofday, tvb, offsetof(F125::PacketSessionData, m_timeOfDay), sizeof(F125::PacketSessionData::m_timeOfDay), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_sessionlength, tvb, offsetof(F125::PacketSessionData, m_sessionLength), sizeof(F125::PacketSessionData::m_sessionLength), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_speedunitsleadplayer, tvb, offsetof(F125::PacketSessionData, m_speedUnitsLeadPlayer), sizeof(F125::PacketSessionData::m_speedUnitsLeadPlayer), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitsleadplayer, tvb, offsetof(F125::PacketSessionData, m_temperatureUnitsLeadPlayer), sizeof(F125::PacketSessionData::m_temperatureUnitsLeadPlayer), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_speedunitssecondaryplayer, tvb, offsetof(F125::PacketSessionData, m_speedUnitsSecondaryPlayer), sizeof(F125::PacketSessionData::m_speedUnitsSecondaryPlayer), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitssecondaryplayer, tvb, offsetof(F125::PacketSessionData, m_temperatureUnitsSecondaryPlayer), sizeof(F125::PacketSessionData::m_temperatureUnitsSecondaryPlayer), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_numsafetycarperiods, tvb, offsetof(F125::PacketSessionData, m_numSafetyCarPeriods), sizeof(F125::PacketSessionData::m_numSafetyCarPeriods), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_numvirtualsafetycarperiods, tvb, offsetof(F125::PacketSessionData, m_numVirtualSafetyCarPeriods), sizeof(F125::PacketSessionData::m_numVirtualSafetyCarPeriods), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_numredflagperiods, tvb, offsetof(F125::PacketSessionData, m_numRedFlagPeriods), sizeof(F125::PacketSessionData::m_numRedFlagPeriods), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_equalcarperformance, tvb, offsetof(F125::PacketSessionData, m_equalCarPerformance), sizeof(F125::PacketSessionData::m_equalCarPerformance), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_recoverymode, tvb, offsetof(F125::PacketSessionData, m_recoveryMode), sizeof(F125::PacketSessionData::m_recoveryMode), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_flashbacklimit, tvb, offsetof(F125::PacketSessionData, m_flashbackLimit), sizeof(F125::PacketSessionData::m_flashbackLimit), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_surfacetype, tvb, offsetof(F125::PacketSessionData, m_surfaceType), sizeof(F125::PacketSessionData::m_surfaceType), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_lowfuelmode, tvb, offsetof(F125::PacketSessionData, m_lowFuelMode), sizeof(F125::PacketSessionData::m_lowFuelMode), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_racestarts, tvb, offsetof(F125::PacketSessionData, m_raceStarts), sizeof(F125::PacketSessionData::m_raceStarts), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_tyretemperature, tvb, offsetof(F125::PacketSessionData, m_tyreTemperature), sizeof(F125::PacketSessionData::m_tyreTemperature), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitlanetyresim, tvb, offsetof(F125::PacketSessionData, m_pitLaneTyreSim), sizeof(F125::PacketSessionData::m_pitLaneTyreSim), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_cardamage, tvb, offsetof(F125::PacketSessionData, m_carDamage), sizeof(F125::PacketSessionData::m_carDamage), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_cardamagerate, tvb, offsetof(F125::PacketSessionData, m_carDamageRate), sizeof(F125::PacketSessionData::m_carDamageRate), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_collisions, tvb, offsetof(F125::PacketSessionData, m_collisions), sizeof(F125::PacketSessionData::m_collisions), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_collisionsoffforfirstlaponly, tvb, offsetof(F125::PacketSessionData, m_collisionsOffForFirstLapOnly), sizeof(F125::PacketSessionData::m_collisionsOffForFirstLapOnly), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_mpunsafepitrelease, tvb, offsetof(F125::PacketSessionData, m_mpUnsafePitRelease), sizeof(F125::PacketSessionData::m_mpUnsafePitRelease), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_mpoffforgriefing, tvb, offsetof(F125::PacketSessionData, m_mpOffForGriefing), sizeof(F125::PacketSessionData::m_mpOffForGriefing), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_cornercuttingstringency, tvb, offsetof(F125::PacketSessionData, m_cornerCuttingStringency), sizeof(F125::PacketSessionData::m_cornerCuttingStringency), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_parcfermerules, tvb, offsetof(F125::PacketSessionData, m_parcFermeRules), sizeof(F125::PacketSessionData::m_parcFermeRules), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_pitstopexperience, tvb, offsetof(F125::PacketSessionData, m_pitStopExperience), sizeof(F125::PacketSessionData::m_pitStopExperience), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_safetycar, tvb, offsetof(F125::PacketSessionData, m_safetyCar), sizeof(F125::PacketSessionData::m_safetyCar), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_safetycarexperience, tvb, offsetof(F125::PacketSessionData, m_safetyCarExperience), sizeof(F125::PacketSessionData::m_safetyCarExperience), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_formationlap, tvb, offsetof(F125::PacketSessionData, m_formationLap), sizeof(F125::PacketSessionData::m_formationLap), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_formationlapexperience, tvb, offsetof(F125::PacketSessionData, m_formationLapExperience), sizeof(F125::PacketSessionData::m_formationLapExperience), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_redflags, tvb, offsetof(F125::PacketSessionData, m_redFlags), sizeof(F125::PacketSessionData::m_redFlags), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelsolo, tvb, offsetof(F125::PacketSessionData, m_affectsLicenceLevelSolo), sizeof(F125::PacketSessionData::m_affectsLicenceLevelSolo), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelmp, tvb, offsetof(F125::PacketSessionData, m_affectsLicenceLevelMP), sizeof(F125::PacketSessionData::m_affectsLicenceLevelMP), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_forecastaccuracy, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_aidifficulty, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_seasonlinkidentifier, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint32_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_weekendlinkidentifier, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint32_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_sessionlinkidentifier, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint32_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowideallap, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopwindowlatestlap, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitstoprejoinposition, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_steeringassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_brakingassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_gearboxassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitreleaseassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_ersassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_drsassist, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_dynamicracingline, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_dynamicracinglinetype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_gamemode, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_ruleset, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_timeofday, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint32_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_sessionlength, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_speedunitsleadplayer, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitsleadplayer, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_speedunitssecondaryplayer, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_temperatureunitssecondaryplayer, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_numsafetycarperiods, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_numvirtualsafetycarperiods, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_numredflagperiods, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_equalcarperformance, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_recoverymode, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_flashbacklimit, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_surfacetype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_lowfuelmode, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_racestarts, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_tyretemperature, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitlanetyresim, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_cardamage, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_cardamagerate, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_collisions, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_collisionsoffforfirstlaponly, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_mpunsafepitrelease, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_mpoffforgriefing, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_cornercuttingstringency, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_parcfermerules, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_pitstopexperience, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_safetycar, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_safetycarexperience, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_formationlap, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_formationlapexperience, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_redflags, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelsolo, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_session_affectslicencelevelmp, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		uint32_t num_sessions_in_weekend;
-		auto num_sessions_in_weekend_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numsessionsinweekend, tvb, offsetof(F125::PacketSessionData, m_numSessionsInWeekend), sizeof(F125::PacketSessionData::m_numSessionsInWeekend), ENC_LITTLE_ENDIAN, &num_sessions_in_weekend);
+		auto num_sessions_in_weekend_ti = proto_tree_add_item_ret_uint(tree, hf_eaf1_session_numsessionsinweekend, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_sessions_in_weekend);
+		offset += sizeof(uint8_t);
+
 		auto num_sessions_in_weekend_tree = proto_item_add_subtree(num_sessions_in_weekend_ti, ett_eaf1_session_numsessionsinweekend);
 
-		for (uint32_t session = 0; session < num_sessions_in_weekend; session++)
+		for (uint32_t session = 0; session < eaf1_f125_maxSessionsInWeekend; session++)
 		{
-			int session_offset = offsetof(F125::PacketSessionData, m_weekendStructure) + session * sizeof(F125::PacketSessionData::m_weekendStructure[0]);
-
-			proto_tree_add_item(num_sessions_in_weekend_tree, hf_eaf1_session_sessionsinweekend_sessiontype, tvb, session_offset, sizeof(F125::PacketSessionData::m_weekendStructure[0]), ENC_LITTLE_ENDIAN);
+			if (session < num_sessions_in_weekend)
+			{
+				proto_tree_add_item(num_sessions_in_weekend_tree, hf_eaf1_session_sessionsinweekend_sessiontype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+			}
+			else
+			{
+				offset += sizeof(uint8_t);
+			}
 		}
 
-		proto_tree_add_item(tree, hf_eaf1_session_sector2lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector2LapDistanceStart), sizeof(F125::PacketSessionData::m_sector2LapDistanceStart), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_session_sector3lapdistancestart, tvb, offsetof(F125::PacketSessionData, m_sector3LapDistanceStart), sizeof(F125::PacketSessionData::m_sector3LapDistanceStart), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_session_sector2lapdistancestart, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+		offset += sizeof(float);
+
+		proto_tree_add_item(tree, hf_eaf1_session_sector3lapdistancestart, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+		offset += sizeof(float);
 
 		return tvb_captured_length(tvb);
 	}

@@ -102,6 +102,8 @@ namespace F125
         CarMotionData m_carMotionData[cs_ADHF125maxNumCarsInUDPData]; // Data for all cars on track
     };
 
+#if 0
+
     //-----------------------------------------------------------------------------
     // Session - 753 bytes
     //-----------------------------------------------------------------------------
@@ -210,6 +212,8 @@ namespace F125
         float m_sector2LapDistanceStart;                                                     // Distance in m around track where sector 2 starts
         float m_sector3LapDistanceStart;                                                     // Distance in m around track where sector 3 starts
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Lap - 1285 bytes
