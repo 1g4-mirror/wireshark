@@ -78,9 +78,9 @@ static const uint32_t eaf1_F125MaxParticipantNameLen = 32;
 static const uint32 eaf1_f125_maxMarshalsZonePerLap = 21;
 static const uint32 eaf1_f125_maxWeatherForecastSamples = 64;
 static const uint32 eaf1_f125_maxSessionsInWeekend = 12;
-// static const uint32 eaf1_F125MaxTyreStints = 8;
+static const uint32 eaf1_f125_maxTyreStints = 8;
 static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
-// static const uint eaf1_F125MaxNumLapsInHistory = 100;
+static const uint eaf1_f125_maxNumLapsInHistory = 100;
 static const uint8 eaf1_F125MaxNumLapsInLapPositionsHistoryPacket = 50;
 
 static const size_t eaf1_headerSize = 29;
@@ -95,7 +95,7 @@ static const size_t eaf1_f125_participantsSize = 1284;
 // static const size_t eaf1_f125_finalClassificationSize = 1042;
 static const size_t eaf1_f125_lobbyInfoSize = 954;
 static const size_t eaf1_f125_carDamageSize = 1041;
-// static const size_t eaf1_f125_sessionHistorySize = 1460;
+static const size_t eaf1_f125_sessionHistorySize = 1460;
 static const size_t eaf1_f125_tyreSetsSize = 231;
 // static const size_t eaf1_f125_motionExSize = 273;
 // static const size_t eaf1_f125_timeTrialSize = 101;
@@ -1256,15 +1256,15 @@ static void add_sector_time(proto_tree *tree, int header_field_time, int header_
 										   header_field_time,
 										   tvb,
 										   msoffset,
-										   sizeof(F125::LapHistoryData::m_sector1TimeMSPart) + sizeof(F125::LapHistoryData::m_sector1TimeMinutesPart),
+										   sizeof(uint16_t) + sizeof(uint8_t),
 										   wmem_strdup_printf(pinfo->pool, "%01d:%02d.%03d",
 															  mins,
 															  ms / 1000,
 															  ms % 1000));
 	auto sector_tree = proto_item_add_subtree(sector_ti, ett);
 
-	proto_tree_add_item(sector_tree, header_field_timems, tvb, msoffset, sizeof(F125::LapHistoryData::m_sector1TimeMSPart), ENC_LITTLE_ENDIAN);
-	proto_tree_add_item(sector_tree, header_field_timemin, tvb, minoffset, sizeof(F125::LapHistoryData::m_sector1TimeMinutesPart), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(sector_tree, header_field_timems, tvb, msoffset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(sector_tree, header_field_timemin, tvb, minoffset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 }
 
 static int dissect_eaf1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
@@ -2514,82 +2514,129 @@ static int dissect_eaf1_2025_lappositions(tvbuff_t *tvb, packet_info *pinfo, pro
 
 static int dissect_eaf1_2025_sessionhistory(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketSessionHistoryData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_sessionHistorySize)
 	{
+		int offset = eaf1_headerSize;
+
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session history"));
 
-		uint8_t vehicle_index = tvb_get_uint8(tvb, offsetof(F125::PacketSessionHistoryData, m_carIdx));
+		uint8_t vehicle_index = tvb_get_uint8(tvb, offset);
 
-		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_sessionhistory_caridx, pinfo, tvb, offsetof(F125::PacketSessionHistoryData, m_carIdx));
+		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_sessionhistory_caridx, pinfo, tvb, offset);
+		offset += sizeof(uint8_t);
+
 		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_sessionhistory_vehicleindex);
+
+		int num_laps_offset = offset;
+		offset += sizeof(uint8_t);
+
+		int num_tyrestints_offset = offset;
+		offset += sizeof(uint8_t);
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Session history (%s)", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index)));
 
-		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestlaptimelapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestLapTimeLapNum), sizeof(F125::PacketSessionHistoryData::m_bestLapTimeLapNum), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector1lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector1LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector1LapNum), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector2lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector2LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector2LapNum), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector3lapnum, tvb, offsetof(F125::PacketSessionHistoryData, m_bestSector3LapNum), sizeof(F125::PacketSessionHistoryData::m_bestSector3LapNum), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestlaptimelapnum, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector1lapnum, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector2lapnum, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_sessionhistory_bestsector3lapnum, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		uint32_t num_laps;
-		auto num_laps_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numlaps, tvb, offsetof(F125::PacketSessionHistoryData, m_numLaps), sizeof(F125::PacketSessionHistoryData::m_numLaps), ENC_LITTLE_ENDIAN, &num_laps);
+		auto num_laps_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numlaps, tvb, num_laps_offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_laps);
 		auto num_laps_tree = proto_item_add_subtree(num_laps_ti, ett_eaf1_sessionhistory_numlaps);
 
-		for (uint32_t lap_number = 0; lap_number < num_laps; lap_number++)
+		static int eaf1_f125_lap_history_data_size = sizeof(uint32) +
+													 sizeof(uint16) +
+													 sizeof(uint8) +
+													 sizeof(uint16) +
+													 sizeof(uint8) +
+													 sizeof(uint16) +
+													 sizeof(uint8) +
+													 sizeof(uint8);
+
+		for (uint32_t lap_number = 0; lap_number < eaf1_f125_maxNumLapsInHistory; lap_number++)
 		{
-			int lap_base = offsetof(F125::PacketSessionHistoryData, m_lapHistoryData) + lap_number * sizeof(F125::LapHistoryData);
+			if (lap_number < num_laps)
+			{
+				auto lap_ti = proto_tree_add_string(num_laps_tree,
+													hf_eaf1_sessionhistory_lap,
+													tvb,
+													offset,
+													eaf1_f125_lap_history_data_size,
+													wmem_strdup_printf(pinfo->pool, "Lap %d", lap_number + 1));
 
-			auto lap_ti = proto_tree_add_string(num_laps_tree,
-												hf_eaf1_sessionhistory_lap,
-												tvb,
-												lap_base,
-												sizeof(F125::PacketSessionHistoryData::m_lapHistoryData[0]),
-												wmem_strdup_printf(pinfo->pool, "Lap %d", lap_number + 1));
+				auto lap_tree = proto_item_add_subtree(lap_ti, ett_eaf1_sessionhistory_lap);
 
-			auto lap_tree = proto_item_add_subtree(lap_ti, ett_eaf1_sessionhistory_lap);
+				proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_laptime, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint32_t);
 
-			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_laptime, tvb, lap_base + offsetof(F125::LapHistoryData, m_lapTimeInMS), sizeof(F125::LapHistoryData::m_lapTimeInMS), ENC_LITTLE_ENDIAN);
+				add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector1time, hf_eaf1_sessionhistory_sector1timemspart, hf_eaf1_sessionhistory_sector1timeminutespart, ett_eaf1_sessionhistory_sector1time, pinfo, tvb, offset, offset + sizeof(uint16));
+				offset += sizeof(uint16_t) + sizeof(uint8_t);
 
-			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector1time, hf_eaf1_sessionhistory_sector1timemspart, hf_eaf1_sessionhistory_sector1timeminutespart, ett_eaf1_sessionhistory_sector1time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector1TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector1TimeMinutesPart));
-			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector2time, hf_eaf1_sessionhistory_sector2timemspart, hf_eaf1_sessionhistory_sector2timeminutespart, ett_eaf1_sessionhistory_sector2time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMinutesPart));
-			add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector3time, hf_eaf1_sessionhistory_sector3timemspart, hf_eaf1_sessionhistory_sector3timeminutespart, ett_eaf1_sessionhistory_sector3time, pinfo, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMSPart), lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMinutesPart));
+				add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector2time, hf_eaf1_sessionhistory_sector2timemspart, hf_eaf1_sessionhistory_sector2timeminutespart, ett_eaf1_sessionhistory_sector2time, pinfo, tvb, offset, offset + sizeof(uint16));
+				offset += sizeof(uint16_t) + sizeof(uint8_t);
 
-			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector2timemspart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMSPart), sizeof(F125::LapHistoryData::m_sector2TimeMSPart), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector2timeminutespart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector2TimeMinutesPart), sizeof(F125::LapHistoryData::m_sector2TimeMinutesPart), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector3timemspart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMSPart), sizeof(F125::LapHistoryData::m_sector3TimeMSPart), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(lap_tree, hf_eaf1_sessionhistory_sector3timeminutespart, tvb, lap_base + offsetof(F125::LapHistoryData, m_sector3TimeMinutesPart), sizeof(F125::LapHistoryData::m_sector3TimeMinutesPart), ENC_LITTLE_ENDIAN);
+				add_sector_time(lap_tree, hf_eaf1_sessionhistory_sector3time, hf_eaf1_sessionhistory_sector3timemspart, hf_eaf1_sessionhistory_sector3timeminutespart, ett_eaf1_sessionhistory_sector3time, pinfo, tvb, offset, offset + sizeof(uint16));
+				offset += sizeof(uint16_t) + sizeof(uint8_t);
 
-			static int *const valid_status_fields[] = {
-				&hf_eaf1_sessionhistory_lapvalidbitflags_lap,
-				&hf_eaf1_sessionhistory_lapvalidbitflags_sector1,
-				&hf_eaf1_sessionhistory_lapvalidbitflags_sector2,
-				&hf_eaf1_sessionhistory_lapvalidbitflags_sector3,
-				NULL,
-			};
+				static int *const valid_status_fields[] = {
+					&hf_eaf1_sessionhistory_lapvalidbitflags_lap,
+					&hf_eaf1_sessionhistory_lapvalidbitflags_sector1,
+					&hf_eaf1_sessionhistory_lapvalidbitflags_sector2,
+					&hf_eaf1_sessionhistory_lapvalidbitflags_sector3,
+					NULL,
+				};
 
-			proto_tree_add_bitmask(lap_tree, tvb, lap_base + offsetof(F125::LapHistoryData, m_lapValidBitFlags), hf_eaf1_sessionhistory_lapvalidbitflags,
-								   ett_eaf1_sessionhistory_lapvalidbitflags, valid_status_fields, ENC_LITTLE_ENDIAN);
+				proto_tree_add_bitmask(lap_tree, tvb, offset, hf_eaf1_sessionhistory_lapvalidbitflags,
+									   ett_eaf1_sessionhistory_lapvalidbitflags, valid_status_fields, ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+			}
+			else
+			{
+				offset += eaf1_f125_lap_history_data_size;
+			}
 		}
 
+		static int eaf1_f125_tyre_stint_history_data_size = sizeof(uint8) +
+															sizeof(uint8) +
+															sizeof(uint8);
+
 		uint32_t num_tyre_stints;
-		auto num_tyre_stints_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numtyrestints, tvb, offsetof(F125::PacketSessionHistoryData, m_numTyreStints), sizeof(F125::PacketSessionHistoryData::m_numTyreStints), ENC_LITTLE_ENDIAN, &num_tyre_stints);
+		auto num_tyre_stints_ti = proto_tree_add_item_ret_uint(vehicle_index_tree, hf_eaf1_sessionhistory_numtyrestints, tvb, num_tyrestints_offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_tyre_stints);
 		auto num_tyre_stints_tree = proto_item_add_subtree(num_tyre_stints_ti, ett_eaf1_sessionhistory_numtyrestints);
 
-		for (uint32_t tyre_stint_number = 0; tyre_stint_number < num_tyre_stints; tyre_stint_number++)
+		for (uint32_t tyre_stint_number = 0; tyre_stint_number < eaf1_f125_maxTyreStints; tyre_stint_number++)
 		{
-			int tyre_stint_base = offsetof(F125::PacketSessionHistoryData, m_tyreStintsHistoryData) + tyre_stint_number * sizeof(F125::TyreStintHistoryData);
+			if (tyre_stint_number < num_tyre_stints)
+			{
+				auto tyre_stint_ti = proto_tree_add_string(num_tyre_stints_tree,
+														   hf_eaf1_sessionhistory_tyrestint,
+														   tvb,
+														   offset,
+														   eaf1_f125_tyre_stint_history_data_size,
+														   wmem_strdup_printf(pinfo->pool, "Tyre stint %d", tyre_stint_number + 1));
 
-			auto tyre_stint_ti = proto_tree_add_string(num_tyre_stints_tree,
-													   hf_eaf1_sessionhistory_tyrestint,
-													   tvb,
-													   tyre_stint_base,
-													   sizeof(F125::PacketSessionHistoryData::m_tyreStintsHistoryData[0]),
-													   wmem_strdup_printf(pinfo->pool, "Tyre stint %d", tyre_stint_number + 1));
+				auto tyre_stint_tree = proto_item_add_subtree(tyre_stint_ti, ett_eaf1_sessionhistory_tyrestint);
 
-			auto tyre_stint_tree = proto_item_add_subtree(tyre_stint_ti, ett_eaf1_sessionhistory_tyrestint);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_endlap, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
 
-			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_endlap, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_endLap), sizeof(F125::TyreStintHistoryData::m_endLap), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyreactualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreActualCompound), sizeof(F125::TyreStintHistoryData::m_tyreActualCompound), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyrevisualcompound, tvb, tyre_stint_base + offsetof(F125::TyreStintHistoryData, m_tyreVisualCompound), sizeof(F125::TyreStintHistoryData::m_tyreVisualCompound), ENC_LITTLE_ENDIAN);
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyreactualcompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+
+				proto_tree_add_item(tyre_stint_tree, hf_eaf1_sessionhistory_tyrevisualcompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+				offset += sizeof(uint8_t);
+			}
+			else
+			{
+				offset += eaf1_f125_tyre_stint_history_data_size;
+			}
 		}
 
 		return tvb_captured_length(tvb);

@@ -707,6 +707,8 @@ namespace F125
     // Session History - 1460 bytes
     //-----------------------------------------------------------------------------
 
+#if 0
+
     static const uint cs_ADHF125maxNumLapsInHistory = 100;
 
     struct LapHistoryData
@@ -746,6 +748,8 @@ namespace F125
         LapHistoryData m_lapHistoryData[cs_ADHF125maxNumLapsInHistory]; // 100 laps of data max
         TyreStintHistoryData m_tyreStintsHistoryData[cs_ADHF125maxTyreStints];
     };
+
+#endif
 
 #if 0
     //-----------------------------------------------------------------------------
