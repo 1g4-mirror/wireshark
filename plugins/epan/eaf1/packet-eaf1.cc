@@ -73,6 +73,7 @@ static constexpr const char *eaf1_F125SafetyCarEventCode = "SCAR";
 static constexpr const char *eaf1_F125CollisionEventCode = "COLL";
 
 static const uint32_t eaf1_F125MaxNumCarsInUDPData = 22;
+static const uint8_t eaf1_F125NumLiveryColours = 4;
 static const uint32_t eaf1_F125MaxParticipantNameLen = 32;
 // static const uint32 eaf1_F125MaxTyreStints = 8;
 static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
@@ -80,8 +81,22 @@ static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weat
 static const uint8 eaf1_F125MaxNumLapsInLapPositionsHistoryPacket = 50;
 
 static const size_t eaf1_headerSize = 29;
-static const size_t eaf1_lobbyInfoSize = 954;
-static const size_t eaf1_eventDataSize = 45;
+static const size_t eaf1_f125_motionSize = 1349;
+static const size_t eaf1_f125_sessionSize = 753;
+static const size_t eaf1_f125_lapDataSize = 1285;
+static const size_t eaf1_f125_eventDataSize = 45;
+static const size_t eaf1_f125_participantsSize = 1284;
+static const size_t eaf1_f125_carSetupsSize = 1133;
+static const size_t eaf1_f125_carTelemetrySize = 1352;
+static const size_t eaf1_f125_carStatusSize = 1239;
+static const size_t eaf1_f125_finalClassificationSize = 1042;
+static const size_t eaf1_f125_lobbyInfoSize = 954;
+static const size_t eaf1_f125_carDamageSize = 1041;
+static const size_t eaf1_f125_sessionHistorySize = 1460;
+static const size_t eaf1_f125_tyreSetsSize = 231;
+static const size_t eaf1_f125_motionExSize = 273;
+static const size_t eaf1_f125_timeTrialSize = 101;
+static const size_t eaf1_f125_lapPositionsSize = 1131;
 
 static const uint eaf1_eventStringCodeLen = 4;
 
@@ -1205,7 +1220,7 @@ static const char *lookup_driver_name(int proto, uint32_t packet_number, const a
 static proto_item *add_vehicle_index_and_name(int proto, proto_tree *tree, int header_field, packet_info *pinfo, tvbuff_t *tvb, int offset)
 {
 	uint32_t vehicle_index;
-	auto ti_vehicle_index = proto_tree_add_item_ret_uint(tree, header_field, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN, &vehicle_index);
+	auto ti_vehicle_index = proto_tree_add_item_ret_uint(tree, header_field, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &vehicle_index);
 
 	const char *driver_name = lookup_driver_name(proto, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index);
 	if (driver_name)
@@ -1363,7 +1378,7 @@ static int dissect_eaf1_2025(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= eaf1_lobbyInfoSize)
+	if (tvb_captured_length(tvb) >= eaf1_f125_lobbyInfoSize)
 	{
 		int offset = eaf1_headerSize;
 
@@ -1380,35 +1395,35 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 			auto player_name_ti = proto_tree_add_item(eaf1_num_players_tree, hf_eaf1_lobby_info_player_name, tvb, offset + 4, eaf1_F125MaxParticipantNameLen, ENC_UTF_8);
 			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_lobbyinfo_player_name);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_ai_controlled, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_ai_controlled, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_team_id, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_team_id, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_nationality, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_nationality, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_platform, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_platform, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
 			// We've added in the player name above
 			offset += eaf1_F125MaxParticipantNameLen;
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_car_number, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_car_number, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_your_telemetry, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_your_telemetry, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_show_online_names, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_show_online_names, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_tech_level, tvb, offset, sizeof(uint16), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint16);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_tech_level, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_ready_status, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
-			offset += sizeof(uint8);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_lobby_info_ready_status, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 		}
 
 		return tvb_captured_length(tvb);
@@ -1419,7 +1434,7 @@ static int dissect_eaf1_2025_lobbyinfo(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 static int dissect_eaf1_2025_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= eaf1_eventDataSize)
+	if (tvb_captured_length(tvb) >= eaf1_f125_eventDataSize)
 	{
 		int offset = eaf1_headerSize;
 
@@ -1574,7 +1589,7 @@ static int dissect_eaf1_2025_event_retirement(tvbuff_t *tvb, packet_info *pinfo,
 	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_retirement_vehicleindex, pinfo, tvb, offset);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_retirement_reason, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_retirement_reason, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	return tvb_captured_length(tvb);
@@ -1591,7 +1606,7 @@ static int dissect_eaf1_2025_event_drsdisabled(tvbuff_t *tvb, packet_info *pinfo
 {
 	int offset = 0;
 
-	proto_tree_add_item(tree, hf_eaf1_event_drsdisabled_reason, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_drsdisabled_reason, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	return tvb_captured_length(tvb);
@@ -1628,10 +1643,10 @@ static int dissect_eaf1_2025_event_penalty(tvbuff_t *tvb, packet_info *pinfo, pr
 {
 	int offset = 0;
 
-	proto_tree_add_item(tree, hf_eaf1_event_penalty_penaltytype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_penaltytype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_penalty_infringementtype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_infringementtype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_penalty_vehicleindex, pinfo, tvb, offset);
@@ -1640,13 +1655,13 @@ static int dissect_eaf1_2025_event_penalty(tvbuff_t *tvb, packet_info *pinfo, pr
 	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_penalty_othervehicleindex, pinfo, tvb, offset);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_penalty_time, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_time, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_penalty_lapnumber, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_lapnumber, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_penalty_placesgained, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_penalty_placesgained, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	return tvb_captured_length(tvb);
@@ -1662,10 +1677,10 @@ static int dissect_eaf1_2025_event_speedtrap(tvbuff_t *tvb, packet_info *pinfo, 
 	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_speed, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
 	offset += sizeof(float);
 
-	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isoverallfastestinsession, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isoverallfastestinsession, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isdriverfastestinsession, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_speedtrap_isdriverfastestinsession, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_event_speedtrap_fastestvehicleindexinsession, pinfo, tvb, offset);
@@ -1681,7 +1696,7 @@ static int dissect_eaf1_2025_event_startlights(tvbuff_t *tvb, packet_info *pinfo
 {
 	int offset = 0;
 
-	proto_tree_add_item(tree, hf_eaf1_event_startlights_numlights, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_startlights_numlights, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	return tvb_captured_length(tvb);
@@ -1721,7 +1736,7 @@ static int dissect_eaf1_2025_event_flashback(tvbuff_t *tvb, packet_info *pinfo _
 {
 	int offset = 0;
 
-	proto_tree_add_item(tree, hf_eaf1_event_flashback_frameidentifier, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_flashback_frameidentifier, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	proto_tree_add_item(tree, hf_eaf1_event_flashback_sessiontime, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
@@ -1801,10 +1816,10 @@ static int dissect_eaf1_2025_event_safetycar(tvbuff_t *tvb, packet_info *pinfo _
 {
 	int offset = 0;
 
-	proto_tree_add_item(tree, hf_eaf1_event_safetycar_type, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_safetycar_type, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
-	proto_tree_add_item(tree, hf_eaf1_event_safetycar_eventtype, tvb, offset, sizeof(uint8), ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_eaf1_event_safetycar_eventtype, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
 	offset += 1;
 
 	return tvb_captured_length(tvb);
@@ -1825,23 +1840,25 @@ static int dissect_eaf1_2025_event_collision(tvbuff_t *tvb, packet_info *pinfo, 
 
 static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketParticipantsData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_participantsSize)
 	{
 		tConversationData conversation_data;
 		memset(&conversation_data, 0, sizeof(conversation_data));
 
+		int offset = eaf1_headerSize;
+
 		uint32_t active_cars;
 
-		proto_tree_add_item_ret_uint(tree, hf_eaf1_participants_activecars, tvb, offsetof(F125::PacketParticipantsData, m_numActiveCars), 1, ENC_LITTLE_ENDIAN, &active_cars);
+		proto_tree_add_item_ret_uint(tree, hf_eaf1_participants_activecars, tvb, offset, 1, ENC_LITTLE_ENDIAN, &active_cars);
+		offset += 1;
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Participants: %d active", active_cars));
 
 		for (std::remove_const<decltype(eaf1_F125MaxNumCarsInUDPData)>::type participant = 0; participant < eaf1_F125MaxNumCarsInUDPData; participant++)
 		{
-			int participant_offset = offsetof(F125::PacketParticipantsData, m_participants) + participant * sizeof(F125::ParticipantData);
-
 			char *player_name;
-			auto player_name_ti = proto_tree_add_item_ret_string(tree, hf_eaf1_participants_name, tvb, participant_offset + offsetof(F125::ParticipantData, m_name), eaf1_F125MaxParticipantNameLen, ENC_UTF_8, pinfo->pool, (const uint8_t **)&player_name);
+
+			auto player_name_ti = proto_tree_add_item_ret_string(tree, hf_eaf1_participants_name, tvb, offset + 7, eaf1_F125MaxParticipantNameLen, ENC_UTF_8, pinfo->pool, (const uint8_t **)&player_name);
 			proto_tree *eaf1_player_name_tree = proto_item_add_subtree(player_name_ti, ett_eaf1_participants_player_name);
 
 			if (!PINFO_FD_VISITED(pinfo))
@@ -1849,38 +1866,74 @@ static int dissect_eaf1_2025_participants(tvbuff_t *tvb, packet_info *pinfo, pro
 				snprintf(conversation_data.m_DriverNames[participant], sizeof(conversation_data.m_DriverNames[participant]), "%s", player_name);
 			}
 
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_aicontrolled, tvb, participant_offset + offsetof(F125::ParticipantData, m_aiControlled), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_driverid, tvb, participant_offset + offsetof(F125::ParticipantData, m_driverId), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_networkid, tvb, participant_offset + offsetof(F125::ParticipantData, m_networkId), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_teamid, tvb, participant_offset + offsetof(F125::ParticipantData, m_teamId), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_myteam, tvb, participant_offset + offsetof(F125::ParticipantData, m_myTeam), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_racenumber, tvb, participant_offset + offsetof(F125::ParticipantData, m_raceNumber), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_nationality, tvb, participant_offset + offsetof(F125::ParticipantData, m_nationality), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_yourtelemetry, tvb, participant_offset + offsetof(F125::ParticipantData, m_yourTelemetry), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_showonlinenames, tvb, participant_offset + offsetof(F125::ParticipantData, m_showOnlineNames), sizeof(uint8), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_techlevel, tvb, participant_offset + offsetof(F125::ParticipantData, m_techLevel), sizeof(uint16), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_platform, tvb, participant_offset + offsetof(F125::ParticipantData, m_platform), sizeof(uint8), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_aicontrolled, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_driverid, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_networkid, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_teamid, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_myteam, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_racenumber, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_nationality, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			// We got the name above
+			offset += eaf1_F125MaxParticipantNameLen;
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_yourtelemetry, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_showonlinenames, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_techlevel, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(eaf1_player_name_tree, hf_eaf1_participants_platform, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
 			uint32_t num_colours;
-			auto num_colours_ti = proto_tree_add_item_ret_uint(eaf1_player_name_tree, hf_eaf1_participants_numcolours, tvb, participant_offset + offsetof(F125::ParticipantData, m_numColours), sizeof(uint8), ENC_LITTLE_ENDIAN, &num_colours);
+			auto num_colours_ti = proto_tree_add_item_ret_uint(eaf1_player_name_tree, hf_eaf1_participants_numcolours, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &num_colours);
+			offset += sizeof(uint8_t);
+
 			proto_tree *eaf1_num_colours_tree = proto_item_add_subtree(num_colours_ti, ett_eaf1_participants_numcolours);
 
-			for (uint32_t colour = 0; colour < num_colours; colour++)
+			for (uint32_t colour = 0; colour < eaf1_F125NumLiveryColours; colour++)
 			{
-				int livery_offset = participant_offset + offsetof(F125::ParticipantData, m_liveryColours) + colour * sizeof(F125::LiveryColour);
+				if (colour < num_colours)
+				{
+					auto livery_colour_ti = proto_tree_add_item(eaf1_num_colours_tree, hf_eaf1_participants_liverycolour, tvb, 0, 0, ENC_LITTLE_ENDIAN);
+					proto_tree *eaf1_livery_colour_tree = proto_item_add_subtree(livery_colour_ti, ett_eaf1_participants_livery_colour);
 
-				auto livery_colour_ti = proto_tree_add_item(eaf1_num_colours_tree, hf_eaf1_participants_liverycolour, tvb, 0, 0, ENC_LITTLE_ENDIAN);
-				proto_tree *eaf1_livery_colour_tree = proto_item_add_subtree(livery_colour_ti, ett_eaf1_participants_livery_colour);
+					uint32_t red;
+					uint32_t green;
+					uint32_t blue;
 
-				uint32_t red;
-				uint32_t green;
-				uint32_t blue;
+					proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_red, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &red);
+					offset += sizeof(uint8_t);
 
-				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_red, tvb, livery_offset + offsetof(F125::LiveryColour, red), sizeof(uint8), ENC_LITTLE_ENDIAN, &red);
-				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_green, tvb, livery_offset + offsetof(F125::LiveryColour, green), sizeof(uint8), ENC_LITTLE_ENDIAN, &green);
-				proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_blue, tvb, livery_offset + offsetof(F125::LiveryColour, blue), sizeof(uint8), ENC_LITTLE_ENDIAN, &blue);
+					proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_green, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &green);
+					offset += sizeof(uint8_t);
 
-				proto_item_append_text(livery_colour_ti, " (0x%02x%02x%02x)", red, green, blue);
+					proto_tree_add_item_ret_uint(eaf1_livery_colour_tree, hf_eaf1_participants_liverycolour_blue, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN, &blue);
+					offset += sizeof(uint8_t);
+
+					proto_item_append_text(livery_colour_ti, " (0x%02x%02x%02x)", red, green, blue);
+				}
+				else
+				{
+					offset += 3;
+				}
 			}
 		}
 
@@ -3833,7 +3886,7 @@ extern "C"
 			{
 				&hf_eaf1_participants_yourtelemetry,
 				{
-					"Participants your tTelemetry",
+					"Participants your telemetry",
 					"eaf1.participants.yourtelemetry",
 					FT_UINT8,
 					BASE_DEC,
@@ -7639,5 +7692,11 @@ extern "C"
 		dissector_add_string("e1f1.f125.event.code", eaf1_F125OvertakeEventCode, create_dissector_handle(dissect_eaf1_2025_event_overtake, proto_eaf1));
 		dissector_add_string("e1f1.f125.event.code", eaf1_F125SafetyCarEventCode, create_dissector_handle(dissect_eaf1_2025_event_safetycar, proto_eaf1));
 		dissector_add_string("e1f1.f125.event.code", eaf1_F125CollisionEventCode, create_dissector_handle(dissect_eaf1_2025_event_collision, proto_eaf1));
+
+		// 6 - cartelemetry
+		// 5 - carsetups
+		// 0 - motion
+		// 13 - motionex
+		// 14 - timetrial
 	}
 }

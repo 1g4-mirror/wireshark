@@ -20,7 +20,7 @@ namespace F125
     // Header - 29 bytes
     //-----------------------------------------------------------------------------
     static const uint32 cs_ADHF125maxNumCarsInUDPData = 22;
-    static const uint32 cs_ADHF125maxParticipantNameLen = 32;
+    // static const uint32 cs_ADHF125maxParticipantNameLen = 32;
     static const uint32 cs_ADHF125maxTyreStints = 8;
     static const uint32 cs_ADHF125maxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
 
@@ -405,6 +405,7 @@ namespace F125
     };
 #endif
 
+#if 0
     //-----------------------------------------------------------------------------
     // Participants - 1284 bytes
     //-----------------------------------------------------------------------------
@@ -447,6 +448,8 @@ namespace F125
         uint8 m_numActiveCars; // Number of active cars in the data - should match number of cars on HUD
         ParticipantData m_participants[cs_ADHF125maxNumCarsInUDPData];
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Car Setups - 1133 bytes
