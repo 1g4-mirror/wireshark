@@ -91,7 +91,7 @@ static const size_t eaf1_f125_eventDataSize = 45;
 static const size_t eaf1_f125_participantsSize = 1284;
 // static const size_t eaf1_f125_carSetupsSize = 1133;
 // static const size_t eaf1_f125_carTelemetrySize = 1352;
-// static const size_t eaf1_f125_carStatusSize = 1239;
+static const size_t eaf1_f125_carStatusSize = 1239;
 static const size_t eaf1_f125_finalClassificationSize = 1042;
 static const size_t eaf1_f125_lobbyInfoSize = 954;
 static const size_t eaf1_f125_carDamageSize = 1041;
@@ -2734,42 +2734,91 @@ static int dissect_eaf1_2025_finalclassification(tvbuff_t *tvb, packet_info *pin
 
 static int dissect_eaf1_2025_carstatus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketCarStatusData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_carStatusSize)
 	{
+		int offset = eaf1_headerSize;
+
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Car status"));
 
 		for (std::remove_const<decltype(eaf1_F125MaxNumCarsInUDPData)>::type participant = 0; participant < eaf1_F125MaxNumCarsInUDPData; participant++)
 		{
-			int participant_offset = offsetof(F125::PacketCarStatusData, m_carStatusData) + participant * sizeof(F125::CarStatusData);
-
 			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_carstatus_drivername, pinfo, tvb, participant);
 			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_carstatus_drivername);
 
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tractioncontrol, tvb, participant_offset + offsetof(F125::CarStatusData, m_tractionControl), sizeof(F125::CarStatusData::m_tractionControl), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_antilockbrakes, tvb, participant_offset + offsetof(F125::CarStatusData, m_antiLockBrakes), sizeof(F125::CarStatusData::m_antiLockBrakes), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelmix, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelMix), sizeof(F125::CarStatusData::m_fuelMix), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_frontbrakebias, tvb, participant_offset + offsetof(F125::CarStatusData, m_frontBrakeBias), sizeof(F125::CarStatusData::m_frontBrakeBias), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_pitlimiterstatus, tvb, participant_offset + offsetof(F125::CarStatusData, m_pitLimiterStatus), sizeof(F125::CarStatusData::m_pitLimiterStatus), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelintank, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelInTank), sizeof(F125::CarStatusData::m_fuelInTank), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelcapacity, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelCapacity), sizeof(F125::CarStatusData::m_fuelCapacity), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelremaininglaps, tvb, participant_offset + offsetof(F125::CarStatusData, m_fuelRemainingLaps), sizeof(F125::CarStatusData::m_fuelRemainingLaps), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxrpm, tvb, participant_offset + offsetof(F125::CarStatusData, m_maxRPM), sizeof(F125::CarStatusData::m_maxRPM), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_idlerpm, tvb, participant_offset + offsetof(F125::CarStatusData, m_idleRPM), sizeof(F125::CarStatusData::m_idleRPM), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxgears, tvb, participant_offset + offsetof(F125::CarStatusData, m_maxGears), sizeof(F125::CarStatusData::m_maxGears), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsallowed, tvb, participant_offset + offsetof(F125::CarStatusData, m_drsAllowed), sizeof(F125::CarStatusData::m_drsAllowed), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsactivationdistance, tvb, participant_offset + offsetof(F125::CarStatusData, m_drsActivationDistance), sizeof(F125::CarStatusData::m_drsActivationDistance), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_actualtyrecompound, tvb, participant_offset + offsetof(F125::CarStatusData, m_actualTyreCompound), sizeof(F125::CarStatusData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_visualtyrecompound, tvb, participant_offset + offsetof(F125::CarStatusData, m_visualTyreCompound), sizeof(F125::CarStatusData::m_visualTyreCompound), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tyresagelaps, tvb, participant_offset + offsetof(F125::CarStatusData, m_tyresAgeLaps), sizeof(F125::CarStatusData::m_tyresAgeLaps), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_vehiclefiaflags, tvb, participant_offset + offsetof(F125::CarStatusData, m_vehicleFIAFlags), sizeof(F125::CarStatusData::m_vehicleFIAFlags), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowerice, tvb, participant_offset + offsetof(F125::CarStatusData, m_enginePowerICE), sizeof(F125::CarStatusData::m_enginePowerICE), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowermguk, tvb, participant_offset + offsetof(F125::CarStatusData, m_enginePowerMGUK), sizeof(F125::CarStatusData::m_enginePowerMGUK), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersstoreenergy, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersStoreEnergy), sizeof(F125::CarStatusData::m_ersStoreEnergy), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeploymode, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersDeployMode), sizeof(F125::CarStatusData::m_ersDeployMode), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguk, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersHarvestedThisLapMGUK), sizeof(F125::CarStatusData::m_ersHarvestedThisLapMGUK), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguh, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersHarvestedThisLapMGUH), sizeof(F125::CarStatusData::m_ersHarvestedThisLapMGUH), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeployedthislap, tvb, participant_offset + offsetof(F125::CarStatusData, m_ersDeployedThisLap), sizeof(F125::CarStatusData::m_ersDeployedThisLap), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_networkpaused, tvb, participant_offset + offsetof(F125::CarStatusData, m_networkPaused), sizeof(F125::CarStatusData::m_networkPaused), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tractioncontrol, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_antilockbrakes, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelmix, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_frontbrakebias, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_pitlimiterstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelintank, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelcapacity, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_fuelremaininglaps, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxrpm, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_idlerpm, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_maxgears, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsallowed, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_drsactivationdistance, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_actualtyrecompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_visualtyrecompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_tyresagelaps, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_vehiclefiaflags, tvb, offset, sizeof(int8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(int8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowerice, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_enginepowermguk, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersstoreenergy, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeploymode, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguk, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersharvestedthislapmguh, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_ersdeployedthislap, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_carstatus_networkpaused, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 		}
 
 		return tvb_captured_length(tvb);

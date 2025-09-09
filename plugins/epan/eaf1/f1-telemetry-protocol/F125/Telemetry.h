@@ -541,6 +541,8 @@ namespace F125
         int8 m_suggestedGear;                 // Suggested gear for the player (1-8), 0 if no gear suggested
     };
 
+#if 0
+
     //-----------------------------------------------------------------------------
     // Car Status - 1239 bytes
     //-----------------------------------------------------------------------------
@@ -589,6 +591,8 @@ namespace F125
         // Packet specific data
         CarStatusData m_carStatusData[cs_ADHF125maxNumCarsInUDPData]; // data for all cars on track
     };
+
+#endif
 
 #if 0
 
