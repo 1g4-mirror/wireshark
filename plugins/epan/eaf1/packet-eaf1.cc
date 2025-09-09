@@ -84,22 +84,22 @@ static const uint32 eaf1_F125MaxNumTyreSets = 13 + 7; // 13 slick and 7 wet weat
 static const uint8 eaf1_F125MaxNumLapsInLapPositionsHistoryPacket = 50;
 
 static const size_t eaf1_headerSize = 29;
-static const size_t eaf1_f125_motionSize = 1349;
+// static const size_t eaf1_f125_motionSize = 1349;
 static const size_t eaf1_f125_sessionSize = 753;
-static const size_t eaf1_f125_lapDataSize = 1285;
+// static const size_t eaf1_f125_lapDataSize = 1285;
 static const size_t eaf1_f125_eventDataSize = 45;
 static const size_t eaf1_f125_participantsSize = 1284;
-static const size_t eaf1_f125_carSetupsSize = 1133;
-static const size_t eaf1_f125_carTelemetrySize = 1352;
-static const size_t eaf1_f125_carStatusSize = 1239;
-static const size_t eaf1_f125_finalClassificationSize = 1042;
+// static const size_t eaf1_f125_carSetupsSize = 1133;
+// static const size_t eaf1_f125_carTelemetrySize = 1352;
+// static const size_t eaf1_f125_carStatusSize = 1239;
+// static const size_t eaf1_f125_finalClassificationSize = 1042;
 static const size_t eaf1_f125_lobbyInfoSize = 954;
 static const size_t eaf1_f125_carDamageSize = 1041;
-static const size_t eaf1_f125_sessionHistorySize = 1460;
+// static const size_t eaf1_f125_sessionHistorySize = 1460;
 static const size_t eaf1_f125_tyreSetsSize = 231;
-static const size_t eaf1_f125_motionExSize = 273;
-static const size_t eaf1_f125_timeTrialSize = 101;
-static const size_t eaf1_f125_lapPositionsSize = 1131;
+// static const size_t eaf1_f125_motionExSize = 273;
+// static const size_t eaf1_f125_timeTrialSize = 101;
+// static const size_t eaf1_f125_lapPositionsSize = 1131;
 
 static const uint eaf1_eventStringCodeLen = 4;
 
