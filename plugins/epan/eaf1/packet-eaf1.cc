@@ -2410,34 +2410,54 @@ static int dissect_eaf1_2025_cardamage(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 static int dissect_eaf1_2025_tyresets(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketTyreSetsData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_tyreSetsSize)
 	{
-		uint8_t vehicle_index = tvb_get_uint8(tvb, offsetof(F125::PacketTyreSetsData, m_carIdx));
+		int offset = eaf1_headerSize;
 
-		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_tyresets_vehicleindex, pinfo, tvb, offsetof(F125::PacketTyreSetsData, m_carIdx));
+		uint8_t vehicle_index = tvb_get_uint8(tvb, offset);
+
+		auto vehicle_index_ti = add_vehicle_index_and_name(proto_eaf1, tree, hf_eaf1_tyresets_vehicleindex, pinfo, tvb, offset);
+		offset += sizeof(uint8_t);
+
 		auto vehicle_index_tree = proto_item_add_subtree(vehicle_index_ti, ett_eaf1_tyresets_vehicleindex);
 
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Tyre sets (%s)", lookup_driver_name(proto_eaf1, pinfo->num, pinfo->src, pinfo->srcport, vehicle_index)));
-
-		proto_tree_add_item(vehicle_index_tree, hf_eaf1_tyresets_fittedindex, tvb, offsetof(F125::PacketTyreSetsData, m_fittedIdx), sizeof(F125::PacketTyreSetsData::m_fittedIdx), ENC_LITTLE_ENDIAN);
 
 		for (std::remove_const<decltype(eaf1_F125MaxNumTyreSets)>::type tyre_set = 0; tyre_set < eaf1_F125MaxNumTyreSets; tyre_set++)
 		{
 			auto tyreset_ti = proto_tree_add_string(vehicle_index_tree, hf_eaf1_tyresets_tyreset, tvb, 0, 0, wmem_strdup_printf(pinfo->pool, "Set %d", tyre_set));
 			auto tyreset_tree = proto_item_add_subtree(tyreset_ti, ett_eaf1_tyresets_tyreset);
 
-			int tyreset_offset = offsetof(F125::PacketTyreSetsData, m_tyreSetData) + tyre_set * sizeof(F125::TyreSetData);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_actualtyrecompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_actualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_actualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_visualtyrecompound, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_visualTyreCompound), sizeof(F125::TyreSetData::m_actualTyreCompound), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_wear, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_wear), sizeof(F125::TyreSetData::m_wear), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_available, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_available), sizeof(F125::TyreSetData::m_available), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_recommendedsession, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_recommendedSession), sizeof(F125::TyreSetData::m_recommendedSession), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lifespan, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_lifeSpan), sizeof(F125::TyreSetData::m_lifeSpan), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_usablelife, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_usableLife), sizeof(F125::TyreSetData::m_usableLife), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lapdeltatime, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_lapDeltaTime), sizeof(F125::TyreSetData::m_lapDeltaTime), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_fitted, tvb, tyreset_offset + offsetof(F125::TyreSetData, m_fitted), sizeof(F125::TyreSetData::m_fitted), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_visualtyrecompound, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_wear, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_available, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_recommendedsession, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lifespan, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_usablelife, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_lapdeltatime, tvb, offset, sizeof(int16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(int16_t);
+
+			proto_tree_add_item(tyreset_tree, hf_eaf1_tyresets_tyreset_fitted, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 		}
+
+		proto_tree_add_item(vehicle_index_tree, hf_eaf1_tyresets_fittedindex, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		return tvb_captured_length(tvb);
 	}

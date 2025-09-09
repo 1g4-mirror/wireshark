@@ -747,6 +747,7 @@ namespace F125
         TyreStintHistoryData m_tyreStintsHistoryData[cs_ADHF125maxTyreStints];
     };
 
+#if 0
     //-----------------------------------------------------------------------------
     // Tyre Sets - 231 bytes
     //-----------------------------------------------------------------------------
@@ -778,6 +779,8 @@ namespace F125
 
         uint8 m_fittedIdx; // Index into array of fitted tyre
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Motion Ex - 273 bytes
