@@ -86,7 +86,7 @@ static const uint8 eaf1_F125MaxNumLapsInLapPositionsHistoryPacket = 50;
 static const size_t eaf1_headerSize = 29;
 // static const size_t eaf1_f125_motionSize = 1349;
 static const size_t eaf1_f125_sessionSize = 753;
-// static const size_t eaf1_f125_lapDataSize = 1285;
+static const size_t eaf1_f125_lapDataSize = 1285;
 static const size_t eaf1_f125_eventDataSize = 45;
 static const size_t eaf1_f125_participantsSize = 1284;
 // static const size_t eaf1_f125_carSetupsSize = 1133;
@@ -2829,50 +2829,110 @@ static int dissect_eaf1_2025_carstatus(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 static int dissect_eaf1_2025_lapdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_)
 {
-	if (tvb_captured_length(tvb) >= sizeof(F125::PacketLapData))
+	if (tvb_captured_length(tvb) >= eaf1_f125_lapDataSize)
 	{
+		int offset = eaf1_headerSize;
+
 		col_set_str(pinfo->cinfo, COL_INFO, wmem_strdup_printf(pinfo->pool, "Lap data"));
 
 		for (std::remove_const<decltype(eaf1_F125MaxNumCarsInUDPData)>::type participant = 0; participant < eaf1_F125MaxNumCarsInUDPData; participant++)
 		{
-			int participant_offset = offsetof(F125::PacketLapData, m_lapData) + participant * sizeof(F125::LapData);
-
 			auto driver_name_ti = add_driver_name(proto_eaf1, tree, hf_eaf1_lapdata_drivername, pinfo, tvb, participant);
 			auto driver_name_tree = proto_item_add_subtree(driver_name_ti, ett_eaf1_lapdata_drivername);
 
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lastlaptimeinms, tvb, participant_offset + offsetof(F125::LapData, m_lastLapTimeInMS), sizeof(F125::LapData::m_lastLapTimeInMS), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlaptimeinms, tvb, participant_offset + offsetof(F125::LapData, m_currentLapTimeInMS), sizeof(F125::LapData::m_currentLapTimeInMS), ENC_LITTLE_ENDIAN);
-			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector1time, hf_eaf1_lapdata_sector1timemspart, hf_eaf1_lapdata_sector1timeminutespart, ett_eaf1_lapdata_sector1time, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_sector1TimeMSPart), participant_offset + offsetof(F125::LapData, m_sector1TimeMinutesPart));
-			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector2time, hf_eaf1_lapdata_sector2timemspart, hf_eaf1_lapdata_sector2timeminutespart, ett_eaf1_lapdata_sector2time, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_sector2TimeMSPart), participant_offset + offsetof(F125::LapData, m_sector2TimeMinutesPart));
-			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatocarinfront, hf_eaf1_lapdata_deltatocarinfrontmspart, hf_eaf1_lapdata_deltatocarinfrontminutespart, ett_eaf1_lapdata_deltatocarinfront, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_deltaToCarInFrontMSPart), participant_offset + offsetof(F125::LapData, m_deltaToCarInFrontMinutesPart));
-			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatoraceleader, hf_eaf1_lapdata_deltatoraceleadermspart, hf_eaf1_lapdata_deltatoraceleaderminutespart, ett_eaf1_lapdata_deltatoraceleader, pinfo, tvb, participant_offset + offsetof(F125::LapData, m_deltaToRaceLeaderMSPart), participant_offset + offsetof(F125::LapData, m_deltaToRaceLeaderMinutesPart));
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lapdistance, tvb, participant_offset + offsetof(F125::LapData, m_lapDistance), sizeof(F125::LapData::m_lapDistance), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totaldistance, tvb, participant_offset + offsetof(F125::LapData, m_totalDistance), sizeof(F125::LapData::m_totalDistance), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_safetycardelta, tvb, participant_offset + offsetof(F125::LapData, m_safetyCarDelta), sizeof(F125::LapData::m_safetyCarDelta), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_carposition, tvb, participant_offset + offsetof(F125::LapData, m_carPosition), sizeof(F125::LapData::m_carPosition), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapnum, tvb, participant_offset + offsetof(F125::LapData, m_currentLapNum), sizeof(F125::LapData::m_currentLapNum), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstatus, tvb, participant_offset + offsetof(F125::LapData, m_pitStatus), sizeof(F125::LapData::m_pitStatus), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numpitstops, tvb, participant_offset + offsetof(F125::LapData, m_numPitStops), sizeof(F125::LapData::m_numPitStops), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_sector, tvb, participant_offset + offsetof(F125::LapData, m_sector), sizeof(F125::LapData::m_sector), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapinvalid, tvb, participant_offset + offsetof(F125::LapData, m_currentLapInvalid), sizeof(F125::LapData::m_currentLapInvalid), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_penalties, tvb, participant_offset + offsetof(F125::LapData, m_penalties), sizeof(F125::LapData::m_penalties), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totalwarnings, tvb, participant_offset + offsetof(F125::LapData, m_totalWarnings), sizeof(F125::LapData::m_totalWarnings), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_cornercuttingwarnings, tvb, participant_offset + offsetof(F125::LapData, m_cornerCuttingWarnings), sizeof(F125::LapData::m_cornerCuttingWarnings), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunserveddrivethroughpens, tvb, participant_offset + offsetof(F125::LapData, m_numUnservedDriveThroughPens), sizeof(F125::LapData::m_numUnservedDriveThroughPens), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunservedstopgopens, tvb, participant_offset + offsetof(F125::LapData, m_numUnservedStopGoPens), sizeof(F125::LapData::m_numUnservedStopGoPens), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_gridposition, tvb, participant_offset + offsetof(F125::LapData, m_gridPosition), sizeof(F125::LapData::m_gridPosition), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_driverstatus, tvb, participant_offset + offsetof(F125::LapData, m_driverStatus), sizeof(F125::LapData::m_driverStatus), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_resultstatus, tvb, participant_offset + offsetof(F125::LapData, m_resultStatus), sizeof(F125::LapData::m_resultStatus), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeractive, tvb, participant_offset + offsetof(F125::LapData, m_pitLaneTimerActive), sizeof(F125::LapData::m_pitLaneTimerActive), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeinlaneinms, tvb, participant_offset + offsetof(F125::LapData, m_pitLaneTimeInLaneInMS), sizeof(F125::LapData::m_pitLaneTimeInLaneInMS), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstoptimerinms, tvb, participant_offset + offsetof(F125::LapData, m_pitStopTimerInMS), sizeof(F125::LapData::m_pitStopTimerInMS), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstopshouldservepen, tvb, participant_offset + offsetof(F125::LapData, m_pitStopShouldServePen), sizeof(F125::LapData::m_pitStopShouldServePen), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestspeed, tvb, participant_offset + offsetof(F125::LapData, m_speedTrapFastestSpeed), sizeof(F125::LapData::m_speedTrapFastestSpeed), ENC_LITTLE_ENDIAN);
-			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestlap, tvb, participant_offset + offsetof(F125::LapData, m_speedTrapFastestLap), sizeof(F125::LapData::m_speedTrapFastestLap), ENC_LITTLE_ENDIAN);
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lastlaptimeinms, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint32_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlaptimeinms, tvb, offset, sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint32_t);
+
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector1time, hf_eaf1_lapdata_sector1timemspart, hf_eaf1_lapdata_sector1timeminutespart, ett_eaf1_lapdata_sector1time, pinfo, tvb, offset, offset + sizeof(uint16));
+			offset += sizeof(uint16_t) + sizeof(uint8_t);
+
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_sector2time, hf_eaf1_lapdata_sector2timemspart, hf_eaf1_lapdata_sector2timeminutespart, ett_eaf1_lapdata_sector2time, pinfo, tvb, offset, offset + sizeof(uint16));
+			offset += sizeof(uint16_t) + sizeof(uint8_t);
+
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatocarinfront, hf_eaf1_lapdata_deltatocarinfrontmspart, hf_eaf1_lapdata_deltatocarinfrontminutespart, ett_eaf1_lapdata_deltatocarinfront, pinfo, tvb, offset, offset + sizeof(uint16));
+			offset += sizeof(uint16_t) + sizeof(uint8_t);
+
+			add_sector_time(driver_name_tree, hf_eaf1_lapdata_deltatoraceleader, hf_eaf1_lapdata_deltatoraceleadermspart, hf_eaf1_lapdata_deltatoraceleaderminutespart, ett_eaf1_lapdata_deltatoraceleader, pinfo, tvb, offset, offset + sizeof(uint16));
+			offset += sizeof(uint16_t) + sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_lapdistance, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totaldistance, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_safetycardelta, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_carposition, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapnum, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numpitstops, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_sector, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_currentlapinvalid, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_penalties, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_totalwarnings, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_cornercuttingwarnings, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunserveddrivethroughpens, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_numunservedstopgopens, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_gridposition, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_driverstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_resultstatus, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeractive, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitlanetimeinlaneinms, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstoptimerinms, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_pitstopshouldservepen, tvb, offset, sizeof(uint16_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint16_t);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestspeed, tvb, offset, sizeof(float), ENC_LITTLE_ENDIAN);
+			offset += sizeof(float);
+
+			proto_tree_add_item(driver_name_tree, hf_eaf1_lapdata_speedtrapfastestlap, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+			offset += sizeof(uint8_t);
 		}
 
-		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialpbcaridx, tvb, offsetof(F125::PacketLapData, m_timeTrialPBCarIdx), sizeof(F125::PacketLapData::m_timeTrialPBCarIdx), ENC_LITTLE_ENDIAN);
-		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialrivalcaridx, tvb, offsetof(F125::PacketLapData, m_timeTrialRivalCarIdx), sizeof(F125::PacketLapData::m_timeTrialRivalCarIdx), ENC_LITTLE_ENDIAN);
+		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialpbcaridx, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_eaf1_lapdata_timetrialrivalcaridx, tvb, offset, sizeof(uint8_t), ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
 
 		return tvb_captured_length(tvb);
 	}

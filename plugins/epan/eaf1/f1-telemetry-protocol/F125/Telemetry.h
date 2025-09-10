@@ -215,6 +215,7 @@ namespace F125
 
 #endif
 
+#if 0
     //-----------------------------------------------------------------------------
     // Lap - 1285 bytes
     //-----------------------------------------------------------------------------
@@ -269,6 +270,8 @@ namespace F125
         uint8 m_timeTrialPBCarIdx;    // Index of Personal Best car in time trial (255 if invalid)
         uint8 m_timeTrialRivalCarIdx; // Index of Rival car in time trial (255 if invalid)
     };
+
+#endif
 
     //-----------------------------------------------------------------------------
     // Event - 45 bytes
