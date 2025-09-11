@@ -17,6 +17,7 @@ ADD_CUSTOM_CMAKE_INCLUDE()
 
 set(WIRESHARK_WIDGET_HEADERS
 	widgets/additional_toolbar.h
+	widgets/application_proxy_style.h
 	widgets/apply_line_edit.h
 	widgets/base_data_source_view.h
 	widgets/capture_filter_combo.h
@@ -297,6 +298,7 @@ endif()
 
 set(WIRESHARK_WIDGET_SRCS
 	widgets/additional_toolbar.cpp
+	widgets/application_proxy_style.cpp
 	widgets/apply_line_edit.cpp
 	widgets/capture_filter_combo.cpp
 	widgets/capture_filter_edit.cpp
