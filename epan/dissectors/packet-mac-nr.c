@@ -5397,49 +5397,49 @@ void proto_register_mac_nr(void)
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg7,
             { "Buffer Size for LCG7",
-              "mac-nr.control.bsr.bs-lcg7", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg7", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg6,
             { "Buffer Size for LCG6",
-              "mac-nr.control.bsr.bs-lcg6", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg6", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg5,
             { "Buffer Size for LCG5",
-              "mac-nr.control.bsr.bs-lcg5", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg5", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg4,
             { "Buffer Size for LCG4",
-              "mac-nr.control.bsr.bs-lcg4", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg4", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg3,
             { "Buffer Size for LCG3",
-              "mac-nr.control.bsr.bs-lcg3", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg3", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg2,
             { "Buffer Size for LCG2",
-              "mac-nr.control.bsr.bs-lcg2", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg2", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg1,
             { "Buffer Size for LCG1",
-              "mac-nr.control.bsr.bs-lcg1", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg1", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_bsr_long_bs_lcg0,
             { "Buffer Size for LCG0",
-              "mac-nr.control.bsr.bs-lcg0", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
+              "mac-nr.control.bsr.long.bs-lcg0", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &buffer_size_8bits_vals_ext, 0x0,
               NULL, HFILL
             }
         },
