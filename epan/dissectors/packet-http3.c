@@ -1454,6 +1454,7 @@ dissect_http3_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *http3_tree, un
     ti_data    = proto_tree_add_item(http3_tree, hf_http3_data, tvb, offset, remaining, ENC_NA);
     if (http3_stream->next_handle) {
         http3_stream->upgrade_info->from_server = http3_stream->direction;
+        pinfo->can_desegment = pinfo->saved_can_desegment;
         call_dissector_only(http3_stream->next_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(proto_tree_get_parent_tree(proto_tree_get_parent_tree(http3_tree))), http3_stream->upgrade_info);
     }
     http3_reset_inner_conversation(pinfo, saved_ctx);

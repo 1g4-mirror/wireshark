@@ -3530,6 +3530,7 @@ dissect_http2_data_partial_body(tvbuff_t *tvb, packet_info *pinfo, http2_session
 
     if (stream_info->next_handle) {
         stream_info->upgrade_info->from_server = select_http2_flow_index(pinfo, http2_session) == 1;
+        pinfo->can_desegment = pinfo->saved_can_desegment;
         call_dissector_only(stream_info->next_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(proto_tree_get_parent_tree(http2_tree)), stream_info->upgrade_info);
     }
 }
