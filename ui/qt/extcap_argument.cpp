@@ -560,7 +560,7 @@ QWidget * ExtArgText::createEditor(QWidget * parent)
         textBox->setPlaceholderText(QString().fromUtf8(_argument->placeholder));
 
     if (_argument->arg_type == EXTCAP_ARG_PASSWORD)
-        textBox->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+        textBox->setEchoMode(QLineEdit::Password);
 
     connect(textBox, &QLineEdit::textChanged, this, &ExtArgText::onStringChanged);
 
