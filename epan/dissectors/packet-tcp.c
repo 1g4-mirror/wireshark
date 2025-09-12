@@ -8402,7 +8402,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             frame = wmem_list_frame_prev(wmem_list_tail(pinfo->layers));
             if (proto_ip == (int) GPOINTER_TO_UINT(wmem_list_frame_data(frame))) {
                 frame = wmem_list_frame_prev(frame);
-                if (proto_icmp == (int) GPOINTER_TO_UINT(wmem_list_frame_data(frame))) {
+                if (frame && proto_icmp == (int) GPOINTER_TO_UINT(wmem_list_frame_data(frame))) {
                     proto_tree_add_item(tcp_tree, hf_tcp_seq, tvb, offset + 4, 4, ENC_BIG_ENDIAN);
                     icmp_ip = true;
                 }
