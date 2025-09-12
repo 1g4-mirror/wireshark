@@ -454,17 +454,21 @@ fetch_tapped_data(int tap_id, int idx)
 	return NULL;
 }
 
-/* This function is called when we need to reset all tap listeners, for example
-   when we open/start a new capture or if we need to rescan the packet list.
-*/
+/** This function is called when we need to reset all tap listeners, for example
+ *  when we open/start a new capture or if we need to rescan the packet list.
+ *
+ * If force is true, reset the tap regardless, otherwise check the XXX flag
+ */
 void
-reset_tap_listeners(void)
+reset_tap_listeners(bool force)
 {
 	tap_listener_t *tl;
 
 	for(tl=tap_listener_queue;tl;tl=tl->next){
 		if(tl->reset){
-			tl->reset(tl->tapdata);
+			if (force || (tl->flags & TL_RESET_EPAN_MEMORY)) {
+				tl->reset(tl->tapdata);
+			}
 		}
 		tl->needs_redraw=true;
 		tl->failed=false;
