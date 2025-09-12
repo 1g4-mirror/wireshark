@@ -42,7 +42,6 @@ private slots:
     void boolPreferenceTriggered();
     void enumPreferenceTriggered();
     void uatPreferenceTriggered();
-    void enumCustomTCPOverridePreferenceTriggered();
 };
 
 #endif // __PROTOCOL_PREFERENCES_MENU_H__

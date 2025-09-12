@@ -288,46 +288,6 @@ void ProtocolPreferencesMenu::addMenuItem(preference *pref)
     case PREF_CUSTOM:
     case PREF_STATIC_TEXT:
         break;
-    case PREF_PROTO_TCP_SNDAMB_ENUM:
-    {
-        int override_id = -1;
-
-        /* ensure we have access to MainWindow, and indirectly to the selection */
-        if (mainApp) {
-            MainWindow * mainWin = mainApp->mainWindow();
-
-            if (mainWin != nullptr && !mainWin->selectedRows().isEmpty()) {
-                frame_data * fdata = mainWin->frameDataForRow(mainWin->selectedRows().at(0));
-                if(fdata) {
-                    override_id = fdata->tcp_snd_manual_analysis;
-                }
-            }
-        }
-
-        if (override_id != -1) {
-            QMenu *enum_menu = addMenu(prefs_get_title(pref));
-            const enum_val_t *enum_valp = prefs_get_enumvals(pref);
-            if (enum_valp && enum_valp->name) {
-                QActionGroup *ag = new QActionGroup(this);
-                while (enum_valp->name) {
-                    EnumCustomTCPOverridePreferenceAction *epa = new EnumCustomTCPOverridePreferenceAction(pref, enum_valp->description, enum_valp->value, ag, this);
-                    if (override_id>=0) {
-                        if(override_id==enum_valp->value)
-                            epa->setChecked(true);
-                    }
-                    else {
-                        if(enum_valp->value == 0)
-                            epa->setChecked(true);
-                    }
-
-                    enum_menu->addAction(epa);
-                    connect(epa, &EnumCustomTCPOverridePreferenceAction::triggered, this, &ProtocolPreferencesMenu::enumCustomTCPOverridePreferenceTriggered);
-                    enum_valp++;
-                }
-            }
-        }
-        break;
-    }
     default:
         // A type we currently don't handle. Just open the prefs dialog.
         QString title = QStringLiteral("%1%2").arg(prefs_get_title(pref), UTF8_HORIZONTAL_ELLIPSIS);
@@ -397,34 +357,6 @@ void ProtocolPreferencesMenu::enumPreferenceTriggered()
         /* Protocol preference changes almost always affect dissection,
            so don't bother checking flags */
         mainApp->emitAppSignal(MainApplication::PacketDissectionChanged);
-    }
-}
-
-void ProtocolPreferencesMenu::enumCustomTCPOverridePreferenceTriggered()
-{
-    EnumCustomTCPOverridePreferenceAction *epa = static_cast<EnumCustomTCPOverridePreferenceAction *>(QObject::sender());
-    if (!epa) return;
-
-    /* ensure we have access to MainWindow, and indirectly to the selection */
-    if (mainApp) {
-        MainWindow * mainWin = mainApp->mainWindow();
-        if (mainWin != nullptr && !mainWin->selectedRows().isEmpty()) {
-            frame_data * fdata = mainWin->frameDataForRow(mainWin->selectedRows().at(0));
-            if(!fdata)
-                return;
-
-            if (fdata->tcp_snd_manual_analysis != epa->getEnumValue()) { // Changed
-                fdata->tcp_snd_manual_analysis = epa->getEnumValue();
-
-                unsigned int changed_flags = prefs_get_effect_flags(epa->getPref());
-                if (changed_flags & PREF_EFFECT_FIELDS) {
-                    mainApp->emitAppSignal(MainApplication::FieldsChanged);
-                }
-                /* Protocol preference changes almost always affect dissection,
-                   so don't bother checking flags */
-                mainApp->emitAppSignal(MainApplication::PacketDissectionChanged);
-            }
-        }
     }
 }
 
