@@ -120,6 +120,8 @@ typedef struct _loal {
 /* avp library (re)initialization */
 extern void avp_init(void);
 
+extern void avp_shutdown(void);
+
 /* If enabled set's up the debug facilities for the avp library */
 #ifdef _AVP_DEBUGGING
 extern void setup_avp_debug(FILE* fp, int* general, int* avp, int* avp_op, int* avpl, int* avpl_op);
