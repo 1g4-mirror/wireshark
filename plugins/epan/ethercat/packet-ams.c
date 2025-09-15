@@ -868,7 +868,7 @@ static int dissect_amstcp_reassembled(tvbuff_t* tvb, packet_info* pinfo, proto_t
 
 static int dissect_amstcp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
 {
-    tcp_dissect_pdus(tvb, pinfo, tree, true, TcpAdsParserHDR_Len, get_amstcp_length, dissect_amstcp_reassembled, data);
+    tcp_dissect_pdus(tvb, pinfo, tree, true, TcpAdsParserHDR_Len, get_amstcp_length, dissect_amstcp_reassembled, NULL);
 
     return tvb_captured_length(tvb);
 }
