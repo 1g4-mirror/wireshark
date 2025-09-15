@@ -850,7 +850,7 @@ static int dissect_ams(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     return dissect_ams_pdu(tvb, pinfo, tree, 0);
 }
 
-static unsigned get_amstcp_length(packet_info* pinfo _U_, tvbuff_t* tvb _U_, int offset _U_, void* data _U_)
+static unsigned get_amstcp_length(packet_info* pinfo _U_, tvbuff_t* tvb, int offset, void* data _U_)
 {
     // The 6-byte AMS/TCP header is 2 reserved bytes followed by 4 bytes
     // indicating the length of the AMS header and data that follows.
