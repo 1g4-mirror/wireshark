@@ -3580,40 +3580,26 @@ proto_register_omron_fins(void)
         { &hf_omron_command_memory_area_code,
         { "Memory Area Code", "omron.memory.area.read", FT_UINT8, BASE_HEX, VALS(memory_area_code_cv), 0x0, NULL, HFILL }},
 
-        {
-            &hf_omron_response_code,
-            {"Response Code", "omron.response.code", FT_UINT16, BASE_HEX, NULL, 0xFFFF, NULL, HFILL}
-        },
+        { &hf_omron_response_code,
+        { "Response Code", "omron.response.code", FT_UINT16, BASE_HEX, NULL, 0xFFFF, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_main_sub_combined,
-            {"Main+Sub Response Code", "omron.response.code.msres", FT_UINT16, BASE_HEX, VALS(response_codes), 0x7F3F, NULL, HFILL}
-        },
+        { &hf_omron_response_code_main_sub_combined,
+        { "Main+Sub Response Code", "omron.response.code.msres", FT_UINT16, BASE_HEX, VALS(response_codes), 0x7F3F, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_relay_error,
-            {"Relay Error", "omron.response.code.relayError", FT_BOOLEAN, 16, NULL, 0x8000, NULL, HFILL}
-        },
+        { &hf_omron_response_code_relay_error,
+        { "Relay Error", "omron.response.code.relayError", FT_BOOLEAN, 16, NULL, 0x8000, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_main_code,
-            {"Main Response Code", "omron.response.code.mres", FT_UINT16, BASE_HEX, NULL, 0x7F00, NULL, HFILL}
-        },
+        { &hf_omron_response_code_main_code,
+        { "Main Response Code", "omron.response.code.mres", FT_UINT16, BASE_HEX, NULL, 0x7F00, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_pc_fatal_error,
-            {"PC Fatal Error", "omron.response.code.fatalError", FT_BOOLEAN, 16, NULL, 0x0080, NULL, HFILL}
-        },
+        { &hf_omron_response_code_pc_fatal_error,
+        { "PC Fatal Error", "omron.response.code.fatalError", FT_BOOLEAN, 16, NULL, 0x0080, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_pc_non_fatal_error,
-            {"PC Non-fatal Error", "omron.response.code.nonFatalError", FT_BOOLEAN, 16, NULL, 0x0040, NULL, HFILL}
-        },
+        { &hf_omron_response_code_pc_non_fatal_error,
+        { "PC Non-fatal Error", "omron.response.code.nonFatalError", FT_BOOLEAN, 16, NULL, 0x0040, NULL, HFILL}},
 
-        {
-            &hf_omron_response_code_sub_code,
-            {"Sub Response Code", "omron.response.code.sres", FT_UINT16, BASE_HEX, NULL, 0x003F, NULL, HFILL}
-        },
+        { &hf_omron_response_code_sub_code,
+        { "Sub Response Code", "omron.response.code.sres", FT_UINT16, BASE_HEX, NULL, 0x003F, NULL, HFILL}},
 
         { &hf_omron_command_data,
         { "Command Data", "omron.command.data", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
