@@ -169,9 +169,6 @@ const QString FilterAction::actionDirectionName(ActionDirection direction) {
 
 QActionGroup * FilterAction::createFilterGroup(QString filter, bool prepare, bool enabled, QWidget * parent)
 {
-    if (filter.isEmpty())
-        enabled = false;
-
     bool filterEmpty = false;
     if (mainApp)
     {
@@ -187,24 +184,89 @@ QActionGroup * FilterAction::createFilterGroup(QString filter, bool prepare, boo
     QActionGroup * group = new QActionGroup(parent);
     group->setProperty("filter", filter);
     group->setProperty("filterAction", prepare ? FilterAction::ActionPrepare : FilterAction::ActionApply);
-    QAction * action = group->addAction(tr("Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypePlain);
-    action = group->addAction(tr("Not Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypeNot);
-    action = group->addAction(tr("…and Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypeAnd);
-    action->setEnabled(!filterEmpty);
-    action = group->addAction(tr("…or Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypeOr);
-    action->setEnabled(!filterEmpty);
-    action = group->addAction(tr("…and not Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypeAndNot);
-    action->setEnabled(!filterEmpty);
-    action = group->addAction(tr("…or not Selected"));
-    action->setProperty("filterType", FilterAction::ActionTypeOrNot);
-    action->setEnabled(!filterEmpty);
+
+    QAction* selectedValueAction = group->addAction(tr("Selected"));
+    selectedValueAction->setProperty("filterType", FilterAction::ActionTypePlain);
+    selectedValueAction->setProperty("filter", filter);
+
+    QAction* notSelectedValueAction = group->addAction(tr("Not Selected"));
+    notSelectedValueAction->setProperty("filterType", FilterAction::ActionTypeNot);
+    notSelectedValueAction->setProperty("filter", filter);
+
+    QAction* andSelectedValueAction = group->addAction(tr("…and Selected"));
+    andSelectedValueAction->setProperty("filterType", FilterAction::ActionTypeAnd);
+    andSelectedValueAction->setProperty("filter", filter);
+    andSelectedValueAction->setEnabled(!filterEmpty);
+
+    QAction* orSelectedValueAction = group->addAction(tr("…or Selected"));
+    orSelectedValueAction->setProperty("filterType", FilterAction::ActionTypeOr);
+    orSelectedValueAction->setProperty("filter", filter);
+    orSelectedValueAction->setEnabled(!filterEmpty);
+
+    QAction* andNotSelectedValueAction = group->addAction(tr("…and not Selected"));
+    andNotSelectedValueAction->setProperty("filterType", FilterAction::ActionTypeAndNot);
+    andNotSelectedValueAction->setProperty("filter", filter);
+    andNotSelectedValueAction->setEnabled(!filterEmpty);
+
+    QAction* orNotSelectedValueAction = group->addAction(tr("…or not Selected"));
+    orNotSelectedValueAction->setProperty("filterType", FilterAction::ActionTypeOrNot);
+    orNotSelectedValueAction->setProperty("filter", filter);
+    orNotSelectedValueAction->setEnabled(!filterEmpty);
+
     group->setEnabled(enabled);
     if (! filter.isEmpty())
+        connect(group, &QActionGroup::triggered, filterAction, &FilterAction::groupTriggered);
+
+    return group;
+}
+
+QActionGroup* FilterAction::createFilterGroupForFieldWithoutValue(QString field, bool prepare, bool enabled, QWidget* parent)
+{
+    bool filterEmpty = false;
+    if (mainApp)
+    {
+        QWidget* mainWin = mainApp->mainWindow();
+        if (qobject_cast<MainWindow*>(mainWin))
+            filterEmpty = qobject_cast<MainWindow*>(mainWin)->getFilter().isEmpty();
+    }
+
+    FilterAction* filterAction = new FilterAction(parent, prepare ? FilterAction::ActionPrepare : FilterAction::ActionApply);
+
+    QActionGroup* group = new QActionGroup(parent);
+    group->setProperty("filter", field);
+    group->setProperty("filterAction", prepare ? FilterAction::ActionPrepare : FilterAction::ActionApply);
+
+    QAction* selectedFieldAction = group->addAction(tr("Field exists"));
+    selectedFieldAction->setProperty("filterType", FilterAction::ActionTypePlain);
+    selectedFieldAction->setProperty("filter", field);
+
+    QAction* notSelectedFieldAction = group->addAction(tr("Field not exists"));
+    notSelectedFieldAction->setProperty("filterType", FilterAction::ActionTypeNot);
+    notSelectedFieldAction->setProperty("filter", field);
+
+    QAction* andSelectedFieldAction = group->addAction(tr("…and Field exists"));
+    andSelectedFieldAction->setProperty("filterType", FilterAction::ActionTypeAnd);
+    andSelectedFieldAction->setProperty("filter", field);
+    andSelectedFieldAction->setEnabled(!filterEmpty);
+
+    QAction* orSelectedFieldAction = group->addAction(tr("…or Field exists"));
+    orSelectedFieldAction->setProperty("filterType", FilterAction::ActionTypeOr);
+    orSelectedFieldAction->setProperty("filter", field);
+    orSelectedFieldAction->setEnabled(!filterEmpty);
+
+    QAction* andNotSelectedFieldAction = group->addAction(tr("…and Field not exists"));
+    andNotSelectedFieldAction->setProperty("filterType", FilterAction::ActionTypeAndNot);
+    andNotSelectedFieldAction->setProperty("filter", field);
+    andNotSelectedFieldAction->setEnabled(!filterEmpty);
+
+    QAction* orNotSelectedFieldAction = group->addAction(tr("…or Field not exists"));
+    orNotSelectedFieldAction->setProperty("filterType", FilterAction::ActionTypeOrNot);
+    orNotSelectedFieldAction->setProperty("filter", field);
+    orNotSelectedFieldAction->setEnabled(!filterEmpty);
+
+
+    group->setEnabled(enabled);
+    if (!field.isEmpty())
         connect(group, &QActionGroup::triggered, filterAction, &FilterAction::groupTriggered);
 
     return group;
@@ -225,8 +287,26 @@ QMenu * FilterAction::createFilterMenu(FilterAction::Action act, QString filter,
         comment->setEnabled(false);
         submenu->addSeparator();
     }
-    QActionGroup * group = FilterAction::createFilterGroup(filter, prepare, enabled, par);
-    submenu->addActions(group->actions());
+    QActionGroup * fieldWithValueGroup = FilterAction::createFilterGroup(filter, prepare, enabled, par);
+    submenu->addActions(fieldWithValueGroup->actions());
+
+    if (filter.length() > 0)
+    {
+        QString field = filter.split(" ==")[0];
+
+        if (field != filter)
+        {
+            submenu->addSeparator();
+
+            QString prep_text = QString("%1: %2").arg(title).arg(field);
+            QAction* comment = submenu->addAction(prep_text);
+            comment->setEnabled(false);
+            submenu->addSeparator();
+
+            QActionGroup* fieldGroup = FilterAction::createFilterGroupForFieldWithoutValue(field, prepare, enabled, par);
+            submenu->addActions(fieldGroup->actions());
+        }
+    }
 
     return submenu;
 }
@@ -240,7 +320,7 @@ void FilterAction::groupTriggered(QAction * action)
         {
             FilterAction::Action act = sender()->property("filterAction").value<FilterAction::Action>();
             FilterAction::ActionType type = action->property("filterType").value<FilterAction::ActionType>();
-            QString filter = sender()->property("filter").toString();
+            QString filter = action->property("filter").toString();
 
             MainWindow *mainWin = mainApp->mainWindow();
             if (mainWin)

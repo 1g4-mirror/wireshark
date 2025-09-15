@@ -74,6 +74,7 @@ public:
     static const QString actionDirectionName(ActionDirection direction);
 
     static QActionGroup * createFilterGroup(QString filter, bool prepare, bool enabled, QWidget * parent);
+    static QActionGroup* createFilterGroupForFieldWithoutValue(QString field, bool prepare, bool enabled, QWidget* parent);
     static QMenu * createFilterMenu(FilterAction::Action act, QString filter, bool enabled, QWidget * parent);
     static QAction * copyFilterAction(QString filter, QWidget *par);
 
