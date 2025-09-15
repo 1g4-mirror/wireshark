@@ -241,6 +241,16 @@
        </property>
       </widget>
      </item>
+   <item>
+    <widget class="QCheckBox" name="preserveWindowTitleCheckBox">
+     <property name="toolTip">
+      <string>If disabled, the window title will be cleared at startup unless set from command line</string>
+     </property>
+     <property name="text">
+      <string>Preserve window title between sessions</string>
+     </property>
+    </widget>
+   </item>
      <item>
       <widget class="QLineEdit" name="prependWindowTitle">
        <property name="toolTip">

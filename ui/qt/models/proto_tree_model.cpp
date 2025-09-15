@@ -102,6 +102,11 @@ QVariant ProtoTreeModel::data(const QModelIndex &index, int role) const
         return index_node->labelText();
     case Qt::BackgroundRole:
     {
+        // Si el usuario ha desactivado los colores de fondo en Expert Info
+        if (prefs.gui_expert_info_no_bgcolor) {
+            return QVariant(); // No aplicar fondo
+        }
+
         switch(finfo.flag(PI_SEVERITY_MASK)) {
         case(0):
             break;
@@ -118,6 +123,7 @@ QVariant ProtoTreeModel::data(const QModelIndex &index, int role) const
         default:
             ws_warning("Unhandled severity flag: %u", finfo.flag(PI_SEVERITY_MASK));
         }
+
         if (finfo.headerInfo().type == FT_PROTOCOL) {
             return QApplication::palette().window();
         }
