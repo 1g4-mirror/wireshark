@@ -855,9 +855,6 @@ static unsigned get_amstcp_length(packet_info* pinfo _U_, tvbuff_t* tvb, int off
     // The 6-byte AMS/TCP header is 2 reserved bytes followed by 4 bytes
     // indicating the length of the AMS header and data that follows.
 
-    if (tvb_reported_length(tvb) < TcpAdsParserHDR_Len)
-        return 0;
-
     return tvb_get_uint32(tvb, offset + 2, ENC_LITTLE_ENDIAN) + TcpAdsParserHDR_Len;
 }
 
