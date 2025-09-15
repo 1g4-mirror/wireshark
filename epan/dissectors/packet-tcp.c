@@ -5624,7 +5624,7 @@ tcp_dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
          * so that it can attempt to find it in case it starts
          * somewhere in the middle of a segment.
          */
-        if(!pinfo->fd->visited && tcp_analyze_seq) {
+        if(!pinfo->desegment_outside_tcp && !pinfo->fd->visited && tcp_analyze_seq) {
             unsigned remaining_bytes;
             remaining_bytes = tvb_reported_length_remaining(tvb, offset);
             if(plen>remaining_bytes) {
@@ -5652,15 +5652,16 @@ tcp_dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             }
         }
 
-        curr_layer_num = pinfo->curr_layer_num-1;
-        frame = wmem_list_frame_prev(wmem_list_tail(pinfo->layers));
-        while (frame && (proto_tcp != (int) GPOINTER_TO_UINT(wmem_list_frame_data(frame)))) {
-            frame = wmem_list_frame_prev(frame);
-            curr_layer_num--;
-        }
+        if (!pinfo->desegment_outside_tcp) {
+            curr_layer_num = pinfo->curr_layer_num-1;
+            frame = wmem_list_frame_prev(wmem_list_tail(pinfo->layers));
+            while (frame && (proto_tcp != (int) GPOINTER_TO_UINT(wmem_list_frame_data(frame)))) {
+                frame = wmem_list_frame_prev(frame);
+                curr_layer_num--;
+            }
 #if 0
-        if (captured_length_remaining >= plen || there are more packets)
-        {
+            if (captured_length_remaining >= plen || there are more packets)
+            {
 #endif
                 /*
                  * Display the PDU length as a field
@@ -5670,14 +5671,14 @@ tcp_dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                          tvb, offset, plen, plen);
                 proto_item_set_generated(item);
 #if 0
-        } else {
+            } else {
                 item = proto_tree_add_expert_format((proto_tree *)p_get_proto_data(pinfo->pool, pinfo, proto_tcp, curr_layer_num),
                                         tvb, offset, -1,
                     "PDU Size: %u cut short at %u",plen,captured_length_remaining);
                 proto_item_set_generated(item);
-        }
+            }
 #endif
-
+        }
         /*
          * Construct a tvbuff containing the amount of the payload we have
          * available.  Make its reported length the amount of data in the PDU.

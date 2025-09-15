@@ -103,6 +103,7 @@ typedef struct _packet_info {
                                          Desegment all data for this tcp session
                                          until the FIN segment.
                                     */
+  bool desegment_outside_tcp;     /**< Is stream desegmentation occurs outside of TCP */
   uint16_t want_pdu_tracking;    /**< >0 if the subdissector has specified
                                    a value in 'bytes_until_next_pdu'.
                                    When a dissector detects that the next PDU
