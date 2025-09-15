@@ -885,6 +885,50 @@ static void test_getopt_opterr1(void)
 #endif
 }
 
+#include "saplzclzh.h"
+
+static void
+test_sap_lzclzh_decompress(void){
+    int rt = 0;
+    wmem_allocator_t *allocator;
+    guint8 *str_out;
+    guint str_in_len, str_out_len;
+    const guint8 *str_out_expected = "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST";
+    const guint str_out_expected_len = strlen(str_out_expected);
+    const guint8 lzh_str_in[] = {
+        0x18, 0x1, 0x0, 0x0, 0x12, 0x1f, 0x9d, 0x2, 0x5d, 0x88, 0x6b, 0x70, 0x48, 0xc8, 0x28, 0xc6, 0xc0, 0x0
+    };
+    const gint8 lzc_str_in[] = {
+        0x18, 0x1, 0x0, 0x0, 0x11, 0x1f, 0x9d, 0x8d, 0x54, 0x8a, 0x4c, 0xa1, 0x12, 0x70, 0x60, 0x41, 0x82, 0x2,
+        0x11, 0x1a, 0x4c, 0x78, 0xb0, 0x21, 0xc3, 0x87, 0xb, 0x23, 0x2a, 0x9c, 0xe8, 0x50, 0x62, 0x45, 0x8a, 0x10,
+        0x31, 0x5a, 0xcc, 0x78, 0xb1, 0x23, 0xc7, 0x8f, 0x1b, 0x43, 0x6a, 0x1c, 0xe9, 0x51, 0x64, 0x49, 0x92, 0x20,
+        0x51, 0x9a, 0x4c, 0x79, 0xf2
+    };
+
+    allocator = wmem_allocator_new(WMEM_ALLOCATOR_BLOCK);
+
+    /* LZH Decompression */
+    str_in_len = sizeof(lzh_str_in);
+    str_out_len = str_out_expected_len;
+    str_out = wmem_alloc0(allocator, str_out_expected_len);
+    rt = sap_lzclzh_decompress(allocator, lzh_str_in, str_in_len, str_out, &str_out_len);
+    g_assert_true(rt);
+    g_assert_true(str_out_len == str_out_expected_len);
+    g_assert_cmpstr(str_out_expected, ==, str_out);
+    wmem_free(allocator, str_out);
+
+    /* LZC Decompression */
+    str_in_len = sizeof(lzc_str_in);
+    str_out_len = str_out_expected_len;
+    str_out = wmem_alloc0(allocator, str_out_expected_len);
+    rt = sap_lzclzh_decompress(allocator, lzc_str_in, str_in_len, str_out, &str_out_len);
+    g_assert_true(rt);
+    g_assert_true(str_out_len == str_out_expected_len);
+    g_assert_cmpstr(str_out_expected, ==, str_out);
+    wmem_free(allocator, str_out);
+}
+
+
 int main(int argc, char **argv)
 {
     int ret;
@@ -938,6 +982,8 @@ int main(int argc, char **argv)
     g_test_add_func("/ws_getopt/basic2", test_getopt_long_basic2);
     g_test_add_func("/ws_getopt/optional1", test_getopt_optional_argument1);
     g_test_add_func("/ws_getopt/opterr1", test_getopt_opterr1);
+
+    g_test_add_func("/sap_lzclzh_decompress", test_sap_lzclzh_decompress);
 
     ret = g_test_run();
 
