@@ -1428,7 +1428,7 @@ QString PacketList::getFilterFromRowAndColumn(QModelIndex idx)
         epan_dissect_t edt;
         wtap_rec rec; /* Record information */
 
-        wtap_rec_init(&rec, 1514);
+        wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
         if (!cf_read_record(cap_file_, fdata, &rec)) {
             wtap_rec_cleanup(&rec);
             return filter; /* error reading the record */
