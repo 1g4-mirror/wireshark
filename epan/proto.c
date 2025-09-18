@@ -9948,6 +9948,8 @@ proto_register_field_init(header_field_info *hfinfo, const int parent)
 			while (same_name_hfinfo) {
 				if (!ftype_similar_types(hfinfo->type, same_name_hfinfo->type))
 					ws_warning("'%s' exists multiple times with incompatible types: %s and %s", hfinfo->abbrev, ftype_name(hfinfo->type), ftype_name(same_name_hfinfo->type));
+				if (hfinfo->strings != same_name_hfinfo->strings)
+					ws_warning("'%s' exists multiple times with different strings", hfinfo->abbrev);
 				same_name_hfinfo = same_name_hfinfo->same_name_next;
 			}
 #endif
