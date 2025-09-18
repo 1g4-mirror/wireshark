@@ -4461,7 +4461,9 @@ if (DOXYGEN_EXECUTABLE)
 endif(DOXYGEN_EXECUTABLE)
 
 add_custom_target(test-programs
-	DEPENDS exntest
+	DEPENDS
+		dissector_table_test
+		exntest
 		fifo_string_cache_test
 		oids_test
 		reassemble_test
