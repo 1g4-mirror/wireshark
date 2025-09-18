@@ -307,8 +307,8 @@ dissect_mp4_mvhd_body(tvbuff_t *tvb, int offset, int len _U_,
     offset += time_len;
 
     mvhd_timescale = tvb_get_ntohl (tvb, offset);
-    proto_tree_add_uint_format(tree, hf_mp4_mvhd_timescale,
-            tvb, offset, 4, mvhd_timescale, "Timescale: %d units in one second",
+    proto_tree_add_uint_format_value(tree, hf_mp4_mvhd_timescale,
+            tvb, offset, 4, mvhd_timescale, "%d units in one second",
             mvhd_timescale);
     offset += 4;
 
@@ -475,8 +475,8 @@ dissect_mp4_stsz_body(tvbuff_t *tvb, int offset, int len _U_,
 
     sample_size = tvb_get_ntohl(tvb, offset);
 
-    proto_tree_add_uint_format(tree, hf_mp4_stsz_sample_size,
-            tvb, offset, 4, sample_size, "Sample size: %u%s", sample_size,
+    proto_tree_add_uint_format_value(tree, hf_mp4_stsz_sample_size,
+            tvb, offset, 4, sample_size, "%u%s", sample_size,
             sample_size == 0 ? " (samples have different sizes)" : "");
     /* XXX - expert info for sample size == 0 */
     offset += 4;
