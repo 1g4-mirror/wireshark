@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #pragma once
@@ -16,4 +17,5 @@ typedef struct _sysdig_event_param_data {
     // sysdig.param.asyncevent.data
     int data_bytes_offset;
     uint32_t data_bytes_length;
+    bool is_json;
 } sysdig_event_param_data;

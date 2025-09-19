@@ -448,8 +448,8 @@ static const struct open_info open_info_base[] = {
 	{ "CAM Inspector file",                     OPEN_INFO_HEURISTIC, camins_open,              "camins",   NULL, NULL },
 	/* NetLog needs to be before JSON open because it is a specifically formatted JSON file */
 	{ "NetLog",                                 OPEN_INFO_HEURISTIC, netlog_open,              "json",     NULL, NULL },
-    /* JSON Lines needs to be before JSON open because it handles a variety of JSON logs */
-    { "JSON Lines",                             OPEN_INFO_HEURISTIC, json_lines_open,          "jsonl;log", NULL, NULL },
+    /* JSON Log needs to be before JSON open because it handles a variety of JSON logs */
+    { "JSON Log",                               OPEN_INFO_HEURISTIC, json_log_open,            "jsonl;log", NULL, NULL },
     { "JavaScript Object Notation",             OPEN_INFO_HEURISTIC, json_open,                "json",     NULL, NULL },
 	{ "Ruby Marshal Object",                    OPEN_INFO_HEURISTIC, ruby_marshal_open,        "",         NULL, NULL },
 	{ "3gpp phone log",                         OPEN_INFO_MAGIC,     log3gpp_open,             "log",      NULL, NULL },
