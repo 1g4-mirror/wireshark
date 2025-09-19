@@ -90,7 +90,7 @@ public:
     {
         QLineEdit *le = static_cast<QLineEdit *>(StringPreference::editor(parent, option, index));
 
-        le->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+        le->setEchoMode(QLineEdit::Password);
         return le;
     }
 };
