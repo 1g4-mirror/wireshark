@@ -106,6 +106,7 @@ set(LIBWIRESHARK_PUBLIC_HEADERS
 	oui.h
 	packet.h
 	packet_info.h
+	packet_range.h
 	params.h
 	pci-ids.h
 	plugin_if.h
