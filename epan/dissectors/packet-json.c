@@ -27,6 +27,7 @@
 #include "packet-media-type.h"
 #include "packet-acdr.h"
 #include "packet-json.h"
+#include "packet-sysdig-event.h"
 
 void proto_register_json(void);
 void proto_reg_handoff_json(void);
@@ -104,6 +105,7 @@ static tvbparse_wanted_t* want;
 static tvbparse_wanted_t* want_ignore;
 
 static dissector_handle_t text_lines_handle;
+static dissector_handle_t falco_events_handle;
 
 typedef enum {
 	JSON_TOKEN_INVALID = -1,
@@ -527,6 +529,14 @@ join_strings(wmem_allocator_t *pool, const char* string_a, const char* string_b,
 static int
 dissect_json(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
+	if (falco_events_handle) {
+		sysdig_event_param_data event_param_data = {0, 0, true};
+		int falco_len = call_dissector_with_data(falco_events_handle, tvb, pinfo, tree, &event_param_data);
+		if (falco_len > 0) {
+			return falco_len;
+		}
+	}
+
 	proto_tree *json_tree = NULL;
 	proto_item *ti = NULL;
 
@@ -1498,6 +1508,7 @@ proto_reg_handoff_json(void)
 	dissector_add_uint_range_with_preference("udp.port", "", json_file_handle); /* JSON-RPC over UDP */
 
 	text_lines_handle = find_dissector_add_dependency("data-text-lines", proto_json);
+	falco_events_handle = find_dissector("falcoevents");
 
 	proto_acdr = proto_get_id_by_filter_name("acdr");
 }
