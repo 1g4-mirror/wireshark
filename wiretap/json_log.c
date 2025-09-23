@@ -21,7 +21,7 @@
  *
  */
 
-#include "json_lines.h"
+#include "json_log.h"
 
 #include <string.h>
 
