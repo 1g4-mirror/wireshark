@@ -12,7 +12,7 @@
 
 #include <config.h>
 
-#include <ui/packet_range.h>
+#include <epan/packet_range.h>
 
 #include <ui/qt/widgets/syntax_line_edit.h>
 #include <QGroupBox>

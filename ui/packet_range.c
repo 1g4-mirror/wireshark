@@ -20,7 +20,7 @@
 #include <epan/frame_data.h>
 #include <epan/prefs.h>
 
-#include "packet_range.h"
+#include <epan/packet_range.h>
 
 #include <wsutil/ws_assert.h>
 
