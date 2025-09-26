@@ -538,7 +538,7 @@ static bool dissect_rbm_header(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tr
 	minor = tvb_get_uint8(tvb, *offset + 1);
 
 	version = wmem_strdup_printf(pinfo->pool, "%u.%u", major, minor);
-	proto_tree_add_string_format(tree, hf_rbm_version, tvb, *offset, 2, version, "Version: %s", version);
+	proto_tree_add_string_format_value(tree, hf_rbm_version, tvb, *offset, 2, version, "%s", version);
 	*offset += 2;
 
 	if (major != RUBY_MARSHAL_MAJOR || minor != RUBY_MARSHAL_MINOR) {
