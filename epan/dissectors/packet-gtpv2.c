@@ -9586,7 +9586,7 @@ dissect_gtpv2(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data
     /*
     * Do we have a conversation for this connection?
     */
-    conversation = find_or_create_conversation(pinfo);
+    conversation = find_conversation_strat(pinfo, CONVERSATION_IP, NO_PORT_X, false);
 
     /*
     * Do we already know this conversation?
