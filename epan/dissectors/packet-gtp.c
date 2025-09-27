@@ -2585,6 +2585,12 @@ typedef struct {
     address addr;
 } gtp_info_t;
 
+typedef struct {
+    uint32_t teid;
+    uint32_t convid;
+    address addr;
+} gtp_info_deint_t;
+
 static unsigned
 gtp_info_hash(const void *key)
 {
@@ -2594,13 +2600,22 @@ gtp_info_hash(const void *key)
     return g_int_hash(&k->teid);
 }
 
-static gboolean
+/*static gboolean
 gtp_info_equal(const void *key1, const void *key2)
 {
     const gtp_info_t *a = (const gtp_info_t *)key1;
     const gtp_info_t *b = (const gtp_info_t *)key2;
 
     return (a->teid == b->teid && (cmp_address(&a->addr, &b->addr) == 0));
+}*/
+
+static gboolean
+gtp_info_deint_equal(const void *key1, const void *key2)
+{
+    const gtp_info_deint_t *a = (const gtp_info_deint_t *)key1;
+    const gtp_info_deint_t *b = (const gtp_info_deint_t *)key2;
+
+    return (a->teid == b->teid && a->convid == b->convid && (cmp_address(&a->addr, &b->addr) == 0));
 }
 
 /* GTP Session funcs*/
@@ -2610,6 +2625,22 @@ get_frame(address ip, uint32_t teid, uint32_t *frame) {
     uint32_t *value;
 
     info.teid = teid;
+    copy_address_shallow(&info.addr, &ip);
+    value = wmem_map_lookup(frame_map, &info);
+    if (value != NULL) {
+        *frame = GPOINTER_TO_UINT(value);
+        return 1;
+    }
+    return 0;
+}
+
+uint32_t
+get_gtp_session_frame(address ip, uint32_t teid, uint32_t convid, uint32_t *frame) {
+    gtp_info_deint_t info;
+    uint32_t *value;
+
+    info.teid = teid;
+    info.convid = convid;
     copy_address_shallow(&info.addr, &ip);
     value = wmem_map_lookup(frame_map, &info);
     if (value != NULL) {
@@ -2688,9 +2719,9 @@ remove_session_from_table(void *key, void *val, void *userdata) {
 }
 
 void
-fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame) {
+fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame, uint32_t convid) {
     wmem_list_frame_t *elem_ip, *elem_teid;
-    gtp_info_t *gtp_info;
+    gtp_info_deint_t *gtp_info;
     uint32_t teid, session;
     address *ip;
 
@@ -2709,8 +2740,9 @@ fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame) {
         elem_teid = wmem_list_head(teid_list);
         while (elem_teid) {
             teid = *(uint32_t*)wmem_list_frame_data(elem_teid);
-            gtp_info = wmem_new0(wmem_file_scope(), gtp_info_t);
+            gtp_info = wmem_new0(wmem_file_scope(), gtp_info_deint_t);
             gtp_info->teid = teid;
+            gtp_info->convid = convid;
             copy_address_wmem(wmem_file_scope(), &gtp_info->addr, ip);
             if (wmem_map_lookup(frame_map, gtp_info)) {
                 /* If the teid and ip already maps to a session, that means
@@ -9990,17 +10022,34 @@ track_gtp_session(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, gtp_hd
             } else if (gtp_hdr->message != GTP_MSG_CREATE_PDP_RESP) {
                 /* If this is an error indication then we have to check the session id that belongs to the message with the same data teid and ip */
                 if (gtp_hdr->message == GTP_MSG_ERR_IND) {
-                    if (get_frame(args->last_ip, args->last_teid, &frame_teid_cp) == 1) {
-                        session = GPOINTER_TO_UINT(wmem_map_lookup(session_table, GUINT_TO_POINTER(frame_teid_cp)));
-                        if (session) {
-                            /* We add the corresponding session to the session list*/
-                            add_gtp_session(pinfo->num, session);
+                    if (is_deinterlacing_supported(pinfo)) {
+                        if (get_gtp_session_frame(args->last_ip, args->last_teid, 5, &frame_teid_cp) == 1) {
+                            session = GPOINTER_TO_UINT(wmem_map_lookup(session_table, GUINT_TO_POINTER(frame_teid_cp)));
+                            if (session) {
+                                /* We add the corresponding session to the session list*/
+                                add_gtp_session(pinfo->num, session);
 
-                            if (args->imsi) {
-                                imsi = wmem_strdup(wmem_file_scope(), args->imsi);
-                                wmem_map_insert(session_imsi, GUINT_TO_POINTER(session), imsi);
+                                if (args->imsi) {
+                                    imsi = wmem_strdup(wmem_file_scope(), args->imsi);
+                                    wmem_map_insert(session_imsi, GUINT_TO_POINTER(session), imsi);
+                                }
                             }
                         }
+                    }
+                    else {
+                        if (get_frame(args->last_ip, args->last_teid, &frame_teid_cp) == 1) {
+                            session = GPOINTER_TO_UINT(wmem_map_lookup(session_table, GUINT_TO_POINTER(frame_teid_cp)));
+                            if (session) {
+                                /* We add the corresponding session to the session list*/
+                                add_gtp_session(pinfo->num, session);
+
+                                if (args->imsi) {
+                                    imsi = wmem_strdup(wmem_file_scope(), args->imsi);
+                                    wmem_map_insert(session_imsi, GUINT_TO_POINTER(session), imsi);
+                                }
+                            }
+                        }
+
                     }
                 }
                 else {
@@ -11030,7 +11079,8 @@ dissect_gtp_common(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree)
 
         if (args && !PINFO_FD_VISITED(pinfo)) {
             /* We insert the lists inside the table*/
-            fill_map(args->teid_list, args->ip_list, pinfo->num);
+            conversation_t *conv = find_conversation_strat(pinfo, CONVERSATION_IP, NO_PORT_X, false);
+            fill_map(args->teid_list, args->ip_list, pinfo->num, conv->conv_index);
         }
         /* Use sequence number to track Req/Resp pairs except GTP' message "Data Record Transfer Response".
          * For "Data Record Transfer Response" sequence numbers are analysed inside decoder of TLV "Requests Responded".
@@ -13273,7 +13323,7 @@ proto_register_gtp(void)
 
     session_table = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
     session_imsi = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
-    frame_map = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), gtp_info_hash, gtp_info_equal);
+    frame_map = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), gtp_info_hash, gtp_info_deint_equal);
     teid_imsi = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
     register_init_routine(gtp_init);
     gtp_tap = register_tap("gtp");
