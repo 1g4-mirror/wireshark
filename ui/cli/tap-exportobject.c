@@ -166,10 +166,11 @@ eo_reset(void *tapdata)
 static void
 eo_finish(void *tapdata)
 {
-    export_object_list_t *tap_object = (export_object_list_t *)tapdata;
-    export_object_list_gui_t *object_list = (export_object_list_gui_t*)tap_object->gui_data;
+    export_object_list_t* tap_object = (export_object_list_t*)tapdata;
+    export_object_list_gui_t* object_list = (export_object_list_gui_t*)tap_object->gui_data;
 
-    g_slist_free_full(g_steal_pointer(&object_list->entries), object_list_free_entry);
+    eo_reset(tapdata);
+
     g_free(object_list);
     g_free(tap_object);
 }
@@ -199,7 +200,7 @@ exportobject_handler(void *key, void *value _U_, void *user_data _U_)
     object_list->eo = eo;
 
     /* Data will be gathered via a tap callback */
-    error_msg = register_tap_listener(get_eo_tap_listener_name(eo), tap_data, NULL, TL_REQUIRES_NOTHING,
+    error_msg = register_tap_listener(get_eo_tap_listener_name(eo), tap_data, NULL, TL_RESET_EPAN_MEMORY,
                       eo_reset, get_eo_packet_func(eo), eo_draw, eo_finish);
 
     if (error_msg) {

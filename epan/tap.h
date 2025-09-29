@@ -56,8 +56,8 @@ typedef void (*tap_finish_cb)(void *tapdata);
  */
 
 /** Flags to indicate what the tap listener does */
-#define TL_IS_DISSECTOR_HELPER      0x00000008	    /**< tap helps a dissector do work
-						                             ** but does not, itself, require dissection */
+#define TL_IS_DISSECTOR_HELPER      0x00000008	    /**< tap helps a dissector do work but does not, itself, require dissection */
+#define TL_RESET_EPAN_MEMORY        0x00000080	    /**< Call the tap's reset function when cleaning up epan memory */
 
 /** Flags to indicate what the packet cb should do */
 #define TL_IGNORE_DISPLAY_FILTER    0x00000010      /**< use packet, even if it would be filtered out */
@@ -155,11 +155,12 @@ extern void tap_queue_init(epan_dissect_t *edt);
 
 extern void tap_push_tapped_queue(epan_dissect_t *edt);
 
-/** This function is called after a packet has been fully dissected to push the tapped
- *  data to all extensions that has callbacks registered.
+/** This function is called when we need to reset all tap listeners, for example
+ *  when we open/start a new capture or if we need to rescan the packet list.
+ *
+ * If force is true, reset the tap regardless, otherwise check the TL_RESET_EPAN_MEMORY flag
  */
-
-WS_DLL_PUBLIC void reset_tap_listeners(void);
+WS_DLL_PUBLIC void reset_tap_listeners(bool force);
 
 /** This function is called when we need to redraw all tap listeners, for example
  * when we open/start a new capture or if we need to rescan the packet list.
