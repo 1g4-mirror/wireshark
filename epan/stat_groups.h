@@ -48,6 +48,10 @@ typedef enum register_stat_group_e {
     REGISTER_TELEPHONY_GROUP_3GPP_UU,           /*!< Name says it all */
     REGISTER_TELEPHONY_GROUP_MTP3,              /*!< Name says it all */
     REGISTER_TELEPHONY_GROUP_SCTP,              /*!< Name says it all */
+    REGISTER_TELEPHONY_GROUP_RRC,               /*!< Name says it all */
+    REGISTER_TELEPHONY_GROUP_RRC_UTRA,          /*!< Name says it all */
+    REGISTER_TELEPHONY_GROUP_RRC_EUTRA,         /*!< Name says it all */
+    REGISTER_TELEPHONY_GROUP_RRC_NR,            /*!< Name says it all */
     REGISTER_TOOLS_GROUP_UNSORTED,              /*!< Unsorted tools */
     REGISTER_LOG_ANALYZE_GROUP_UNSORTED,        /*!< Unsorted log analysis */
     REGISTER_LOG_STAT_GROUP_UNSORTED,           /*!< Unsorted log statistics */

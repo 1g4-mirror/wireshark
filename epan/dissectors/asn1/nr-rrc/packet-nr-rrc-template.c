@@ -23,6 +23,8 @@
 #include <epan/show_exception.h>
 #include <epan/proto_data.h>
 #include <epan/prefs.h>
+#include <epan/tap.h>
+#include <epan/stat_tap_ui.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
 
@@ -46,6 +48,14 @@
 #define PNAME  "NR Radio Resource Control (RRC) protocol"
 #define PSNAME "NR RRC"
 #define PFNAME "nr-rrc"
+
+#define NR_RRC_PDU_TYPE_DL_CCCH    0
+#define NR_RRC_PDU_TYPE_DL_DCCH    1
+#define NR_RRC_PDU_TYPE_PCCH       2
+#define NR_RRC_PDU_TYPE_UL_CCCH    3
+#define NR_RRC_PDU_TYPE_UL_CCCH1   4
+#define NR_RRC_PDU_TYPE_UL_DCCH    5
+#define NR_RRC_PDU_TYPE_SCCH       6
 
 void proto_register_nr_rrc(void);
 void proto_reg_handoff_nr_rrc(void);
@@ -77,6 +87,7 @@ extern int proto_pdcp_nr;
 
 /* Initialize the protocol and registered fields */
 static int proto_nr_rrc;
+static int nr_rrc_tap;
 #include "packet-nr-rrc-hf.c"
 static int hf_nr_rrc_serialNumber_gs;
 static int hf_nr_rrc_serialNumber_msg_code;
@@ -213,6 +224,12 @@ typedef struct {
   tvbuff_t *dcch_segment;
   bool dcch_segment_last;
 } nr_rrc_private_data_t;
+
+typedef struct _nr_rrc_tap_rec_t {
+    uint8_t             pdu_type;
+    uint8_t             message_type;
+    uint8_t             choice;
+} nr_rrc_tap_rec_t;
 
 /* Helper function to get UE identifier from lower layers (in order MAC, RLC, PDCP) */
 static uint16_t*
@@ -899,6 +916,330 @@ dissect_nr_rrc_rach_ConfigCommonIAB_r16_PDU(tvbuff_t *tvb _U_, packet_info *pinf
   return offset;
 }
 
+/* TAP STAT INFO */
+typedef enum
+{
+  MESSAGE_NAME_COLUMN = 0,
+  COUNT_COLUMN
+} rrc_stat_columns;
+
+static stat_tap_table_item nr_rrc_stat_fields[] =
+{
+  {TABLE_ITEM_STRING, TAP_ALIGN_LEFT,  "Message Name", "%-60s"},
+  {TABLE_ITEM_UINT,   TAP_ALIGN_RIGHT, "Count",        "%d  "}
+};
+
+const value_string nr_rrc_dl_ccch_strings[] =
+{
+  {  0, "RRC Reject" },
+  {  1, "RRC Setup" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_dl_dcch_strings[] =
+{
+  {  0, "RRC Reconfiguration" },
+  {  1, "RRC Resume" },
+  {  2, "RRC Release" },
+  {  3, "RRC Reestablishment" },
+  {  4, "Security Mode Command" },
+  {  5, "DL Information Transfer" },
+  {  6, "UE Capability Enquiry" },
+  {  7, "Counter Check" },
+  {  8, "Mobility From NR Command" },
+  {  9, "DL Dedicated Message Segment" },
+  { 10, "UE Information Request" },
+  { 11, "DL Information Transfer MRDC" },
+  { 12, "Logged Measurement Configuration" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_pcch_strings[] =
+{
+  {  0, "Paging" },    
+  { 0, NULL }
+};
+
+const value_string nr_rrc_ul_ccch_strings[] =
+{
+  {  0, "RRC Setup Request" },
+  {  1, "RRC Resume Request" },
+  {  2, "RRC Reestablishment Request" },
+  {  3, "RRC System Info Request" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_ul_ccch1_strings[] =
+{
+  {  0, "RRC Resume Request 1" },    
+  { 0, NULL }
+};
+
+const value_string nr_rrc_ul_dcch_c1_strings[] =
+{
+  {  0, "Measurement Report" },
+  {  1, "RRC Reconfiguration Complete" },
+  {  2, "RRC Setup Complete" },
+  {  3, "RRC Reestablishment Complete" },
+  {  4, "RRC Resume Complete" },
+  {  5, "Security Mode Complete" },
+  {  6, "Security Mode Failure" },
+  {  7, "UL Information Transfer" },
+  {  8, "Location Measurement Indication" },
+  {  9, "UE Capability Information" },
+  { 10, "Counter Check Response" },
+  { 11, "UE Assistance Information" },
+  { 12, "Failure Information" },
+  { 13, "UL Information Transfer MRDC" },
+  { 14, "SCG Failure Information" },
+  { 15, "SCG Failure Information EUTRA" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_ul_dcch_c2_strings[] =
+{
+  {  0, "UL Dedicated Message Segment" },
+  {  1, "Dedicated SIB Request" },
+  {  2, "MCG Failure Information" },
+  {  3, "UE Information Response" },
+  {  4, "Sidelink UE Information NR" },
+  {  5, "UL Information Transfer IRAT" },
+  {  6, "IAB Other Information" },
+  {  7, "MBS Interest Indication" },
+  {  8, "UE Positioning Assistance Info" },
+  {  9, "Measurement Report AppLayer" },
+  { 10, "Indirect Path Failure Information" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_scch_c1_strings[] =
+{
+  {  0, "Measurement Report Sidelink" },
+  {  1, "RRC Reconfiguration Sidelink" },
+  {  2, "RRC Reconfiguration Complete Sidelink" },
+  {  3, "RRC Reconfiguration FailureS idelink" },
+  {  4, "UE Capability Enquiry Sidelink" },
+  {  5, "UE Capability Information Sidelink" },
+  {  6, "Uu Message Transfer Sidelink" },
+  {  7, "Remote UE Information Sidelink" },
+  { 0, NULL }
+};
+
+const value_string nr_rrc_scch_c2_strings[] =
+{
+  {  0, "Notification Message Sidelink" },
+  {  1, "UE Assistance Information Sidelink" },
+  { 0, NULL }
+};
+
+static void stat_init(stat_tap_table_ui* new_stat, const char* table_name, const value_string* strings)
+{
+    int num_fields = array_length(nr_rrc_stat_fields);
+    stat_tap_table *table;
+    int i;
+    stat_tap_table_item_type items[array_length(nr_rrc_stat_fields)];
+
+    items[MESSAGE_NAME_COLUMN].type = TABLE_ITEM_STRING;
+    items[COUNT_COLUMN].type = TABLE_ITEM_UINT;
+    items[COUNT_COLUMN].value.uint_value = 0;
+
+    /* N.B. user-data field not used by this protocol, but init anyway */
+    items[MESSAGE_NAME_COLUMN].user_data.uint_value = 0;
+    items[COUNT_COLUMN].user_data.uint_value = 0;
+
+    /* Look for existing table */
+    table = stat_tap_find_table(new_stat, table_name);
+    if (table) {
+        if (new_stat->stat_tap_reset_table_cb) {
+            new_stat->stat_tap_reset_table_cb(table);
+        }
+        /* Nothing more to do */
+        return;
+    }
+
+    /* Initialize table */
+    table = stat_tap_init_table(table_name, num_fields, 0, NULL);
+    stat_tap_add_table(new_stat, table);
+
+    /* Add a row for each value type */
+    i = 0;
+    while (strings[i].strptr)
+    {
+        items[MESSAGE_NAME_COLUMN].value.string_value = strings[i].strptr;
+        stat_tap_init_table_row(table, i, num_fields, items);
+        i++;
+    }
+}
+
+static void stat_extend(stat_tap_table_ui* new_stat, const char* table_name, const value_string* strings)
+{
+    int num_fields = array_length(nr_rrc_stat_fields);
+    stat_tap_table *table;
+    int i;
+    stat_tap_table_item_type items[array_length(nr_rrc_stat_fields)];
+
+    items[MESSAGE_NAME_COLUMN].type = TABLE_ITEM_STRING;
+    items[COUNT_COLUMN].type = TABLE_ITEM_UINT;
+    items[COUNT_COLUMN].value.uint_value = 0;
+
+    /* Look for existing table */
+    table = stat_tap_find_table(new_stat, table_name);
+    if (!table)
+        return;
+
+    /* Add a row for each value type */
+    i = 0;
+    while (strings[i].strptr)
+    {
+        items[MESSAGE_NAME_COLUMN].value.string_value = strings[i].strptr;
+        stat_tap_init_table_row(table, i, num_fields, items);
+        i++;
+    }
+}
+
+static void nr_rrc_pcch_stat_init(stat_tap_table_ui* new_stat)
+{
+    const char *table_name = "NR RRC PCCH Statistics";
+    stat_init(new_stat, table_name, nr_rrc_pcch_strings);
+}
+
+static void nr_rrc_ccch_stat_init(stat_tap_table_ui* new_stat)
+{
+    const char *table_name_dl = "NR RRC DL-CCCH Statistics";
+    const char *table_name_ul = "NR RRC UL-CCCH Statistics";
+    stat_init(new_stat, table_name_dl, nr_rrc_dl_ccch_strings);
+    stat_init(new_stat, table_name_ul, nr_rrc_ul_ccch_strings);
+}
+
+static void nr_rrc_ccch1_stat_init(stat_tap_table_ui* new_stat)
+{
+    const char *table_name = "NR RRC UL-CCCH1 Statistics";
+    stat_init(new_stat, table_name, nr_rrc_ul_ccch1_strings);
+}
+
+static void nr_rrc_dcch_stat_init(stat_tap_table_ui* new_stat)
+{
+    const char *table_name_dl = "NR RRC DL-DCCH Statistics";
+    const char *table_name_ul = "NR RRC UL-DCCH Statistics";
+    stat_init(new_stat, table_name_dl, nr_rrc_dl_dcch_strings);
+    stat_init(new_stat, table_name_ul, nr_rrc_ul_dcch_c1_strings);
+    stat_extend(new_stat, table_name_ul, nr_rrc_ul_dcch_c2_strings);
+}
+
+static void nr_rrc_scch_stat_init(stat_tap_table_ui* new_stat)
+{
+    const char *table_name = "NR RRC SCCH Statistics";
+    stat_init(new_stat, table_name, nr_rrc_scch_c1_strings);
+    stat_extend(new_stat, table_name, nr_rrc_scch_c2_strings);
+}
+
+static tap_packet_status
+stat_packet(stat_data_t* stat_data, int msg_type, const value_string* strings, int idx)
+{
+    stat_tap_table_item_type* item_data;
+    stat_tap_table* table;
+
+    if (try_val_to_str(msg_type, strings) == NULL)
+        return TAP_PACKET_DONT_REDRAW;
+
+    table = g_array_index(stat_data->stat_tap_data->tables, stat_tap_table*, idx);
+    item_data = stat_tap_get_field_data(table, msg_type, COUNT_COLUMN);
+    item_data->value.uint_value++;
+    stat_tap_set_field_data(table, msg_type, COUNT_COLUMN, item_data);
+
+    return TAP_PACKET_REDRAW;
+}
+
+static tap_packet_status
+nr_rrc_pcch_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
+{
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
+    const nr_rrc_tap_rec_t *data_p = (const nr_rrc_tap_rec_t *)data;
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_PCCH)
+        return stat_packet(stat_data, data_p->message_type, nr_rrc_pcch_strings, 0);
+
+    return TAP_PACKET_DONT_REDRAW;
+}
+
+static tap_packet_status
+nr_rrc_ccch_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
+{
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
+    const nr_rrc_tap_rec_t *data_p = (const nr_rrc_tap_rec_t *)data;
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_DL_CCCH)
+        return stat_packet(stat_data, data_p->message_type, nr_rrc_dl_ccch_strings, 0);
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_UL_CCCH)
+        return stat_packet(stat_data, data_p->message_type, nr_rrc_ul_ccch_strings, 1);
+
+    return TAP_PACKET_DONT_REDRAW;
+}
+
+static tap_packet_status
+nr_rrc_ccch1_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
+{
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
+    const nr_rrc_tap_rec_t *data_p = (const nr_rrc_tap_rec_t *)data;
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_UL_CCCH1)
+        return stat_packet(stat_data, data_p->message_type, nr_rrc_ul_ccch1_strings, 0);
+
+    return TAP_PACKET_DONT_REDRAW;
+}
+
+static tap_packet_status
+nr_rrc_dcch_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
+{
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
+    const nr_rrc_tap_rec_t *data_p = (const nr_rrc_tap_rec_t *)data;
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_DL_DCCH)
+        return stat_packet(stat_data, data_p->message_type, nr_rrc_dl_dcch_strings, 0);
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_UL_DCCH)
+    {
+        if (data_p->choice == 1)
+            return stat_packet(stat_data, data_p->message_type, nr_rrc_ul_dcch_c1_strings, 1);
+        if (data_p->choice == 2)
+            return stat_packet(stat_data, data_p->message_type, nr_rrc_ul_dcch_c2_strings, 2);
+    }
+    return TAP_PACKET_DONT_REDRAW;
+}
+
+static tap_packet_status
+nr_rrc_scch_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
+{
+    stat_data_t* stat_data = (stat_data_t*)tapdata;
+    const nr_rrc_tap_rec_t *data_p = (const nr_rrc_tap_rec_t *)data;
+
+    if (data_p->pdu_type == NR_RRC_PDU_TYPE_SCCH)
+    {
+        if (data_p->choice == 1)
+            return stat_packet(stat_data, data_p->message_type, nr_rrc_scch_c1_strings, 0);
+        if (data_p->choice == 2)
+            return stat_packet(stat_data, data_p->message_type, nr_rrc_scch_c2_strings, 1);
+    }
+
+    return TAP_PACKET_DONT_REDRAW;
+}
+
+static void
+nr_rrc_stat_reset(stat_tap_table* table)
+{
+    unsigned element;
+    stat_tap_table_item_type* item_data;
+
+    for (element = 0; element < table->num_elements; element++)
+    {
+        item_data = stat_tap_get_field_data(table, element, COUNT_COLUMN);
+        item_data->value.uint_value = 0;
+        stat_tap_set_field_data(table, element, COUNT_COLUMN, item_data);
+    }
+
+}
+
 void
 proto_register_nr_rrc(void) {
 
@@ -1154,6 +1495,86 @@ proto_register_nr_rrc(void) {
   expert_module_t* expert_nr_rrc;
   module_t *nr_rrc_module;
 
+  static stat_tap_table_ui nr_rrc_pcch_stat_table = {
+      REGISTER_TELEPHONY_GROUP_RRC_NR,
+      "NR RRC PCCH Statistics",
+      "nr-rrc",
+      "nr-rrc,pcch",
+      nr_rrc_pcch_stat_init,
+      nr_rrc_pcch_stat_packet,
+      nr_rrc_stat_reset,
+      NULL,
+      NULL,
+      array_length(nr_rrc_stat_fields), nr_rrc_stat_fields,
+      0, NULL,
+      NULL,
+      0
+  };
+
+  static stat_tap_table_ui nr_rrc_ccch_stat_table = {
+      REGISTER_TELEPHONY_GROUP_RRC_NR,
+      "NR RRC CCCH Statistics",
+      "nr-rrc",
+      "nr-rrc,ccch",
+      nr_rrc_ccch_stat_init,
+      nr_rrc_ccch_stat_packet,
+      nr_rrc_stat_reset,
+      NULL,
+      NULL,
+      array_length(nr_rrc_stat_fields), nr_rrc_stat_fields,
+      0, NULL,
+      NULL,
+      0
+  };
+
+  static stat_tap_table_ui nr_rrc_ccch1_stat_table = {
+      REGISTER_TELEPHONY_GROUP_RRC_NR,
+      "NR RRC CCCH1 Statistics",
+      "nr-rrc",
+      "nr-rrc,ccch1",
+      nr_rrc_ccch1_stat_init,
+      nr_rrc_ccch1_stat_packet,
+      nr_rrc_stat_reset,
+      NULL,
+      NULL,
+      array_length(nr_rrc_stat_fields), nr_rrc_stat_fields,
+      0, NULL,
+      NULL,
+      0
+  };
+
+  static stat_tap_table_ui nr_rrc_dcch_stat_table = {
+      REGISTER_TELEPHONY_GROUP_RRC_NR,
+      "NR RRC DCCH Statistics",
+      "nr-rrc",
+      "nr-rrc,dcch",
+      nr_rrc_dcch_stat_init,
+      nr_rrc_dcch_stat_packet,
+      nr_rrc_stat_reset,
+      NULL,
+      NULL,
+      array_length(nr_rrc_stat_fields), nr_rrc_stat_fields,
+      0, NULL,
+      NULL,
+      0
+  };
+
+  static stat_tap_table_ui nr_rrc_scch_stat_table = {
+      REGISTER_TELEPHONY_GROUP_RRC_NR,
+      "NR RRC SCCH Statistics",
+      "nr-rrc",
+      "nr-rrc,scch",
+      nr_rrc_scch_stat_init,
+      nr_rrc_scch_stat_packet,
+      nr_rrc_stat_reset,
+      NULL,
+      NULL,
+      array_length(nr_rrc_stat_fields), nr_rrc_stat_fields,
+      0, NULL,
+      NULL,
+      0
+  };
+
   /* Register protocol */
   proto_nr_rrc = proto_register_protocol(PNAME, PSNAME, PFNAME);
 
@@ -1207,6 +1628,14 @@ proto_register_nr_rrc(void) {
                                  "Try to reassemble DCCH segmented messages",
                                  "Whether the NR RRC dissector should attempt to reassemble DCCH segmented messages",
                                  &nr_rrc_reassemble_dcch_segments);
+
+  nr_rrc_tap = register_tap("nr-rrc");
+
+  register_stat_tap_table_ui(&nr_rrc_pcch_stat_table);
+  register_stat_tap_table_ui(&nr_rrc_ccch_stat_table);
+  register_stat_tap_table_ui(&nr_rrc_ccch1_stat_table);
+  register_stat_tap_table_ui(&nr_rrc_dcch_stat_table);
+  register_stat_tap_table_ui(&nr_rrc_scch_stat_table);
 }
 
 void
