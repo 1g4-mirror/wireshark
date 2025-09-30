@@ -743,9 +743,11 @@ typedef enum {
 
 #define BASE_SPECIAL_VALS         0x00008000  /**< field will not display "Unknown" if value_string match is not found */
 
-#define BASE_SHOW_ASCII_PRINTABLE 0x00010000 /**< show byte array as ASCII if it's all printable characters */
+#define BASE_SHOW_ASCII_PRINTABLE 0x00010000  /**< show byte array as ASCII if it's all printable characters */
 
-#define BASE_SHOW_UTF_8_PRINTABLE 0x00020000 /**< show byte array as UTF-8 if it's all valid and printable UTF-8 characters */
+#define BASE_SHOW_UTF_8_PRINTABLE 0x00020000  /**< show byte array as UTF-8 if it's all valid and printable UTF-8 characters */
+
+#define BASE_DEFAULT_VALS         0x00080000  /**< field will use -1 value instead of "Unknown" if value_string match is not found */
 
 /** BASE_ values that cause the field value to be displayed twice */
 #define IS_BASE_DUAL(b) ((b)==BASE_DEC_HEX||(b)==BASE_HEX_DEC)
