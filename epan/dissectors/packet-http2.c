@@ -32,6 +32,7 @@
 #include <epan/prefs.h>
 #include <epan/proto_data.h>
 #include <epan/exceptions.h>
+#include <epan/show_exception.h>
 #include "packet-http.h" /* for getting status reason-phrase */
 #include "packet-http2.h"
 #include "packet-media-type.h"
@@ -2107,10 +2108,13 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
         && strcmp(header_name, HTTP2_HEADER_PROTOCOL) == 0) {
         stream_info->protocol = header_value;
         stream_info->next_handle = http_upgrade_dissector(header_value);
-        stream_info->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
-        stream_info->upgrade_info->server_port = pinfo->destport;
-        stream_info->upgrade_info->http_version = 2;
-        stream_info->upgrade_info->get_header_value = http2_get_header_value;
+        if (stream_info->next_handle) {
+            stream_info->upgrade_info = wmem_new0(wmem_file_scope(), http_upgrade_info_t);
+            stream_info->upgrade_info->server_port = pinfo->destport;
+            stream_info->upgrade_info->http_version = 2;
+            stream_info->upgrade_info->get_header_value = http2_get_header_value;
+            stream_info->reassembly_mode = HTTP2_DATA_REASSEMBLY_MODE_STREAMING;
+        }
     }
 
     /* Populate the content type so we can dissect the body later */
@@ -3524,11 +3528,6 @@ dissect_http2_data_partial_body(tvbuff_t *tvb, packet_info *pinfo, http2_session
     }
 
     proto_tree_add_item(http2_tree, hf_http2_data_data, tvb, offset, length, ENC_NA);
-
-    if (stream_info->next_handle) {
-        stream_info->upgrade_info->from_server = select_http2_flow_index(pinfo, http2_session) == 1;
-        call_dissector_only(stream_info->next_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(proto_tree_get_parent_tree(http2_tree)), stream_info->upgrade_info);
-    }
 }
 
 static void
@@ -3586,7 +3585,8 @@ check_reassembly_completion_status(tvbuff_t* tvb, packet_info* pinfo, proto_tree
  */
 static void
 reassemble_http2_data_according_to_subdissector(tvbuff_t* tvb, packet_info* pinfo, http2_session_t* http2_session,
-                                                proto_tree* http2_tree, unsigned offset, uint8_t flags, int length)
+                                                proto_tree* http2_tree, unsigned offset, uint8_t flags, int length,
+                                                http2_stream_info_t* stream_info)
 {
     const char* saved_match_string = pinfo->match_string;
     http2_frame_num_t cur_frame_num = get_http2_frame_num(tvb, pinfo);
@@ -3594,36 +3594,49 @@ reassemble_http2_data_according_to_subdissector(tvbuff_t* tvb, packet_info* pinf
     proto_tree_add_bytes_format(http2_tree, hf_http2_data_data, tvb, offset,
         length, NULL, "DATA payload (%u byte%s)", length, plurality(length, "", "s"));
 
-    http2_data_stream_body_info_t* body_info = get_data_stream_body_info(pinfo, http2_session);
-    char* content_type = body_info->content_type;
-    media_content_info_t metadata_used_for_media_type_handle = {
-        MEDIA_CONTAINER_HTTP_OTHERS, body_info->content_type_parameters, NULL, NULL
-    };
     streaming_reassembly_info_t* reassembly_info = get_streaming_reassembly_info(pinfo, http2_session);
 
-    dissector_handle_t subdissector_handle = dissector_get_string_handle(streaming_content_type_dissector_table, content_type);
-    if (subdissector_handle == NULL) {
-        /* We didn't get the content type, possibly because of byte errors.
-         * Note that the content type is per direction (as it should be)
-         * but reassembly_mode is set the same for *both* directions.
-         *
-         * We could try to set it to the content type used in the other
-         * direction, but among other things, if this is the request,
-         * we might be getting here for the first time on the second pass,
-         * and reassemble_streaming_data_and_call_subdissector() asserts in
-         *
-         * Just set it to data for now to avoid an assert from a NULL handle.
-         */
-        subdissector_handle = data_handle;
-    }
-    /* XXX - Do we still need to set this? */
-    pinfo->match_string = content_type;
+    if (stream_info->next_handle) {
+        stream_info->upgrade_info->from_server = select_http2_flow_index(pinfo, http2_session) == 1;
+        pinfo->match_string = dissector_handle_get_dissector_name(stream_info->next_handle);
+        pinfo->desegment_outside_tcp = true;
+        reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset, length, http2_tree, proto_tree_get_parent_tree(http2_tree),
+            http2_streaming_reassembly_table, reassembly_info, (uint64_t)cur_frame_num, NULL,
+            stream_info->next_handle, proto_tree_get_parent_tree(proto_tree_get_parent_tree(http2_tree)), stream_info->upgrade_info,
+            "HTTP2 body", &http2_body_fragment_items, hf_http2_data_segment);
+        pinfo->desegment_outside_tcp = false;
+    } else {
+        http2_data_stream_body_info_t* body_info = get_data_stream_body_info(pinfo, http2_session);
+        char* content_type = body_info->content_type;
+        media_content_info_t metadata_used_for_media_type_handle = {
+            MEDIA_CONTAINER_HTTP_OTHERS, body_info->content_type_parameters, NULL, NULL
+        };
 
-    reassemble_streaming_data_and_call_subdissector(
-        tvb, pinfo, offset, length, http2_tree, proto_tree_get_parent_tree(http2_tree),
-        http2_streaming_reassembly_table, reassembly_info, (uint64_t)cur_frame_num,
-        subdissector_handle, proto_tree_get_parent_tree(http2_tree), &metadata_used_for_media_type_handle,
-        "HTTP2 body", &http2_body_fragment_items, hf_http2_data_segment);
+        dissector_handle_t subdissector_handle = dissector_get_string_handle(streaming_content_type_dissector_table, content_type);
+        if (subdissector_handle == NULL) {
+            /* We didn't get the content type, possibly because of byte errors.
+             * Note that the content type is per direction (as it should be)
+             * but reassembly_mode is set the same for *both* directions.
+             *
+             * We could try to set it to the content type used in the other
+             * direction, but among other things, if this is the request,
+             * we might be getting here for the first time on the second pass,
+             * and reassemble_streaming_data_and_call_subdissector() asserts in
+             *
+             * Just set it to data for now to avoid an assert from a NULL handle.
+             */
+            subdissector_handle = data_handle;
+        }
+        /* XXX - Do we still need to set this? */
+        pinfo->match_string = content_type;
+
+        reassemble_streaming_data_and_call_subdissector(
+            tvb, pinfo, offset, length, http2_tree, proto_tree_get_parent_tree(http2_tree),
+            http2_streaming_reassembly_table, reassembly_info, (uint64_t)cur_frame_num, NULL,
+            subdissector_handle, proto_tree_get_parent_tree(http2_tree), &metadata_used_for_media_type_handle,
+            "HTTP2 body", &http2_body_fragment_items, hf_http2_data_segment);
+    }
+
 
     pinfo->match_string = saved_match_string;
 
@@ -3639,7 +3652,7 @@ dissect_http2_data_body(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* h2se
 
     http2_stream_info_t *stream_info = get_stream_info(pinfo, h2session, false);
     if (stream_info->reassembly_mode == HTTP2_DATA_REASSEMBLY_MODE_STREAMING) {
-        reassemble_http2_data_according_to_subdissector(tvb, pinfo, h2session, http2_tree, offset, flags, length);
+        reassemble_http2_data_according_to_subdissector(tvb, pinfo, h2session, http2_tree, offset, flags, length, stream_info);
         return;
     }
 

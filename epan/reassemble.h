@@ -1131,7 +1131,7 @@ WS_DLL_PUBLIC int
 reassemble_streaming_data_and_call_subdissector(
 	tvbuff_t* tvb, packet_info* pinfo, unsigned offset, int length,
 	proto_tree* segment_tree, proto_tree* reassembled_tree, reassembly_table streaming_reassembly_table,
-	streaming_reassembly_info_t* reassembly_info, uint64_t cur_frame_num,
+	streaming_reassembly_info_t* reassembly_info, uint64_t cur_frame_num, void* reassembly_data,
 	dissector_handle_t subdissector_handle, proto_tree* subdissector_tree, void* subdissector_data,
 	const char* label, const fragment_items* frag_hf_items, int hf_segment_data
 );

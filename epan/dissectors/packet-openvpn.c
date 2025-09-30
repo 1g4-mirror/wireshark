@@ -347,7 +347,7 @@ dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvp
 
   reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset,
     msg_length_remaining, openvpn_tree, parent_tree, msg_reassembly_table,
-    streaming_reassembly_info, get_virtual_frame_num64(tvb, pinfo, offset),
+    streaming_reassembly_info, get_virtual_frame_num64(tvb, pinfo, offset), NULL,
     tls_handle, parent_tree, NULL /* should it be tcpinfo if we have it? */, "OpenVPN Message",
     &openvpn_frag_items, hf_openvpn_fragment_bytes);
 

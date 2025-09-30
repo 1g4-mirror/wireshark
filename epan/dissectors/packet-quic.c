@@ -1636,7 +1636,7 @@ quic_stream_free_persistent_key(void *ptr)
     g_slice_free(quic_stream_key, key);
 }
 
-static const reassembly_table_functions
+const reassembly_table_functions
 quic_reassembly_table_functions = {
     quic_stream_hash,
     quic_stream_equal,

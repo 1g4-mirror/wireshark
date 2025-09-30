@@ -2532,7 +2532,7 @@ dissecting_body:
 				dissected = (bool)reassemble_streaming_data_and_call_subdissector(next_tvb, pinfo, 0,
 					tvb_reported_length_remaining(next_tvb, 0), http_tree, proto_tree_get_parent_tree(tree),
 					http_streaming_reassembly_table, streaming_reassembly_data->streaming_reassembly_info,
-					get_http_chunk_frame_num(tvb, pinfo, offset), handle,
+					get_http_chunk_frame_num(tvb, pinfo, offset), NULL, handle,
 					proto_tree_get_parent_tree(tree), content_info,
 					"HTTP", &http_body_fragment_items, hf_http_body_segment);
 			} else {

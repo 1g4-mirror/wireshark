@@ -638,16 +638,20 @@ dissect_websocket_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
   proto_tree       *ws_tree;
   const uint8_t    *masking_key = NULL;
   tvbuff_t         *tvb_payload;
-  conversation_t   *conv;
+  conversation_t   *conv = NULL;
   websocket_conv_t *websocket_conv;
 
-  const http_upgrade_info_t *http_info = (http_upgrade_info_t *)data;
+  http_upgrade_info_t *http_info = (http_upgrade_info_t *)data;
   /*
    * If this is a new Websocket session, try to parse HTTP Sec-Websocket-*
    * headers once.
    */
-  conv = find_or_create_conversation(pinfo);
-  websocket_conv = (websocket_conv_t *)conversation_get_proto_data(conv, proto_websocket);
+  if (http_info) {
+    websocket_conv = (websocket_conv_t *)http_info->dissector_data;
+  } else {
+    conv = find_or_create_conversation(pinfo);
+    websocket_conv = (websocket_conv_t *)conversation_get_proto_data(conv, proto_websocket);
+  }
   if (!websocket_conv) {
     websocket_conv = wmem_new0(wmem_file_scope(), websocket_conv_t);
     websocket_conv->frag_id = ++frag_id_counter;
@@ -682,7 +686,12 @@ dissect_websocket_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
       }
     }
 
-    conversation_add_proto_data(conv, proto_websocket, websocket_conv);
+    if (conv) {
+      conversation_add_proto_data(conv, proto_websocket, websocket_conv);
+    }
+    if (http_info) {
+      http_info->dissector_data = websocket_conv;
+    }
   }
 
   const bool from_server = http_info ? http_info->from_server : websocket_conv->server_port == pinfo->srcport;

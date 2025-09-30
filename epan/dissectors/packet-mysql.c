@@ -4917,7 +4917,7 @@ dissect_mysql_compressed_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 		}
 		if (next_tvb) {
 			add_new_data_source(pinfo, next_tvb, "compressed data");
-			reassemble_streaming_data_and_call_subdissector(next_tvb, pinfo, 0, ulen, mysql_tree, tree, mysql_reassembly_table, conn_data->reassembly_info, get_virtual_frame_num64(next_tvb, pinfo, 0), decompressed_handle, tree, data, "MySQL", &mysql_frag_items, hf_mysql_fragment_data);
+			reassemble_streaming_data_and_call_subdissector(next_tvb, pinfo, 0, ulen, mysql_tree, tree, mysql_reassembly_table, conn_data->reassembly_info, get_virtual_frame_num64(next_tvb, pinfo, 0), NULL, decompressed_handle, tree, data, "MySQL", &mysql_frag_items, hf_mysql_fragment_data);
 
 			offset += clen;
 		} else {
@@ -4929,7 +4929,7 @@ dissect_mysql_compressed_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 		 * frame boundaries (otherwise compression would have been
 		 * used), but it doesn't hurt to do this.
 		 */
-		reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset, tvb_reported_length_remaining(tvb, offset), mysql_tree, tree, mysql_reassembly_table, conn_data->reassembly_info, get_virtual_frame_num64(tvb, pinfo, offset), decompressed_handle, tree, data, "MySQL", &mysql_frag_items, hf_mysql_fragment_data);
+		reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset, tvb_reported_length_remaining(tvb, offset), mysql_tree, tree, mysql_reassembly_table, conn_data->reassembly_info, get_virtual_frame_num64(tvb, pinfo, offset), NULL, decompressed_handle, tree, data, "MySQL", &mysql_frag_items, hf_mysql_fragment_data);
 		offset = tvb_reported_length(tvb);
 	}
 
