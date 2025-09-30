@@ -2406,7 +2406,8 @@ void PacketList::resizeAllColumns(bool onlyTimeFormatted)
         return;
 
     for (int col = 0; col < cap_file_->cinfo.num_cols; col++) {
-        if (! onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) {
+        if ((!onlyTimeFormatted || col_has_time_fmt(&cap_file_->cinfo, col)) &&
+            get_column_format(&cap_file_->cinfo, col) != COL_INFO) {
             resizeColumnToContents(col);
         }
     }
