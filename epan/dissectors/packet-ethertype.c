@@ -128,6 +128,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_IEC61850_GOOSE,       "IEC 61850/GOOSE" },
 	{ ETHERTYPE_IEC61850_GSE,         "IEC 61850/GSE management services" },
 	{ ETHERTYPE_IEC61850_SV,          "IEC 61850/SV (Sampled Value Transmission" },
+	{ ETHERTYPE_ROMON,                "RoMON device specific information" },
 	{ ETHERTYPE_TIPC,                 "Transparent Inter Process Communication" },
 	{ ETHERTYPE_LLDP,                 "802.1 Link Layer Discovery Protocol (LLDP)" },
 	{ ETHERTYPE_3GPP2,                "CDMA2000 A10 3GPP2 Packet" },
