@@ -22,6 +22,7 @@
  * RFC 2869 - RADIUS Extensions
  * RFC 3162 - RADIUS and IPv6
  * RFC 3576 - Dynamic Authorization Extensions to RADIUS
+ * RFC 6613 - RADIUS over TCP
  * RFC 6929 - Remote Authentication Dial-In User Service (RADIUS) Protocol Extensions
  *
  * See also
@@ -100,12 +101,13 @@ typedef struct _radius_info_t
  * Default RADIUS ports:
  * 1645 (Authentication, pre RFC 2865)
  * 1646 (Accounting, pre RFC 2866)
- * 1812 (Authentication, RFC 2865)
- * 1813 (Accounting, RFC 2866)
+ * 1812 (Authentication, RFC 2865, 6613)
+ * 1813 (Accounting, RFC 2866, 6613)
  * 1700 (Dynamic Authorization Extensions, pre RFC 3576)
- * 3799 (Dynamic Authorization Extensions, RFC 3576)
+ * 3799 (Dynamic Authorization Extensions, RFC 3576, 6613)
 */
 #define DEFAULT_RADIUS_PORT_RANGE "1645,1646,1700,1812,1813,3799"
+#define DEFAULT_RADIUS_TCP_PORT_RANGE "1812,1813,3799"
 
 static radius_dictionary_t *dict;
 
@@ -2943,6 +2945,7 @@ proto_reg_handoff_radius(void)
 {
 	eap_handle = find_dissector_add_dependency("eap", proto_radius);
 	dissector_add_uint_range_with_preference("udp.port", DEFAULT_RADIUS_PORT_RANGE, radius_handle);
+	dissector_add_uint_range_with_preference("tcp.port", DEFAULT_RADIUS_TCP_PORT_RANGE, radius_handle);
 }
 
 /*
