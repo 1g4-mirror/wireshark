@@ -936,6 +936,7 @@ set(DISSECTOR_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-collectd.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-componentstatus.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-communityid.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/packet-connect-ip.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-cops.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-corosync-totemnet.c
 	${CMAKE_CURRENT_SOURCE_DIR}/packet-corosync-totemsrp.c
