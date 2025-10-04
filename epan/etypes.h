@@ -443,6 +443,10 @@ extern "C" {
 #define ETHERTYPE_IEC61850_SV		0x88BA	/* IEC 61850 is a global standard for the use in utility communication,*/
 #endif						/* in particular for the information exchange between IED's in a power */
 
+#ifndef ETHERTYPE_ROMON
+#define ETHERTYPE_ROMON 		0x88BF  /* Proxim Corporation, for encapsulation of Ethernet packets being transmitted */
+#endif						/* between switch-like devices to carry device specific information.           */
+
 #ifndef ETHERTYPE_TIPC
 #define ETHERTYPE_TIPC			0x88CA	/* TIPC (Transparent Inter Process Communication, */
 #endif						/* http://tipc.sourceforge.net/) Ericsson Research Canada Inc */
