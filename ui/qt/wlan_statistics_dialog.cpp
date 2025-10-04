@@ -12,6 +12,7 @@
 #include <epan/packet.h>
 #include <epan/strutil.h>
 #include <epan/tap.h>
+#include <epan/address_types.h>
 
 #include <epan/dissectors/packet-ieee80211.h>
 
@@ -49,32 +50,26 @@ enum {
     wlan_station_row_type_
 };
 
-class WlanStationTreeWidgetItem : public QTreeWidgetItem
+class WlanStatsTreeWidgetItem : public QTreeWidgetItem
 {
-public:
-    WlanStationTreeWidgetItem(const address *addr) :
-        QTreeWidgetItem (wlan_station_row_type_),
-        packets_(0),
-        retry_(0),
-        sent_(0),
-        received_(0),
-        probe_req_(0),
-        probe_resp_(0),
-        auth_(0),
-        deauth_(0),
-        other_(0)
+protected:
+    WlanStatsTreeWidgetItem(QTreeWidget* parent, const address* addr, int row_type) :
+        QTreeWidgetItem(parent, row_type)
     {
         copy_address(&addr_, addr);
-        setText(col_bssid_, address_to_qstring(&addr_));
-    }
-    bool isMatch(const address *addr) {
-        return addresses_equal(&addr_, addr);
-    }
-    void update(const wlan_hdr_t *wlan_hdr) {
-        bool is_sender = addresses_equal(&addr_, &wlan_hdr->src);
 
+        int wlan_bssid_type = address_type_get_by_name("AT_ETHER_BSSID");
+        set_address(&bssid_broadcast_, wlan_bssid_type, 6, bssid_broadcast_data_);
+    }
+
+    bool is_broadcast_bssid(const address* bssid) {
+        return addresses_equal(&bssid_broadcast_, bssid);
+    }
+
+    void update_stats(const wlan_hdr_t* wlan_hdr, bool count_beacon_as_packet)
+    {
         if (wlan_hdr->stats.fc_retry != 0) {
-            retry_++;
+            retry_packet_++;
         }
 
         // XXX Should we count received probes and auths? This is what the
@@ -87,7 +82,8 @@ public:
             probe_resp_++;
             break;
         case MGT_BEACON:
-            // Skip
+            if (count_beacon_as_packet)
+                beacon_++;
             break;
         case MGT_AUTHENTICATION:
             auth_++;
@@ -103,34 +99,84 @@ public:
         case DATA_QOS_DATA_CF_ACK:
         case DATA_QOS_DATA_CF_POLL:
         case DATA_QOS_DATA_CF_ACK_POLL:
-            if (is_sender) {
+            if (addresses_equal(&addr_, &wlan_hdr->src)) {
                 sent_++;
-            } else {
+            }
+            else {
                 received_++;
             }
+            data_packet_++;
             break;
         default:
             other_++;
             break;
         }
-        if (wlan_hdr->type != MGT_BEACON) packets_++;
+        if (count_beacon_as_packet || (wlan_hdr->type != MGT_BEACON))
+            packets_++;
+    }
+
+    address addr_;
+
+    int get_packets() const { return packets_; }
+    int get_data_packets() const { return data_packet_; }
+    int get_sent_packets() const { return sent_; }
+    int get_received_packets() const { return received_; }
+    int get_retry_packets() const { return retry_packet_; }
+    int get_probe_req_packets() const { return probe_req_; }
+    int get_probe_resp_packets() const { return probe_resp_; }
+    int get_auth_packets() const { return auth_; }
+    int get_deauth_packets() const { return deauth_; }
+    int get_other_packets() const { return other_; }
+    int get_beacon_packets() const { return beacon_; }
+
+private:
+    int packets_ = 0;
+    int data_packet_ = 0;
+    int sent_ = 0;
+    int received_ = 0;
+    int retry_packet_ = 0;
+    int probe_req_ = 0;
+    int probe_resp_ = 0;
+    int auth_ = 0;
+    int deauth_ = 0;
+    int other_ = 0;
+    int beacon_ = 0;
+
+
+    const unsigned char bssid_broadcast_data_[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+    address bssid_broadcast_;
+};
+
+class WlanStationTreeWidgetItem : public WlanStatsTreeWidgetItem
+{
+public:
+    WlanStationTreeWidgetItem(const address *addr) :
+        WlanStatsTreeWidgetItem(NULL, addr, wlan_station_row_type_)
+    {
+        setText(col_bssid_, address_to_qstring(&addr_));
+    }
+    bool isMatch(const address *addr) {
+        return addresses_equal(&addr_, addr);
+    }
+    void update(const wlan_hdr_t *wlan_hdr) {
+        update_stats(wlan_hdr, false);
     }
     void draw(address *bssid, int num_packets) {
-        if (packets_ && num_packets > 0) {
-            setData(col_pct_packets_, Qt::UserRole, QVariant::fromValue<double>(packets_ * 100.0 / num_packets));
-            setData(col_pct_retry_, Qt::UserRole, QVariant::fromValue<double>(retry_ * 100.0 / packets_));
+        if (get_packets() && num_packets > 0) {
+            setData(col_pct_packets_, Qt::UserRole, QVariant::fromValue<double>(get_packets() * 100.0 / num_packets));
+            setData(col_pct_retry_, Qt::UserRole, QVariant::fromValue<double>(get_retry_packets() * 100.0 / get_packets()));
         } else {
             setData(col_pct_packets_, Qt::UserRole, QVariant::fromValue<double>(0));
             setData(col_pct_retry_, Qt::UserRole, QVariant::fromValue<double>(0));
         }
-        setText(col_beacons_, QString::number(sent_));
-        setText(col_data_packets_, QString::number(received_));
-        setText(col_retry_packets_, QString::number(retry_));
-        setText(col_probe_reqs_, QString::number(probe_req_));
-        setText(col_probe_resps_, QString::number(probe_resp_));
-        setText(col_auths_, QString::number(auth_));
-        setText(col_deauths_, QString::number(deauth_));
-        setText(col_others_, QString::number(other_));
+        setText(col_beacons_, QString::number(get_sent_packets()));
+        setText(col_data_packets_, QString::number(get_received_packets()));
+        setText(col_retry_packets_, QString::number(get_retry_packets()));
+        setText(col_probe_reqs_, QString::number(get_probe_req_packets()));
+        setText(col_probe_resps_, QString::number(get_probe_resp_packets()));
+        setText(col_auths_, QString::number(get_auth_packets()));
+        setText(col_deauths_, QString::number(get_deauth_packets()));
+        setText(col_others_, QString::number(get_other_packets()));
 
         if (!is_broadcast_bssid(bssid) && addresses_data_equal(&addr_, bssid)) {
             setText(col_protection_, QObject::tr("Base station"));
@@ -145,24 +191,24 @@ public:
         case col_bssid_:
             return cmp_address(&addr_, &other_row->addr_) < 0;
         case col_pct_packets_:
-            return packets_ < other_row->packets_;
+            return get_packets() < other_row->get_packets();
         case col_beacons_:
-            return sent_ < other_row->sent_;
+            return get_sent_packets() < other_row->get_sent_packets();
         case col_data_packets_:
-            return received_ < other_row->received_;
+            return get_received_packets() < other_row->get_received_packets();
         case col_probe_reqs_:
-            return probe_req_ < other_row->probe_req_;
+            return get_probe_req_packets() < other_row->get_probe_req_packets();
         case col_probe_resps_:
-            return probe_resp_ < other_row->probe_resp_;
+            return get_probe_resp_packets() < other_row->get_probe_resp_packets();
         case col_auths_:
-            return auth_ < other_row->auth_;
+            return get_auth_packets() < other_row->get_auth_packets();
         case col_deauths_:
-            return deauth_ < other_row->deauth_;
+            return get_deauth_packets() < other_row->get_deauth_packets();
         case col_others_:
-            return other_ < other_row->other_;
+            return get_other_packets() < other_row->get_other_packets();
         case col_retry_packets_:
         case col_pct_retry_:
-            return retry_ < other_row->retry_;
+            return get_retry_packets() < other_row->get_retry_packets();
         default:
             break;
         }
@@ -173,44 +219,22 @@ public:
         return QList<QVariant>()
                 << address_to_qstring(&addr_)
                 << data(col_pct_packets_, Qt::UserRole).toDouble()
-                << data(col_pct_retry_, Qt::UserRole).toDouble() << retry_
-                << sent_ << received_ << probe_req_ << probe_resp_
-                << auth_ << deauth_ << other_ << text(col_protection_);
+                << data(col_pct_retry_, Qt::UserRole).toDouble() << get_retry_packets()
+                << get_sent_packets() << get_received_packets() << get_probe_req_packets() << get_probe_resp_packets()
+                << get_auth_packets() << get_deauth_packets() << get_other_packets() << text(col_protection_);
     }
     const QString filterExpression() {
         QString filter_expr = QStringLiteral("wlan.addr==%1")
                 .arg(address_to_qstring(&addr_));
         return filter_expr;
     }
-
-private:
-    address addr_;
-    int packets_;
-    int retry_;
-    int sent_;
-    int received_;
-    int probe_req_;
-    int probe_resp_;
-    int auth_;
-    int deauth_;
-    int other_;
-
 };
 
-class WlanNetworkTreeWidgetItem : public QTreeWidgetItem
+class WlanNetworkTreeWidgetItem : public WlanStatsTreeWidgetItem
 {
 public:
     WlanNetworkTreeWidgetItem(QTreeWidget *parent, const wlan_hdr_t *wlan_hdr) :
-        QTreeWidgetItem (parent, wlan_network_row_type_),
-        beacon_(0),
-        data_packet_(0),
-        retry_packet_(0),
-        probe_req_(0),
-        probe_resp_(0),
-        auth_(0),
-        deauth_(0),
-        other_(0),
-        packets_(0)
+        WlanStatsTreeWidgetItem(parent, &wlan_hdr->bssid, wlan_network_row_type_)
     {
         updateBssid(wlan_hdr);
         channel_ = wlan_hdr->stats.channel;
@@ -238,7 +262,7 @@ public:
         // We want (but might not have) a unicast BSSID and a named SSID. Try
         // to match the current packet and update our information if possible.
 
-        if (addresses_equal(&bssid_, &wlan_hdr->bssid)) {
+        if (addresses_equal(&addr_, &wlan_hdr->bssid)) {
             is_bssid_match = true;
         }
 
@@ -260,7 +284,7 @@ public:
                 }
             // Probes with hidden SSIDs. Unicast.
             } else if ((wlan_hdr->stats.ssid_len == 1) && (wlan_hdr->stats.ssid[0] == 0)) {
-                if (!is_broadcast_ && addresses_equal(&bssid_, &wlan_hdr->bssid)) {
+                if (!is_broadcast_ && addresses_equal(&addr_, &wlan_hdr->bssid)) {
                     is_bssid_match = true;
                     update_ssid = true;
                 }
@@ -311,41 +335,9 @@ public:
         if (text(col_protection_).isEmpty() && wlan_hdr->stats.protection[0] != 0) {
             setText(col_protection_, wlan_hdr->stats.protection);
         }
-        if (wlan_hdr->stats.fc_retry != 0) {
-            retry_packet_++;
-        }
 
-        switch (wlan_hdr->type) {
-        case MGT_PROBE_REQ:
-            probe_req_++;
-            break;
-        case MGT_PROBE_RESP:
-            probe_resp_++;
-            break;
-        case MGT_BEACON:
-            beacon_++;
-            break;
-        case MGT_AUTHENTICATION:
-            auth_++;
-            break;
-        case MGT_DEAUTHENTICATION:
-            deauth_++;
-            break;
-        case DATA:
-        case DATA_CF_ACK:
-        case DATA_CF_POLL:
-        case DATA_CF_ACK_POLL:
-        case DATA_QOS_DATA:
-        case DATA_QOS_DATA_CF_ACK:
-        case DATA_QOS_DATA_CF_POLL:
-        case DATA_QOS_DATA_CF_ACK_POLL:
-            data_packet_++;
-            break;
-        default:
-            other_++;
-            break;
-        }
-        packets_++;
+        update_stats(wlan_hdr, true);
+
 
         WlanStationTreeWidgetItem* sender_ws_ti = NULL;
         WlanStationTreeWidgetItem* receiver_ws_ti = NULL;
@@ -369,22 +361,22 @@ public:
 
     void draw(int num_packets) {
         if (channel_ > 0) setText(col_channel_, QString::number(channel_));
-        setData(col_pct_packets_, Qt::UserRole, QVariant::fromValue<double>(packets_ * 100.0 / num_packets));
-        setData(col_pct_retry_, Qt::UserRole, QVariant::fromValue<double>(retry_packet_ * 100.0 / packets_));
-        setText(col_retry_packets_, QString::number(retry_packet_));
-        setText(col_beacons_, QString::number(beacon_));
-        setText(col_data_packets_, QString::number(data_packet_));
-        setText(col_probe_reqs_, QString::number(probe_req_));
-        setText(col_probe_resps_, QString::number(probe_resp_));
-        setText(col_auths_, QString::number(auth_));
-        setText(col_deauths_, QString::number(deauth_));
-        setText(col_others_, QString::number(other_));
+        setData(col_pct_packets_, Qt::UserRole, QVariant::fromValue<double>(get_packets() * 100.0 / num_packets));
+        setData(col_pct_retry_, Qt::UserRole, QVariant::fromValue<double>(get_retry_packets() * 100.0 / get_packets()));
+        setText(col_retry_packets_, QString::number(get_retry_packets()));
+        setText(col_beacons_, QString::number(get_beacon_packets()));
+        setText(col_data_packets_, QString::number(get_data_packets()));
+        setText(col_probe_reqs_, QString::number(get_probe_req_packets()));
+        setText(col_probe_resps_, QString::number(get_probe_resp_packets()));
+        setText(col_auths_, QString::number(get_auth_packets()));
+        setText(col_deauths_, QString::number(get_deauth_packets()));
+        setText(col_others_, QString::number(get_other_packets()));
     }
 
     void addStations() {
         foreach (QTreeWidgetItem *cur_ti, stations_) {
             WlanStationTreeWidgetItem *cur_ws_ti = dynamic_cast<WlanStationTreeWidgetItem *>(cur_ti);
-            cur_ws_ti->draw(&bssid_, packets_ - beacon_);
+            cur_ws_ti->draw(&addr_, get_packets() - get_beacon_packets());
             for (int col = 0; col < treeWidget()->columnCount(); col++) {
             // int QTreeWidgetItem::textAlignment(int column) const
             // Returns the text alignment for the label in the given column.
@@ -404,27 +396,27 @@ public:
 
         switch (treeWidget()->sortColumn()) {
         case col_bssid_:
-            return cmp_address(&bssid_, &other_row->bssid_) < 0;
+            return cmp_address(&addr_, &other_row->addr_) < 0;
         case col_channel_:
             return channel_ < other_row->channel_;
         case col_ssid_:
             return ssid_ < other_row->ssid_;
         case col_pct_packets_:
-            return packets_ < other_row->packets_;
+            return get_packets() < other_row->get_packets();
         case col_beacons_:
-            return beacon_ < other_row->beacon_;
+            return get_beacon_packets() < other_row->get_beacon_packets();
         case col_data_packets_:
-            return data_packet_ < other_row->data_packet_;
+            return get_data_packets() < other_row->get_data_packets();
         case col_probe_reqs_:
-            return probe_req_ < other_row->probe_req_;
+            return get_probe_req_packets() < other_row->get_probe_req_packets();
         case col_probe_resps_:
-            return probe_resp_ < other_row->probe_resp_;
+            return get_probe_resp_packets() < other_row->get_probe_resp_packets();
         case col_auths_:
-            return auth_ < other_row->auth_;
+            return get_auth_packets() < other_row->get_auth_packets();
         case col_deauths_:
-            return deauth_ < other_row->deauth_;
+            return get_deauth_packets() < other_row->get_deauth_packets();
         case col_others_:
-            return other_ < other_row->other_;
+            return get_other_packets() < other_row->get_other_packets();
         case col_protection_:
         default:
             break;
@@ -434,17 +426,17 @@ public:
     }
     QList<QVariant> rowData() {
         return QList<QVariant>()
-                << address_to_qstring(&bssid_) << channel_ << text(col_ssid_)
+                << address_to_qstring(&addr_) << channel_ << text(col_ssid_)
                 << data(col_pct_packets_, Qt::UserRole).toDouble()
                 << data(col_pct_retry_, Qt::UserRole).toDouble()
-                << retry_packet_ << beacon_  << data_packet_ << probe_req_
-                << probe_resp_ << auth_ << deauth_ << other_
+                << get_retry_packets() << get_beacon_packets() << get_data_packets() << get_probe_req_packets()
+                << get_probe_resp_packets() << get_auth_packets() << get_deauth_packets() << get_other_packets()
                 << text(col_protection_);
     }
 
     const QString filterExpression() {
         QString filter_expr = QStringLiteral("(wlan.bssid==%1")
-                .arg(address_to_qstring(&bssid_));
+                .arg(address_to_qstring(&addr_));
         if (!ssid_.isEmpty() && ssid_[0] != '\0') {
             filter_expr += QStringLiteral(" || wlan.ssid==\"%1\"")
                     .arg(ssid_.constData());
@@ -454,28 +446,18 @@ public:
     }
 
 private:
-    address bssid_;
     bool is_broadcast_;
     int channel_;
     QByteArray ssid_;
-    int beacon_;
-    int data_packet_;
-    int retry_packet_;
-    int probe_req_;
-    int probe_resp_;
-    int auth_;
-    int deauth_;
-    int other_;
-    int packets_;
 
     // Adding items one at a time is slow. Gather up the stations in a list
     // and add them all at once later.
     QList<QTreeWidgetItem *>stations_;
 
     void updateBssid(const wlan_hdr_t *wlan_hdr) {
-        copy_address(&bssid_, &wlan_hdr->bssid);
-        is_broadcast_ = is_broadcast_bssid(&bssid_);
-        setText(col_bssid_, address_to_qstring(&bssid_));
+        copy_address(&addr_, &wlan_hdr->bssid);
+        is_broadcast_ = is_broadcast_bssid(&addr_);
+        setText(col_bssid_, address_to_qstring(&addr_));
     }
 };
 
