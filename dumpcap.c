@@ -1884,6 +1884,26 @@ cap_pipe_open_live(char *pipename,
                 pcap_src->cap_pipe_err = PIPERR;
                 return;
             }
+            if (ws_fstat64(fd, &pipe_stat) < 0) {
+                if (errno == ENOENT || errno == ENOTDIR)
+                    pcap_src->cap_pipe_err = PIPNEXIST;
+                else {
+                    g_snprintf(errmsg, (gulong)errmsgl,
+                               "The capture session could not be initiated "
+                               "due to error getting information on pipe or socket: %s.", g_strerror(errno));
+                    pcap_src->cap_pipe_err = PIPERR;
+                }
+                return;
+            }
+            if (!S_ISFIFO(pipe_stat.st_mode)) {
+                g_snprintf(errmsg, (gulong)errmsgl,
+                          "The capture session could not be initiated "
+                          "because the pipe or socket was initially detected as FIFO "
+                          "and was then detected as not being a FIFO");
+                pcap_src->cap_pipe_err = PIPERR;
+                return;
+            }
+
         } else if (S_ISSOCK(pipe_stat.st_mode)) {
             fd = socket(AF_UNIX, SOCK_STREAM, 0);
             if (fd == -1) {
