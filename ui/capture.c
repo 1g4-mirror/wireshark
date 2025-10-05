@@ -165,7 +165,7 @@ capture_start(capture_options *capture_opts, GPtrArray *capture_comments,
     /* spawn/exec of the capture child, without waiting for any response from it */
     capture_callback_invoke(capture_cb_capture_prepared, cap_session);
 
-    wtap_rec_init(&cap_session->rec, 1514);
+    wtap_rec_init(&cap_session->rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     cap_session->wtap = NULL;
 
@@ -513,7 +513,7 @@ capture_info_new_packets(int to_read, wtap *wth, info_data_t* cap_info)
 
     /*ws_warning("new packets: %u", to_read);*/
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
     while (to_read > 0) {
         wtap_cleareof(wth);
         if (!wtap_read(wth, &rec, &err, &err_info, &data_offset)) {

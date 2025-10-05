@@ -1312,7 +1312,7 @@ extract_secrets(wtap *wth, char* filename, int *err, char **err_info)
     char         *fsuffix            = NULL;
 
     /* Read all of the packets in turn */
-    wtap_rec_init(&read_rec, 1514);
+    wtap_rec_init(&read_rec, WTAP_DEFAULT_ETH_FRAME_LEN);
     while (wtap_read(wth, &read_rec, err, err_info, &offset)) {
         /* Do we want to respect the max packet number on the command line?
          * Probably more confusing than it's worth, because a user might
@@ -2209,7 +2209,7 @@ main(int argc, char *argv[])
     idbs_seen = g_array_new(FALSE, FALSE, sizeof(wtap_block_t));
 
     /* Read all of the packets in turn */
-    wtap_rec_init(&read_rec, 1514);
+    wtap_rec_init(&read_rec, WTAP_DEFAULT_ETH_FRAME_LEN);
     while (wtap_read(wth, &read_rec, &read_err, &read_err_info, &data_offset)) {
         /*
          * XXX - what about non-packet records in the file after this?

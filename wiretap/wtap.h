@@ -399,6 +399,9 @@ struct dte_dce_phdr {
     uint8_t flags;   /* ENCAP_LAPB, ENCAP_V120, ENCAP_FRELAY: 1st bit means From DCE */
 };
 
+/* Default length for Ethernet frames*/
+#define WTAP_DEFAULT_ETH_FRAME_LEN 1514
+
 /* Packet "pseudo-header" information for ISDN capture files. */
 
 /* Direction */

@@ -926,7 +926,7 @@ load_cap_file(capture_file *cf)
     wtap_rec     rec;
     epan_dissect_t edt;
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, WTAP_DEFAULT_ETH_FRAME_LEN);
 
     epan_dissect_init(&edt, cf->epan, true, false);
 
