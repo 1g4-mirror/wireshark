@@ -8,6 +8,7 @@
  */
 
 #include "wireshark_application.h"
+#include <ui/qt/widgets/application_proxy_style.h>
 
 WiresharkApplication *wsApp;
 
@@ -18,6 +19,7 @@ WiresharkApplication::WiresharkApplication(int &argc,  char **argv) :
     Q_INIT_RESOURCE(wsicon);
     setApplicationName("Wireshark");
     setDesktopFileName(QStringLiteral("org.wireshark.Wireshark"));
+    setStyle(new ApplicationProxyStyle);
 }
 
 WiresharkApplication::~WiresharkApplication()
