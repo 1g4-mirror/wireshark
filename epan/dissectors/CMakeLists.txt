@@ -340,12 +340,15 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-dcerpc-dnsserver.h
 	packet-dcerpc-frsapi.h
 	packet-dcerpc-frsrpc.h
+	packet-dcerpc-lsa.h
+	packet-dcerpc-misc.h
 	packet-dcerpc-netlogon.h
 	packet-dcerpc-nt.h
 	packet-dcerpc-pnp.h
 	packet-dcerpc-rras.h
 	packet-dcerpc-samr.h
 	packet-dcerpc-spoolss.h
+	packet-dcerpc-srvsvc.h
 	packet-dcerpc-svcctl.h
 	packet-dcerpc-tapi.h
 	packet-dcom.h
@@ -484,6 +487,7 @@ set(DISSECTOR_PUBLIC_HEADERS
 	packet-lpp.h
 	packet-lppa.h
 	packet-lte-rrc.h
+	packet-mac-3gpp-common.h
 	packet-mac-lte.h
 	packet-mausb.h
 	packet-mbim.h

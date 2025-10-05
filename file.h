@@ -16,7 +16,7 @@
 #include <epan/epan.h>
 #include <epan/print.h>
 #include <epan/fifo_string_cache.h>
-#include <ui/packet_range.h>
+#include <epan/packet_range.h>
 
 #ifdef __cplusplus
 extern "C" {

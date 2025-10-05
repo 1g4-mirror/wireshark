@@ -17,7 +17,7 @@
 #include "packet_range_group_box.h"
 #include "ui/help_url.h"
 
-#include <ui/packet_range.h>
+#include <epan/packet_range.h>
 
 #include <ui/qt/models/packet_list_record.h>
 #include "cfile.h"

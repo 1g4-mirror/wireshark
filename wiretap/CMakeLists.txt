@@ -12,9 +12,11 @@ set(WIRETAP_PUBLIC_HEADERS
 	introspection.h
 	merge.h
 	pcap-encap.h
+	pcapng.h
 	pcapng_module.h
 	secrets-types.h
 	wtap.h
+	wtap-int.h
 	wtap_modules.h
 	wtap_opttypes.h
 )
