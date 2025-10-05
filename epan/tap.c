@@ -749,6 +749,12 @@ remove_tap_listener(void *tapdata)
 	free_tap_listener(tl);
 }
 
+void
+remove_all_tap_listeners(void)
+{
+	tap_listener_queue = NULL;
+}
+
 /*
  * Return true if we have one or more tap listeners that require dissection,
  * false otherwise.

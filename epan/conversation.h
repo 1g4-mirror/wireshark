@@ -286,7 +286,7 @@ WS_DLL_PUBLIC uint32_t conversation_key_port2(const conversation_element_t *key)
 /**
  * Create a new hash tables for conversations.
  */
-extern void conversation_init(void);
+WS_DLL_PUBLIC void conversation_init(void);
 
 /**
  * Initialize some variables every time a file is loaded or re-loaded.

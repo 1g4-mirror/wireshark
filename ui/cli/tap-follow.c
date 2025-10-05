@@ -549,6 +549,17 @@ follow_arg_done(const char *opt_argp)
   return true;
 }
 
+static GPtrArray *follow_streams_array = NULL;
+
+guint get_follow_streams_count(void) {
+    return follow_streams_array ? follow_streams_array->len : 0;
+}
+
+follow_info_t *get_follow_streams_instance(guint index) {
+    if (!follow_streams_array || index >= follow_streams_array->len) return NULL;
+       return g_ptr_array_index(follow_streams_array, index);
+}
+
 static bool follow_stream(const char *opt_argp, void *userdata)
 {
   follow_info_t *follow_info;
@@ -564,6 +575,10 @@ static bool follow_stream(const char *opt_argp, void *userdata)
   opt_argp += strlen(STR_FOLLOW);
   opt_argp += strlen(proto_filter_name);
 
+  if (!follow_streams_array) {
+    follow_streams_array = g_ptr_array_new();
+  }
+
   cli_follow_info = g_new0(cli_follow_info_t, 1);
   cli_follow_info->stream_index = -1;
   /* use second parameter only for followers that have sub streams
@@ -574,6 +589,7 @@ static bool follow_stream(const char *opt_argp, void *userdata)
       cli_follow_info->sub_stream_index = 0;
   }
   follow_info = g_new0(follow_info_t, 1);
+  g_ptr_array_add(follow_streams_array, follow_info);
   follow_info->gui_data = cli_follow_info;
   follow_info->substream_id = SUBSTREAM_UNUSED;
   cli_follow_info->follower = follower;

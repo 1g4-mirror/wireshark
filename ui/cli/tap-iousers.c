@@ -20,12 +20,8 @@
 #include <wsutil/str_util.h>
 #include <wsutil/cmdarg_err.h>
 #include <ui/cli/tshark-tap.h>
+#include <ui/cli/tap-iousers.h>
 
-typedef struct _io_users_t {
-	const char *type;
-	const char *filter;
-	conv_hash_t hash;
-} io_users_t;
 
 static void
 iousers_draw(void *arg)
@@ -253,12 +249,26 @@ static void iousers_finish(void *arg)
 		g_free(iu);
 }
 
+static GPtrArray *iousers_array = NULL;
+
+guint get_iousers_count(void) {
+    return iousers_array ? iousers_array->len : 0;
+}
+
+io_users_t *get_iousers_instance(guint index) {
+    if (!iousers_array || index >= iousers_array->len) return NULL;
+	return g_ptr_array_index(iousers_array, index);
+}
+
 void init_iousers(struct register_ct *ct, const char *filter)
 {
 	io_users_t *iu;
 	GString *error_string;
-
+	if (!iousers_array) {
+	    iousers_array = g_ptr_array_new();
+	}
 	iu = g_new0(io_users_t, 1);
+	g_ptr_array_add(iousers_array, iu);
 	iu->type = proto_get_protocol_short_name(find_protocol_by_id(get_conversation_proto_id(ct)));
 	iu->filter = g_strdup(filter);
 	iu->hash.user_data = iu;

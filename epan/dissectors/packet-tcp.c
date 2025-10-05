@@ -1587,6 +1587,7 @@ follow_tcp_tap_listener(void *tapdata, packet_info *pinfo,
     uint32_t data_offset = 0;
     uint32_t data_length = tvb_captured_length(follow_data->tvb);
 
+    follow_info->tcpd = follow_data->tcpd;
     if (follow_data->tcph->th_flags & TH_SYN) {
         sequence++;
     }
@@ -1599,6 +1600,18 @@ follow_tcp_tap_listener(void *tapdata, packet_info *pinfo,
     }
 
     is_server = !(addresses_equal(&follow_info->client_ip, &pinfo->src) && follow_info->client_port == pinfo->srcport);
+
+    if (follow_data->tcph->th_flags & TH_FIN) {
+        if (follow_info->tcp_fin[FROM_CLIENT] == 0 && follow_info->tcp_fin[FROM_SERVER] == 0)
+            follow_info->tcp_fin[is_server] = 1;
+    }
+
+    if (follow_data->tcph->th_flags & TH_RST) {
+        if (data_length > 0)
+            follow_info->tcp_rst_with_data = true;
+        if (follow_info->tcp_rst[FROM_CLIENT] == 0 && follow_info->tcp_rst[FROM_SERVER] == 0)
+            follow_info->tcp_rst[is_server] = 1;
+    }
 
    /* Check whether this frame ACKs fragments in flow from the other direction.
     * This happens when frames are not in the capture file, but were actually

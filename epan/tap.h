@@ -260,6 +260,8 @@ WS_DLL_PUBLIC void tap_listeners_dfilter_recompile(void);
 /** this function removes a tap listener */
 WS_DLL_PUBLIC void remove_tap_listener(void *tapdata);
 
+WS_DLL_PUBLIC void remove_all_tap_listeners(void);
+
 /** This function sets new flags to a tap listener */
 WS_DLL_PUBLIC GString *set_tap_flags(void *tapdata, unsigned flags);
 
