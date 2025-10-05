@@ -8542,6 +8542,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <source>RSA Keys</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>TLS Session Key Files</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PrintDialog</name>
